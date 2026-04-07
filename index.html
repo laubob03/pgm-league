@@ -2283,7 +2283,7 @@ function resetAllData() {
 // 云端同步模块 - 使用 GitHub Gist 作为免费云端数据库
 // 支持多设备数据同步，无需后端服务器
 
-let GIST_ID = localStorage.getItem('pgm_gist_id') || '';
+let GIST_ID = localStorage.getItem('pgm_gist_id') || 'BUILTIN_GIST_ID_PLACEHOLDER';
 let GITHUB_TOKEN = localStorage.getItem('pgm_github_token') || '';
 
 const GIST_API = 'https://api.github.com/gists';
@@ -2293,8 +2293,9 @@ function showSyncModal() {
   const hasToken = !!GITHUB_TOKEN;
   const hasGist = !!GIST_ID;
   
-  // 非管理员只能看到云端下载和数据概览
+  // 非管理员只能看到云端下载和数据概览（无需 Token）
   if (!isAdmin) {
+    const hasGist = !!GIST_ID && GIST_ID !== 'BUILTIN_GIST_ID_PLACEHOLDER';
     const content = `
       <div class="modal-header">
         <div class="modal-title">☁️ 数据同步中心</div>
@@ -2306,12 +2307,12 @@ function showSyncModal() {
         <div class="import-section" style="border-color:#FF9800;">
           <div class="import-section-title" style="color:#FF9800;">📋 使用说明</div>
           <div style="font-size:13px;color:#333;line-height:1.8;">
-            数据由管理员统一管理，你只需点击下方按钮获取最新数据。
+            数据由管理员统一管理，点击下方按钮获取最新数据。无需任何配置。
           </div>
         </div>
         
+        ${hasGist ? `
         <!-- 从云端下载 -->
-        ${hasToken && hasGist ? `
         <div class="import-section" style="border-color:#2196F3;">
           <div class="import-section-title" style="color:#2196F3;">⬇️ 获取最新数据</div>
           <div class="import-desc">从云端下载管理员最新上传的联赛数据</div>
@@ -2324,9 +2325,9 @@ function showSyncModal() {
         </div>
         ` : `
         <div class="import-section" style="border-color:#9E9E9E;">
-          <div class="import-section-title" style="color:#9E9E9E;">⏳ 等待管理员配置</div>
+          <div class="import-section-title" style="color:#9E9E9E;">⏳ 等待管理员上传</div>
           <div style="font-size:13px;color:#888;line-height:1.8;">
-            管理员还未配置云端同步，请等待通知。
+            管理员还未上传数据，请等待通知。
           </div>
         </div>
         `}
@@ -2375,7 +2376,7 @@ function showSyncModal() {
         <button class="btn btn-primary btn-full" onclick="saveGithubToken()" style="background:#2196F3;">
           保存 Token
         </button>
-        ${hasToken ? '<button class="btn btn-full" style="background:#f44336;color:white;margin-top:8px;" onclick="removeGithubToken()">清除 Token</button>' : ''}
+        ${hasToken ? '<button class="btn btn-full" style="background:#f44336;color:white;margin-top:8px;" onclick="removeGithubToken()">清除 Token 并重新绑定</button>' : ''}
       </div>
       
       ${hasToken ? `
@@ -2536,10 +2537,10 @@ async function syncUpload() {
         throw new Error('无法读取已有云端数据');
       }
     } else {
-      // 创建新 Gist（Secret）
+      // 创建新 Gist（公开，教练无需 Token 即可下载）
       const body = {
         description: 'PGM足球经理联赛数据 - 自动同步',
-        public: false,
+        public: true,
         files: { [filename]: { content: dataStr } }
       };
 
@@ -2573,29 +2574,28 @@ async function syncUpload() {
       String(now.getMinutes()).padStart(2,'0');
     localStorage.setItem('pgm_last_sync_time', timeStr);
 
-    showToast('上传成功！数据已同步到云端');
-    setTimeout(() => showSyncModal(), 500);
+    showToast('上传成功！Gist: ' + GIST_ID);
+    setTimeout(() => showSyncModal(), 1000);
   } catch(e) {
     showToast(e.message);
     console.error('Sync upload error:', e);
   }
 }
 
-// 从云端下载数据
+// 从云端下载数据（Public Gist 无需 Token）
 async function syncDownload() {
-  if (!GITHUB_TOKEN) { showToast('请先配置 GitHub Token'); return; }
-  if (!GIST_ID) { showToast('还没有云端数据，请先上传一次'); return; }
+  if (!GIST_ID || GIST_ID === 'BUILTIN_GIST_ID_PLACEHOLDER') { showToast('还没有云端数据，请等待管理员上传'); return; }
   if (!confirm('确定要从云端下载数据吗？这将覆盖本地所有数据！')) return;
-  if (!confirm('再次确认：本地修改将被云端数据覆盖！')) return;
   
   showToast('正在下载...');
   
   try {
-    const resp = await fetch(GIST_API + '/' + GIST_ID, {
-      headers: { 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' }
-    });
+    const resp = await fetch(GIST_API + '/' + GIST_ID);
     
-    if (!resp.ok) throw new Error('下载失败 ' + resp.status);
+    if (!resp.ok) {
+      if (resp.status === 404) throw new Error('云端数据不存在，请联系管理员');
+      throw new Error('下载失败 ' + resp.status);
+    }
     const gist = await resp.json();
     
     // 找到数据文件
