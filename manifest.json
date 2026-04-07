@@ -1,0 +1,22 @@
+{
+  "name": "PGM足球经理官方联赛",
+  "short_name": "PGM足球",
+  "description": "PGM足球经理官方联赛 - 移动端足球联赛管理平台",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#228B22",
+  "theme_color": "#228B22",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "generated-images/A_beautiful_realistic_football_2026-04-02T19-41-49.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "generated-images/A_beautiful_realistic_football_2026-04-02T19-41-49.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

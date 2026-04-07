@@ -1,0 +1,42 @@
+name: Deploy PGM League to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main      # 推送到 main 分支时自动触发
+  workflow_dispatch:  # 支持手动触发
+
+# 设置 GITHUB_TOKEN 权限，允许部署到 Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同时只允许一个部署任务，避免冲突
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 代码
+        uses: actions/checkout@v4
+
+      - name: 配置 GitHub Pages
+        uses: actions/configure-pages@v4
+
+      - name: 上传静态文件
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # 上传整个仓库根目录（纯静态文件，无需构建）
+          path: '.'
+
+      - name: 部署到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

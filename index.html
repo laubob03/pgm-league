@@ -1,0 +1,2361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1B5E20">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>PGM足球经理官方联赛</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    :root{--primary:#1B5E20;--primary-dark:#0D3311;--primary-light:#4CAF50;--accent:#FFD700;--bg:#F5F5F5;--card:#f5f5f5;--text:#212121;--text-secondary:#757575;--border:#E0E0E0;--promotion:#4CAF50;--relegation:#F44336}
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    .header{background:#ddd;color:#333;position:fixed;bottom:0;left:0;right:0;z-index:99;box-shadow:0 -2px 8px rgba(0,0,0,0.3)}
+    .header-top{display:flex;justify-content:space-between;align-items:center;padding:4px 8px}
+    .header-title{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px}
+    .menu-btn{background:rgba(255,255,255,0.15);border:none;color:white;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer}
+    .header-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+    .header-tabs::-webkit-scrollbar{display:none}
+    .tab-btn{background:rgba(255,255,255,0.12);border:none;color:rgba(255,255,255,0.75);padding:6px 16px;border-radius:16px;font-size:14px;font-weight:500;white-space:nowrap;cursor:pointer;transition:all 0.2s}
+    .tab-btn.active{background:white;color:var(--primary);font-weight:600}
+    .main-content{margin-top:70px;padding:0 12px;padding-bottom:50px}
+    .page{display:none}
+    .page.active{display:block}
+    .card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+    .card-title{font-size:16px;font-weight:700;color:var(--primary);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+    .stats-tabs{display:flex;gap:4px;margin-bottom:12px;border-bottom:1px solid var(--border)}
+    .stats-tab{padding:8px 12px;font-size:13px;font-weight:600;color:var(--text-secondary);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .2s}
+    .stats-tab:hover{color:var(--primary)}
+    .stats-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+    .league-selector{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none}
+    .league-selector::-webkit-scrollbar{display:none}
+    .league-chip{background:white;border:2px solid var(--border);border-radius:20px;padding:6px 14px;font-size:13px;white-space:nowrap;cursor:pointer;transition:all 0.2s}
+    .league-chip.active{background:#228B22;border-color:#228B22;color:white}
+    .standings-table{width:100%;border-collapse:collapse;font-size:13px}
+    .standings-table th{background:#228B22;color:white;padding:8px 4px;text-align:center;font-weight:600;font-size:13px}
+    .standings-table th.sortable{cursor:pointer;user-select:none}
+    .standings-table th.sortable:hover{background:var(--primary-light)}
+    .standings-table td{padding:10px 4px;text-align:center;border-bottom:1px solid var(--border)}
+    .standings-table tr:nth-child(even){background:#f8f8f8}
+    .standings-table .rank{font-weight:700;width:24px}
+    .standings-table .team-cell{text-align:left;display:flex;align-items:center;gap:6px;min-width:90px}
+    .standings-table .team-name{font-weight:500;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.team-name-clickable{font-weight:500;font-size:12px;cursor:pointer;color:var(--primary);text-decoration:underline;text-decoration-color:transparent;transition:all 0.2s}
+.team-name-clickable:hover{text-decoration-color:var(--primary)}
+    .promotion-bg{background:rgba(76,175,80,0.15)!important}
+    .relegation-bg{background:rgba(244,67,54,0.15)!important}
+    .team-list{display:grid;gap:4px}
+    .team-item{background:white;border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+    .team-item:active{transform:scale(0.98);background:#f0f0f0}
+    .team-item-logo,.match-team-logo{width:40px;height:40px;object-fit:contain;border-radius:6px}
+    .team-item-info{flex:1}
+    .team-item-name{font-weight:600;font-size:15px;margin-bottom:2px}
+    .team-item-coach{font-size:12px;color:var(--text-secondary)}
+    .team-league-tag{font-size:10px;font-weight:500;background:var(--primary);color:white;padding:2px 6px;border-radius:10px;margin-left:6px}
+    .team-item-arrow{color:var(--text-secondary);font-size:18px;transition:transform 0.2s;display:inline-block}
+.team-card{background:white;border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.06)}
+.team-card .team-item{border-radius:0;box-shadow:none}
+.team-players{display:none;padding:0 14px 14px;background:#fafafa}
+.player-names{font-size:13px;line-height:1.8;color:var(--text)}
+.player-summary{font-size:11px;color:var(--text-secondary);margin-top:10px;text-align:center}
+    .match-round-title{font-size:13px;font-weight:700;color:#555;background:var(--card);border:1px solid #333;margin:16px 0 10px;padding:6px 12px;border-radius:8px;text-align:center}
+    .match-card{background:var(--card);border-radius:8px;padding:8px;margin-bottom:4px;box-shadow:0 1px 2px rgba(0,0,0,0.06)}
+    .match-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:var(--text-secondary)}
+    .match-status{padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+    .match-status.pending{background:#FFF3E0;color:#E65100}
+    .match-status.completed{background:#E8F5E9;color:#2E7D32}
+    .match-teams{display:flex;align-items:center;justify-content:space-between;gap:4px}
+    .match-team{display:flex;align-items:center;gap:4px;flex:1}
+    .match-team.away{flex-direction:row-reverse;text-align:right}
+    .match-team-logo{width:26px;height:26px;object-fit:contain;border-radius:4px}
+    .match-team-name{font-weight:500;font-size:13px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.match-team-name-full{font-weight:700;font-size:13px;white-space:normal;text-align:center}
+    .match-score{display:flex;align-items:center;gap:6px;font-size:20px;font-weight:700;color:var(--primary);padding:0 8px}
+    .match-score .dash{color:var(--text-secondary);font-weight:400}
+    .match-actions{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:8px}
+    .btn{padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;border:none;cursor:pointer;transition:all 0.2s}
+    .btn-primary{background:var(--primary);color:white}
+    .btn-primary:active{background:var(--primary-dark)}
+    .btn-secondary{background:var(--border);color:var(--text)}
+    .btn-full{width:100%}
+    .btn-small{padding:6px 14px;font-size:12px}
+    .stats-table{width:100%;border-collapse:collapse;font-size:13px}
+    .stats-table th{background:#228B22;color:white;padding:10px 8px;text-align:left;font-weight:600;font-size:12px}
+    .stats-table th.sortable{cursor:pointer;user-select:none}
+    .stats-table th.sortable:hover{opacity:0.85}
+    .stats-table td{padding:6px 8px;border-bottom:1px solid var(--border)}
+    .stats-rank{font-weight:700;color:var(--primary);width:30px}
+    .gold-medal{color:#FFD700;font-weight:700}
+    .silver-medal{color:#C0C0C0;font-weight:700}
+    .bronze-medal{color:#CD7F32;font-weight:700}
+    .bottom-nav{position:fixed;top:0;left:0;right:0;background:#228B22;display:flex;justify-content:flex-start;padding:8px 16px;gap:24px;box-shadow:0 2px 10px rgba(0,0,0,0.1);z-index:100}
+    .nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:rgba(255,255,255,0.8);font-size:10px;cursor:pointer;padding:4px 8px;border-radius:8px;transition:all 0.2s}
+    .nav-item.active{color:#fff;background:rgba(144,238,144,0.4);backdrop-filter:blur(4px)}
+    .nav-item-icon{font-size:26px}
+    .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:flex-end;justify-content:center}
+    .modal-overlay.active{display:flex}
+    .modal{background:white;border-radius:20px 20px 0 0;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;padding:20px;animation:slideUp 0.3s ease}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+    .modal-title{font-size:18px;font-weight:700}
+    .modal-league{font-size:12px;font-weight:500;color:var(--text-secondary);margin-left:8px}
+    .coach-info{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+    .coach-main{font-weight:600;color:var(--text)}
+    .coach-assistant{color:var(--text-secondary);padding-left:16px;border-left:2px solid var(--border)}
+    .modal-close{background:none;border:none;font-size:24px;color:var(--text-secondary);cursor:pointer;padding:4px}
+    .form-group{margin-bottom:16px}
+    .form-label{display:block;font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:6px}
+    .form-input{width:100%;padding:12px;border:2px solid var(--border);border-radius:8px;font-size:15px}
+    .form-input:focus{outline:none;border-color:var(--primary)}
+    .form-select{width:100%;padding:12px;border:2px solid var(--border);border-radius:8px;font-size:15px;background:white}
+    .player-list{display:grid;gap:8px}
+    .player-item{display:flex;align-items:center;gap:12px;padding:6px;background:#f8f8f8;border-radius:6px}
+    .player-number{width:32px;height:32px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+    .player-info{flex:1}
+    .player-name{font-weight:600;font-size:14px}
+    .player-position{font-size:11px;color:var(--text-secondary)}
+    .player-stats{font-size:11px;color:var(--text-secondary)}
+    .player-stats{display:flex;gap:12px;font-size:12px;color:var(--text-secondary)}
+    .sidebar-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:150;display:none}
+    .sidebar-overlay.active{display:block}
+    .sidebar{position:fixed;top:0;left:0;width:280px;height:100%;background:white;z-index:160;transform:translateX(-100%);transition:transform 0.3s ease;overflow-y:auto}
+    .sidebar.active{transform:translateX(0)}
+    .sidebar-header{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);color:white;padding:30px 20px}
+    .sidebar-title{font-size:18px;font-weight:700;margin-bottom:4px}
+    .sidebar-subtitle{font-size:12px;opacity:0.8}
+    .sidebar-menu{padding:12px 0}
+    .sidebar-item{display:flex;align-items:center;gap:12px;padding:14px 20px;color:var(--text);font-size:15px;cursor:pointer;transition:background 0.2s;border:none;background:none;width:100%;text-align:left}
+    .sidebar-item:active{background:#f0f0f0}
+    .sidebar-item-icon{font-size:20px}
+    .sidebar-item.danger{color:var(--relegation)}
+    .login-container{max-width:360px;margin:40px auto;padding:20px}
+    .login-logo{text-align:center;margin-bottom:30px}
+    .login-logo-emoji{font-size:64px;margin-bottom:10px}
+    .login-logo-title{font-size:22px;font-weight:700;color:var(--primary)}
+    .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#323232;color:white;padding:12px 24px;border-radius:24px;font-size:14px;z-index:300;animation:fadeInUp 0.3s ease}
+    @keyframes fadeInUp{from{opacity:0;transform:translate(-50%,20px)}to{opacity:1;transform:translate(-50%,0)}}
+    .text-center{text-align:center}
+    .mb-8{margin-bottom:8px}
+    .mb-16{margin-bottom:16px}
+    .mt-16{margin-top:16px}
+    .flex{display:flex}
+    .gap-8{gap:8px}
+    .flex-1{flex:1}
+    .items-center{align-items:center}
+    .scorer-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)}
+    .scorer-row:last-child{border-bottom:none}
+    .scorer-minute{font-size:11px;color:var(--text-secondary);width:30px}
+    .scorer-name{flex:1;font-size:13px}
+    .scorer-team{font-size:11px;color:var(--text-secondary)}
+  </style>
+</head>
+<body>
+
+
+<nav class="bottom-nav">
+  <button class="nav-item active" data-page="standings"><span class="nav-item-icon">🏆</span><span>积分榜</span></button>
+  <button class="nav-item" data-page="schedule"><span class="nav-item-icon">📅</span><span>赛程</span></button>
+  <button class="nav-item" data-page="stats"><span class="nav-item-icon">📊</span><span>榜单</span></button>
+</nav>
+
+<header class="header">
+  <div class="header-top">
+    <button class="menu-btn" id="menuBtn" style="background:none;border:none;font-size:20px;padding:4px">☰</button>
+    <div class="header-title"><span>⚽</span><span id="pageTitle">PGM官方联赛</span></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="menu-btn" id="btnSettings" style="background:none;border:none;font-size:18px;padding:4px">⚙️</button>
+      <button class="menu-btn" id="btnLogin" style="background:none;border:none;font-size:18px;padding:4px">🔑</button>
+    </div>
+  </div>
+</header>
+
+<main class="main-content">
+  <!-- Standings Page -->
+  <div class="page active" id="standingsPage">
+    <div class="card">
+      <div class="card-title">🏆 积分榜</div>
+      <div class="league-selector" id="standingsLeagueSelector">
+        <button class="league-chip active" data-league="super">超级</button>
+        <button class="league-chip" data-league="jiaEast">甲东</button>
+        <button class="league-chip" data-league="jiaWest">甲西</button>
+        <button class="league-chip" data-league="yiEast">乙东</button>
+        <button class="league-chip" data-league="yiWest">乙西</button>
+      </div>
+      <div id="standingsContent"></div>
+    </div>
+  </div>
+
+  <!-- Teams Page -->
+  <div class="page" id="teamsPage">
+    <div class="card">
+      <div class="card-title">👥 球队列表</div>
+      <div class="league-selector" id="teamsLeagueSelector">
+        <button class="league-chip active" data-league="super">超级</button>
+        <button class="league-chip" data-league="jiaEast">甲东</button>
+        <button class="league-chip" data-league="jiaWest">甲西</button>
+        <button class="league-chip" data-league="yiEast">乙东</button>
+        <button class="league-chip" data-league="yiWest">乙西</button>
+      </div>
+      <div id="teamsContent"></div>
+    </div>
+  </div>
+
+  <!-- Schedule Page -->
+  <div class="page" id="schedulePage">
+    <div class="card">
+      <div class="card-title">📅 赛程</div>
+      <div class="league-selector" id="scheduleLeagueSelector">
+        <button class="league-chip active" data-league="super">超级</button>
+        <button class="league-chip" data-league="jiaEast">甲东</button>
+        <button class="league-chip" data-league="jiaWest">甲西</button>
+        <button class="league-chip" data-league="yiEast">乙东</button>
+        <button class="league-chip" data-league="yiWest">乙西</button>
+      </div>
+      <div id="scheduleContent"></div>
+    </div>
+  </div>
+
+  <!-- Stats Page -->
+  <div class="page" id="statsPage">
+    <div class="card">
+      <div class="card-title">📊 数据榜单</div>
+      <div class="league-selector" id="statsLeagueSelector">
+        <button class="league-chip active" data-league="super">超级</button>
+        <button class="league-chip" data-league="jiaEast">甲东</button>
+        <button class="league-chip" data-league="jiaWest">甲西</button>
+        <button class="league-chip" data-league="yiEast">乙东</button>
+        <button class="league-chip" data-league="yiWest">乙西</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="stats-tabs">
+        <button class="stats-tab active" data-tab="goals">⚽ 射手榜</button>
+        <button class="stats-tab" data-tab="assists">👟 助攻榜</button>
+        <button class="stats-tab" data-tab="motm">⭐ 最佳球员</button>
+      </div>
+      <div id="statsContent"></div>
+    </div>
+  </div>
+</main>
+
+<!-- Sidebar -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-title" id="sidebarUserName">PGM足球经理</div>
+    <div class="sidebar-subtitle" id="sidebarUserRole">官方联赛</div>
+  </div>
+  <div class="sidebar-menu">
+    <button class="sidebar-item" id="btnMyTeam"><span class="sidebar-item-icon">👤</span>我的球队</button>
+    <button class="sidebar-item" id="btnEnterMatch"><span class="sidebar-item-icon">✏️</span>录入比赛</button>
+    <button class="sidebar-item" id="btnAdminImport" style="display:none"><span class="sidebar-item-icon">⚙️</span>管理员导入</button>
+    <button class="sidebar-item" id="btnSettings"><span class="sidebar-item-icon">⚙️</span>设置</button>
+    <button class="sidebar-item" id="sidebarLoginBtn"><span class="sidebar-item-icon">🔑</span>登录</button>
+    <button class="sidebar-item danger" id="btnLogout" style="display:none"><span class="sidebar-item-icon">🚪</span>退出登录</button>
+  </div>
+</aside>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<div class="toast" id="toast" style="display:none"></div>
+
+<script>
+// ============ DATA ============
+const LEAGUE_NAMES = {
+  super: '超级联赛', jiaEast: '甲级-东区', jiaWest: '甲级-西区', yiEast: '乙级-东区', yiWest: '乙级-西区'
+};
+const LEAGUE_TEAM_COUNTS = { super: 12, jiaEast: 12, jiaWest: 12, yiEast: 12, yiWest: 12 };
+const POSITION_NAMES = { GK: '门将', DF: '后卫', MF: '中场', FW: '前锋' };
+const EMOJIS = ['⚽','🔵','🔴','🟡','🟠','🟢','⭐','🌟','💎','🏅','🎖️','🎯','🚀','🔥','💥'];
+
+const TEAM_NAMES = {
+  super: ['A. Bilbao','Arsenal','Aston Villa','Barcelona','Benfica','FC Bayern','Juventus','Man City','Palmeiras','Paris SG','River','Wrexham'],
+  jiaEast: ['1860 Munchen','Aberdeen','AS Roma','Atl. Tucuman','Dortmund','Fulham','Hertha BSC','Liverpool','Marseille','Monaco','Newcastle','Nottm Forest'],
+  jiaWest: ['Ajax','Brighton','Chelsea','Everton','Fiorentina','Frankfurt','Genk','Hamburger SV','Lazio','Leicester','RC Lens','Schalke'],
+  yiEast: ['A. Madrid','Asante Kotoko','Como','FC Porto','Leverkusen','Oriental Dragon','R. Madrid','Stuttgart','Sunderland','Tottenham','青岛海神','上海申花'],
+  yiWest: ['AC Milan','Atalanta','Celtic','FC Koln','Flamengo','Inter','Man Utd','Napoli','PSV','Sporting','West Ham','Wolfsburg']
+};
+
+// Team logos from Transfermarkt CDN
+const TEAM_LOGOS = {
+  'A. Bilbao': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/621.png',
+  'Arsenal': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/11.png',
+  'Aston Villa': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/405.png',
+  'Barcelona': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/131.png',
+  'Benfica': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/54.png',
+  'FC Bayern': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/27.png',
+  'Juventus': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/109.png',
+  'Man City': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/281.png',
+  'Palmeiras': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/1027.png',
+  'Paris SG': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/583.png',
+  'River': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/9.png',
+  'Wrexham': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/2595.png',
+  '1860 Munchen': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/79.png',
+  'Aberdeen': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/369.png',
+  'AS Roma': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/92.png',
+  'Atl. Tucuman': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/10083.png',
+  'Dortmund': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/16.png',
+  'Fulham': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/379.png',
+  'Hertha BSC': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/129.png',
+  'Liverpool': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/230.png',
+  'Marseille': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/244.png',
+  'Monaco': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/162.png',
+  'Newcastle': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/762.png',
+  'Nottm Forest': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/703.png',
+  'Ajax': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/610.png',
+  'Brighton': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/1237.png',
+  'Chelsea': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/631.png',
+  'Everton': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/369.png',
+  'Fiorentina': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/166.png',
+  'Frankfurt': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/91.png',
+  'Genk': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/366.png',
+  'Hamburger SV': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/41.png',
+  'Lazio': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/398.png',
+  'Leicester': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/1003.png',
+  'RC Lens': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/826.png',
+  'Schalke': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/33.png',
+  'A. Madrid': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/1060.png',
+  'Asante Kotoko': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/11183.png',
+  'Como': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/199.png',
+  'FC Porto': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/720.png',
+  'Leverkusen': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/3.png',
+  'Oriental Dragon': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/12683.png',
+  'R. Madrid': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/86.png',
+  'Stuttgart': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/79.png',
+  'Sunderland': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/1486.png',
+  'Tottenham': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/148.png',
+  '青岛海神': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/13961.png',
+  '上海申花': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/16798.png',
+  'AC Milan': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/109.png',
+  'Atalanta': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/1028.png',
+  'Celtic': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/294.png',
+  'FC Koln': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/3.png',
+  'Flamengo': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/136.png',
+  'Inter': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/46.png',
+  'Man Utd': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/985.png',
+  'Napoli': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/6195.png',
+  'PSV': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/1044.png',
+  'Sporting': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/368.png',
+  'West Ham': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/379.png',
+  'Wolfsburg': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/82.png'
+};
+
+const COACH_NAMES = ['李明','王强','张伟','刘洋','陈杰','杨帆','赵磊','孙杰','周宇','吴昊','郑鹏','刘建'];
+const ASSISTANT_COACH_NAMES = ['陈明','陈东','陈静','陈文','陈晓','陈华','陈军','陈勇','陈刚','陈波','陈超','陈磊'];
+
+// 第62届PGM联赛球员数据库（UID唯一识别码）
+const PLAYERS_DB = {
+  'A. Bilbao': [
+    {uid:67228634,name:'Achraf Hakimi'},{uid:67200923,name:'Unai Simón'},{uid:2000134186,name:'Mikel Jauregizar'},{uid:2000160511,name:'Ousmane Diomande'},{uid:2000211219,name:'Samu Aghehowa'},{uid:2000179713,name:'Senny Mayulu'},{uid:29189400,name:'Brennan Johnson'},{uid:20041862,name:'Alphonso Davies'},{uid:2000182795,name:'Archie Gray'},{uid:67211695,name:'Theo Hernández'},{uid:29216094,name:'Festy Ebosele'},{uid:62182055,name:'Dusan Vlahovic'},{uid:67231100,name:'Jorge de Frutos'},{uid:67277830,name:'Julen Agirrezabala'},{uid:85085378,name:'Aymeric Laporte'},{uid:2000034344,name:'Javi Guerra'},{uid:2000045005,name:'Noah Sadiki'},{uid:2000058232,name:'Chadi Riad'},{uid:2000061312,name:'Luca Koleosho'},{uid:2000252303,name:'Kendry Páez'},{uid:2000031901,name:'Kevin'},{uid:91137260,name:'Jordan Torunarigha'},{uid:76047347,name:'Sinisterra'},{uid:95034355,name:'Cameron Pring'},{uid:2000171727,name:'Pedro'},{uid:2000297306,name:'Jofre Torrents'},{uid:2000483116,name:'Giovanni Baldini'},{uid:2000184284,name:'Mattia Mannini'},{uid:2000510837,name:'Yohann Obin'},{uid:2000293527,name:'Tyler Bindon'}
+  ],
+  'Arsenal': [
+    {uid:19242094,name:'Gabriel'},{uid:19351309,name:'Gabriel Martinelli'},{uid:28108035,name:'Reece James'},{uid:71113679,name:'Illia Zabarnyi'},{uid:93070286,name:'Alexander Isak'},{uid:28116386,name:'Anthony Gordon'},{uid:67287665,name:'Alex Baena'},{uid:13136629,name:'Taiwo Awoniyi'},{uid:13181623,name:'Ismaël Pathé Ciss'},{uid:13181675,name:'Abdoulaye Faye'},{uid:29217603,name:'Archie Brown'},{uid:54009099,name:'Łukasz Skorupski'},{uid:83169864,name:'Nuno Tavares'},{uid:83206392,name:'Samú'},{uid:84159608,name:'Albian Hajdari'},{uid:2000018781,name:'Simon Adingra'},{uid:2000047221,name:'Omari Hutchinson'},{uid:2000083915,name:'Wesley'},{uid:2000094715,name:'Guillaume Restes'},{uid:2000188897,name:'Dominik Prpic'},{uid:2000129012,name:'Jayden Addai'},{uid:28009441,name:'Kyle Walker'},{uid:2000032708,name:'Mamadou Sangaré'},{uid:2000261761,name:'Trey Samuel-Ogunsuyi'},{uid:2000357640,name:'Alex Verón'},{uid:2000407507,name:'Andre Harriman-Annous'},{uid:2000444739,name:'Khensane'},{uid:2000457582,name:'Eba Bekir İŞ'},{uid:2000461292,name:'Roméo Garnier'},{uid:2000494587,name:'Carlos Macià'},{uid:2000180114,name:'Eguinaldo'},{uid:2000476256,name:'Charles Robert Holland'},{uid:2000224404,name:'Dylan Lawlor'}
+  ],
+  'Aston Villa': [
+    {uid:19242277,name:'Raphinha'},{uid:85140178,name:'Ousmane Dembélé'},{uid:37063644,name:'Jurrien Timber'},{uid:95079228,name:'Alex Scott'},{uid:2000093091,name:'Nestory Irankunda'},{uid:14048328,name:'Juan Musso'},{uid:29244869,name:'Kamaldeen Sulemana'},{uid:45116977,name:'Sano Kaishu'},{uid:48032338,name:'Ismael Bennacer'},{uid:49059205,name:'Bradley Locko'},{uid:93083839,name:'Isak Hien'},{uid:2000033033,name:'Joel Ordónez'},{uid:2000382044,name:'Ruan Pablo'},{uid:2000385385,name:'Gabriel Mec'},{uid:2000426283,name:'Mohamed Kader Meité'},{uid:2000447255,name:'Cardoso Varela'},{uid:28097980,name:'Fikayo Tomori'},{uid:2000101844,name:'robin risser'},{uid:93065006,name:'Gabriel Gudmundsson'},{uid:49060933,name:'Maxime Estève'},{uid:28090452,name:'Ola Aina'},{uid:2000055184,name:'Bilal El Khannouss'},{uid:2000289956,name:'Prosper Peter'},{uid:2000290881,name:'Robinio Vaz'},{uid:2000332383,name:'Alexander Staff'},{uid:2000368852,name:'Lucca Kiaba Mounganga Brughmans'},{uid:2000391038,name:'Jacob Ambaek'},{uid:2000451471,name:'Joél Jason Drakes-Thomas'},{uid:2000488891,name:'Nadson Juan'},{uid:2000490112,name:'Saïd Remadnia'},{uid:2000251829,name:'Genesis Kofi Koranteng Antwi'}
+  ],
+  'Barcelona': [
+    {uid:49037900,name:'Wesley Fofana'},{uid:86078360,name:'Moisés Caicedo'},{uid:28126247,name:'Liam Delap'},{uid:43143488,name:'Federico Dimarco'},{uid:43424738,name:'Riccardo Calafiori'},{uid:48036304,name:'Jules Koundé'},{uid:67276230,name:'Nico Williams'},{uid:29194724,name:'Antoine Semenyo'},{uid:2000103330,name:'Can Uzun'},{uid:16337326,name:'tarik muharemovic'},{uid:35017428,name:'Marc-André ter Stegen'},{uid:67011248,name:'David Soria'},{uid:78060464,name:'José Giménez'},{uid:2000090622,name:'Santiago Mouriño'},{uid:2000094152,name:'Claudio Echeverri'},{uid:2000193842,name:'Sindre Walle Egeli'},{uid:2000193961,name:'Ibrahim Maza'},{uid:2000158356,name:'Jair'},{uid:2000126534,name:'Rodrigo Mendoza'},{uid:2000299722,name:'Carlos Espi'},{uid:2000333549,name:'Luca Reggiani'},{uid:2000086175,name:'Kaiki Bruno da Silva'},{uid:91157307,name:'Deniz Undav'},{uid:2000210551,name:'William Gomes'},{uid:2000273847,name:'Charalabos Kostoulas'},{uid:2000338374,name:'Samuele Inácio'},{uid:2000365946,name:'Raul Kumar'},{uid:2000379943,name:'Matias Siltanen'},{uid:2000407494,name:'Mateus Mide'},{uid:2000258576,name:'Montrell Amare Culbreth'},{uid:2000524865,name:'Mor Talla Ndiaye'},{uid:2000349260,name:'Nathan Mbala'},{uid:2000480666,name:'Kauê Furquim'},{uid:2000476257,name:'Ibrahim Rabbaj'}
+  ],
+  'Benfica': [
+    {uid:29156522,name:'Ebere Eze'},{uid:43426047,name:'Destiny Udogie'},{uid:49056282,name:'Bradley Barcola'},{uid:2000015300,name:'Jamie Bynoe-Gittens'},{uid:83261140,name:'Francisco Conceicao'},{uid:2000051886,name:'Rafa Marín'},{uid:71099053,name:'Andriy Lunin'},{uid:13174979,name:'Yves Bissouma'},{uid:19375640,name:'André'},{uid:28106683,name:'Nathan Tella'},{uid:28127164,name:'Tyler Morton'},{uid:29123128,name:'Dominic Calvert-Lewin'},{uid:43424754,name:'Matteo Cancellieri'},{uid:49043189,name:'Georges Mikautadze'},{uid:49048365,name:'Tanguy Nianzou'},{uid:49062699,name:'Andy Diouf'},{uid:83206395,name:'Francisco Moura'},{uid:83243060,name:'Tomás Araújo'},{uid:91143491,name:'Nadiem Amiri'},{uid:91144914,name:'Kevin Danso'},{uid:91188349,name:'Noah Atubolu'},{uid:93127195,name:'Odilon Kossounou'},{uid:2000199219,name:'Goncalo Moreira'},{uid:2000385886,name:'Diego León'}
+  ],
+  'FC Bayern': [
+    {uid:92039023,name:'Joshua Kimmich'},{uid:16182894,name:'Dayot Upamecano'},{uid:18054004,name:'Leandro Trossard'},{uid:37052843,name:'Denzel Dumfries'},{uid:2000094252,name:'Beraldo'},{uid:14020367,name:'Emiliano Martínez'},{uid:67296654,name:'Alejandro Balde'},{uid:2000395112,name:'Pau Navarro'},{uid:28066083,name:'Serge Gnabry'},{uid:19270493,name:'Bremer'},{uid:2000014559,name:'Ernest Poku'},{uid:2000055284,name:'Angelo'},{uid:8718372,name:'Manuel Neuer'},{uid:16045721,name:'Marcel Sabitzer'},{uid:16147659,name:'Konrad Laimer'},{uid:28116305,name:'Folarin Balogun'},{uid:36096824,name:'Kostas Tsimikas'},{uid:55061470,name:'Nélson Semedo'},{uid:89063073,name:'Kim Min-Jae'},{uid:91104807,name:'Leon Goretzka'},{uid:91190673,name:'Josip Stanisic'},{uid:2000069643,name:'Mohamed Amoura'},{uid:2000193585,name:'Aymen Sliti'},{uid:2000209904,name:'Bruno Ogbus'},{uid:2000396129,name:'Justin Clarke'}
+  ],
+  'Juventus': [
+    {uid:29179241,name:'Erling Haaland'},{uid:16279486,name:'Karim Adeyemi'},{uid:28127166,name:'Conor Bradley'},{uid:67295650,name:'Yeremy Pino'},{uid:86075795,name:'Willian Pacho'},{uid:2000053239,name:'Yaser Asprilla'},{uid:67276122,name:'Ansu Fati'},{uid:67276071,name:'Miguel Gutiérrez'},{uid:28126242,name:'James Trafford'},{uid:28127875,name:'Carney Chukwuemeka'},{uid:43500510,name:'Fabio Miretti'},{uid:67190888,name:'Aleix García'},{uid:67217522,name:'Pau Torres'},{uid:76050675,name:'Daniel Muñoz'},{uid:2000024428,name:'Radek Vítek'},{uid:2000058381,name:'Ngal\'Ayel Mukau'},{uid:2000108398,name:'Joaquin Seys'},{uid:2000116383,name:'Nathan Zeze'},{uid:2000143029,name:'Gonzalo'},{uid:2000164358,name:'Raphael Kofler'},{uid:2000045246,name:'Ruben van Bommel'},{uid:13196616,name:'Edmond Tapsoba'},{uid:2000282595,name:'Eivind Fauske Helland'},{uid:2000186389,name:'Edvin Austbø'},{uid:2000239998,name:'Keisuke Goto'},{uid:2000098012,name:'Aleksandar Stankovic'},{uid:2000291513,name:'Antonio Cordero'},{uid:2000176791,name:'Billy van Duijl'},{uid:2000181767,name:'Mats Rots'},{uid:2000403065,name:'Pedro Villar'},{uid:2000426369,name:'Pierre Mounguengue'},{uid:2000386356,name:'Adam Ayari'}
+  ],
+  'Man City': [
+    {uid:18115012,name:'Roméo Lavia'},{uid:67217524,name:'Rodri'},{uid:7458500,name:'Lionel Messi'},{uid:18004457,name:'Kevin De Bruyne'},{uid:28108494,name:'Phil Foden'},{uid:29141828,name:'Ademola Lookman'},{uid:37063649,name:'Sven Botman'},{uid:55057659,name:'Ederson'},{uid:55070299,name:'Rúben Dias'},{uid:83320124,name:'Mateus Fernandes'},{uid:2000098727,name:'Rico Lewis'},{uid:28116427,name:'Eric García'},{uid:2000101285,name:'Nico O\'Reilly'},{uid:37025551,name:'Nathan Aké'},{uid:24003746,name:'Ante Budimir'},{uid:28116558,name:'Largie Ramazani'},{uid:34000647,name:'Olivier Giroud'},{uid:37065875,name:'Kjell Scherpen'},{uid:43295110,name:'Raoul Bellanova'},{uid:67245235,name:'Fran García'},{uid:98034601,name:'Denis Zakaria'},{uid:2000036812,name:'Callum Doyle'},{uid:2000112986,name:'Max Alleyne'},{uid:49045184,name:'Pierre Kalulu'},{uid:2000183134,name:'Ewen Jaouen'},{uid:2000185228,name:'Justin Oboavwoduo'},{uid:2000288733,name:'Mahamadou Sangare'},{uid:2000421810,name:'Bas Evers'},{uid:2000437952,name:'Tyrone Samba'},{uid:2000511340,name:'Floyd Samba'},{uid:2000511353,name:'Teddie Lamb'},{uid:2000368021,name:'Wojciech Mońka'},{uid:2000262414,name:'Paulo da Silva'},{uid:2000503806,name:'Iago Machado'}
+  ],
+  'Paris SG': [
+    {uid:37024025,name:'Virgil van Dijk'},{uid:83261910,name:'Nuno Mendes'},{uid:91193048,name:'Florian Wirtz'},{uid:24060473,name:'Josko Gvardiol'},{uid:653054,name:'Luka Modric'},{uid:28104124,name:'Trent Alexander-Arnold'},{uid:28121369,name:'Armando Broja'},{uid:2000375662,name:'Lennart Karl'},{uid:91205962,name:'Omar Marmoush'},{uid:27132703,name:'Morten Hjulmand'},{uid:67172040,name:'Ayeze Perez'},{uid:13160655,name:'Reinildo'},{uid:19409448,name:'Vanderson'},{uid:25055083,name:'Ladislav Krejčí'},{uid:28110176,name:'Nathan Trott'},{uid:29141827,name:'Ezri Konsa'},{uid:43426126,name:'Nicola Zalewski'},{uid:67030171,name:'David De Gea'},{uid:79024232,name:'Miguel Ángel Almirón Rejala'},{uid:92017376,name:'Pascal Gross'},{uid:91119265,name:'Julian Brandt'},{uid:2000379470,name:'Taufik Seidu Zanzi Awudu'},{uid:2000406231,name:'Ilies Belmokhtar'},{uid:2000476255,name:'Reggie Spencer Walsh'},{uid:2000476261,name:'Mathis Maxime E. Eboué'}
+  ],
+  'River': [
+    {uid:37084591,name:'Micky van de Ven'},{uid:18111484,name:'Johan Bakayoko'},{uid:91207281,name:'Maximilian Beier'},{uid:71101334,name:'Anatolii Trubin'},{uid:62220026,name:'Strahinja Pavlovic'},{uid:12078947,name:'Wilfried Singo'},{uid:16010162,name:'David Alaba'},{uid:16283629,name:'Amar Dedic'},{uid:18018791,name:'Matz Sels'},{uid:19024412,name:'Neymar'},{uid:19265858,name:'Richarlison'},{uid:19383256,name:'Igor Paixao'},{uid:37061602,name:'Orkun Kökçü'},{uid:43167354,name:'Manuel Locatelli'},{uid:49039003,name:'Logan Costa'},{uid:53110135,name:'Kristoffer Ajer'},{uid:53174131,name:'Victor Boniface'},{uid:67258414,name:'Sergio Gómez'},{uid:67276375,name:'Aimar'},{uid:71110357,name:'Yehor Yarmoliuk'},{uid:2000085150,name:'Cole Campbell'},{uid:2000104173,name:'Gianluca Prestianni'},{uid:2000127875,name:'Ethan Butera'},{uid:2000172478,name:'Damion Downs'},{uid:2000235296,name:'Mateo Caicedo'},{uid:2000328959,name:'Emanuele Sala'},{uid:2000412322,name:'Rudy Matondo'},{uid:2000474046,name:'Joshu Nga Kana'}
+  ],
+  'Palmeiras': [
+    {uid:53095137,name:'Martin Odegaard'},{uid:2000256231,name:'Lamine Yamal'},{uid:2000100253,name:'El Chadaille Bitshiabu'},{uid:2000104850,name:'Mathys Tel'},{uid:2000147056,name:'Tom Bischof'},{uid:2000221458,name:'Luís Guilherme'},{uid:28127161,name:'Jarell Quansah'},{uid:78090138,name:'Darwin Núnez'},{uid:12095226,name:'Amara Diouf'},{uid:13194648,name:'Joao Paintsil'},{uid:18116329,name:'Mario Stroeykens'},{uid:37001813,name:'Marten de Roon'},{uid:37057982,name:'Teun Koopmeiners'},{uid:37078404,name:'Mees Hilgers'},{uid:37084869,name:'Jayden Oosterwolde'},{uid:43036586,name:'Leonardo Spinazzola'},{uid:43093395,name:'Alessio Romagnoli'},{uid:43096538,name:'Manuel Lazzari'},{uid:43140326,name:'Alex Meret'},{uid:58123343,name:'Nikita Khaikin'},{uid:67178177,name:'José Gayà'},{uid:85103818,name:'Ludovic Ajorque'},{uid:2000087434,name:'Isaac Babadi'},{uid:19273277,name:'Dodo'},{uid:2000110066,name:'Alejo Sarco'},{uid:2000178997,name:'Simone Pafundi'},{uid:2000180882,name:'Paris Josua Brunner'},{uid:2000237116,name:'Dujuan Richards'},{uid:2000254107,name:'Kaye Furo'},{uid:2000274204,name:'Julian Hall'},{uid:2000288527,name:'Said El Mala'},{uid:2000311467,name:'Bright Ede'}
+  ],
+  'Wrexham': [
+    {uid:2000115202,name:'Désiré Doué'},{uid:49038952,name:'Khephren Thuram'},{uid:61089387,name:'Aaron Hickey'},{uid:91187679,name:'Malik Tillman'},{uid:2000023588,name:'Michael Kayode'},{uid:13211267,name:'Abdul Fatawu'},{uid:18105831,name:'Ismael Saibari'},{uid:28115798,name:'Oluwafisayo Faruq Dele-Bashiru'},{uid:49048468,name:'Chrislain Matsima'},{uid:53160749,name:'Igoh Ogbu'},{uid:83283239,name:'Tiago Santos'},{uid:83297510,name:'Lukás Hornícek'},{uid:92071481,name:'Finn Gilbert Dahmen'},{uid:2000019413,name:'Carlos Romero Serrano'},{uid:2000184619,name:'Tyrique George'},{uid:2000187717,name:'Tommy Watson'},{uid:2000230641,name:'Max Moerstedt'},{uid:2000304487,name:'Christantus Uche'},{uid:2000039991,name:'Luca Jaquez'},{uid:2000048682,name:'Medon Berisha'},{uid:2000426277,name:'Christian Kofane'},{uid:2000182279,name:'Alessandro Vogt'},{uid:2000301391,name:'than meichtry'},{uid:2000265954,name:'Lorenzo Biliboc'},{uid:37051305,name:'Arnaut Danjuma'},{uid:2000205568,name:'Alphadjo Cissè'},{uid:2000288469,name:'Veljko Milosavljevic'},{uid:2000379558,name:'Tayo Subuloye'},{uid:2000410735,name:'Andrej Kostić'},{uid:2000277689,name:'Alysson Edward Franco da Rocha'},{uid:2000335906,name:'Yassir Zabiri'},{uid:2000205277,name:'Ismaëlo Ganiou'},{uid:2000506792,name:'Cruz Ibeh'},{uid:2000522407,name:'James Bogere'},{uid:2000293366,name:'Matthew Warhurst'}
+  ],
+  '1860 Munchen': [
+    {uid:37071197,name:'Ryan Gravenberch'},{uid:59130638,name:'Khvicha Kvaratskhelia'},{uid:92026209,name:'Hakan Calhanoglu'},{uid:2000210791,name:'Assane Diao'},{uid:83188780,name:'Matheus Nunes'},{uid:16337073,name:'Samson Baidoo'},{uid:18107187,name:'Maarten Vandevoordt'},{uid:19352610,name:'Rodrigo Muniz'},{uid:36141838,name:'Giorgos Vagiannidis'},{uid:67277455,name:'Mario Gila'},{uid:2000100062,name:'Badredine Bouanani'},{uid:2000103798,name:'Chemsdine Talbi'},{uid:2000108691,name:'Lewis Hall'},{uid:2000115205,name:'Jeanuel Belocian'},{uid:2000218552,name:'David Odogu'},{uid:2000221609,name:'Vitor Reis'},{uid:2000242422,name:'Alexey Batrakov'},{uid:29125334,name:'Dean Henderson'},{uid:29192705,name:'Pedro Goncalves'},{uid:67211760,name:'Mikel Merino'},{uid:16191724,name:'nicolas seiwald'},{uid:19259027,name:'Renan Lodi'},{uid:19348862,name:'Kaio Jorge'},{uid:2000336209,name:'Alessandro Longoni'},{uid:2000368894,name:'Jesse Bisiwu'},{uid:2000388083,name:'Kyllian Antonio'},{uid:2000449220,name:'August De Wannemacker'},{uid:2000497719,name:'Adil Hamdani'}
+  ],
+  'Aberdeen': [
+    {uid:27160181,name:'Rasmus Hojlund'},{uid:27164470,name:'Patrick Dorgu'},{uid:28121564,name:'Mason Greenwood'},{uid:43252073,name:'Gianluigi Donnarumma'},{uid:2000107079,name:'Malick Fofana'},{uid:89063107,name:'Iliman N\'Diaye'},{uid:2000301027,name:'Ayden Heaven'},{uid:29125343,name:'Scott McTominay'},{uid:2000014205,name:'Martin Vitík'},{uid:43075156,name:'Giovanni Di Lorenzo'},{uid:12095306,name:'Sékou Koné'},{uid:37065620,name:'Brian Brobbey'},{uid:43162321,name:'Riccardo Orsolini'},{uid:72051563,name:'Chris Richards'},{uid:83282675,name:'Alexsandro Ribeiro'},{uid:89051923,name:'Álvaro Valles'},{uid:91194540,name:'Anton Stach'},{uid:92065436,name:'Tim Kleindienst'},{uid:2000049425,name:'Omar El Hilali'},{uid:2000147523,name:'Omari Kellyman'},{uid:2000256110,name:'Shea Lacey'},{uid:2000379552,name:'Shim Mheuka'},{uid:2000288426,name:'Tiago Gabriel'},{uid:2000397286,name:'Arsene kouassi'},{uid:2000126470,name:'Víctor Muñoz Villanueva'},{uid:2000266583,name:'Federico Coletta'},{uid:2000288856,name:'Axel Tape'},{uid:2000330067,name:'Gaoussou Diakité'},{uid:2000339863,name:'Caleb Yirenkyi'},{uid:2000388663,name:'Jake Evans'},{uid:2000241471,name:'Juan Arizala'},{uid:2000359695,name:'Ben Casey'},{uid:2000381116,name:'Christ Inao Oulaï'},{uid:2000254841,name:'Cristian Orozco'},{uid:2000223178,name:'Emanuele Rao'}
+  ],
+  'Ajax': [
+    {uid:2000105654,name:'Jorrel Hato'},{uid:2000030816,name:'Cristhian Mosquera'},{uid:55041623,name:'Joao Cancelo'},{uid:12095038,name:'Malick Yalcouyé'},{uid:18083611,name:'Dodi Lukébakio'},{uid:18101745,name:'Lois Openda'},{uid:19337893,name:'Roger Ibanez'},{uid:28097985,name:'Tammy Abraham'},{uid:29115800,name:'Joe Gomez'},{uid:37055842,name:'Noa Lang'},{uid:48037391,name:'Matteo Guendouzi'},{uid:48042432,name:'Timothy Weah'},{uid:72044918,name:'Tyler Adams'},{uid:83152910,name:'Galeno'},{uid:96085886,name:'Kamil Grabara'},{uid:2000107424,name:'Roger Fernandes'},{uid:2000162595,name:'Max Weiss'},{uid:2000162930,name:'Petar Sucic'},{uid:2000215183,name:'Bence Dárdai'},{uid:2000241002,name:'Niccolò Fortini'},{uid:91151156,name:'Vangelis Pavlidis'},{uid:85045409,name:'Raphael Guerreiro'},{uid:2000165624,name:'Zachary Athekame'},{uid:2000127926,name:'Thierno Barry'},{uid:2000400123,name:'Honest Ahanor'},{uid:2000287960,name:'Joane Gadou'},{uid:2000378873,name:'Modou Kéba Cissé'},{uid:2000441701,name:'Prince Amoako'},{uid:2000464287,name:'Abubacarr Sedi Kinteh'},{uid:2000330499,name:'Johannes Moser'},{uid:2000220860,name:'Matviy Ponomarenko'},{uid:2000410026,name:'Lamine Sadio'},{uid:2000472538,name:'Luka Zarić'},{uid:2000308790,name:'Yanis Musuayi'},{uid:2000426362,name:'Samba Coulibaly'}
+  ],
+  'AS Roma': [
+    {uid:28124573,name:'Levi Colwill'},{uid:29111433,name:'David Raya'},{uid:2000182819,name:'Leny Yoro'},{uid:98031331,name:'Manuel Akanji'},{uid:29233143,name:'Harvey Elliott'},{uid:19380666,name:'Marcos Leonardo'},{uid:28009478,name:'Wojciech Szczesny'},{uid:43093502,name:'Gianluca Mancini'},{uid:52101552,name:'Jake O\'Brien'},{uid:67175052,name:'Thomas Partey'},{uid:70112874,name:'Baris Alper Yilmaz'},{uid:76063258,name:'Jhon Durán'},{uid:93123163,name:'Daniel Svensson'},{uid:2000027530,name:'Juanlu'},{uid:2000130568,name:'Javier Bonar'},{uid:2000192797,name:'Leo Sauer'},{uid:2000214136,name:'George Ilenikhena'},{uid:2000395140,name:'Cabanes Pau'},{uid:2000295603,name:'Marc Bernal'},{uid:2000082598,name:'Stefan Bajcetic'},{uid:18116154,name:'Rafik Belghali'},{uid:2000104444,name:'Vivaldo Semedo'},{uid:2000091515,name:'Kyriani Sabbe'},{uid:2000246003,name:'Relja Obric'},{uid:2000297000,name:'Valde'},{uid:2000300159,name:'David Otorbi'},{uid:2000398626,name:'Darryl Bakola'},{uid:2000214885,name:'Álvaro Cortés'},{uid:2000288737,name:'Oumar Camara'},{uid:2000223283,name:'Jorge Cestero'},{uid:2000454284,name:'Bruninho'},{uid:2000473856,name:'Álex González'}
+  ],
+  'Atl. Tucuman': [
+    {uid:14130029,name:'Cristian Romero'},{uid:14172522,name:'Thiago Almada'},{uid:14222108,name:'Matías Soulé'},{uid:2000183231,name:'Franco Mastantuono'},{uid:14241914,name:'Alan Varela'},{uid:14000219,name:'Angel Di María'},{uid:14030119,name:'Gerónimo Rulli'},{uid:14044150,name:'Paulo Dybala'},{uid:14059327,name:'Augusto Batalla'},{uid:14077011,name:'Nicolás Domínguez'},{uid:14129337,name:'Nahuel Molina'},{uid:14185869,name:'Facundo Medina'},{uid:14186894,name:'Juan Foyth'},{uid:14217538,name:'Mateo Pellegrino'},{uid:14227360,name:'Máximo Perrone'},{uid:14236223,name:'Santiago Castro'},{uid:14247304,name:'Ezequiel Fernández'},{uid:14250859,name:'Giuliano Simeone'},{uid:2000044526,name:'José López'},{uid:2000096439,name:'Tomás Palacios'},{uid:2000142045,name:'Julio César Soler'},{uid:2000173400,name:'Agustín Ruberto'},{uid:2000200406,name:'Mariano Troilo'},{uid:2000254616,name:'Juan Giménez'},{uid:14080605,name:'Marcos Senesi'},{uid:2000184436,name:'Dylan Gorosito'},{uid:2000258392,name:'Ian Subiabre'},{uid:2000321323,name:'Thomas De Martis'},{uid:2000360842,name:'Felipe Esquivel'},{uid:2000455851,name:'Tobias Andrada'},{uid:2000176500,name:'Dylan Aquino'}
+  ],
+  'Dortmund': [
+    {uid:18087914,name:'Mile Svilar'},{uid:28060397,name:'John Stones'},{uid:55041632,name:'Bernardo Silva'},{uid:28113827,name:'Felix Nmecha'},{uid:19371552,name:'Joao Pedro'},{uid:12081007,name:'El Bilal Touré'},{uid:12093439,name:'Lamine Camara'},{uid:19220266,name:'Gabriel Jesus'},{uid:27051813,name:'Yussuf Poulsen'},{uid:28126249,name:'James McAtee'},{uid:29125265,name:'Antonee Robinson'},{uid:29179717,name:'Pedro Neto'},{uid:43093382,name:'Matteo Politano'},{uid:51054011,name:'Edson Alvarez'},{uid:53113114,name:'Julian Ryerson'},{uid:61083649,name:'Nathan Patterson'},{uid:67243881,name:'Javi Galán'},{uid:67248170,name:'Jorge Cuenca'},{uid:72051281,name:'Giovanni Reyna'},{uid:92012109,name:'Bernd Leno'},{uid:2000137635,name:'Ashley Phillips'},{uid:2000155483,name:'Julien Duranville'},{uid:2000184837,name:'Mario Dorgeles'},{uid:2000232157,name:'Daniel Daga'},{uid:2000325860,name:'Divine Mukasa'},{uid:2000378240,name:'Jose Neto'},{uid:2000397242,name:'Mauro Furtado'},{uid:2000409460,name:'Tomas Soares'},{uid:2000412364,name:'Michael Noonan'},{uid:2000416598,name:'Ryan McAidoo'},{uid:2000515504,name:'Jan-Luca Riedl'}
+  ],
+  'Fulham': [
+    {uid:28049320,name:'Harry Kane'},{uid:28122642,name:'Bukayo Saka'},{uid:28124569,name:'Tino Livramento'},{uid:29141472,name:'Benjamin White'},{uid:2000283274,name:'Myles Lewis-Skelly'},{uid:2000205927,name:'Jobe Bellingham'},{uid:29193659,name:'Jacob Ramsey'},{uid:37076092,name:'Noni Madueke'},{uid:13234277,name:'Sampson Dweh'},{uid:28094856,name:'Daniel James'},{uid:28109599,name:'Emile Smith Rowe'},{uid:29165656,name:'Ryan Sessegnon'},{uid:29217875,name:'Charlie Cresswell'},{uid:2000102877,name:'Mike Penders'},{uid:2000189871,name:'Lewis Miley'},{uid:2000191846,name:'Jayden Danns'},{uid:2000261214,name:'Trey Nyoni'},{uid:2000276594,name:'Josh King'},{uid:69005372,name:'Roman Bürki'},{uid:29061164,name:'Dan Burn'},{uid:28111079,name:'Calvin Bassey'},{uid:29125191,name:'Dominic Solanke'},{uid:2000251820,name:'Jonah Kusi-Asare'},{uid:53161610,name:'Pedersen'},{uid:29116247,name:'Ivan Toney'},{uid:2000216555,name:'Joshua Nichols'},{uid:2000273472,name:'Kiano Dyer'},{uid:2000276761,name:'Kieran Morrison'},{uid:2000301021,name:'will Sweet'},{uid:2000303360,name:'Flávio Goncalves'},{uid:2000399869,name:'Josh Sonni-Lambie'},{uid:2000299994,name:'Jaden Dixon'}
+  ],
+  'Hertha BSC': [
+    {uid:18026122,name:'Thibaut Courtois'},{uid:48030711,name:'André-Franck Zambo Anguissa'},{uid:2000274379,name:'Geovany Quenda'},{uid:2000381365,name:'Ayyoub Bouaddi'},{uid:2000088490,name:'Roony Bardghji'},{uid:12093353,name:'Karim Konaté'},{uid:19342183,name:'Evanilson'},{uid:43617061,name:'Nicolò Bertola'},{uid:48032198,name:'Evan N\'Dicka'},{uid:48034615,name:'Nordi Mukiele'},{uid:55070264,name:'Nuno Santos'},{uid:63029157,name:'Dominik Greif'},{uid:67269484,name:'Samuel Chukwueze'},{uid:76020280,name:'Johan Mojica'},{uid:78064881,name:'Mauro Arambarri'},{uid:2000052247,name:'Ibrahima Bamba'},{uid:2000101248,name:'Marc Pubill'},{uid:2000102845,name:'Mika Godts'},{uid:2000113245,name:'Jean-Mattéo Bahoya'},{uid:2000129380,name:'Darío Osorio'},{uid:2000158335,name:'Matías Moreno'},{uid:2000166604,name:'Alexander Freeman'},{uid:2000257061,name:'Oskar Spiten-Nysæter'},{uid:2000072022,name:'Igor Matanovic'},{uid:43500245,name:'Giovanni Fabbian'},{uid:2000269520,name:'Aaron Bouwman'},{uid:2000279620,name:'Souleymane Sidibé'},{uid:2000288837,name:'Lazar Jovanovic'},{uid:2000299717,name:'Diego Aguado Facio'},{uid:2000328963,name:'Bogdan Popov'},{uid:2000335245,name:'Sydney Osazuwa'},{uid:2000352027,name:'Òscar Gistau'},{uid:2000412892,name:'Lushendry Martes'},{uid:2000217846,name:'César Palacios'}
+  ],
+  'Liverpool': [
+    {uid:85139014,name:'Kylian Mbappé'},{uid:49062667,name:'Hugo Ekitiké'},{uid:2000198043,name:'Tyler Dibling'},{uid:2000094886,name:'Jérémy Jacquet'},{uid:28115788,name:'Curtis Jones'},{uid:19217413,name:'Gérson'},{uid:19403484,name:'Luís Henrique'},{uid:29158244,name:'Lloyd Kelly'},{uid:29175587,name:'Leif Davis'},{uid:37084637,name:'Robin Gerardus Petrus Roefs'},{uid:48037291,name:'Axel Disasi'},{uid:48044574,name:'Moussa Diaby'},{uid:49038965,name:'Sacha Boey'},{uid:49048461,name:'Lucien Agoumé'},{uid:49054420,name:'Youte'},{uid:2000022887,name:'Cher Ndour'},{uid:2000101543,name:'Roberto Fernández'},{uid:2000104915,name:'Saël Kumbedi Nseke'},{uid:2000121585,name:'Filippo Mané'},{uid:2000138872,name:'Kassoum Ouattara'},{uid:2000180861,name:'Almugera Kabar'},{uid:2000218544,name:'Rayan'},{uid:2000123485,name:'GIOVANE'},{uid:2000221411,name:'Allan Andrade Elias'},{uid:2000183492,name:'Ndemeni Bastien Chefren Meupiyou Menadjou'},{uid:2000268858,name:'Eduardo Felicíssimo'},{uid:2000273913,name:'Gui Negão'},{uid:2000293255,name:'Luca Meirelles'},{uid:2000297302,name:'Albert Navarro'},{uid:2000478239,name:'Simón Escobar'},{uid:2000290365,name:'Mathys Niflore'}
+  ],
+  'Marseille': [
+    {uid:27156352,name:'Maurits Kjaergaard'},{uid:28100266,name:'Marcus Rashford'},{uid:92023410,name:'Antonio Rüdiger'},{uid:18007344,name:'Romelu Lukaku'},{uid:71101331,name:'Mykhaylo Mudryk'},{uid:28100123,name:'Aaron Wan-Bissaka'},{uid:28108036,name:'Conor Gallagher'},{uid:29083750,name:'Nick Pope'},{uid:62191195,name:'Nikola Milenkovic'},{uid:62192744,name:'Aleksa Terzic'},{uid:67174729,name:'Adama Traoré'},{uid:79034187,name:'Julio Enciso'},{uid:83111501,name:'Thierry Rendall Correia'},{uid:2000091511,name:'Lequincio Zeefuik'},{uid:2000098836,name:'Petar Ratkov'},{uid:2000187623,name:'Jaydee Canvot'},{uid:2000229933,name:'Kjell Watjen'},{uid:19371031,name:'Joao Gomes'},{uid:91175517,name:'David Raum'},{uid:2000086472,name:'Kevin Kelsy'},{uid:2000111055,name:'Afonso Moreira'},{uid:2000279637,name:'Amadou Koné'},{uid:2000102796,name:'Joshua Quarshie'},{uid:2000104631,name:'Jakob Schöller'},{uid:2000241678,name:'Lorran'},{uid:2000433203,name:'Sherkhan Kalmurza'},{uid:2000480447,name:'Emmanuel Chukwu'},{uid:12094355,name:'Mamour N\'Diaye'},{uid:2000140844,name:'David Ozoh'},{uid:2000392430,name:'Godwill Kukonki'},{uid:2000261857,name:'Guido Della Rovere'},{uid:2000240974,name:'Farid Alfa-Ruprecht'},{uid:2000196490,name:'Hendry Blank'}
+  ],
+  'Monaco': [
+    {uid:49039004,name:'William Saliba'},{uid:2000220941,name:'Endrick'},{uid:14048343,name:'Rodrigo De Paul'},{uid:67260204,name:'Oihan Sancet'},{uid:28117372,name:'Nathan Collins'},{uid:14042683,name:'Joaquín Correa'},{uid:16253898,name:'Patrick Wimmer'},{uid:24016925,name:'Mateo Kovacic'},{uid:24047814,name:'Nikola Katic'},{uid:28066082,name:'Héctor Bellerín'},{uid:29110623,name:'Ollie Watkins'},{uid:35017438,name:'Mario Gotze'},{uid:37076465,name:'Denso Kasius'},{uid:53063430,name:'Alexander Sorloth'},{uid:67183918,name:'Alex Remiro'},{uid:67295761,name:'Mika Mármol'},{uid:76033272,name:'Wílmar Barrios'},{uid:98033113,name:'Jonas Omlin'},{uid:18115008,name:'Samuel Kinduelu Mbangula'},{uid:71104595,name:'Vitaliy Mykolenko'},{uid:49045776,name:'Youssouf Fofana'},{uid:2000257869,name:'Filip Thorvaldsen'},{uid:2000234703,name:'Simon Eriksson'},{uid:2000402975,name:'Adrian Guerrero'},{uid:2000399539,name:'Elías Alexander Legendre Quiñónez'},{uid:2000241976,name:'Yannick Eduardo'},{uid:2000332435,name:'Eymen Laghrissi'},{uid:2000224269,name:'Alexandru Stoian'}
+  ],
+  'Newcastle': [
+    {uid:49038942,name:'Benoit Badiashile'},{uid:2000053516,name:'Adam Wharton'},{uid:2000257209,name:'Givairo Read'},{uid:28115831,name:'James Garner'},{uid:49041157,name:'Melvin Bard'},{uid:85140301,name:'Christopher Nkunku'},{uid:28106999,name:'Brahim Díaz'},{uid:35018013,name:'Kevin Trapp'},{uid:43272557,name:'Davide Frattesi'},{uid:48044735,name:'Amine Gouiri'},{uid:49047065,name:'Mohamed Simakan'},{uid:53143395,name:'Jorgen Strand Larsen'},{uid:57178516,name:'Radu Dragusin'},{uid:73201428,name:'Guela Doué'},{uid:2000006280,name:'Mohamed-Ali Cho'},{uid:2000011415,name:'Kévin Danois'},{uid:2000085414,name:'Keke Topp'},{uid:2000102722,name:'Wilson Odobert'},{uid:2000142236,name:'Romain Esse'},{uid:2000184285,name:'Clement Bischoff'},{uid:2000190480,name:'Jayden Meghoma'},{uid:2000205018,name:'Mamadou Diakhon'},{uid:2000226596,name:'Joeri Jesse Heerkens'},{uid:2000224700,name:'Adriano Jagusic'},{uid:2000188079,name:'Dayann Methalie'},{uid:2000280486,name:'Moustapha Dabo'},{uid:2000288364,name:'Ibrahim Kanté'},{uid:2000288697,name:'Harrison Armstrong'},{uid:2000313833,name:'Alexander Rossing-Lelesiit'},{uid:2000407283,name:'Marvyn Muzungu'},{uid:2000475043,name:'Stephan Zagadou'},{uid:2000368352,name:'Ifeanyi Ndukwe'},{uid:2000333625,name:'Gessime Yassine'}
+  ],
+  'Nottm Forest': [
+    {uid:13158205,name:'Victor Osimhen'},{uid:28127254,name:'Elliot Anderson'},{uid:49047182,name:'Manu Koné'},{uid:91138280,name:'Leroy Sané'},{uid:12094339,name:'Abakar Sylla'},{uid:12095249,name:'Ibrahim Diarra'},{uid:18115949,name:'Jackson Tchatchoua'},{uid:28067800,name:'Jack Grealish'},{uid:33001438,name:'Hrádecký'},{uid:37051440,name:'Danilho Doekhi'},{uid:43317730,name:'Salvatore Esposito'},{uid:43409366,name:'Lorenzo Lucca'},{uid:61093823,name:'Josh Doig'},{uid:67276474,name:'Benat Turrientes'},{uid:83335582,name:'Diego Callai'},{uid:2000006158,name:'Willy Kambwala'},{uid:2000302092,name:'Trevan Sanusi'},{uid:2000356711,name:'Christopher Cupps'},{uid:2000447889,name:'victor ozhianvuna'},{uid:2000496104,name:'Gilberto Mora'},{uid:19258642,name:'Bruno Henrique'},{uid:2000382120,name:'Chido Obi-Martin'},{uid:96088106,name:'Przemysław Płacheta'},{uid:83174775,name:'Joao Mário'},{uid:18083491,name:'Leon Bailey'},{uid:2000268036,name:'Bouziane'},{uid:2000297774,name:'Shane Kluivert'},{uid:2000370206,name:'Dastan Satpaev'},{uid:2000406728,name:'Ilyas Azizi'},{uid:2000487855,name:'Arone Gadou'},{uid:2000506287,name:'Finley Grigg'},{uid:2000203153,name:'Tejiri Adejenughure'},{uid:2000302495,name:'Anhán Candé'}
+  ],
+  'Brighton': [
+    {uid:37055843,name:'Matthijs de Ligt'},{uid:48042326,name:'Aurélien Tchouameni'},{uid:49048380,name:'Georginio Rutter'},{uid:2000051578,name:'Facundo Buonanotte'},{uid:2000120742,name:'Evan Ferguson'},{uid:2000180822,name:'Brajan Gruda'},{uid:16199713,name:'Igor'},{uid:24025298,name:'Dominik Livakovic'},{uid:28010491,name:'Danny Welbeck'},{uid:28112993,name:'Tariq Lamptey'},{uid:29036189,name:'Lewis Dunk'},{uid:29090530,name:'Solly March'},{uid:37071145,name:'Mats Wieffer'},{uid:52101143,name:'Andrew Moran'},{uid:93142470,name:'Yasin Ayari'},{uid:2000036372,name:'Diego Gómez'},{uid:2000056845,name:'James Beadle'},{uid:2000124287,name:'Jack Hinshelwood'},{uid:2000227373,name:'Stefanos Tzimas'},{uid:18110473,name:'Maxim De Cuyper'},{uid:13182752,name:'Chidera Ejuke'},{uid:37060600,name:'Ferdi Kadioglu'},{uid:2000338014,name:'Justin Lerma'},{uid:2000277534,name:'Abdoul Koné'},{uid:2000025485,name:'Habib Diarra'},{uid:2000216807,name:'Mason Melia'},{uid:2000521120,name:'Edwin Josué Quintero Preciado'},{uid:2000521121,name:'Holger Jamil Quintero Preciado'},{uid:2000497883,name:'Hugo Fernández Muret'},{uid:2000460892,name:'Akol Akon'},{uid:2000299363,name:'Daniel Yáñez Barla'},{uid:2000447804,name:'Giovanni Emir Baroni'},{uid:2000529221,name:'Leo Lemaitre Lezcano'},{uid:2000276593,name:'Samuel Amissah'},{uid:2000384299,name:'José Antonio Morante Antúnez'}
+  ],
+  'Chelsea': [
+    {uid:19058734,name:'Alisson'},{uid:14229525,name:'Enzo Fernández'},{uid:48037335,name:'Marcus Thuram'},{uid:91119700,name:'Jonathan Tah'},{uid:91175868,name:'Yann Aurel Bisseck'},{uid:62127037,name:'Sergej Milinkovic-Savic'},{uid:67184349,name:'Inaki Williams'},{uid:28068727,name:'Ruben Loftus-Cheek'},{uid:28100239,name:'Tosin Adarabioyo'},{uid:28103591,name:'Trevoh Chalobah'},{uid:48043873,name:'Randal Kolo Muani'},{uid:62216198,name:'Djordje Petrovic'},{uid:67215284,name:'Marc Cucurella'},{uid:83169822,name:'Joao Félix'},{uid:85132406,name:'Allan Saint-Maximin'},{uid:85133751,name:'Ferland Mendy'},{uid:92021718,name:'Emre Can'},{uid:2000006186,name:'Lesley Ugochukwu'},{uid:2000105004,name:'Leon Grgic'},{uid:2000151926,name:'Kota Takai'},{uid:2000165653,name:'Iván Fresneda'},{uid:2000208439,name:'Gabriel Moscardo'},{uid:2000264337,name:'Pedro Lima'},{uid:28100207,name:'Harvey Barnes'},{uid:2000447463,name:'Kevin Filling'},{uid:2000495995,name:'Felipe Morais'},{uid:2000488543,name:'Ederson Castillo'}
+  ],
+  'Everton': [
+    {uid:67293495,name:'Pedri'},{uid:83174762,name:'Vitinha'},{uid:67283140,name:'Filip Jorgensen'},{uid:67103537,name:'Isco'},{uid:28108033,name:'Marc Guéhi'},{uid:24048100,name:'Dani Olmo'},{uid:89056845,name:'Ferran Torres'},{uid:67220143,name:'Mikel Oyarzábal'},{uid:63013145,name:'Milan Škriniar'},{uid:19371902,name:'Danilo'},{uid:28005568,name:'Jordan Henderson'},{uid:29179807,name:'Jayden Bogle'},{uid:67153373,name:'Alex Moreno'},{uid:67245413,name:'Oscar Mingueza'},{uid:79027217,name:'Omar Alderete'},{uid:83320135,name:'António Silva'},{uid:292380027,name:'Tim Iroegbunam'},{uid:2000160584,name:'Santiago Hidalgo'},{uid:2000190301,name:'Louis Jackson'},{uid:2000190312,name:'Ethan Williams'},{uid:8826969,name:'Keylor Navas'},{uid:61043456,name:'Andrew Robertson'},{uid:85078880,name:'Lenglet'},{uid:2000263566,name:'Ryan Francisco'},{uid:2000375648,name:'Wisdom Okpako Mike'},{uid:2000273902,name:'André Luiz Santos Dias'}
+  ],
+  'Fiorentina': [
+    {uid:43390774,name:'Samuele Ricci'},{uid:62246208,name:'Benjamin Sesko'},{uid:13194021,name:'Cheick Doucouré'},{uid:18097159,name:'Alexis Saelemaekers'},{uid:28094949,name:'Harry Wilson'},{uid:37075765,name:'Milan van Ewijk'},{uid:49040115,name:'Illan Meslier'},{uid:53110469,name:'Brice Wembangomo'},{uid:61098180,name:'Calvin Ramsay'},{uid:67271025,name:'Adrián Bernabé'},{uid:70118933,name:'Cenk Ozkacar'},{uid:83111338,name:'Gedson Fernandes'},{uid:83169004,name:'Zaidu Sanusi'},{uid:85051083,name:'Kalidou Koulibaly'},{uid:85075595,name:'Kurt Zouma'},{uid:85145148,name:'Jonathan Ikoné'},{uid:86066843,name:'Moisés Ramírez'},{uid:91182849,name:'Lazar Samardzic'},{uid:92051583,name:'Timo Werner'},{uid:92102718,name:'Armel Bella-Kotchap'},{uid:2000080496,name:'Garang Kuol'},{uid:2000109338,name:'Deniz Gül'},{uid:2000114473,name:'Arijon Ibrahimovic'},{uid:2000153847,name:'Sani Suleiman'},{uid:2000169799,name:'John Mellberg'},{uid:2000177913,name:'Shaqueel van Persie'},{uid:2000258809,name:'Rafael Pinto Pedrosa'},{uid:2000259382,name:'Luca Erlein'},{uid:2000263996,name:'Riquelme Fillipi'},{uid:2000332528,name:'Mirza Ćatović'}
+  ],
+  'Frankfurt': [
+    {uid:29221846,name:'Michael Olise'},{uid:2000032706,name:'Alvaro Carreras'},{uid:91208050,name:'Kevin Schade'},{uid:28054565,name:'Jordan Pickford'},{uid:98003821,name:'Granit Xhaka'},{uid:67288555,name:'Xavi Simons'},{uid:27100968,name:'Rasmus Kristensen'},{uid:45095577,name:'Ritsu Doan'},{uid:84161623,name:'Aurèle Amenda'},{uid:91147345,name:'Robin Koch'},{uid:91203087,name:'Ansgar Knauff'},{uid:96102946,name:'Jakub Kiwior'},{uid:2000019708,name:'Hugo Larsson'},{uid:2000045854,name:'Nnamdi Collins'},{uid:2000052135,name:'Abdallah Sima'},{uid:2000065824,name:'Mio Backhaus'},{uid:2000068585,name:'Nathaniel Brown'},{uid:2000096364,name:'Joaquin Panichelli'},{uid:2000178777,name:'Kosta Nedeljkovic'},{uid:2000184217,name:'Joel Ndala'},{uid:2000307251,name:'Konstantinos Karetsas'},{uid:2000385891,name:'Alejandro Gomes Rodríguez'},{uid:2000097929,name:'Niccolò Pisilli'},{uid:18105815,name:'Arthur Theate'},{uid:2000186695,name:'Jan Ziółkowski'},{uid:2000205299,name:'Rayan Fofana'},{uid:2000263998,name:'Luis Gustavo Benedetti'},{uid:2000269260,name:'Matteo Cocchi'},{uid:2000289214,name:'Joël-Emmanuel Coulibaly'},{uid:2000102803,name:'Ayoube Amaimouni-Echghouyab'},{uid:2000267399,name:'Bendegúz Kovács'},{uid:2000180832,name:'Elias Baum'}
+  ],
+  'Genk': [
+    {uid:53122155,name:'Leo Skiri Østigård'},{uid:70104047,name:'Berke Özer'},{uid:91183532,name:'Diant Ramaj'},{uid:2000191043,name:'Herba Guirassy'},{uid:85033422,name:'Geoffrey Kondogbia'},{uid:2000054475,name:'Antoni-Djibu Milambo'},{uid:2000053497,name:'David Mella Boullón'},{uid:2000529223,name:'Bryan Bugarín Gonçalves'},{uid:37076141,name:'Youri Baas'},{uid:2000379979,name:'Vinicius Lira'},{uid:2000395183,name:'Rémi Himbert'},{uid:2000062325,name:'Matte Smets'},{uid:19404391,name:'alisson santos'},{uid:2000212746,name:'Samir El Mourabet'},{uid:91108805,name:'Robert Andrich'},{uid:2000344636,name:'Djylian N\'Guessan'},{uid:2000300033,name:'Romelle Donovan'},{uid:2000188753,name:'Aladji Bamba'},{uid:28126245,name:'Conrad Jaden Egan-Riley'},{uid:2000238992,name:'Tawaratsumida Kota'},{uid:2000238983,name:'Doi Kanta'},{uid:2000334636,name:'Mochizuki Henry Heroki'},{uid:2000191040,name:'Louis Leroux'},{uid:2000241496,name:'Moisés Paniagua'},{uid:2000257060,name:'Sebastian Olderheim'},{uid:2000271175,name:'Sidiki Chérif'},{uid:2000275657,name:'Jay Robinson'},{uid:2000288566,name:'Nikola Simic'},{uid:2000288567,name:'Bogdan Kostić'},{uid:2000288923,name:'Khalis Merah'},{uid:2000475823,name:'Tiago Rocha Rodrigues'},{uid:2000271667,name:'Tommaso Rubino'}
+  ],
+  'Hamburger SV': [
+    {uid:2000188173,name:'Assan Ouédraogo'},{uid:2000283271,name:'Ethan Nwaneri'},{uid:48037822,name:'Ibrahima Konaté'},{uid:49056280,name:'Malo Gusto'},{uid:2000195626,name:'Yankuba Minteh'},{uid:28121372,name:'Ian Maatsen'},{uid:37074900,name:'Palmeirasp van den Berg'},{uid:19326796,name:'Ederson'},{uid:2000171034,name:'Aleksandar Pavlovic'},{uid:2000107089,name:'Matias Fernandez-Pardo'},{uid:27014576,name:'Frederik Ronnow'},{uid:37088234,name:'Emanuel Emegha'},{uid:43108998,name:'Andrea Compagno'},{uid:76046285,name:'Luis Suárez'},{uid:2000126886,name:'Oscar Hojlund'},{uid:2000219701,name:'Kaua Elias'},{uid:2000402904,name:'Jan Virgili'},{uid:91184334,name:'Maduka Okoye'},{uid:48037362,name:'Moussa Niakhaté'},{uid:2000253187,name:'Juan Rodríguez'},{uid:49053443,name:'Lorenz Assignon'},{uid:36078574,name:'Dimitrios Christos Giannoulis'},{uid:28058224,name:'Ross Barkley'},{uid:19310729,name:'Paulo Henrique'},{uid:2000187477,name:'Tidiam Gomis'},{uid:2000237714,name:'Mustafa Hekimoglu'},{uid:2000276967,name:'Ethan Mbappé'},{uid:2000366140,name:'Leon Jakirovic'},{uid:2000392956,name:'Manuel Carrascosa Moreno'},{uid:2000503477,name:'Samba Konate'},{uid:2000454624,name:'Chris Irenee Ntamack Pondy'},{uid:2000290392,name:'Seny Koumbassa'},{uid:2000251805,name:'Adrian Adriano Lahdo'},{uid:2000278478,name:'Mohamadou Kanté'}
+  ],
+  'Lazio': [
+    {uid:2000163799,name:'Nico Paz'},{uid:12087972,name:'Nicolas Jackson'},{uid:43298481,name:'Sandro Tonali'},{uid:64016316,name:'Jan Oblak'},{uid:85086031,name:'Adrien Rabiot'},{uid:11023165,name:'Amir Rrahmani'},{uid:28107919,name:'Reiss Nelson'},{uid:28121568,name:'Anthony Elanga'},{uid:29178504,name:'Djed Spence'},{uid:43017499,name:'Francesco Acerbi'},{uid:43125343,name:'Mattia Zaccagni'},{uid:43500130,name:'Diego Coppola'},{uid:48043484,name:'Pape Guèye'},{uid:49050736,name:'Adrien Truffert'},{uid:67212046,name:'Alfonso Pedraza'},{uid:83209468,name:'Goncalo Ramos'},{uid:2000011613,name:'Soumaila Coulibaly'},{uid:2000014080,name:'Rome-Jayden Owusu-Oduro'},{uid:2000228120,name:'Marc Guiu'},{uid:2000298715,name:'Mikey Moore'},{uid:2000259401,name:'Kacper Kościerski'},{uid:2000350903,name:'Sean Steur'},{uid:2000404501,name:'Jaime Barroso'}
+  ],
+  'Leicester': [
+    {uid:49056243,name:'Eduardo Camavinga'},{uid:19306929,name:'Rodrygo'},{uid:28112986,name:'Callum Hudson-Odoi'},{uid:98040383,name:'Gregor Kobel'},{uid:2000123482,name:'Murillo'},{uid:2000138516,name:'Paul Wanner'},{uid:91207274,name:'Amadou Onana'},{uid:25044451,name:'Tomás Chory'},{uid:28115792,name:'Neco Williams'},{uid:28127273,name:'Jonathan Rowe'},{uid:29175220,name:'Morgan Gibbs-White'},{uid:43094150,name:'Ivan Provedel'},{uid:43274977,name:'Moise Kean'},{uid:48042717,name:'Ibrahim Sangaré'},{uid:76023027,name:'Davinson Sánchez'},{uid:91184445,name:'Josha Vagnoman'},{uid:2000161829,name:'Breno Bidon'},{uid:2000217198,name:'Milton Delgado'},{uid:2000239167,name:'Moise Bombito'},{uid:2000330773,name:'Yang Min-Hyuk'},{uid:2000416048,name:'Reigan Heskey'},{uid:2000181790,name:'Junior Kroupi'},{uid:67294055,name:'Sergi Cardona'},{uid:2000026194,name:'Lucas Hogsberg'},{uid:2000165742,name:'Christian McFarlane'},{uid:2000301767,name:'Buba Sangaré'},{uid:2000368737,name:'René Mitongo'},{uid:2000457463,name:'Sadriddin Hasanov'}
+  ],
+  'RC Lens': [
+    {uid:19302146,name:'Vinícius Júnior'},{uid:2000138835,name:'Kenan Yildiz'},{uid:28120042,name:'Cole Palmer'},{uid:48042658,name:'Bryan Mbeumo'},{uid:43298002,name:'Marco Carnesecchi'},{uid:2000054872,name:'Ez Abde'},{uid:43372892,name:'Nicolò Rovella'},{uid:19383257,name:'Yan Couto'},{uid:14031132,name:'Lucas Ocampos'},{uid:18108550,name:'Koni De Winter'},{uid:29219115,name:'Flavien-Enzo Boyomo'},{uid:37065561,name:'Ramon Hendriks'},{uid:37073317,name:'Kenneth Taylor'},{uid:37084510,name:'Ryan Flamingo'},{uid:67271371,name:'Rodrigo Zalazar'},{uid:78074598,name:'Leonardo Fernández'},{uid:78093159,name:'Maximiliano Araújo'},{uid:91204520,name:'Merlin Rohl'},{uid:2000028428,name:'Leo Román'},{uid:2000040214,name:'Jhon Solís'},{uid:2000077331,name:'Valentín Gómez'},{uid:2000231531,name:'Anan Khalaily'},{uid:49061868,name:'Elye Wahi'},{uid:2000127879,name:'Rayane Bounida'},{uid:2000259411,name:'Francis Onyeka'},{uid:2000267443,name:'Abdelhamid Ait Boudlal'},{uid:2000403784,name:'Selton'},{uid:2000462816,name:'Djibril Coulibaly'},{uid:2000295451,name:'Noah Nsoki'}
+  ],
+  'Schalke': [
+    {uid:2000179712,name:'Warren Zaire-Emery'},{uid:14157184,name:'Alexis Mac Allister'},{uid:29226000,name:'Jarrad Branthwaite'},{uid:49048357,name:'Lucas Chevalier'},{uid:49056273,name:'Castello Lukeba'},{uid:59138294,name:'Giorgi Mamardashvili'},{uid:85111795,name:'Serhou Guirassy'},{uid:2000265865,name:'Rodrigo Mora'},{uid:2000181764,name:'Kees Smit'},{uid:2000054263,name:'Bryan Zaragoza'},{uid:12038706,name:'Ramy Bensebaini'},{uid:16130398,name:'Philipp Lienhart'},{uid:19380090,name:'Rômulo Cardoso'},{uid:29147447,name:'Matty Cash'},{uid:37049949,name:'Jerry St. Juste'},{uid:2000312673,name:'Jesús Rodríguez'},{uid:2000191507,name:'Adam Aznou'},{uid:83228802,name:'Fábio Silva'},{uid:18104985,name:'Edon Zhegrova'},{uid:2000404708,name:'Stephen Mfuni'},{uid:2000385919,name:'Ibrahim Mbaye'},{uid:67256618,name:'Dani Vivian'},{uid:2000273252,name:'Isaque'},{uid:2000273266,name:'Riquelme Felipe'},{uid:2000299435,name:'Joan Martínez'},{uid:2000368243,name:'Nathan De Cat'},{uid:2000386347,name:'Mathis Jangeal'},{uid:2000459410,name:'Aleksander Borgersen'},{uid:2000467056,name:'Abdellah Ouazane'},{uid:2000475889,name:'Joshua Bastien'},{uid:2000503369,name:'Christian Imga'},{uid:2000228178,name:'Áron Yaakobishvili'}
+  ],
+  'AC Milan': [
+    {uid:48043084,name:'Boubacar Kamara'},{uid:85094520,name:'Mike Maignan'},{uid:2000146883,name:'Francesco Pio Esposito'},{uid:92074020,name:'Christian Pulisic'},{uid:91206164,name:'Malick Thiaw'},{uid:2000211997,name:'Alex Jiménez'},{uid:43270682,name:'Alessandro Buongiorno'},{uid:24065108,name:'Martin Baturina'},{uid:37071180,name:'Quilindschy Hartman'},{uid:43266774,name:'Matteo Gabbia'},{uid:43339195,name:'Andrea Cambiaso'},{uid:43500064,name:'Cesare Casadei'},{uid:84153276,name:'Dan Ndoye'},{uid:84161856,name:'Ardon Jashari'},{uid:2000006107,name:'Warren Bondo'},{uid:2000033291,name:'Valentín Barco'},{uid:2000103120,name:'Lorenzo Torriani'},{uid:2000107103,name:'Mamadou Sarr'},{uid:2000183044,name:'Davide Bartesaghi'},{uid:2000338371,name:'Francesco Camarda'},{uid:49048348,name:'Dilane Bakwa'},{uid:67229630,name:'Youssef En-Nesyri'},{uid:2000252799,name:'Mattia Liberali'},{uid:2000289673,name:'Soriba Diaoune'},{uid:2000298369,name:'Branimir Mlačić'},{uid:2000349187,name:'Edmund Baidoo'},{uid:2000388375,name:'Christian Comotto'},{uid:2000491133,name:'Nahël Haddani'},{uid:2000440037,name:'Luis Eduardo'},{uid:2000374131,name:'Virgilio Olaya'}
+  ],
+  'A. Madrid': [
+    {uid:14183207,name:'Julián Alvarez'},{uid:28113828,name:'Jeremie Frimpong'},{uid:37047745,name:'Frenkie de Jong'},{uid:37071126,name:'Tijjani Reijnders'},{uid:49056279,name:'Rayan Cherki'},{uid:83169226,name:'Diogo Costa'},{uid:37076335,name:'Jan Paul van Hecke'},{uid:19184436,name:'Joelinton'},{uid:37060922,name:'Joshua Zirkzee'},{uid:29128536,name:'Ben Chilwell'},{uid:37050136,name:'Bijlow'},{uid:37060952,name:'Quinten Timber'},{uid:37064720,name:'Lutsharel Geertruida'},{uid:37073313,name:'Devyne Rensch'},{uid:43316850,name:'Giacomo Raspadori'},{uid:2000138305,name:'Nobel Mendy'},{uid:2000144508,name:'Ezechiel Banzuzi'},{uid:78085068,name:'Ronald Araujo'},{uid:37055841,name:'Justin Kluivert'},{uid:2000017415,name:'Alessandro Circati'},{uid:86045976,name:'Pervis Estupinán'},{uid:2000402688,name:'Dro'},{uid:2000254418,name:'Robin Mirisola'},{uid:2000257577,name:'Ayodele Thomas'},{uid:2000310111,name:'Giacomo Koloto'},{uid:2000378966,name:'Wendeson Dell'},{uid:2000443913,name:'Zé Lucas'},{uid:2000460060,name:'Angelo Candido'},{uid:2000389904,name:'Tynan Thompson'},{uid:2000269819,name:'mathys detourbet'},{uid:2000185929,name:'Daryll Benlahlou'},{uid:2000205837,name:'Matteo Lavelli'}
+  ],
+  'Asante Kotoko': [
+    {uid:67197125,name:'Marco Asensio'},{uid:14094572,name:'Rodrigo Bentancur'},{uid:14101872,name:'Agustín Rossi'},{uid:19226741,name:'Lucas Paquetá'},{uid:19270959,name:'Bernardo'},{uid:27104982,name:'Jens Stage'},{uid:28106687,name:'Eddie Nketiah'},{uid:67157624,name:'Kepa Arrizabalaga'},{uid:67184140,name:'Alvaro García'},{uid:86080170,name:'Jon Aramburu'},{uid:91107789,name:'Matthias Ginter'},{uid:98015432,name:'Berat Djimsiti'},{uid:2000068412,name:'Franjo Ivanovic'},{uid:2000116169,name:'Sergi Altimira'},{uid:2000218258,name:'Alvaro Rodríguez'},{uid:2000205570,name:'Rabby Nzingoula'},{uid:28093567,name:'James Maddison'},{uid:67279753,name:'Ilaix Moriba'},{uid:67291985,name:'Carlos Alvarez'},{uid:29129073,name:'Rico Henry'},{uid:2000271170,name:'Marius Courcoul'},{uid:2000287938,name:'Naoufel El Hannach'},{uid:2000289491,name:'Julián Vignolo'},{uid:2000330177,name:'Patrice Covic'},{uid:2000412744,name:'Alexis Vossah'},{uid:2000483445,name:'Maxima Goffi'}
+  ],
+  'Atalanta': [
+    {uid:28106491,name:'Declan Rice'},{uid:98028755,name:'Mohamed Salah'},{uid:2000202295,name:'Victor Froholdt'},{uid:2000164850,name:'Ben Doak'},{uid:83137935,name:'Francisco Trincao'},{uid:67216396,name:'Fabián'},{uid:93070271,name:'Viktor Gyokeres'},{uid:19351985,name:'Natan'},{uid:39060464,name:'Hákon Arnar Haraldsson'},{uid:62142830,name:'Vanja Milinkovic-Savic'},{uid:83169817,name:'Florentino Luís'},{uid:95080787,name:'Kialonda Gaspar'},{uid:2000012523,name:'Vinicius Augusto Tobias da Silva'},{uid:2000039995,name:'Antonín Kinsky'},{uid:2000054508,name:'Jaden Fernando Slory'},{uid:2000146948,name:'Tom Rothe'},{uid:2000351877,name:'Guille Fernández'},{uid:12091814,name:'Dango Ouattara'},{uid:27066387,name:'Andreas Christensen'},{uid:92079338,name:'Ridle Baku'},{uid:85120944,name:'Benjamin Pavard'},{uid:61078265,name:'Billy Gilmour'},{uid:85140175,name:'Yoane Wissa'},{uid:2000294487,name:'Joselillo'},{uid:2000186151,name:'Alex Tóth'},{uid:2000350554,name:'Filip Öhman'},{uid:2000183396,name:'Ollie scarles'},{uid:2000416938,name:'alex marchal'},{uid:2000332522,name:'Florian Hellstern'},{uid:2000308098,name:'Josh Landers'}
+  ],
+  'Celtic': [
+    {uid:43124203,name:'Bruno Fernandes'},{uid:83320123,name:'Renato Veiga'},{uid:2000030130,name:'Joao Neves'},{uid:43161651,name:'Federico Chiesa'},{uid:78084541,name:'Manuel Ugarte'},{uid:12095040,name:'Bazoumana Touré'},{uid:14167329,name:'Lisandro Martínez'},{uid:18107436,name:'Senne Lammens'},{uid:19338230,name:'Antony'},{uid:19362984,name:'Luiz Júnior'},{uid:28049740,name:'Harry Maguire'},{uid:29076105,name:'Luke Shaw'},{uid:36149384,name:'Kostas Tzolakis'},{uid:37076262,name:'Luciano Valente'},{uid:83105845,name:'Diogo Dalot'},{uid:83333463,name:'Rodrigo Gomes'},{uid:2000010840,name:'Toby Collyer'},{uid:2000022188,name:'Lucas Stassin'},{uid:2000027719,name:'Diego Moreira'},{uid:2000087400,name:'Dário Essugo'},{uid:2000104892,name:'Eliesse Ben Seghir'},{uid:2000146882,name:'Gustavo Sá'},{uid:2000190386,name:'Karl Etta Eyong'},{uid:2000243635,name:'Ousmane Diao'},{uid:2000224667,name:'Avom'},{uid:12094946,name:'Gueye'},{uid:2000145303,name:'Vavassori'},{uid:2000200565,name:'Amougou'},{uid:2000269293,name:'Mosconi'},{uid:2000449303,name:'Matthias Wamu'},{uid:2000295427,name:'Villarreal'},{uid:2000384848,name:'Iddrissou'},{uid:2000238729,name:'Arroyo'},{uid:2000294672,name:'May'},{uid:12095307,name:'Tia'}
+  ],
+  'Como': [
+    {uid:29232937,name:'Jude Bellingham'},{uid:83111483,name:'Rafael Leao'},{uid:16147660,name:'Xaver Schlager'},{uid:91206105,name:'Rocco Reitz'},{uid:2000065610,name:'Armindo Sieb'},{uid:2000070509,name:'Tjark Ernst'},{uid:2000120656,name:'Sebastian Villaume Otoa'},{uid:2000196762,name:'Ilyas Ansah'},{uid:2000202298,name:'Amin Chiakha'},{uid:2000219705,name:'Youssef Enriquez Lekhedim'},{uid:2000241044,name:'Vasilije Adzic'},{uid:2000333587,name:'Victor Orakpo'},{uid:2000378259,name:'Daniel Banjaqui'},{uid:2000383145,name:'Matteo Palma'},{uid:2000399711,name:'Juma Bah'},{uid:2000407543,name:'Jack Porter'},{uid:2000151103,name:'Carlos Garcés'},{uid:29194731,name:'William Kokolo'},{uid:2000133279,name:'Noah Markmann'},{uid:19377206,name:'Luiz Henrique'},{uid:2000375174,name:'Harry Howell'},{uid:25059064,name:'Pavel Šulc'},{uid:2000180847,name:'Noël Aséko'},{uid:12096015,name:'Seydou Dembélé'},{uid:2000302080,name:'Sean Neave'},{uid:2000307250,name:'Brad Manguelle'},{uid:2000310973,name:'Tiago Pitarch Pinar'},{uid:2000472536,name:'Aleksa Damjanović'},{uid:2000476049,name:'Christ Batola'},{uid:2000511933,name:'Tyrese Noubissie'},{uid:2000462497,name:'Yisa Alao'},{uid:2000423418,name:'Nicolás Azambuja'}
+  ],
+  'FC Koln': [
+    {uid:14180903,name:'Mateo Retegui'},{uid:83228731,name:'Goncalo Inácio'},{uid:37065567,name:'Crysencio Summerville'},{uid:14110846,name:'Exequiel Palacios'},{uid:2000011147,name:'Milos Kerkez'},{uid:19260918,name:'David Neres'},{uid:19391095,name:'Richard Ríos'},{uid:28122195,name:'Fábio Carvalho'},{uid:29137172,name:'Aaron Ramsdale'},{uid:48037162,name:'Robin Le Normand'},{uid:67197145,name:'Lucas Hernández'},{uid:71108249,name:'Heorhii Sudakov'},{uid:84159755,name:'Marvin Keller'},{uid:2000016808,name:'Ismaël Doukouré'},{uid:2000020287,name:'Andreas Schjelderup'},{uid:2000028607,name:'Leon Avdullahu'},{uid:2000053930,name:'José Ángel Carmona'},{uid:2000108031,name:'Will Lankshear'},{uid:2000280807,name:'Harry Amass'},{uid:28095341,name:'Pablo Maffeo'},{uid:43091113,name:'Bryan Cristante'},{uid:62096282,name:'Aleksandar Mitrovic'},{uid:2000246890,name:'Lorenzo Venturino'},{uid:2000271959,name:'Gabriele Biancheri'},{uid:2000273442,name:'Elias Benkara'},{uid:2000315290,name:'Luighi'}
+  ],
+  'FC Porto': [
+    {uid:28124579,name:'Jamal Musiala'},{uid:735216,name:'Cristiano Ronaldo'},{uid:12080051,name:'Pape Matar Sarr'},{uid:8435089,name:'Karim Benzema'},{uid:67086656,name:'Antoine Griezmann'},{uid:67104772,name:'Íñigo Martínez'},{uid:67139735,name:'Dani Carvajal'},{uid:85104424,name:'Kingsley Coman'},{uid:7458272,name:'Sergio Ramos'},{uid:19409389,name:'Thiago'},{uid:28018613,name:'Kieran Trippier'},{uid:35011448,name:'Thomas Müller'},{uid:55070285,name:'Joao Palhinha'},{uid:67030696,name:'Nacho'},{uid:85028014,name:'Paul Pogba'},{uid:91177332,name:'Jeff Chabot'},{uid:92071707,name:'Alexander Nübel'},{uid:2000027898,name:'Shea Charles'},{uid:2000147146,name:'Dzenan Pejcinovic'},{uid:2000175080,name:'Dennis Seimen'},{uid:2000208868,name:'Jonathan De Irastorza'},{uid:2000218213,name:'Taylan Bulut'},{uid:2000215455,name:'Ishé Samuels-Smith'},{uid:43295822,name:'Nicolò Cambiaghi'},{uid:2000180865,name:'Justin von der Hitz'},{uid:2000259412,name:'Adin Licina'},{uid:2000291355,name:'Jorge Salinas'},{uid:2000332589,name:'Jussef Nasrawe'},{uid:2000352129,name:'Andrea Natali'},{uid:2000476260,name:'Chizaram Ezenwata'}
+  ],
+  'Flamengo': [
+    {uid:2000263999,name:'Estêvao'},{uid:67277675,name:'Joan García'},{uid:2000049413,name:'Gavi'},{uid:2000141742,name:'Fermín'},{uid:2000296497,name:'Pau Cubarsí'},{uid:76049803,name:'Luis Díaz'},{uid:19258927,name:'Caio Henrique'},{uid:29156212,name:'Robert Sánchez'},{uid:37053643,name:'Gianluca Scamacca'},{uid:2000009057,name:'Carlos Forbs'},{uid:2000058198,name:'Marc Casadó'},{uid:2000141707,name:'Yarek Gasiorowski'},{uid:2000227977,name:'Héctor Fort'},{uid:2000123587,name:'jeremy arevalo'},{uid:29074544,name:'Tyrone Mings'},{uid:2000101061,name:'Gerard Martín'},{uid:95081385,name:'Otávio'},{uid:91184426,name:'Angelo Stiller'},{uid:2000128974,name:'Eliezer Mayenda'},{uid:2000351880,name:'Toni Fernández'},{uid:93085044,name:'Emil Holm'},{uid:85140415,name:'Issa Diop'},{uid:2000149882,name:'Ebenezer Akinsanmiro'},{uid:2000220048,name:'Chema Andrés'},{uid:2000229718,name:'Jon Martín'},{uid:2000210786,name:'Pablo García'},{uid:2000298787,name:'Xavi Espart'},{uid:2000370427,name:'Pedro Rodríguez'},{uid:2000472427,name:'Raúl Expósito'},{uid:2000297470,name:'Tomàs Marqués'},{uid:2000402287,name:'Hamza Abdelkarim'},{uid:2000475982,name:'João Gabriel Castro Santos'},{uid:2000103231,name:'Nikolaus Wurmbrand'},{uid:2000234010,name:'Patricio Pacífico'},{uid:2000297543,name:'Juan Hernández'}
+  ],
+  'Inter': [
+    {uid:14110660,name:'Lautaro Martínez'},{uid:43139595,name:'Nicolò Barella'},{uid:43252460,name:'Alessandro Bastoni'},{uid:43500755,name:'Giorgio Scalvini'},{uid:28115996,name:'Morgan Rogers'},{uid:28126241,name:'Oscar Bobb'},{uid:2000097988,name:'Valentín Carboni'},{uid:19350649,name:'Carlos Augusto'},{uid:43155241,name:'Guglielmo Vicario'},{uid:43391659,name:'Elia Caprile'},{uid:43617691,name:'Nicolò Savona'},{uid:49037684,name:'Oumar Solet'},{uid:61078132,name:'Lewis Ferguson'},{uid:67277845,name:'Borja Sainz'},{uid:2000024341,name:'Arthur Atta'},{uid:2000082098,name:'Alex Valle'},{uid:2000136198,name:'Marco Palestra'},{uid:2000273835,name:'Christos Mouzakitis'},{uid:2000288835,name:'Mihajlo Cvetkovic'},{uid:91190494,name:'Tim Lemperle'},{uid:2000013430,name:'Pablo Felipe'},{uid:2000221925,name:'Rafiu Durosinmi'},{uid:2000031536,name:'Soungoutou Magassa'},{uid:83320131,name:'Youssef Chermiti'},{uid:2000311773,name:'Noahkai Banks'},{uid:2000259904,name:'Giovanni Leoni'},{uid:2000438795,name:'Saba Kharebashvili'},{uid:2000330855,name:'Kerim Alajbegovic'},{uid:2000388194,name:'Will Wright'},{uid:2000519166,name:'Maycon Cardozo'},{uid:2000363430,name:'Juan Angulo'},{uid:2000417237,name:'Vasilije Novicic'},{uid:2000327151,name:'Mick Schmetgens'},{uid:2000259556,name:'Philipp Maybach'}
+  ],
+  'Leverkusen': [
+    {uid:2000011972,name:'Sávio'},{uid:86066853,name:'Piero Hincapie'},{uid:92088306,name:'Nico Schlotterbeck'},{uid:2000180889,name:'Finn Jeltsch'},{uid:25055037,name:'David Doudera'},{uid:35017377,name:'Oliver Baumann'},{uid:39062838,name:'Orri Steinn Oskarsson'},{uid:49061476,name:'Yoan Bonny'},{uid:91207698,name:'Jonas Urbig'},{uid:2000010316,name:'Rav van den Berg'},{uid:2000023222,name:'Djaoui Cissé'},{uid:2000048260,name:'Alberto Baio'},{uid:2000154217,name:'Semih Kilicsoy'},{uid:2000190479,name:'Sam Amo-Ameyaw'},{uid:2000222926,name:'Jeff Ekhator'},{uid:2000243128,name:'Gonzalo Petit'},{uid:2000245263,name:'Johan Manzambi'},{uid:2000254692,name:'Chris Rigg'},{uid:2000257921,name:'Karim Coulibaly'},{uid:2000290285,name:'Artem Stepanov'},{uid:16184707,name:'Christoph Baumgartner'},{uid:2000300244,name:'Omar Janneh'},{uid:2000008568,name:'Williot Swedberg'},{uid:28110835,name:'Daniel Ballard'},{uid:2000207199,name:'João Victor de Souza Menezes'},{uid:2000310749,name:'mertcan ayhan'},{uid:2000368639,name:'vasilije kostov'},{uid:2000391611,name:'Bovio'},{uid:2000459742,name:'Cassiano Kiala'},{uid:2000331119,name:'Fynn schenten'},{uid:2000262633,name:'David Santos Daiber'},{uid:2000282469,name:'Felipe Chávez'},{uid:2000327139,name:'Mika wallentowitz'},{uid:2000170587,name:'Nelson Weiper'},{uid:2000154161,name:'aljoscha kemlein'}
+  ],
+  'Man Utd': [
+    {uid:43425040,name:'Amad Diallo'},{uid:2000035036,name:'Alejandro Garnacho'},{uid:2000123586,name:'Kobbie Mainoo'},{uid:19334410,name:'Matheus Cunha'},{uid:37058363,name:'Tyrell Malacia'},{uid:67201634,name:'André Onana'},{uid:2000025291,name:'Rhys Bennett'},{uid:2000123107,name:'Tyler Fredricson'},{uid:2000123626,name:'Daniel Gore'},{uid:2000272176,name:'Jayce Fitzgerald'},{uid:2000272185,name:'James Scanlon'},{uid:2000272807,name:'Reece Munro'},{uid:2000272808,name:'Jaydan Kamason'},{uid:2000280809,name:'Jack Fletcher'},{uid:2000280811,name:'Tyler Fletcher'},{uid:2000392421,name:'Daniel Arner'},{uid:2000392429,name:'Amir Ibragimov'},{uid:2000392431,name:'Bendito Mantato'},{uid:2000392459,name:'Jim Thwaites'},{uid:2000401490,name:'Enzo Kana-Biyik'},{uid:2000474164,name:'Jayden Ngwashi'},{uid:28103590,name:'Mason Mount'},{uid:2000190299,name:'Elyh Harrison'},{uid:2000190306,name:'Jack Moorhouse'},{uid:2000273647,name:'Jacob Devaney'},{uid:2000474167,name:'Jay McEvoy'},{uid:2000474178,name:'Noah Ajayi'}
+  ],
+  'Napoli': [
+    {uid:91151081,name:'Kai Havertz'},{uid:2000250907,name:'Ibrahim Osman'},{uid:12078577,name:'Emmanuel Agbadou'},{uid:19030933,name:'Neto'},{uid:19284037,name:'Ayrton Lucas'},{uid:19347264,name:'Morato'},{uid:25042141,name:'Patrik Schick'},{uid:28100269,name:'Axel Tuanzebe'},{uid:37024470,name:'Memphis Depay'},{uid:37055844,name:'Donyell Malen'},{uid:48036643,name:'Mouctar Diakhaby'},{uid:49038271,name:'Maxence Lacroix'},{uid:53086846,name:'Fredrik Aursnes'},{uid:55070307,name:'Rúben Neves'},{uid:58156290,name:'Sergey Pinyaev'},{uid:70138807,name:'Youssouf Ndayishimiye'},{uid:78076343,name:'Mathías Olivera'},{uid:91144903,name:'Moritz Nicolas'},{uid:2000180880,name:'Eric da Silva Moreira'},{uid:2000163504,name:'Mario Martín'},{uid:55063493,name:'Rafa'},{uid:2000303600,name:'Wang Yudong'},{uid:2000266424,name:'Diego Mascardi'},{uid:2000215081,name:'Víctor Moreno'},{uid:2000219431,name:'Ayoub Oufkir'},{uid:2000085967,name:'Matteo Pérez Vinlöf'},{uid:2000230119,name:'Iván Román'},{uid:2000108694,name:'Leo Castledine'}
+  ],
+  'Oriental Dragon': [
+    {uid:91187791,name:'Nick Woltemade'},{uid:2000077193,name:'Arda Güler'},{uid:2000090211,name:'Antonio Nusa'},{uid:28111507,name:'Tyrick Mitchell'},{uid:36159445,name:'Kostas Koulierakis'},{uid:37063774,name:'Sam Beukema'},{uid:45112276,name:'Zion Suzuki'},{uid:49039789,name:'Loic Badé'},{uid:67294886,name:'Gabri Veiga'},{uid:89066513,name:'Johnny'},{uid:91205129,name:'Fisnik Asllani'},{uid:91205203,name:'Eric Martel'},{uid:2000026180,name:'Conrad Harder'},{uid:2000065061,name:'Oscar Gloukh'},{uid:2000122572,name:'Aarón Anselmino'},{uid:2000126407,name:'Raúl Asencio'},{uid:2000179623,name:'Dies Janse'},{uid:2000184611,name:'Josh Acheampong'},{uid:2000188763,name:'Alvaro Montoro'},{uid:2000298276,name:'Pedro Luccas Morisco da Silva'},{uid:2000375912,name:'Ruud Nijstad'},{uid:2000411042,name:'Anísio'},{uid:2000414242,name:'Bradley Burrowes'},{uid:2000415453,name:'Kaden Elliot Braithwaite'},{uid:2000493921,name:'Seth Somapalan Ridgeon'}
+  ],
+  'PSV': [
+    {uid:28100477,name:'Joe Rodon'},{uid:28108492,name:'Arijanet Anan Murić'},{uid:29125842,name:'Jarrod Bowen'},{uid:47102498,name:'Gvidas Gineitis'},{uid:49034219,name:'Jean-Philippe Mateta'},{uid:49041006,name:'Evann Guessand'},{uid:67288450,name:'Abel Bretones'},{uid:85033423,name:'Lucas Digne'},{uid:91011532,name:'Willi Orbán'},{uid:91137493,name:'Waldemar Anton'},{uid:2000006106,name:'Isaak Touré'},{uid:2000254793,name:'Sverre Nypan'},{uid:2000293312,name:'Jesús Fortea'},{uid:2000387880,name:'Sami Bouhoudane'},{uid:37060896,name:'Joey Veerman'},{uid:37065767,name:'Sergino Dest'},{uid:37076315,name:'Couhaib Driouech'},{uid:2000188625,name:'Yanis Massolin'},{uid:37057744,name:'Jerdy Schouten'},{uid:2000063168,name:'Luka Kharatishvili'},{uid:20048604,name:'Ricardo Pepi'},{uid:2000257651,name:'Noah Darvich'},{uid:2000258154,name:'Luis Engelns'},{uid:2000382564,name:'Marc Domènech'},{uid:2000476249,name:'Lewi Richards'},{uid:2000110948,name:'Julian Gonstad'},{uid:2000143321,name:'David Martínez'},{uid:2000284118,name:'Yunus Emre Konak'},{uid:2000379974,name:'João Pedro Lúcio da Silva'}
+  ],
+  'R. Madrid': [
+    {uid:719601,name:'Robert Lewandowski'},{uid:16202373,name:'Dominik Szoboszlai'},{uid:37062185,name:'Cody Gakpo'},{uid:45104608,name:'Takefusa Kubo'},{uid:2000169739,name:'Lucas Bergvall'},{uid:2000183245,name:'Martim Fernandes'},{uid:2000056415,name:'Ilias Akhomach'},{uid:27069975,name:'Joachim Andersen'},{uid:28018193,name:'Péter Gulácsi'},{uid:28104130,name:'Caoimhin Kelleher'},{uid:45030953,name:'Wataru Endo'},{uid:48044499,name:'Jean-Clair Todibo'},{uid:62095383,name:'Adam Marusic'},{uid:67196204,name:'Carlos Soler'},{uid:67210735,name:'Alejandro Catena'},{uid:67257950,name:'Víctor Gómez'},{uid:85028361,name:'Benjamin André'},{uid:85136376,name:'Nicolas Pépé'},{uid:86047272,name:'Yangel Clemente Herrera Ravelo'},{uid:91143714,name:'Maximilian Mittelstädt'},{uid:92020288,name:'Heung-Min Son'},{uid:2000273988,name:'Gabriel Carvalho'},{uid:2000288465,name:'Andrija Maksimovic'},{uid:2000379917,name:'Wesley Natã'},{uid:2000407413,name:'Asier Bonel Aicua'},{uid:2000465225,name:'Mathis Albert'},{uid:2000474063,name:'Jayden Onia Seke'},{uid:2000495383,name:'Quentin Attigah'}
+  ],
+  'Sporting': [
+    {uid:78074594,name:'Federico Valverde'},{uid:67246385,name:'Martín Zubimendi'},{uid:2000311833,name:'Yan Diomandé'},{uid:12029963,name:'Yassine Bounou'},{uid:19320258,name:'Samuel Lino'},{uid:21024436,name:'Nikola Vasilj'},{uid:27039017,name:'Christian Norgaard'},{uid:27129532,name:'Alexander Bah'},{uid:37052470,name:'Noussair Mazraoui'},{uid:43425834,name:'Matteo Ruggeri'},{uid:48042766,name:'Ismaïla Sarr'},{uid:72048200,name:'Miles Robinson'},{uid:89040516,name:'Ethan Pinnock'},{uid:91170086,name:'Jonathan Burkardt'},{uid:92074021,name:'Atakan Karazor'},{uid:2000120348,name:'Hamza Igamane'},{uid:2000288850,name:'Quentin Ndjantou'},{uid:2000330201,name:'Kennet Eichhorn'},{uid:2000369658,name:'Davinchi'},{uid:2000388558,name:'Louis Page'},{uid:2000476259,name:'Ryan Kavuma-McQueen'},{uid:2000248160,name:'Enrique Aguilar'},{uid:2000386325,name:'Emmanuel Mbemba'},{uid:2000403408,name:'Kaua Prates'},{uid:2000403932,name:'Baba Korouma'},{uid:2000417769,name:'Robinho Junior'},{uid:2000423813,name:'Zinadine Zidane Bedoya'},{uid:2000448414,name:'Rafael Belinho'},{uid:2000468465,name:'Wael Mohya'},{uid:2000476254,name:'Calvin Diakite'},{uid:2000494868,name:'Sam Alabi'}
+  ],
+  'Stuttgart': [
+    {uid:18110528,name:'Charles De Ketelaere'},{uid:19273276,name:'Eder Militao'},{uid:28095342,name:'Angeliño'},{uid:63029353,name:'Dávid Hancko'},{uid:67217491,name:'Andrei Raţiu'},{uid:67283137,name:'Yeremay'},{uid:91105813,name:'Robin Zentner'},{uid:92103754,name:'Jamie Leweling'},{uid:2000047226,name:'Brooke Norton-Cuffy'},{uid:2000112357,name:'Kauã Santos'},{uid:2000136301,name:'Marlon Gomes'},{uid:2000158854,name:'Tani Oluwaseyi'},{uid:2000165617,name:'Kike Salas'},{uid:2000241381,name:'Matvey Kislyak'},{uid:2000241413,name:'Kirill Glebov'},{uid:2000409386,name:'José Reyes'},{uid:2000474101,name:'Jeremy Monga'},{uid:2000485992,name:'Luca Williams-Barnett'},{uid:2000080723,name:'Demir Ege Tiknaz'},{uid:48043868,name:'Batista Mendy'},{uid:19225861,name:'Fabricio Bruno'},{uid:2000202578,name:'Alisson'},{uid:2000227258,name:'Ricardo Mathias'},{uid:2000272205,name:'Lucas Ferreira'},{uid:2000350902,name:'Emre Unüvar'},{uid:2000375172,name:'Freddie Simmonds'}
+  ],
+  'Sunderland': [
+    {uid:2000095783,name:'Vitor Roque'},{uid:2000399897,name:'Rio Ngumoha'},{uid:2000096278,name:'Pietro Comuzzo'},{uid:16199712,name:'Gideon Mensah'},{uid:27129125,name:'Frank Onyeka'},{uid:28128173,name:'William Osula'},{uid:43272105,name:'Michele Collocolo'},{uid:59058929,name:'Tärlan Ähmädli'},{uid:76018954,name:'Jhon Córdoba'},{uid:91193999,name:'Omar Traoré'},{uid:2000184143,name:'Tommaso Martinelli'},{uid:2000251841,name:'Mtias Acevedo'},{uid:2000274341,name:'Kacper Potulski'},{uid:2000288922,name:'Enzo Molebe'},{uid:2000326671,name:'Viktor Bjarki Daðason'},{uid:2000351894,name:'Mateus Mané'},{uid:2000448428,name:'Mikkel Bro Hansen'},{uid:2000466272,name:'Brian Madjo'},{uid:2000481114,name:'Tian Nai Koren'},{uid:2000019039,name:'Lorenzo Bernasconi'},{uid:2000233765,name:'Younes Ebnoutalib'},{uid:2000292320,name:'Jesse Derry'},{uid:2000312176,name:'Igor Tyjon'},{uid:2000335003,name:'Maxloren Castro'},{uid:2000338373,name:'Francisco Barído'},{uid:2000370918,name:'Igor Oyono'},{uid:2000445433,name:'Kalum Thompson'},{uid:2000474873,name:'Jivayno Zinhagel'},{uid:2000476248,name:'Freddy Jorge Bernal'},{uid:2000500824,name:'Ekene Russel Chukwuani'},{uid:2000488948,name:'David Nogueira Carmo'}
+  ],
+  'Tottenham': [
+    {uid:13200568,name:'Mohammed Kudus'},{uid:19163495,name:'Marquinhos'},{uid:67276127,name:'Nico González'},{uid:2000007415,name:'Andrey Santos'},{uid:67260506,name:'Kang-In Lee'},{uid:2000168014,name:'Abdukodir Khusanov'},{uid:7990060,name:'Matteo Darmian'},{uid:14181375,name:'Nicolás González'},{uid:37041773,name:'Robin Gosens'},{uid:45111317,name:'Yukinari Sugawara'},{uid:48031641,name:'Olivier Boscagli'},{uid:49041153,name:'Esteban Lepaul'},{uid:49047581,name:'Rayan Ait-Nouri'},{uid:49048445,name:'Arnaud Kalimuendo'},{uid:67245412,name:'Martínez'},{uid:67268221,name:'Pedro Porro'},{uid:71099066,name:'Artem Dovbyk'},{uid:2000031073,name:'Reda Belahyane'},{uid:2000156783,name:'Ernest Nuamah'},{uid:2000214886,name:'Jacobo Ramón'},{uid:2000261789,name:'Santiago López'},{uid:28108490,name:'Jadon Sancho'},{uid:36152916,name:'Christos Tzolis'},{uid:2000097986,name:'Thomas Berenbruch'},{uid:70097314,name:'Uğurcan Çakır'},{uid:2000094208,name:'Obed Vargas'},{uid:2000179918,name:'Giacomo Gabbiani'},{uid:2000269262,name:'Giacomo De Pieri'},{uid:2000274057,name:'Peyton Miller'},{uid:2000336547,name:'Vakhtang Salia'},{uid:2000372640,name:'Ryan Roberto'},{uid:2000474999,name:'Andria Bartishvili'},{uid:2000366060,name:'Mattia Marello'},{uid:2000292778,name:'Francisco Carvalho Souza Silva'}
+  ],
+  'West Ham': [
+    {uid:2000390047,name:'Tylel Tati'},{uid:2000395118,name:'Uchenna Ogundu'},{uid:2000258668,name:'Louey Ben Farhat'},{uid:2000466343,name:'Olivier Mambwa'},{uid:2000485995,name:'Byfield Jun\'ai'},{uid:2000461946,name:'Antonio Arena'},{uid:2000408376,name:'Cheveyo Balentien'},{uid:2000497044,name:'David Boly'},{uid:2000311463,name:'Oskar Pietuszewski'},{uid:2000214745,name:'Sascha Britschgi'},{uid:2000216339,name:'Othmane Maamma'},{uid:2000350319,name:'Love Arrhov'},{uid:2000449300,name:'Moncef Zekri'},{uid:2000432704,name:'Darwin GUagUa'},{uid:27120988,name:'Mads Hermansen'},{uid:14063109,name:'Jeremías Ledesma'},{uid:76042952,name:'Jhon Lucumí'},{uid:83257795,name:'Leonardo Filipe Cruz Lelo'},{uid:2000170028,name:'Lennon Miller'},{uid:2000030160,name:'Franculino Djú'},{uid:2000252612,name:'Santiago Londoño'},{uid:2000290759,name:'Hugo Camberos'},{uid:2000372610,name:'Rin Ahmeti'},{uid:2000378267,name:'Rafael Quintas'},{uid:2000487699,name:'Destiny Elimoghale'}
+  ],
+  'Wolfsburg': [
+    {uid:16337125,name:'Leopold Querfeld'},{uid:27148020,name:'Mohamed Daramy'},{uid:28122837,name:'Troy Parrott'},{uid:28129089,name:'Yunus Musah'},{uid:29186052,name:'Matt O\'Riley'},{uid:36141840,name:'Sotiris Alexandropoulos'},{uid:37053569,name:'Kingsley Ehizibue'},{uid:43161669,name:'Michele Di Gregorio'},{uid:43195181,name:'Umar Sadiq'},{uid:49055037,name:'Maghnes Akliouche'},{uid:53020695,name:'Joshua King'},{uid:83174759,name:'Fábio Vieira'},{uid:2000199255,name:'Joao Fonseca'},{uid:2000262615,name:'El Hadji Malick Diouf'},{uid:2000457461,name:'Daulet Orynbasar'},{uid:2000463321,name:'Harry Gray'},{uid:2000131124,name:'Christian Mawissa'},{uid:2000466929,name:'Zabi'},{uid:2000471521,name:'Adri Mehmeti'},{uid:2000407487,name:'Bernardo Lima'},{uid:2000384911,name:'Renato Nhaga'},{uid:2000299857,name:'Alfie Cresswell'},{uid:2000461757,name:'Mussa Kaba'},{uid:2000498739,name:'Finlay Gorman'},{uid:2000310893,name:'cajetan lenz'},{uid:2000503845,name:'Aly Traoré'},{uid:2000330431,name:'Faik Sakar'},{uid:2000206446,name:'Taras Mykhavko'},{uid:2000320711,name:'John Otomewo'}
+  ],
+  '青岛海神': [
+    {uid:43295814,name:'Dejan Kulusevski'},{uid:63012964,name:'Stanislav Lobotka'},{uid:67153376,name:'Alex Grimaldo'},{uid:67196198,name:'Marcos Llorente'},{uid:69000199,name:'Yann Sommer'},{uid:2000028320,name:'Alberto Moleiro'},{uid:2000125958,name:'Pablo Barrios'},{uid:2000166563,name:'Carlos Baleba'},{uid:18087987,name:'Sebastiaan Bornauw'},{uid:19158043,name:'Emerson'},{uid:27129146,name:'Gustav Isaksen'},{uid:37039829,name:'Kenny Tete'},{uid:43491384,name:'Federico Gatti'},{uid:45101691,name:'Daizen Maeda'},{uid:45104245,name:'Ao Tanaka'},{uid:55069796,name:'Ricardo Horta'},{uid:62215974,name:'Jaka Bijol'},{uid:67047092,name:'Koke'},{uid:90087316,name:'Keven Schlotterbeck'},{uid:91107360,name:'Niklas Süle'},{uid:2000091914,name:'Froilan Díaz'},{uid:11022221,name:'Vedat Muriqi'},{uid:13162051,name:'Oscar'},{uid:2000264015,name:'Alessandro Nunziante'},{uid:2000280572,name:'Joachim Kayi Sanda'},{uid:2000302088,name:'Leo Shahar'}
+  ],
+  '上海申花': [
+    {uid:18106083,name:'Jérémy Doku'},{uid:18077264,name:'Youri Tielemans'},{uid:19297055,name:'Bruno Guimaraes'},{uid:37076355,name:'Bart Verbruggen'},{uid:2000262919,name:'Luka Vuskovic'},{uid:18115016,name:'Zeno Debast'},{uid:2000016527,name:'Stanis Idumbo Muzambo'},{uid:16254093,name:'Luka Sucic'},{uid:18108540,name:'Jonathan David'},{uid:43500350,name:'Wilfried Gnonto'},{uid:58104594,name:'Alexandr Golovin'},{uid:58123738,name:'Matvey Safonov'},{uid:72048035,name:'Weston McKennie'},{uid:93142472,name:'Samuel Dahl'},{uid:2000005988,name:'Thomas Kristensen'},{uid:2000014077,name:'Arsen Zakharyan'},{uid:2000124157,name:'Javi Rodriguez'},{uid:2000127465,name:'Arthur Vermeeren'},{uid:2000146355,name:'Adam Daghim'},{uid:2000264561,name:'Luka Topalovic'},{uid:2000368248,name:'Jorthy Mokio'},{uid:19386116,name:'Abner Vinicius'},{uid:2000318285,name:'Bruno Durdov'},{uid:85145172,name:'Armand Laurienté'},{uid:96047750,name:'Jan Bednarek'},{uid:2000129108,name:'Noah Nartey'},{uid:2000181028,name:'Elijah Dijkstra'},{uid:2000268884,name:'Joao Simões'},{uid:2000303379,name:'Salvador Blopá'},{uid:2000339841,name:'Mohammed El Âdfaoui'},{uid:2000366580,name:'Noah Fernandez'},{uid:2000332084,name:'Dylan Almada'},{uid:2000490708,name:'Fabian Merién'},{uid:2000218555,name:'JP Chermont'},{uid:2000221876,name:'Winsley Boteli'}
+  ]
+};
+
+// ============ STATE ============
+let state = {
+  teams: [],
+  matches: [],
+  standings: {},
+  currentUser: null,
+  currentLeague: 'super',
+  currentPage: 'home'
+};
+
+// ============ STORAGE ============
+function saveState() {
+  localStorage.setItem('pgm_football_state', JSON.stringify(state));
+}
+
+function loadState() {
+  const saved = localStorage.getItem('pgm_football_state');
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    // Check if using old team data (emoji-based or without uid), reinit if so
+    const hasOldData = parsed.teams && parsed.teams[0] && (!parsed.teams[0].logo || (parsed.teams[0].players && parsed.teams[0].players[0] && !parsed.teams[0].players[0].uid));
+    // Check for duplicate teamId bug - if multiple teams have same prefix in player ids, reinit
+    let hasDuplicateTeamBug = false;
+    if (parsed.teams && parsed.teams.length > 0) {
+      const playerIdsByPrefix = {};
+      for (const team of parsed.teams) {
+        if (team.players && team.players.length > 0) {
+          const prefix = team.id;
+          if (!playerIdsByPrefix[prefix]) playerIdsByPrefix[prefix] = 0;
+          playerIdsByPrefix[prefix] += team.players.length;
+        }
+      }
+      // With correct data, each team has unique id, so prefix count should equal team count
+      // If we have 60 teams but fewer than 60 unique prefixes, there's a bug
+      const uniquePrefixes = Object.keys(playerIdsByPrefix).length;
+      if (uniquePrefixes < 60 && parsed.teams.length === 60) {
+        hasDuplicateTeamBug = true;
+      }
+    }
+    if (hasOldData || hasDuplicateTeamBug) {
+      localStorage.removeItem('pgm_football_state');
+      initData();
+    } else {
+      state = parsed;
+    }
+  } else {
+    initData();
+  }
+}
+
+// ============ INIT DATA ============
+function initData() {
+  state.teams = [];
+  let teamId = 1;
+  for (const league of ['super', 'jiaEast', 'jiaWest', 'yiEast', 'yiWest']) {
+    for (let i = 0; i < 12; i++) {
+      const teamName = TEAM_NAMES[league][i];
+      const logo = TEAM_LOGOS[teamName] || '';
+      
+      // Get real players from PLAYERS_DB
+      const teamPlayers = PLAYERS_DB[teamName] || [];
+      const players = teamPlayers.map((p, idx) => ({
+        id: `p${teamId}_${p.uid}`,  // Use UID in player ID for unique identification
+        uid: p.uid,  // Preserve the original UID
+        name: p.name,
+        number: idx + 1,
+        position: idx < 4 ? (idx === 0 ? 'GK' : 'DF') : idx < 8 ? 'MF' : 'FW',  // Approximate positions
+        goals: 0,
+        assists: 0,
+        rating: 0,
+        gamesPlayed: 0,
+        motmCount: 0
+      }));
+
+      // 特殊球队教练配置
+      let coach = COACH_NAMES[i % COACH_NAMES.length];
+      let assistantCoaches = [];
+      if (teamName === 'Tottenham') {
+        coach = 'J.K';
+        assistantCoaches = ['TL'];
+      } else if (teamName === 'Wrexham') {
+        coach = 'Bobo';
+        assistantCoaches = [];
+      } else if (teamName === 'Aberdeen') {
+        coach = '苟';
+        assistantCoaches = ['曾总'];
+      } else if (teamName === 'Aston Villa') {
+        coach = '小罗';
+        assistantCoaches = [];
+      } else if (teamName === 'Barcelona') {
+        coach = '四嫂';
+        assistantCoaches = [];
+      } else {
+        const assistantCount = 1 + (teamId % 3);
+        for (let a = 0; a < assistantCount; a++) {
+          assistantCoaches.push(ASSISTANT_COACH_NAMES[(teamId * 3 + a) % ASSISTANT_COACH_NAMES.length]);
+        }
+      }
+
+      state.teams.push({
+        id: `t${teamId}`,
+        name: teamName,
+        shortName: teamName.slice(0,6),
+        logo,
+        league,
+        coach,
+        assistantCoaches,
+        players
+      });
+      teamId++;
+    }
+  }
+
+  // Initialize standings for each league
+  state.standings = {};
+  ['super', 'a', 'b'].forEach(league => {
+    state.standings[league] = state.teams
+      .filter(t => t.league === league)
+      .map(t => ({
+        teamId: t.id,
+        played: 0, won: 0, draw: 0, lost: 0,
+        gf: 0, ga: 0, gd: 0, points: 0
+      }));
+  });
+
+  // Generate matches
+  state.matches = generateAllMatches();
+  saveState();
+}
+
+// 第62届PGM联赛完整赛程表
+const LEAGUE_FIXTURES = {
+  super: [
+    // 第1轮
+    [{h:2,a:11},{h:6,a:0},{h:9,a:4},{h:8,a:7},{h:3,a:10},{h:5,a:1}],
+    // 第2轮
+    [{h:11,a:2},{h:0,a:6},{h:4,a:9},{h:7,a:8},{h:10,a:3},{h:1,a:5}],
+    // 第3轮
+    [{h:0,a:2},{h:4,a:6},{h:7,a:9},{h:10,a:8},{h:1,a:3},{h:5,a:11}],
+    // 第4轮
+    [{h:2,a:0},{h:6,a:4},{h:9,a:7},{h:8,a:10},{h:3,a:1},{h:11,a:5}],
+    // 第5轮
+    [{h:2,a:4},{h:6,a:7},{h:9,a:10},{h:8,a:1},{h:3,a:5},{h:11,a:0}],
+    // 第6轮
+    [{h:4,a:2},{h:7,a:6},{h:10,a:9},{h:1,a:8},{h:5,a:3},{h:0,a:11}],
+    // 第7轮
+    [{h:7,a:2},{h:10,a:6},{h:1,a:9},{h:5,a:8},{h:3,a:11},{h:4,a:0}],
+    // 第8轮
+    [{h:2,a:7},{h:6,a:10},{h:9,a:1},{h:8,a:5},{h:11,a:3},{h:0,a:4}],
+    // 第9轮
+    [{h:2,a:10},{h:6,a:1},{h:9,a:5},{h:8,a:3},{h:0,a:7},{h:11,a:4}],
+    // 第10轮
+    [{h:10,a:2},{h:1,a:6},{h:5,a:9},{h:3,a:8},{h:7,a:0},{h:4,a:11}],
+    // 第11轮
+    [{h:1,a:2},{h:5,a:6},{h:3,a:9},{h:8,a:11},{h:10,a:0},{h:7,a:4}],
+    // 第12轮
+    [{h:2,a:1},{h:6,a:5},{h:9,a:3},{h:11,a:8},{h:0,a:10},{h:4,a:7}],
+    // 第13轮
+    [{h:2,a:5},{h:6,a:3},{h:9,a:8},{h:0,a:1},{h:4,a:10},{h:11,a:7}],
+    // 第14轮
+    [{h:5,a:2},{h:3,a:6},{h:8,a:9},{h:1,a:0},{h:10,a:4},{h:7,a:11}],
+    // 第15轮
+    [{h:3,a:2},{h:8,a:6},{h:11,a:9},{h:0,a:5},{h:4,a:1},{h:7,a:10}],
+    // 第16轮
+    [{h:2,a:3},{h:6,a:8},{h:9,a:11},{h:5,a:0},{h:1,a:4},{h:10,a:7}],
+    // 第17轮
+    [{h:2,a:8},{h:6,a:9},{h:0,a:3},{h:4,a:5},{h:7,a:1},{h:11,a:10}],
+    // 第18轮
+    [{h:8,a:2},{h:9,a:6},{h:3,a:0},{h:5,a:4},{h:1,a:7},{h:10,a:11}],
+    // 第19轮
+    [{h:9,a:2},{h:6,a:11},{h:8,a:0},{h:3,a:4},{h:5,a:7},{h:1,a:10}],
+    // 第20轮
+    [{h:2,a:9},{h:11,a:6},{h:0,a:8},{h:4,a:3},{h:7,a:5},{h:10,a:1}],
+    // 第21轮
+    [{h:2,a:6},{h:0,a:9},{h:4,a:8},{h:7,a:3},{h:10,a:5},{h:11,a:1}],
+    // 第22轮
+    [{h:6,a:2},{h:9,a:0},{h:8,a:4},{h:3,a:7},{h:5,a:10},{h:1,a:11}]
+  ],
+  jiaEast: [
+    // 第1轮
+    [{h:0,a:5},{h:1,a:3},{h:11,a:10},{h:7,a:8},{h:6,a:2},{h:4,a:9}],
+    // 第2轮
+    [{h:5,a:0},{h:3,a:1},{h:10,a:11},{h:8,a:7},{h:2,a:6},{h:9,a:4}],
+    // 第3轮
+    [{h:3,a:0},{h:10,a:1},{h:8,a:11},{h:2,a:7},{h:9,a:6},{h:4,a:5}],
+    // 第4轮
+    [{h:0,a:3},{h:1,a:10},{h:11,a:8},{h:7,a:2},{h:6,a:9},{h:5,a:4}],
+    // 第5轮
+    [{h:0,a:10},{h:1,a:8},{h:11,a:2},{h:7,a:9},{h:6,a:4},{h:5,a:3}],
+    // 第6轮
+    [{h:10,a:0},{h:8,a:1},{h:2,a:11},{h:9,a:7},{h:4,a:6},{h:3,a:5}],
+    // 第7轮
+    [{h:8,a:0},{h:2,a:1},{h:9,a:11},{h:4,a:7},{h:6,a:5},{h:10,a:3}],
+    // 第8轮
+    [{h:0,a:8},{h:1,a:2},{h:11,a:9},{h:7,a:4},{h:5,a:6},{h:3,a:10}],
+    // 第9轮
+    [{h:0,a:2},{h:1,a:9},{h:11,a:4},{h:7,a:6},{h:3,a:8},{h:5,a:10}],
+    // 第10轮
+    [{h:2,a:0},{h:9,a:1},{h:4,a:11},{h:6,a:7},{h:8,a:3},{h:10,a:5}],
+    // 第11轮
+    [{h:9,a:0},{h:4,a:1},{h:6,a:11},{h:5,a:7},{h:2,a:3},{h:8,a:10}],
+    // 第12轮
+    [{h:0,a:9},{h:1,a:4},{h:11,a:6},{h:7,a:5},{h:3,a:2},{h:10,a:8}],
+    // 第13轮
+    [{h:0,a:4},{h:1,a:6},{h:11,a:7},{h:3,a:9},{h:10,a:2},{h:5,a:8}],
+    // 第14轮
+    [{h:4,a:0},{h:6,a:1},{h:7,a:11},{h:9,a:3},{h:2,a:10},{h:8,a:5}],
+    // 第15轮
+    [{h:6,a:0},{h:7,a:1},{h:11,a:5},{h:4,a:3},{h:9,a:10},{h:2,a:8}],
+    // 第16轮
+    [{h:0,a:6},{h:1,a:7},{h:5,a:11},{h:3,a:4},{h:10,a:9},{h:8,a:2}],
+    // 第17轮
+    [{h:0,a:7},{h:1,a:11},{h:3,a:6},{h:10,a:4},{h:8,a:9},{h:5,a:2}],
+    // 第18轮
+    [{h:7,a:0},{h:11,a:1},{h:6,a:3},{h:4,a:10},{h:9,a:8},{h:2,a:5}],
+    // 第19轮
+    [{h:11,a:0},{h:5,a:1},{h:7,a:3},{h:6,a:10},{h:4,a:8},{h:9,a:2}],
+    // 第20轮
+    [{h:0,a:11},{h:1,a:5},{h:3,a:7},{h:10,a:6},{h:8,a:4},{h:2,a:9}],
+    // 第21轮
+    [{h:0,a:1},{h:3,a:11},{h:10,a:7},{h:8,a:6},{h:2,a:4},{h:5,a:9}],
+    // 第22轮
+    [{h:1,a:0},{h:11,a:3},{h:7,a:10},{h:6,a:8},{h:4,a:2},{h:9,a:5}]
+  ],
+  jiaWest: [
+    // 第1轮
+    [{h:1,a:9},{h:6,a:11},{h:7,a:0},{h:8,a:5},{h:3,a:4},{h:10,a:2}],
+    // 第2轮
+    [{h:9,a:1},{h:11,a:6},{h:0,a:7},{h:5,a:8},{h:4,a:3},{h:2,a:10}],
+    // 第3轮
+    [{h:11,a:1},{h:0,a:6},{h:5,a:7},{h:4,a:8},{h:2,a:3},{h:10,a:9}],
+    // 第4轮
+    [{h:1,a:11},{h:6,a:0},{h:7,a:5},{h:8,a:4},{h:3,a:2},{h:9,a:10}],
+    // 第5轮
+    [{h:1,a:0},{h:6,a:5},{h:7,a:4},{h:8,a:2},{h:3,a:10},{h:9,a:11}],
+    // 第6轮
+    [{h:0,a:1},{h:5,a:6},{h:4,a:7},{h:2,a:8},{h:10,a:3},{h:11,a:9}],
+    // 第7轮
+    [{h:5,a:1},{h:4,a:6},{h:2,a:7},{h:10,a:8},{h:3,a:9},{h:0,a:11}],
+    // 第8轮
+    [{h:1,a:5},{h:6,a:4},{h:7,a:2},{h:8,a:10},{h:9,a:3},{h:11,a:0}],
+    // 第9轮
+    [{h:1,a:4},{h:6,a:2},{h:7,a:10},{h:8,a:3},{h:11,a:5},{h:9,a:0}],
+    // 第10轮
+    [{h:4,a:1},{h:2,a:6},{h:10,a:7},{h:3,a:8},{h:5,a:11},{h:0,a:9}],
+    // 第11轮
+    [{h:2,a:1},{h:10,a:6},{h:3,a:7},{h:9,a:8},{h:4,a:11},{h:5,a:0}],
+    // 第12轮
+    [{h:1,a:2},{h:6,a:10},{h:7,a:3},{h:9,a:8},{h:11,a:4},{h:0,a:5}],
+    // 第13轮
+    [{h:1,a:10},{h:6,a:3},{h:7,a:8},{h:11,a:2},{h:0,a:4},{h:9,a:5}],
+    // 第14轮
+    [{h:10,a:1},{h:3,a:6},{h:8,a:7},{h:2,a:11},{h:4,a:0},{h:5,a:9}],
+    // 第15轮
+    [{h:3,a:1},{h:8,a:6},{h:7,a:9},{h:10,a:11},{h:2,a:0},{h:4,a:5}],
+    // 第16轮
+    [{h:1,a:3},{h:6,a:8},{h:9,a:7},{h:11,a:10},{h:0,a:2},{h:5,a:4}],
+    // 第17轮
+    [{h:1,a:8},{h:6,a:7},{h:11,a:3},{h:0,a:10},{h:5,a:2},{h:9,a:4}],
+    // 第18轮
+    [{h:8,a:1},{h:7,a:6},{h:3,a:11},{h:10,a:0},{h:2,a:5},{h:4,a:9}],
+    // 第19轮
+    [{h:7,a:1},{h:9,a:6},{h:8,a:11},{h:3,a:0},{h:10,a:5},{h:2,a:4}],
+    // 第20轮
+    [{h:1,a:7},{h:6,a:9},{h:11,a:8},{h:0,a:3},{h:5,a:10},{h:4,a:2}],
+    // 第21轮
+    [{h:1,a:6},{h:11,a:7},{h:0,a:8},{h:5,a:3},{h:4,a:10},{h:9,a:2}],
+    // 第22轮
+    [{h:6,a:1},{h:7,a:11},{h:8,a:0},{h:3,a:5},{h:10,a:4},{h:2,a:9}]
+  ],
+yiEast: [
+    // 第1轮
+    [{h:4,a:6},{h:7,a:10},{h:0,a:1},{h:9,a:3},{h:5,a:8},{h:2,a:11}],
+    // 第2轮
+    [{h:6,a:4},{h:10,a:7},{h:1,a:0},{h:3,a:9},{h:8,a:5},{h:11,a:2}],
+    // 第3轮
+    [{h:10,a:4},{h:1,a:7},{h:3,a:0},{h:8,a:9},{h:11,a:5},{h:2,a:6}],
+    // 第4轮
+    [{h:4,a:10},{h:7,a:1},{h:0,a:3},{h:9,a:8},{h:5,a:11},{h:6,a:2}],
+    // 第5轮
+    [{h:4,a:1},{h:7,a:3},{h:0,a:8},{h:9,a:11},{h:5,a:2},{h:6,a:10}],
+    // 第6轮
+    [{h:1,a:4},{h:3,a:7},{h:8,a:0},{h:11,a:9},{h:2,a:5},{h:10,a:6}],
+    // 第7轮
+    [{h:3,a:4},{h:8,a:7},{h:11,a:0},{h:2,a:9},{h:5,a:6},{h:1,a:10}],
+    // 第8轮
+    [{h:4,a:3},{h:7,a:8},{h:0,a:11},{h:9,a:2},{h:6,a:5},{h:10,a:1}],
+    // 第9轮
+    [{h:4,a:8},{h:7,a:11},{h:0,a:2},{h:9,a:5},{h:10,a:3},{h:6,a:1}],
+    // 第10轮
+    [{h:8,a:4},{h:11,a:7},{h:2,a:0},{h:5,a:9},{h:3,a:10},{h:1,a:6}],
+    // 第11轮
+    [{h:11,a:4},{h:2,a:7},{h:5,a:0},{h:9,a:6},{h:8,a:10},{h:3,a:1}],
+    // 第12轮
+    [{h:4,a:11},{h:7,a:2},{h:0,a:5},{h:6,a:9},{h:10,a:8},{h:1,a:3}],
+    // 第13轮
+    [{h:4,a:2},{h:7,a:5},{h:0,a:9},{h:10,a:11},{h:1,a:8},{h:6,a:3}],
+    // 第14轮
+    [{h:2,a:4},{h:5,a:7},{h:9,a:0},{h:11,a:10},{h:8,a:1},{h:3,a:6}],
+    // 第15轮
+    [{h:5,a:4},{h:9,a:7},{h:6,a:0},{h:2,a:10},{h:11,a:1},{h:8,a:3}],
+    // 第16轮
+    [{h:4,a:5},{h:7,a:9},{h:0,a:6},{h:10,a:2},{h:1,a:11},{h:3,a:8}],
+    // 第17轮
+    [{h:4,a:9},{h:7,a:0},{h:10,a:5},{h:1,a:2},{h:3,a:11},{h:6,a:8}],
+    // 第18轮
+    [{h:9,a:4},{h:0,a:7},{h:5,a:10},{h:2,a:1},{h:11,a:3},{h:8,a:6}],
+    // 第19轮
+    [{h:0,a:4},{h:7,a:6},{h:9,a:10},{h:5,a:1},{h:2,a:3},{h:11,a:8}],
+    // 第20轮
+    [{h:4,a:0},{h:6,a:7},{h:10,a:9},{h:1,a:5},{h:3,a:2},{h:8,a:11}],
+    // 第21轮
+    [{h:4,a:7},{h:10,a:0},{h:1,a:9},{h:3,a:5},{h:8,a:2},{h:6,a:11}],
+    // 第22轮
+    [{h:7,a:4},{h:0,a:10},{h:9,a:1},{h:5,a:3},{h:2,a:8},{h:11,a:6}]
+  ],
+yiWest: [
+    // 第1轮
+    [{h:11,a:10},{h:1,a:9},{h:7,a:8},{h:6,a:4},{h:3,a:5},{h:2,a:0}],
+    // 第2轮
+    [{h:10,a:11},{h:9,a:1},{h:8,a:7},{h:4,a:6},{h:5,a:3},{h:0,a:2}],
+    // 第3轮
+    [{h:9,a:11},{h:8,a:1},{h:4,a:7},{h:5,a:6},{h:0,a:3},{h:2,a:10}],
+    // 第4轮
+    [{h:11,a:9},{h:1,a:8},{h:7,a:4},{h:6,a:5},{h:3,a:0},{h:10,a:2}],
+    // 第5轮
+    [{h:11,a:8},{h:1,a:4},{h:7,a:5},{h:6,a:0},{h:3,a:2},{h:10,a:9}],
+    // 第6轮
+    [{h:8,a:11},{h:4,a:1},{h:5,a:7},{h:0,a:6},{h:2,a:3},{h:9,a:10}],
+    // 第7轮
+    [{h:4,a:11},{h:5,a:1},{h:0,a:7},{h:2,a:6},{h:3,a:10},{h:8,a:9}],
+    // 第8轮
+    [{h:11,a:4},{h:1,a:5},{h:7,a:0},{h:6,a:2},{h:10,a:3},{h:9,a:8}],
+    // 第9轮
+    [{h:11,a:5},{h:1,a:0},{h:7,a:2},{h:6,a:3},{h:9,a:4},{h:10,a:8}],
+    // 第10轮
+    [{h:5,a:11},{h:0,a:1},{h:2,a:7},{h:3,a:6},{h:4,a:9},{h:8,a:10}],
+    // 第11轮
+    [{h:0,a:11},{h:2,a:1},{h:3,a:7},{h:10,a:6},{h:9,a:5},{h:8,a:4}],
+    // 第12轮
+    [{h:11,a:0},{h:1,a:2},{h:7,a:3},{h:6,a:10},{h:5,a:9},{h:4,a:8}],
+    // 第13轮
+    [{h:11,a:2},{h:1,a:3},{h:7,a:6},{h:9,a:0},{h:8,a:5},{h:10,a:4}],
+    // 第14轮
+    [{h:2,a:11},{h:3,a:1},{h:6,a:7},{h:0,a:9},{h:5,a:8},{h:4,a:10}],
+    // 第15轮
+    [{h:3,a:11},{h:6,a:1},{h:7,a:10},{h:2,a:9},{h:0,a:8},{h:5,a:4}],
+    // 第16轮
+    [{h:11,a:3},{h:1,a:6},{h:10,a:7},{h:9,a:2},{h:8,a:0},{h:4,a:5}],
+    // 第17轮
+    [{h:11,a:6},{h:1,a:7},{h:9,a:3},{h:8,a:2},{h:4,a:0},{h:10,a:5}],
+    // 第18轮
+    [{h:6,a:11},{h:7,a:1},{h:3,a:9},{h:2,a:8},{h:0,a:4},{h:5,a:10}],
+    // 第19轮
+    [{h:7,a:11},{h:10,a:1},{h:6,a:9},{h:3,a:8},{h:2,a:4},{h:0,a:5}],
+    // 第20轮
+    [{h:11,a:7},{h:1,a:10},{h:9,a:6},{h:8,a:3},{h:4,a:2},{h:5,a:0}],
+    // 第21轮
+    [{h:11,a:1},{h:9,a:7},{h:8,a:6},{h:4,a:3},{h:5,a:2},{h:10,a:0}],
+    // 第22轮
+    [{h:1,a:11},{h:7,a:9},{h:6,a:8},{h:3,a:4},{h:2,a:5},{h:0,a:10}]
+  ]
+};
+
+function generateAllMatches() {
+  const matches = [];
+  const leagues = ['super', 'jiaEast', 'jiaWest', 'yiEast', 'yiWest'];
+  let matchId = 1;
+  
+  for (const league of leagues) {
+    const teams = state.teams.filter(t => t.league === league);
+    const fixtures = LEAGUE_FIXTURES[league];
+    
+    for (let round = 0; round < fixtures.length; round++) {
+      const roundMatches = fixtures[round];
+      for (const fixture of roundMatches) {
+        matches.push({
+          id: `m${matchId++}`,
+          round: round + 1,
+          homeTeam: teams[fixture.h].id,
+          awayTeam: teams[fixture.a].id,
+          date: null,
+          time: '15:00',
+          venue: teams[fixture.h].name + '主场',
+          homeScore: null,
+          awayScore: null,
+          scorers: [],
+          assists: [],
+          motm: null,
+          status: 'pending'
+        });
+      }
+    }
+  }
+  return matches;
+}
+
+// ============ RENDER ============
+function render() {
+  renderStandings();
+  renderTeams();
+  renderSchedule();
+  renderStats();
+  updateNavAndHeader();
+}
+
+function renderStandings() {
+  const container = document.getElementById('standingsContent');
+  const league = state.currentLeague;
+
+  const teams = state.teams.filter(t => t.league === league);
+  let standings = calculateStandings(teams);
+
+  // Get sort params from state or use defaults
+  const sortCol = window.standingsSortCol || 'points';
+  const sortDir = window.standingsSortDir || 'desc';
+
+  // Sort standings
+  standings.sort((a, b) => {
+    let valA, valB;
+    switch(sortCol) {
+      case 'points': valA = a.points; valB = b.points; break;
+      case 'played': valA = a.played; valB = b.played; break;
+      case 'won': valA = a.won; valB = b.won; break;
+      case 'draw': valA = a.draw; valB = b.draw; break;
+      case 'lost': valA = a.lost; valB = b.lost; break;
+      case 'gf': valA = a.gf; valB = b.gf; break;
+      case 'ga': valA = a.ga; valB = b.ga; break;
+      case 'gd': valA = a.gf - a.ga; valB = b.gf - b.ga; break;
+      default: valA = a.points; valB = b.points;
+    }
+    return sortDir === 'desc' ? valB - valA : valA - valB;
+  });
+
+  const sortIcon = (col) => {
+    if (sortCol !== col) return '';
+    return sortDir === 'desc' ? ' ↓' : ' ↑';
+  };
+
+  let html = '<table class="standings-table"><thead><tr>';
+  html += `<th>#</th><th class="sortable" onclick="sortStandings('name')">球队${sortIcon('name')}</th>`;
+  html += `<th class="sortable" onclick="sortStandings('played')">场${sortIcon('played')}</th>`;
+  html += `<th class="sortable" onclick="sortStandings('won')">胜${sortIcon('won')}</th>`;
+  html += `<th class="sortable" onclick="sortStandings('draw')">平${sortIcon('draw')}</th>`;
+  html += `<th class="sortable" onclick="sortStandings('lost')">负${sortIcon('lost')}</th>`;
+  html += `<th class="sortable" onclick="sortStandings('gf')">进${sortIcon('gf')}</th>`;
+  html += `<th class="sortable" onclick="sortStandings('ga')">失${sortIcon('ga')}</th>`;
+  html += `<th class="sortable" onclick="sortStandings('gd')">净${sortIcon('gd')}</th>`;
+  html += `<th class="sortable" onclick="sortStandings('points')">分${sortIcon('points')}</th>`;
+  html += '</tr></thead><tbody>';
+
+  standings.forEach((s, i) => {
+    const isTop1Promotion = (league === 'jiaEast' || league === 'jiaWest');
+    const topPromotionCount = isTop1Promotion ? 1 : 2;
+    const promotionClass = i < topPromotionCount ? 'promotion-bg' : (i >= standings.length - 2 ? 'relegation-bg' : '');
+    html += `<tr class="${promotionClass}">`;
+    html += `<td class="rank">${i + 1}</td>`;
+    html += `<td class="team-cell"><img src="${s.team.logo}" style="width:24px;height:24px;object-fit:contain;border-radius:4px" onerror="this.style.display='none'"><span class="team-name-clickable" onclick="showTeamDetail('${s.team.id}')">${s.team.name}</span></td>`;
+    html += `<td>${s.played}</td><td>${s.won}</td><td>${s.draw}</td><td>${s.lost}</td>`;
+    html += `<td>${s.gf}</td><td>${s.ga}</td><td>${s.gf - s.ga}</td><td><strong>${s.points}</strong></td>`;
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function sortStandings(col) {
+  if (window.standingsSortCol === col) {
+    window.standingsSortDir = window.standingsSortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    window.standingsSortCol = col;
+    window.standingsSortDir = 'desc';
+  }
+  renderStandings();
+}
+
+function renderTeams() {
+  const container = document.getElementById('teamsContent');
+  const league = state.currentLeague;
+
+  const teams = state.teams.filter(t => t.league === league);
+
+  let html = '<div class="team-list">';
+  teams.forEach(t => {
+    // 按球员姓名首字升序排列
+    const sortedPlayers = [...t.players].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+    const playersLines = sortedPlayers.map(p => `${p.name}（${p.uid}）`).join('<br>');
+
+    const assistantStr = t.assistantCoaches && t.assistantCoaches.length > 0 ? '、' + t.assistantCoaches.join('、') : '';
+    html += `
+      <div class="team-card">
+        <div class="team-item" onclick="toggleTeamPlayers(this)">
+          <img src="${t.logo}" class="team-item-logo" onerror="this.style.display='none'">
+          <div class="team-item-info">
+            <div class="team-item-name">${t.name} <span class="team-league-tag">${LEAGUE_NAMES[t.league]}</span></div>
+            <div class="team-item-coach">主教练:${t.coach}${assistantStr}</div>
+          </div>
+          <span class="team-item-arrow">›</span>
+        </div>
+        <div class="team-players">
+          <div class="player-names">${playersLines || '暂无球员'}</div>
+          <div class="player-summary">共 ${t.players.length} 名球员</div>
+        </div>
+      </div>
+    `;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function toggleTeamPlayers(card) {
+  const playerDiv = card.nextElementSibling;
+  if (playerDiv.style.display === 'none') {
+    playerDiv.style.display = 'block';
+    card.querySelector('.team-item-arrow').style.transform = 'rotate(90deg)';
+  } else {
+    playerDiv.style.display = 'none';
+    card.querySelector('.team-item-arrow').style.transform = 'rotate(0deg)';
+  }
+}
+
+function renderSchedule() {
+  const container = document.getElementById('scheduleContent');
+  const league = state.currentLeague;
+  
+  let matches = [...state.matches];
+  matches = matches.filter(m => {
+    const homeTeam = state.teams.find(t => t.id === m.homeTeam);
+    return homeTeam && homeTeam.league === league;
+  });
+  
+  const rounds = {};
+  matches.forEach(m => {
+    if (!rounds[m.round]) rounds[m.round] = [];
+    rounds[m.round].push(m);
+  });
+  
+  let html = '';
+  Object.keys(rounds).sort((a, b) => a - b).forEach(round => {
+    html += '<div class="match-round-title">\u7B2C' + round + '\u8F6E</div>';
+    rounds[round].forEach(m => {
+      const home = state.teams.find(t => t.id === m.homeTeam);
+      const away = state.teams.find(t => t.id === m.awayTeam);
+      const isCompleted = m.status === 'completed';
+      const homeGoals = isCompleted ? (m.scorers||[]).filter(s => s.teamId === m.homeTeam) : [];
+      const awayGoals = isCompleted ? (m.scorers||[]).filter(s => s.teamId === m.awayTeam) : [];
+      const homeAssists = isCompleted && m.assists ? m.assists.filter(a => a.teamId === m.homeTeam) : [];
+      const awayAssists = isCompleted && m.assists ? m.assists.filter(a => a.teamId === m.awayTeam) : [];
+      const countNames = (arr, team) => {
+        const counts = {};
+        arr.forEach(s => {
+          const p = team.players.find(x => x.id === s.playerId);
+          if (p) counts[p.name] = (counts[p.name] || 0) + 1;
+        });
+        return Object.entries(counts).map(([name, c]) => c > 1 ? name + '(' + c + ')' : name).join(', ');
+      };
+      const homeScorerStr = countNames(homeGoals, home);
+      const homeAssistStr = countNames(homeAssists, home);
+      const awayScorerStr = countNames(awayGoals, away);
+      const awayAssistStr = countNames(awayAssists, away);
+      const homeMotmPlayer = isCompleted && m.motm ? home.players.find(p => p.id === m.motm) : null;
+      const homeMotmStr = homeMotmPlayer ? homeMotmPlayer.name : '';
+      const homeDetail = isCompleted && (homeScorerStr || homeAssistStr || homeMotmStr)
+        ? '<div style="font-size:10px;color:#666;line-height:1.3;padding:0 0 0 0">'
+          + (homeScorerStr ? '<div>\u26BD ' + homeScorerStr + '</div>' : '')
+          + (homeAssistStr ? '<div>\uD83D\uDC5F ' + homeAssistStr + '</div>' : '')
+          + (homeMotmStr ? '<div style="color:#f5a623">\u2B50 ' + homeMotmStr + '</div>' : '')
+          + '</div>' : '';
+      const awayMotmPlayer = isCompleted && m.motm ? away.players.find(p => p.id === m.motm) : null;
+      const awayMotmStr = awayMotmPlayer ? awayMotmPlayer.name : '';
+      const awayDetail = isCompleted && (awayScorerStr || awayAssistStr || awayMotmStr)
+        ? '<div style="font-size:10px;color:#666;line-height:1.3;padding:0 0 0 0;text-align:right">'
+          + (awayScorerStr ? '<div>\u26BD ' + awayScorerStr + '</div>' : '')
+          + (awayAssistStr ? '<div>\uD83D\uDC5F ' + awayAssistStr + '</div>' : '')
+          + (awayMotmStr ? '<div style="color:#f5a623">\u2B50 ' + awayMotmStr + '</div>' : '')
+          + '</div>' : '';
+      const canEnter = state.currentUser && (state.currentUser.isSuperAdmin || state.currentUser.teamId === m.homeTeam || state.currentUser.teamId === m.awayTeam) && !isCompleted;
+      const enterBtn = canEnter
+        ? '<div style="text-align:center;margin-top:4px"><button class="btn btn-primary btn-small" onclick="showEnterMatchModal(\'' + m.id + '\')">\u5F55\u5165\u6BD4\u8D5B</button></div>'
+        : '';
+
+      html += '<div class="match-card" style="padding:8px 10px;margin-bottom:6px">'
+        + '<div style="font-size:10px;color:#aaa;margin-bottom:3px">' + (m.date||'') + '</div>'
+        + '<div style="display:flex;align-items:stretch;gap:4px">'
+          + '<div style="flex:1;display:flex;flex-direction:column;gap:0">'
+            + '<div style="display:flex;align-items:center;gap:3px">'
+              + '<img src="' + home.logo + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
+              + '<span style="font-size:13px;font-weight:600;color:#228B22;cursor:pointer" onclick="showTeamDetail(\'' + home.id + '\')">' + home.name + '</span>'
+            + '</div>'
+            + homeDetail
+          + '</div>'
+          + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px">'
+            + '<span style="font-size:9px;color:' + (isCompleted?'#2E7D32':'#E65100') + ';margin-bottom:1px">' + (isCompleted?'\u5DF2\u7ED3\u675F':'\u5F85\u8FDB\u884C') + '</span>'
+            + (isCompleted
+              ? (state.currentUser && state.currentUser.isSuperAdmin
+                ? '<div class="match-score" style="cursor:pointer" onclick="showEnterMatchModal(\'' + m.id + '\')"><span>' + m.homeScore + '</span><span class="dash">-</span><span>' + m.awayScore + '</span></div>'
+                : '<div class="match-score"><span>' + m.homeScore + '</span><span class="dash">-</span><span>' + m.awayScore + '</span></div>')
+              : '<span style="font-size:20px">\u2694\uFE0F</span>')
+          + '</div>'
+          + '<div style="flex:1;display:flex;flex-direction:column;gap:0;align-items:flex-end">'
+            + '<div style="display:flex;align-items:center;gap:3px">'
+              + '<span style="font-size:13px;font-weight:600;color:#228B22;cursor:pointer" onclick="showTeamDetail(\'' + away.id + '\')">' + away.name + '</span>'
+              + '<img src="' + away.logo + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
+            + '</div>'
+            + awayDetail
+          + '</div>'
+        + '</div>'
+        + enterBtn
+      + '</div>';
+    });
+  });
+  
+  if (!html) {
+    html = '<div class="empty-state"><div class="empty-state-emoji">\uD83D\uDCC5</div><div class="empty-state-text">\u6682\u65E0\u8D5B\u7A0B\u6570\u636E</div></div>';
+  }
+  container.innerHTML = html;
+}
+
+function renderMatchScorers(m) {
+  if (!m.scorers || m.scorers.length === 0) return '';
+  
+  const homeGoals = m.scorers.filter(s => s.teamId === m.homeTeam);
+  const awayGoals = m.scorers.filter(s => s.teamId === m.awayTeam);
+  const homeAssists = m.assists ? m.assists.filter(a => a.teamId === m.homeTeam) : [];
+  const awayAssists = m.assists ? m.assists.filter(a => a.teamId === m.awayTeam) : [];
+  
+  let html = '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:12px;color:var(--text-secondary)">';
+  
+  // Home team goals
+  if (homeGoals.length > 0) {
+    html += '<div><strong>主队进球:</strong> ';
+    html += homeGoals.map(s => {
+      const team = state.teams.find(t => t.id === s.teamId);
+      const player = team ? team.players.find(p => p.id === s.playerId) : null;
+      return `${player ? player.name : s.playerId}${s.minute ? s.minute + "'" : ''}`;
+    }).join(', ');
+    html += '</div>';
+  }
+  
+  // Home team assists
+  if (homeAssists.length > 0) {
+    html += '<div><strong>主队助攻:</strong> ';
+    html += homeAssists.map(a => {
+      const team = state.teams.find(t => t.id === a.teamId);
+      const player = team ? team.players.find(p => p.id === a.playerId) : null;
+      return `${player ? player.name : a.playerId}`;
+    }).join(', ');
+    html += '</div>';
+  }
+  
+  // Away team goals
+  if (awayGoals.length > 0) {
+    html += '<div><strong>客队进球:</strong> ';
+    html += awayGoals.map(s => {
+      const team = state.teams.find(t => t.id === s.teamId);
+      const player = team ? team.players.find(p => p.id === s.playerId) : null;
+      return `${player ? player.name : s.playerId}${s.minute ? s.minute + "'" : ''}`;
+    }).join(', ');
+    html += '</div>';
+  }
+  
+  // Away team assists
+  if (awayAssists.length > 0) {
+    html += '<div><strong>客队助攻:</strong> ';
+    html += awayAssists.map(a => {
+      const team = state.teams.find(t => t.id === a.teamId);
+      const player = team ? team.players.find(p => p.id === a.playerId) : null;
+      return `${player ? player.name : a.playerId}`;
+    }).join(', ');
+    html += '</div>';
+  }
+  
+  html += '</div>';
+  return html;
+}
+
+function renderStats() {
+  const league = state.currentLeague;
+  
+  let currentTab = 'goals';
+
+  // Initial render
+  renderStatsTab(currentTab);
+
+  // Tab click handler
+  document.querySelectorAll('.stats-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.stats-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentTab = tab.dataset.tab;
+      renderStatsTab(currentTab);
+    });
+  });
+
+  function renderStatsTab(type) {
+    window.currentStatsTab = type;
+    const container = document.getElementById('statsContent');
+    let players = [];
+    if (type === 'goals') {
+      players = getTopScorers(20, league);
+    } else if (type === 'assists') {
+      players = getTopAssists(20, league);
+    } else if (type === 'motm') {
+      players = getTopMotm(20, league);
+    }
+    container.innerHTML = renderScorersList(players, type);
+  }
+}
+
+function renderScorersList(players, type = 'goals') {
+  if (!players || players.length === 0) {
+    return '<div class="empty-state"><div class="empty-state-emoji">⚽</div><div class="empty-state-text">暂无数据</div></div>';
+  }
+
+  // 排序图标
+  const sortIcon = (col) => {
+    const currentSort = window.statsSortCol || type;
+    const currentDir = window.statsSortDir || 'desc';
+    if (currentSort !== col) return '';
+    return currentDir === 'desc' ? ' ↓' : ' ↑';
+  };
+
+  let html = '<table class="stats-table"><thead><tr>';
+  html += '<th class="sortable" onclick="sortStats(\'rank\')">#' + sortIcon('rank') + '</th>';
+  html += '<th class="sortable" onclick="sortStats(\'name\')">球员' + sortIcon('name') + '</th>';
+  html += '<th class="sortable" onclick="sortStats(\'team\')">球队' + sortIcon('team') + '</th>';
+  html += '<th class="sortable" onclick="sortStats(\'value\')">' + (type === 'goals' ? '进球' : type === 'assists' ? '助攻' : 'MVP次数') + sortIcon('value') + '</th>';
+  html += '</tr></thead><tbody>';
+
+  players.forEach((p, i) => {
+    const medal = i === 0 ? 'gold-medal' : i === 1 ? 'silver-medal' : i === 2 ? 'bronze-medal' : '';
+    const value = type === 'goals' ? p.goals : type === 'assists' ? p.assists : (p.motmCount || 0);
+    html += `<tr><td class="stats-rank ${medal}">${i + 1}</td><td><strong>${p.name}</strong></td><td><span class="team-name-clickable" onclick="showTeamDetail('${p.teamId}')">${p.teamName}</span></td><td><strong>${value}</strong></td></tr>`;
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
+function sortStats(col) {
+  const currentSort = window.statsSortCol || 'value';
+  const currentDir = window.statsSortDir || 'desc';
+
+  if (window.statsSortCol === col) {
+    window.statsSortDir = currentDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    window.statsSortCol = col;
+    window.statsSortDir = col === 'rank' ? 'asc' : 'desc';
+  }
+
+  // 获取当前tab类型
+  const currentTab = window.currentStatsTab || 'goals';
+  const container = document.getElementById('statsContent');
+  let players = [];
+  if (currentTab === 'goals') {
+    players = getTopScorers(20, state.currentLeague);
+  } else if (currentTab === 'assists') {
+    players = getTopAssists(20, state.currentLeague);
+  } else if (currentTab === 'motm') {
+    players = getTopMotm(20, state.currentLeague);
+  }
+
+  // 根据排序列排序
+  players.sort((a, b) => {
+    let valA, valB;
+    const type = currentTab;
+    const valueA = type === 'goals' ? a.goals : type === 'assists' ? a.assists : (a.motmCount || 0);
+    const valueB = type === 'goals' ? b.goals : type === 'assists' ? b.assists : (b.motmCount || 0);
+
+    switch(col) {
+      case 'name': valA = a.name; valB = b.name; break;
+      case 'team': valA = a.teamName; valB = b.teamName; break;
+      case 'value': valA = valueA; valB = valueB; break;
+      default: valA = valueA; valB = valueB;
+    }
+
+    if (typeof valA === 'string') {
+      return window.statsSortDir === 'desc' ? valB.localeCompare(valA) : valA.localeCompare(valB);
+    }
+    return window.statsSortDir === 'desc' ? valB - valA : valA - valB;
+  });
+
+  container.innerHTML = renderScorersList(players, currentTab);
+}
+
+// ============ CALCULATIONS ============
+function calculateStandings(teams) {
+  const standings = teams.map(t => ({
+    team: t,
+    played: 0, won: 0, draw: 0, lost: 0, gf: 0, ga: 0, points: 0
+  }));
+  
+  state.matches.filter(m => m.status === 'completed').forEach(m => {
+    const homeIdx = standings.findIndex(s => s.team.id === m.homeTeam);
+    const awayIdx = standings.findIndex(s => s.team.id === m.awayTeam);
+    if (homeIdx === -1 || awayIdx === -1) return;
+    
+    const home = standings[homeIdx];
+    const away = standings[awayIdx];
+    
+    home.played++;
+    away.played++;
+    home.gf += m.homeScore;
+    home.ga += m.awayScore;
+    away.gf += m.awayScore;
+    away.ga += m.homeScore;
+    
+    if (m.homeScore > m.awayScore) {
+      home.won++;
+      home.points += 3;
+      away.lost++;
+    } else if (m.homeScore < m.awayScore) {
+      away.won++;
+      away.points += 3;
+      home.lost++;
+    } else {
+      home.draw++;
+      away.draw++;
+      home.points++;
+      away.points++;
+    }
+  });
+  
+  standings.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    const gdA = a.gf - a.ga, gdB = b.gf - b.ga;
+    if (gdB !== gdA) return gdB - gdA;
+    return b.gf - a.gf;
+  });
+  
+  return standings;
+}
+
+function getTopScorers(limit = 10, league = 'super') {
+  const allPlayers = [];
+  state.teams.filter(t => t.league === league).forEach(t => {
+    t.players.forEach(p => {
+      if (p.goals > 0) {
+        allPlayers.push({ ...p, teamId: t.id, teamName: t.name, teamShortName: t.shortName, logo: t.logo });
+      }
+    });
+  });
+  return allPlayers.sort((a, b) => b.goals - a.goals).slice(0, limit);
+}
+
+function getTopAssists(limit = 10, league = 'super') {
+  const allPlayers = [];
+  state.teams.filter(t => t.league === league).forEach(t => {
+    t.players.forEach(p => {
+      if (p.assists > 0) {
+        allPlayers.push({ ...p, teamId: t.id, teamName: t.name, teamShortName: t.shortName, logo: t.logo });
+      }
+    });
+  });
+  return allPlayers.sort((a, b) => b.assists - a.assists).slice(0, limit);
+}
+
+function getTopMotm(limit = 10, league = 'super') {
+  const allPlayers = [];
+  state.teams.filter(t => t.league === league).forEach(t => {
+    t.players.forEach(p => {
+      if (p.motmCount && p.motmCount > 0) {
+        allPlayers.push({ ...p, teamId: t.id, teamName: t.name, teamShortName: t.shortName, logo: t.logo });
+      }
+    });
+  });
+  return allPlayers.sort((a, b) => b.motmCount - a.motmCount).slice(0, limit);
+}
+
+// ============ MODALS ============
+function showModal(content) {
+  document.getElementById('modalContent').innerHTML = content;
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+
+function showTeamDetail(teamId) {
+  const team = state.teams.find(t => t.id === teamId);
+  if (!team) return;
+
+  // 获取该队所有比赛
+  const teamMatches = state.matches.filter(m => m.homeTeam === teamId || m.awayTeam === teamId);
+  
+  // 按轮次排序
+  teamMatches.sort((a, b) => (a.round || 0) - (b.round || 0));
+
+  // 生成赛程HTML - 采用赛程页对阵模式
+  let matchesHtml = teamMatches.map(m => {
+    const opponent = m.homeTeam === teamId ? state.teams.find(t => t.id === m.awayTeam) : state.teams.find(t => t.id === m.homeTeam);
+    const isHome = m.homeTeam === teamId;
+    const homeScore = m.homeScore || 0;
+    const awayScore = m.awayScore || 0;
+    const teamScore = isHome ? homeScore : awayScore;
+    const oppScore = isHome ? awayScore : homeScore;
+    const isCompleted = m.status === 'completed';
+    
+    // 计算结果
+    let resultColor = '';
+    if (isCompleted) {
+      if (teamScore > oppScore) resultColor = '#4caf50';
+      else if (teamScore < oppScore) resultColor = '#f44336';
+      else resultColor = '#ff9800';
+    }
+
+    // 获取进球助攻
+    const teamGoals = isCompleted && m.scorers ? m.scorers.filter(s => s.teamId === teamId).map(s => {
+      const p = team.players.find(x => x.id === s.playerId);
+      return p ? p.name : '';
+    }).filter(Boolean).join(', ') : '';
+    const teamAssists = isCompleted && m.assists ? m.assists.filter(a => a.teamId === teamId).map(a => {
+      const p = team.players.find(x => x.id === a.playerId);
+      return p ? p.name : '';
+    }).filter(Boolean).join(', ') : '';
+
+    const teamDetail = isCompleted && (teamGoals || teamAssists)
+      ? `<div style="font-size:9px;color:#666;line-height:1.2">${teamGoals ? '⚽' + teamGoals : ''}${teamGoals && teamAssists ? ' ' : ''}${teamAssists ? '👟' + teamAssists : ''}</div>` : '';
+
+    // 判断是否可以录入（管理员或相关球队）
+    const canEnter = state.currentUser && (state.currentUser.isSuperAdmin || state.currentUser.teamId === m.homeTeam || state.currentUser.teamId === m.awayTeam);
+    const enterAttr = canEnter ? `onclick="closeModal();setTimeout(()=>showEnterMatchModal('${m.id}'),100)" style="cursor:pointer"` : '';
+
+    return `
+    <div class="team-match-row" ${enterAttr}>
+      <div class="tm-round">第${m.round}轮</div>
+      <div class="tm-teams">
+        <div class="tm-team ${isHome ? 'highlight' : ''}">
+          <img src="${isHome ? team.logo : (opponent ? opponent.logo : '')}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
+          <span>${isHome ? team.name : (opponent ? opponent.name : '未知')}</span>
+        </div>
+        <div class="tm-score-area">
+          ${isCompleted
+            ? `<span class="tm-score" style="${teamScore > oppScore ? 'font-weight:700;color:#4caf50' : teamScore < oppScore ? '' : ''}">${isHome ? teamScore : oppScore}</span><span class="tm-dash">-</span><span class="tm-score">${isHome ? oppScore : teamScore}</span>`
+            : '<span style="font-size:16px">⚔️</span>'}
+        </div>
+        <div class="tm-team ${!isHome ? 'highlight' : ''}">
+          <span>${isHome ? (opponent ? opponent.name : '未知') : team.name}</span>
+          <img src="${isHome ? (opponent ? opponent.logo : '') : team.logo}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
+        </div>
+      </div>
+      <div class="tm-detail">${teamDetail}</div>
+    </div>
+  `;
+  }).join('');
+
+  // 计算球员平均得分
+  const getPlayerAvgRating = (playerId) => {
+    let totalRating = 0;
+    let gameCount = 0;
+    state.matches.forEach(m => {
+      if (m.status === 'completed') {
+        const isInMatch = m.scorers && m.scorers.some(s => s.playerId === playerId);
+        const isMotm = m.motm === playerId;
+        if (isInMatch || isMotm) {
+          gameCount++;
+          const player = team.players.find(p => p.id === playerId);
+          if (player && player.rating) {
+            totalRating += player.rating;
+          }
+        }
+      }
+    });
+    if (gameCount === 0) return 0;
+    return totalRating / gameCount;
+  };
+
+  const sortedPlayers = [...team.players].sort((a, b) => (b.goals || 0) - (a.goals || 0));
+
+  // 生成球员列表HTML（带排序功能）
+  const generatePlayersHtml = (sortBy) => {
+    let sorted;
+    switch(sortBy) {
+      case 'goals':
+        sorted = [...team.players].sort((a, b) => (b.goals || 0) - (a.goals || 0));
+        break;
+      case 'assists':
+        sorted = [...team.players].sort((a, b) => (b.assists || 0) - (a.assists || 0));
+        break;
+      case 'motm':
+        sorted = [...team.players].sort((a, b) => (b.motmCount || 0) - (a.motmCount || 0));
+        break;
+      case 'number':
+      default:
+        sorted = [...team.players].sort((a, b) => (a.number || 0) - (b.number || 0));
+    }
+    return sorted.map(p => `
+      <div class="player-row">
+        <span class="player-num">${p.number}</span>
+        <span class="player-nm">${p.name}</span>
+        <span class="player-st">⚽${p.goals || 0} 👟${p.assists || 0} ⭐${p.motmCount || 0}</span>
+      </div>
+    `).join('');
+  };
+
+  const assistantDisplay = team.assistantCoaches && team.assistantCoaches.length > 0 ? '<span class="coach-assistant">助理教练：' + team.assistantCoaches.join('、') + '</span>' : '';
+  const content = `
+    <style>
+      .team-match-row{padding:4px 8px;border-bottom:1px solid #f0f0f0;line-height:1.3;cursor:default}
+      .team-match-row[cursor\:pointer]{cursor:pointer}
+      .team-match-row:last-child{border-bottom:none}
+      .tm-round{font-size:10px;color:#999;margin-bottom:2px}
+      .tm-teams{display:flex;align-items:center;gap:4px}
+      .tm-team{display:flex;align-items:center;gap:3px;flex:1;font-size:12px}
+      .tm-team.highlight{font-weight:600;color:#228B22}
+      .tm-team:first-child{justify-content:flex-end}
+      .tm-team:last-child{justify-content:flex-start}
+      .tm-score-area{display:flex;align-items:center;gap:2px;min-width:60px;justify-content:center}
+      .tm-score{font-size:13px;font-weight:600}
+      .tm-dash{color:#ccc}
+      .tm-detail{text-align:center;font-size:9px;color:#888;margin-top:1px}
+      .player-row{display:flex;align-items:center;padding:3px 6px;border-bottom:1px solid #f5f5f5}
+      .player-row:last-child{border-bottom:none}
+      .player-num{width:24px;font-size:11px;color:#999}
+      .player-nm{flex:1;font-size:12px;font-weight:500}
+      .player-st{font-size:10px;color:#666}
+      .sort-btns{display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap}
+      .sort-btn{font-size:11px;padding:3px 8px;border-radius:12px;border:1px solid #ddd;background:#fff;cursor:pointer}
+      .sort-btn.active{background:#228B22;color:#fff;border-color:#228B22}
+    </style>
+    <div class="modal-header">
+      <div class="modal-title"><img src="${team.logo}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;margin-right:8px" onerror="this.style.display='none'">${team.name} <span class="modal-league">联赛: ${LEAGUE_NAMES[team.league]}</span></div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="form-group">
+      <div class="coach-info"><span class="coach-main">主教练：${team.coach}</span>${assistantDisplay}</div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">📅 赛程战绩</div>
+      <div style="max-height:220px;overflow-y:auto">${matchesHtml || '<div class="empty-state"><div class="empty-state-emoji">📅</div><div class="empty-state-text">暂无赛程</div></div>'}</div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">👥 球员名单（${team.players.length}人）</div>
+      <div class="sort-btns">
+        <button class="sort-btn active" onclick="sortTeamPlayers('number')">号码</button>
+        <button class="sort-btn" onclick="sortTeamPlayers('goals')">进球</button>
+        <button class="sort-btn" onclick="sortTeamPlayers('assists')">助攻</button>
+        <button class="sort-btn" onclick="sortTeamPlayers('motm')">MVP</button>
+      </div>
+      <div id="teamPlayersList" style="max-height:260px;overflow-y:auto">${generatePlayersHtml('number')}</div>
+    </div>
+    <button class="btn btn-secondary btn-full" onclick="closeModal()">关闭</button>
+  `;
+  showModal(content);
+
+  // 排序函数
+  window.sortTeamPlayers = (sortBy) => {
+    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    let sorted;
+    switch(sortBy) {
+      case 'goals':
+        sorted = [...team.players].sort((a, b) => (b.goals || 0) - (a.goals || 0));
+        break;
+      case 'assists':
+        sorted = [...team.players].sort((a, b) => (b.assists || 0) - (a.assists || 0));
+        break;
+      case 'motm':
+        sorted = [...team.players].sort((a, b) => (b.motmCount || 0) - (a.motmCount || 0));
+        break;
+      case 'number':
+      default:
+        sorted = [...team.players].sort((a, b) => (a.number || 0) - (b.number || 0));
+    }
+    const html = sorted.map(p => `
+      <div class="player-row">
+        <span class="player-num">${p.number}</span>
+        <span class="player-nm">${p.name}</span>
+        <span class="player-st">⚽${p.goals || 0} 👟${p.assists || 0} ⭐${p.motmCount || 0}</span>
+      </div>
+    `).join('');
+    document.getElementById('teamPlayersList').innerHTML = html;
+  };
+}
+
+function showEnterMatchModal(matchId) {
+  const match = state.matches.find(m => m.id === matchId);
+  if (!match) return;
+
+  const homeTeam = state.teams.find(t => t.id === match.homeTeam);
+  const awayTeam = state.teams.find(t => t.id === match.awayTeam);
+  const isEdit = match.status === 'completed';
+
+  let homePlayers = [...homeTeam.players].sort((a,b) => a.name.localeCompare(b.name,'zh-CN'));
+  let awayPlayers = [...awayTeam.players].sort((a,b) => a.name.localeCompare(b.name,'zh-CN'));
+
+  // 计算已有进球助攻数
+  const getGoalCount = (pid, teamId) => {
+    if (!match.scorers) return 0;
+    return match.scorers.filter(s => s.playerId === pid && s.teamId === teamId).length;
+  };
+  const getAssistCount = (pid, teamId) => {
+    if (!match.assists) return 0;
+    return match.assists.filter(a => a.playerId === pid && a.teamId === teamId).length;
+  };
+
+  const homeGoalsHtml = homePlayers.map(p => '<div class="pr"><span>'+p.name+'</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="'+p.id+'" data-goal="home" value="'+getGoalCount(p.id, match.homeTeam)+'" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>').join('');
+  const homeAssistsHtml = homePlayers.map(p => '<div class="pr"><span>'+p.name+'</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="'+p.id+'" data-ast="home" value="'+getAssistCount(p.id, match.homeTeam)+'" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>').join('');
+  const awayGoalsHtml = awayPlayers.map(p => '<div class="pr"><span>'+p.name+'</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="'+p.id+'" data-goal="away" value="'+getGoalCount(p.id, match.awayTeam)+'" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>').join('');
+  const awayAssistsHtml = awayPlayers.map(p => '<div class="pr"><span>'+p.name+'</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="'+p.id+'" data-ast="away" value="'+getAssistCount(p.id, match.awayTeam)+'" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>').join('');
+
+  // MVP选中状态
+  const motmId = match.motm || '';
+  const homeMotmHtml = homePlayers.map(p => '<div class="mr'+(motmId===p.id?' selected':'')+'" onclick="selMotm(this,\''+p.id+'\')"><span>'+p.name+'</span></div>').join('');
+  const awayMotmHtml = awayPlayers.map(p => '<div class="mr'+(motmId===p.id?' selected':'')+'" onclick="selMotm(this,\''+p.id+'\')"><span>'+p.name+'</span></div>').join('');
+
+  const style = '<style>.pr{display:flex;align-items:center;justify-content:space-between;padding:3px 4px;border-bottom:1px solid #eee}.pr:last-child{border-bottom:none}.pc{display:flex;align-items:center;gap:2px}.bm,.bp{width:24px;height:24px;border-radius:50%;font-size:14px;font-weight:bold;cursor:pointer;border:none}.bm{background:#f5f5f5;color:#666}.bp{background:#228B22;color:#fff}.pv{width:28px;text-align:center;font-size:14px;font-weight:600;border:1px solid #228B22;border-radius:4px;padding:2px;background:#f8fff8}.mtb{background:#fff;border:2px solid #ddd;border-radius:20px;padding:5px 10px;font-size:12px;cursor:pointer}.mtb.active{background:#228B22;border-color:#228B22;color:#fff}.mr{display:flex;align-items:center;justify-content:space-between;padding:2px 4px;border-bottom:1px solid #eee;cursor:pointer;font-size:13px}.mr:last-child{border-bottom:none}.mr.selected{background:#e8f5e9;color:#228B22;font-weight:600}.mc{flex:1;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px;margin:0 2px}.mct{text-align:center;font-weight:700;font-size:13px;padding:4px;background:#228B22;color:#fff;border-radius:4px 4px 0 0}</style>';
+
+  const header = '<div class="modal-header"><div class="modal-title">'+(isEdit?'✏️ 修改比赛结果':'✏️ 录入比赛结果')+'</div><button class="modal-close" onclick="closeModal()">×</button></div>';
+
+  const score = '<div style="text-align:center;padding:8px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:8px"><span style="font-size:15px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+homeTeam.name+'</span><img src="'+homeTeam.logo+'" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><input type="number" id="homeScore" value="'+(match.homeScore||0)+'" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid #228B22;border-radius:4px">:<input type="number" id="awayScore" value="'+(match.awayScore||0)+'" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid #228B22;border-radius:4px"><img src="'+awayTeam.logo+'" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><span style="font-size:15px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+awayTeam.name+'</span></div>';
+
+  const tabs = '<div style="display:flex;gap:2px;overflow-x:auto;padding:2px 0;scrollbar-width:none"><button type="button" class="mtb active" data-tab="hg">⚽ 主队进球</button><button type="button" class="mtb" data-tab="ha">👟 主队助攻</button><button type="button" class="mtb" data-tab="ag">⚽ 客队进球</button><button type="button" class="mtb" data-tab="aa">👟 客队助攻</button><button type="button" class="mtb" data-tab="motm">⭐ 最佳球员</button></div>';
+
+  const panels = '<div id="tab-hg" class="tp" style="max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">'+homeGoalsHtml+'</div><div id="tab-ha" class="tp" style="display:none;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">'+homeAssistsHtml+'</div><div id="tab-ag" class="tp" style="display:none;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">'+awayGoalsHtml+'</div><div id="tab-aa" class="tp" style="display:none;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">'+awayAssistsHtml+'</div><div id="tab-motm" class="tp" style="display:none"><div style="display:flex;gap:4px"><div class="mc"><div class="mct">'+homeTeam.name+'</div><div>'+homeMotmHtml+'</div></div><div class="mc"><div class="mct">'+awayTeam.name+'</div><div>'+awayMotmHtml+'</div></div></div><input type="hidden" id="motm" value="'+motmId+'"></div>';
+
+  const submitBtn = '<button type="button" class="btn btn-primary btn-full" style="margin-top:8px;padding:10px;font-size:14px" id="saveMatchBtn">'+(isEdit?'更新比赛结果':'保存比赛结果')+'</button>';
+
+  const content = style + header + score + '<form id="matchForm">' + tabs + panels + submitBtn + '</form>';
+  showModal(content);
+
+  window.adjInp = function(btn, d) {
+    const inp = btn.parentElement.querySelector('.pv');
+    let v = parseInt(inp.value) || 0;
+    v = Math.max(0, v + d);
+    inp.value = v;
+    inp.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  window.selMotm = function(row, pid) {
+    document.querySelectorAll('.mr').forEach(r => r.classList.remove('selected'));
+    row.classList.add('selected');
+    document.getElementById('motm').value = pid;
+  };
+
+  document.querySelectorAll('.mtb').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.mtb').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      document.querySelectorAll('.tp').forEach(p => p.style.display = 'none');
+      document.getElementById('tab-' + this.dataset.tab).style.display = 'block';
+    });
+  });
+
+  document.querySelectorAll('[data-goal]').forEach(inp => {
+    inp.addEventListener('input', function() {
+      let hg = 0, ag = 0;
+      document.querySelectorAll('[data-goal="home"]').forEach(i => hg += parseInt(i.value) || 0);
+      document.querySelectorAll('[data-goal="away"]').forEach(i => ag += parseInt(i.value) || 0);
+      document.getElementById('homeScore').value = hg;
+      document.getElementById('awayScore').value = ag;
+    });
+  });
+
+  window.currentMatchId = matchId;
+  window.isEditing = isEdit;
+  
+  window.submitMatch = function() {
+    try {
+      submitMatchResult(window.currentMatchId);
+    } catch(err) {
+      alert('错误: ' + err.message);
+    }
+  };
+  
+  document.getElementById('saveMatchBtn').onclick = function() {
+    window.submitMatch();
+  };
+}
+
+function submitMatchResult(matchId) {
+  alert('开始保存...');
+  const match = state.matches.find(m => m.id === matchId);
+  if (!match) { alert('比赛未找到'); return; }
+  alert('比赛找到: ' + match.id);
+
+  const homeScore = parseInt(document.getElementById('homeScore').value) || 0;
+  const awayScore = parseInt(document.getElementById('awayScore').value) || 0;
+  const motmId = document.getElementById('motm').value;
+  alert('比分: ' + homeScore + ' - ' + awayScore);
+
+  const homeTeam = state.teams.find(t => t.id === match.homeTeam);
+  const awayTeam = state.teams.find(t => t.id === match.awayTeam);
+  if (!homeTeam || !awayTeam) { alert('球队未找到'); return; }
+  alert('球队: ' + homeTeam.name + ' vs ' + awayTeam.name);
+
+  const isEdit = window.isEditing;
+  
+  // 直接使用super联赛
+  let league = 'super';
+  
+  // 确保积分榜存在
+  if (!state.standings) { 
+    state.standings = {super: [], a: [], b: []};
+  }
+  if (!state.standings['super']) {
+    state.standings['super'] = [];
+  }
+  
+  // 如果积分榜为空，初始化
+  if (state.standings['super'].length === 0) {
+    state.teams.forEach(t => {
+      if (t.league === 'super' || !t.league) {
+        state.standings['super'].push({
+          teamId: t.id,
+          played: 0, won: 0, draw: 0, lost: 0,
+          gf: 0, ga: 0, gd: 0, points: 0
+        });
+      }
+    });
+  }
+  
+  const hs = state.standings['super'].find(s => s.teamId === match.homeTeam);
+  const as = state.standings['super'].find(s => s.teamId === match.awayTeam);
+  
+  // 如果积分榜中没找到，添加
+  if (!hs) {
+    state.standings['super'].push({
+      teamId: match.homeTeam,
+      played: 0, won: 0, draw: 0, lost: 0,
+      gf: 0, ga: 0, gd: 0, points: 0
+    });
+  }
+  if (!as) {
+    state.standings['super'].push({
+      teamId: match.awayTeam,
+      played: 0, won: 0, draw: 0, lost: 0,
+      gf: 0, ga: 0, gd: 0, points: 0
+    });
+  }
+  
+  const hs2 = state.standings['super'].find(s => s.teamId === match.homeTeam);
+  const as2 = state.standings['super'].find(s => s.teamId === match.awayTeam);
+
+  if (isEdit && hs2 && as2) {
+    // 还原积分榜
+    const oldHomeScore = match.homeScore || 0;
+    const oldAwayScore = match.awayScore || 0;
+    hs2.played--;
+    as2.played--;
+    hs2.gf -= oldHomeScore;
+    hs2.ga -= oldAwayScore;
+    as2.gf -= oldAwayScore;
+    as2.ga -= oldHomeScore;
+    hs2.gd = hs2.gf - hs2.ga;
+    as2.gd = as2.gf - as2.ga;
+    if (oldHomeScore > oldAwayScore) { hs2.won--; hs2.points -= 3; as2.lost--; }
+    else if (oldHomeScore < oldAwayScore) { as2.won--; as2.points -= 3; hs2.lost--; }
+    else { hs2.draw--; hs2.points--; as2.draw--; as2.points--; }
+
+    // 还原球员数据
+    if (match.scorers) {
+      match.scorers.forEach(s => {
+        const team = s.teamId === match.homeTeam ? homeTeam : awayTeam;
+        const p = team.players.find(x => x.id === s.playerId);
+        if (p) {
+          p.goals = (p.goals || 0) - 1;
+          p.gamesPlayed = (p.gamesPlayed || 0) - 1;
+        }
+      });
+    }
+    if (match.assists) {
+      match.assists.forEach(a => {
+        const team = a.teamId === match.homeTeam ? homeTeam : awayTeam;
+        const p = team.players.find(x => x.id === a.playerId);
+        if (p) {
+          p.assists = (p.assists || 0) - 1;
+          p.gamesPlayed = (p.gamesPlayed || 0) - 1;
+        }
+      });
+    }
+    if (match.motm) {
+      const motmP = [...homeTeam.players, ...awayTeam.players].find(x => x.id === match.motm);
+      if (motmP) motmP.motmCount = (motmP.motmCount || 0) - 1;
+    }
+  }
+
+  // 更新比赛数据
+  match.homeScore = homeScore;
+  match.awayScore = awayScore;
+  match.status = 'completed';
+  match.scorers = [];
+  match.assists = [];
+  match.motm = motmId || null;
+
+  // 添加新数据
+  document.querySelectorAll('[data-goal="home"]').forEach(inp => {
+    const g = parseInt(inp.value) || 0;
+    if (g > 0) {
+      const p = homeTeam.players.find(x => x.id === inp.dataset.pid);
+      if (p) {
+        p.goals = (p.goals || 0) + g;
+        p.gamesPlayed = (p.gamesPlayed || 0) + 1;
+        for (let i = 0; i < g; i++) match.scorers.push({ playerId: inp.dataset.pid, teamId: match.homeTeam, minute: null });
+      }
+    }
+  });
+
+  document.querySelectorAll('[data-goal="away"]').forEach(inp => {
+    const g = parseInt(inp.value) || 0;
+    if (g > 0) {
+      const p = awayTeam.players.find(x => x.id === inp.dataset.pid);
+      if (p) {
+        p.goals = (p.goals || 0) + g;
+        p.gamesPlayed = (p.gamesPlayed || 0) + 1;
+        for (let i = 0; i < g; i++) match.scorers.push({ playerId: inp.dataset.pid, teamId: match.awayTeam, minute: null });
+      }
+    }
+  });
+
+  document.querySelectorAll('[data-ast="home"]').forEach(inp => {
+    const a = parseInt(inp.value) || 0;
+    if (a > 0) {
+      const p = homeTeam.players.find(x => x.id === inp.dataset.pid);
+      if (p) {
+        p.assists = (p.assists || 0) + a;
+        p.gamesPlayed = (p.gamesPlayed || 0) + 1;
+        for (let i = 0; i < a; i++) match.assists.push({ playerId: inp.dataset.pid, teamId: match.homeTeam });
+      }
+    }
+  });
+
+  document.querySelectorAll('[data-ast="away"]').forEach(inp => {
+    const a = parseInt(inp.value) || 0;
+    if (a > 0) {
+      const p = awayTeam.players.find(x => x.id === inp.dataset.pid);
+      if (p) {
+        p.assists = (p.assists || 0) + a;
+        p.gamesPlayed = (p.gamesPlayed || 0) + 1;
+        for (let i = 0; i < a; i++) match.assists.push({ playerId: inp.dataset.pid, teamId: match.awayTeam });
+      }
+    }
+  });
+
+  if (motmId) {
+    const motmP = [...homeTeam.players, ...awayTeam.players].find(x => x.id === motmId);
+    if (motmP) motmP.motmCount = (motmP.motmCount || 0) + 1;
+  }
+
+  // 更新积分榜
+  if (hs2 && as2) {
+    hs2.played++; as2.played++;
+    hs2.gf += homeScore; hs2.ga += awayScore;
+    as2.gf += awayScore; as2.ga += homeScore;
+    hs2.gd = hs2.gf - hs2.ga; as2.gd = as2.gf - as2.ga;
+    if (homeScore > awayScore) { hs2.won++; hs2.points += 3; as2.lost++; }
+    else if (homeScore < awayScore) { as2.won++; as2.points += 3; hs2.lost++; }
+    else { hs2.draw++; as2.draw++; hs2.points++; as2.points++; }
+  }
+
+  alert('保存中...');
+  saveState();
+  closeModal();
+  render();
+  showToast(isEdit ? '比赛结果已更新！' : '比赛结果已保存！');
+  alert('保存完成！');
+}
+
+
+function showLoginModal() {
+  const content = `
+    <div class="modal-header">
+      <div class="modal-title">🔑 教练登录</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <form id="loginForm">
+      <div class="form-group">
+        <div class="form-label">选择球队</div>
+        <select class="form-select" id="loginTeamId" required>
+          <option value="">-- 选择你的球队 --</option>
+          <option value="laubob">👑 超级管理员</option>
+          <option value="laubob">👑 超级管理员</option>
+          ${state.teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <div class="form-label">密码</div>
+        <input type="password" class="form-input" id="loginPassword" placeholder="请输入密码" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">登录</button>
+      <div style="margin-top:12px;font-size:12px;color:var(--text-secondary);text-align:center">
+        默认密码: 123456
+      </div>
+    </form>
+  `;
+  showModal(content);
+  
+  document.getElementById('loginForm').onsubmit = (e) => {
+    e.preventDefault();
+    const teamId = document.getElementById('loginTeamId').value;
+    const password = document.getElementById('loginPassword').value;
+
+    // 超级管理员登录
+    if (teamId === 'laubob' && password === 'i981456981456') {
+      state.currentUser = { teamId: 'laubob', teamName: '超级管理员', coachName: 'laubob', isSuperAdmin: true };
+      saveState();
+      closeModal();
+      updateSidebar();
+      render();
+      showToast('欢迎，超级管理员！');
+    } else if (password === '123456') {
+      const team = state.teams.find(t => t.id === teamId);
+      if (team) {
+        state.currentUser = { teamId, teamName: team.name, coachName: team.coach };
+        saveState();
+        closeModal();
+        updateSidebar();
+        render();
+        showToast(`欢迎, ${team.coach}！`);
+      } else {
+        showToast('球队不存在！');
+      }
+    } else {
+      showToast('密码错误！');
+    }
+  };
+}
+
+function logout() {
+  state.currentUser = null;
+  saveState();
+  updateSidebar();
+  render();
+  showToast('已退出登录');
+}
+
+// ============ NAVIGATION ============
+function updateNavAndHeader() {
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.page === state.currentPage);
+  });
+  
+  // Update header tabs
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.page === state.currentPage);
+  });
+  
+  // Update page title
+  const titles = { home: 'PGM足球经理', standings: '积分榜', teams: '球队列表', schedule: '赛程', stats: '数据榜单' };
+  document.getElementById('pageTitle').textContent = titles[state.currentPage] || 'PGM官方联赛';
+  
+  // Show/hide pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const pageEl = document.getElementById(state.currentPage + 'Page');
+  if (pageEl) pageEl.classList.add('active');
+}
+
+function updateSidebar() {
+  const loginBtn = document.getElementById("btnLogin");
+  const sidebarLoginBtn = document.getElementById("sidebarLoginBtn");
+  const logoutBtn = document.getElementById("btnLogout");
+  const adminImportBtn = document.getElementById("btnAdminImport");
+  const userName = document.getElementById("sidebarUserName");
+  const userRole = document.getElementById("sidebarUserRole");
+
+  if (state.currentUser) {
+    if (loginBtn) loginBtn.style.display = "none";
+    if (sidebarLoginBtn) sidebarLoginBtn.style.display = "none";
+    logoutBtn.style.display = 'flex';
+    userName.textContent = state.currentUser.coachName;
+    userRole.textContent = state.currentUser.isSuperAdmin ? '超级管理员' : (state.currentUser.teamName + ' 主教练');
+    // 超级管理员显示导入按钮
+    if (adminImportBtn) {
+      adminImportBtn.style.display = state.currentUser.isSuperAdmin ? 'flex' : 'none';
+    }
+  } else {
+    if (loginBtn) loginBtn.style.display = "flex";
+    if (sidebarLoginBtn) sidebarLoginBtn.style.display = "flex";
+    logoutBtn.style.display = 'none';
+    if (adminImportBtn) adminImportBtn.style.display = 'none';
+    userName.textContent = 'PGM足球经理';
+    userRole.textContent = '官方联赛';
+  }
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 2500);
+}
+
+// ============ 超级管理员导入功能 ============
+function showAdminImportModal() {
+  if (!state.currentUser || !state.currentUser.isSuperAdmin) {
+    showToast('需要超级管理员权限');
+    return;
+  }
+  
+  const content = `
+    <div class="modal-header">
+      <div class="modal-title">⚙️ 超级管理员 - 数据导入</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="admin-import-container" style="max-height:70vh;overflow-y:auto">
+      <div class="import-section">
+        <div class="import-section-title">📋 导入联赛分组球队</div>
+        <div class="import-desc">导入新赛季联赛分组和球队名单，会覆盖现有数据</div>
+        <div class="format-example">
+          <div class="format-label">📝 格式说明：</div>
+          <pre class="format-code">{
+  "super": ["球队名1", "球队名2", "球队名3", ...],
+  "jiaEast": ["球队名1", "球队名2", ...],
+  "jiaWest": ["球队名1", "球队名2", ...],
+  "yiEast": ["球队名1", "球队名2", ...],
+  "yiWest": ["球队名1", "球队名2", ...]
+}</pre>
+          <div class="format-tips">💡 提示：球队顺序即为索引，索引从0开始，用于赛程配置</div>
+        </div>
+        <textarea id="importTeamsJson" class="import-textarea" placeholder='粘贴JSON数据...'></textarea>
+        <button class="btn btn-primary btn-full" onclick="importLeagueTeams()">导入联赛分组球队</button>
+      </div>
+      
+      <div class="import-section">
+        <div class="import-section-title">👥 导入球队球员名单</div>
+        <div class="import-desc">导入指定球队的球员名单，会覆盖该队现有球员</div>
+        <div class="form-group">
+          <select id="importTeamSelect" class="form-select">
+            <option value="">选择球队</option>
+            ${state.teams.map(t => `<option value="${t.id}">${t.name} (${LEAGUE_NAMES[t.league]})</option>`).join('')}
+          </select>
+        </div>
+        <div class="format-example">
+          <div class="format-label">📝 格式说明：</div>
+          <pre class="format-code">[
+  {"number": 1, "name": "门将姓名", "position": "GK"},
+  {"number": 2, "name": "后卫姓名", "position": "DF"},
+  {"number": 10, "name": "中场姓名", "position": "MF"},
+  {"number": 9, "name": "前锋姓名", "position": "FW"},
+  ...
+]</pre>
+          <div class="format-tips">💡 position可选：GK(门将) DF(后卫) MF(中场) FW(前锋)</div>
+        </div>
+        <textarea id="importPlayersJson" class="import-textarea" placeholder='粘贴JSON数据...'></textarea>
+        <button class="btn btn-primary btn-full" onclick="importTeamPlayers()">导入球员名单</button>
+      </div>
+      
+      <div class="import-section">
+        <div class="import-section-title">📅 导入赛程表</div>
+        <div class="import-desc">导入指定联赛的完整赛程，会覆盖现有赛程</div>
+        <div class="form-group">
+          <select id="importLeagueSelect" class="form-select">
+            <option value="">选择联赛</option>
+            <option value="super">超级联赛 (12队/22轮)</option>
+            <option value="jiaEast">甲级东 (12队/22轮)</option>
+            <option value="jiaWest">甲级西 (12队/22轮)</option>
+            <option value="yiEast">乙级东 (12队/22轮)</option>
+            <option value="yiWest">乙级西 (12队/22轮)</option>
+          </select>
+        </div>
+        <div class="format-example">
+          <div class="format-label">📝 格式说明：</div>
+          <pre class="format-code">[
+  [{"h":0,"a":11}, {"h":5,"a":1}, {"h":8,"a":3}, ...],
+  [{"h":11,"a":0}, {"h":1,"a":5}, {"h":3,"a":8}, ...],
+  [{"h":1,"a":0}, {"h":3,"a":5}, {"h":7,"a":8}, ...],
+  ...共22轮
+]</pre>
+          <div class="format-tips">💡 h=主场球队索引, a=客场球队索引，索引从0开始</div>
+        </div>
+        <textarea id="importScheduleJson" class="import-textarea" placeholder='粘贴JSON数据...'></textarea>
+        <button class="btn btn-primary btn-full" onclick="importLeagueSchedule()">导入赛程</button>
+      </div>
+      
+      <div class="import-section" style="border-color: #f44336;">
+        <div class="import-section-title" style="color: #f44336;">🗑️ 清除所有数据</div>
+        <div class="import-desc">清除localStorage中的所有数据，重新初始化（不可恢复）</div>
+        <button class="btn btn-danger btn-full" onclick="resetAllData()" style="background:#f44336;border-color:#f44336">⚠️ 清除所有数据</button>
+      </div>
+    </div>
+    <style>
+      .admin-import-container{padding:0 16px 16px}
+      .import-section{margin-bottom:16px;padding:12px;border:1px solid #e0e0e0;border-radius:8px}
+      .import-section-title{font-size:14px;font-weight:700;margin-bottom:4px}
+      .import-desc{font-size:11px;color:#666;margin-bottom:8px}
+      .import-textarea{width:100%;height:80px;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:11px;font-family:monospace;resize:vertical}
+      .format-example{background:#f5f5f5;padding:8px;border-radius:4px;margin-bottom:8px}
+      .format-label{font-size:11px;font-weight:600;color:#333;margin-bottom:4px}
+      .format-code{font-size:10px;font-family:monospace;background:#fff;padding:8px;border-radius:4px;overflow-x:auto;white-space:pre-wrap;margin:0}
+      .format-tips{font-size:10px;color:#228B22;margin-top:4px}
+      .btn-danger{background:#f44336;color:#fff}
+    </style>
+  `;
+  showModal(content);
+}
+
+function importLeagueTeams() {
+  try {
+    const json = document.getElementById('importTeamsJson').value.trim();
+    if (!json) { showToast('请输入JSON数据'); return; }
+    
+    const data = JSON.parse(json);
+    if (typeof data !== 'object') { showToast('JSON格式错误'); return; }
+    
+    // 更新TEAM_NAMES
+    Object.assign(TEAM_NAMES, data);
+    
+    // 重新生成球队数据
+    state.teams = [];
+    const leagues = Object.keys(data);
+    let teamId = 0;
+    
+    leagues.forEach(league => {
+      data[league].forEach(teamName => {
+        const logo = TEAM_LOGOS[teamName] || '';
+        state.teams.push({
+          id: `t${teamId}`,
+          name: teamName,
+          shortName: teamName.slice(0, 6),
+          logo,
+          league,
+          coach: '待定',
+          assistantCoaches: [],
+          players: []
+        });
+        teamId++;
+      });
+    });
+    
+    // 重新生成积分榜和赛程
+    state.standings = {};
+    leagues.forEach(league => {
+      state.standings[league] = state.teams
+        .filter(t => t.league === league)
+        .map(t => ({
+          teamId: t.id,
+          played: 0, won: 0, draw: 0, lost: 0,
+          gf: 0, ga: 0, gd: 0, points: 0
+        }));
+    });
+    
+    state.matches = generateAllMatches();
+    state.currentLeague = leagues[0] || 'super';
+    
+    saveState();
+    closeModal();
+    render();
+    showToast('联赛分组球队导入成功！');
+  } catch(e) {
+    showToast('JSON解析错误: ' + e.message);
+  }
+}
+
+function importTeamPlayers() {
+  try {
+    const teamId = document.getElementById('importTeamSelect').value;
+    if (!teamId) { showToast('请选择球队'); return; }
+    
+    const json = document.getElementById('importPlayersJson').value.trim();
+    if (!json) { showToast('请输入JSON数据'); return; }
+    
+    const players = JSON.parse(json);
+    if (!Array.isArray(players)) { showToast('JSON格式错误，需要数组'); return; }
+    
+    const team = state.teams.find(t => t.id === teamId);
+    if (!team) { showToast('球队未找到'); return; }
+    
+    // 清空原有球员数据（保留统计数据）
+    const oldPlayers = team.players || [];
+    
+    team.players = players.map((p, i) => {
+      // 尝试匹配已有球员（按号码或姓名）
+      const existing = oldPlayers.find(op => op.number === p.number || op.name === p.name);
+      return {
+        id: `${teamId}_p${i}`,
+        number: p.number || i + 1,
+        name: p.name,
+        position: p.position || 'MF',
+        goals: existing ? (existing.goals || 0) : 0,
+        assists: existing ? (existing.assists || 0) : 0,
+        motmCount: existing ? (existing.motmCount || 0) : 0,
+        gamesPlayed: existing ? (existing.gamesPlayed || 0) : 0,
+        rating: existing ? (existing.rating || 0) : 0
+      };
+    });
+    
+    saveState();
+    closeModal();
+    render();
+    showToast(`已导入 ${players.length} 名球员到 ${team.name}`);
+  } catch(e) {
+    showToast('JSON解析错误: ' + e.message);
+  }
+}
+
+function importLeagueSchedule() {
+  try {
+    const league = document.getElementById('importLeagueSelect').value;
+    if (!league) { showToast('请选择联赛'); return; }
+    
+    const json = document.getElementById('importScheduleJson').value.trim();
+    if (!json) { showToast('请输入JSON数据'); return; }
+    
+    const schedule = JSON.parse(json);
+    if (!Array.isArray(schedule)) { showToast('JSON格式错误，需要数组'); return; }
+    
+    // 更新LEAGUE_FIXTURES
+    LEAGUE_FIXTURES[league] = schedule;
+    
+    // 重新生成该联赛的比赛
+    const existingMatches = state.matches.filter(m => {
+      const team = state.teams.find(t => t.id === m.homeTeam);
+      return team && team.league !== league;
+    });
+    
+    const leagueTeams = state.teams.filter(t => t.league === league);
+    const newMatches = [];
+    let matchId = state.matches.length + 1;
+    
+    for (let round = 0; round < schedule.length; round++) {
+      for (const fixture of schedule[round]) {
+        newMatches.push({
+          id: `m_${league}_${round}_${fixture.h}_${fixture.a}`,
+          round: round + 1,
+          homeTeam: leagueTeams[fixture.h]?.id,
+          awayTeam: leagueTeams[fixture.a]?.id,
+          homeScore: null,
+          awayScore: null,
+          scorers: [],
+          assists: [],
+          motm: null,
+          status: 'pending'
+        });
+      }
+    }
+    
+    state.matches = [...existingMatches, ...newMatches];
+    
+    saveState();
+    closeModal();
+    render();
+    showToast(`${league} 联赛赛程导入成功！`);
+  } catch(e) {
+    showToast('JSON解析错误: ' + e.message);
+  }
+}
+
+function resetAllData() {
+  if (!confirm('确定要清除所有数据吗？此操作不可恢复！')) return;
+  if (!confirm('再次确认：清除所有球队、球员、比赛数据？')) return;
+  
+  localStorage.removeItem('pgm_football_state');
+  location.reload();
+}
+
+// ============ EVENT LISTENERS ============
+document.getElementById('menuBtn').onclick = () => {
+  document.getElementById('sidebar').classList.toggle('active');
+  document.getElementById('sidebarOverlay').classList.toggle('active');
+};
+
+document.getElementById('sidebarOverlay').onclick = () => {
+  document.getElementById('sidebar').classList.remove('active');
+  document.getElementById('sidebarOverlay').classList.remove('active');
+};
+
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.onclick = () => {
+    state.currentPage = btn.dataset.page;
+    updateNavAndHeader();
+    render();
+  };
+});
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.onclick = () => {
+    state.currentPage = btn.dataset.page;
+    updateNavAndHeader();
+    render();
+  };
+});
+
+document.querySelectorAll('.league-chip').forEach(chip => {
+  chip.onclick = () => {
+    const selector = chip.parentElement;
+    selector.querySelectorAll('.league-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    state.currentLeague = chip.dataset.league;
+    render();
+  };
+});
+
+document.getElementById("btnLogin").onclick = () => showLoginModal();
+  document.getElementById("sidebarLoginBtn").onclick = () => showLoginModal();
+document.getElementById('sidebarLoginBtn').onclick = () => showLoginModal();
+document.getElementById('btnLogout').onclick = () => logout();
+document.getElementById('btnMyTeam').onclick = () => {
+  if (state.currentUser) {
+    showTeamDetail(state.currentUser.teamId);
+  } else {
+    showToast('请先登录');
+  }
+};
+document.getElementById('btnEnterMatch').onclick = () => {
+  if (state.currentUser) {
+    state.currentPage = 'schedule';
+    updateNavAndHeader();
+    render();
+  } else {
+    showToast('请先登录');
+  }
+};
+document.getElementById('btnAdminImport').onclick = () => showAdminImportModal();
+document.getElementById('btnSettings').onclick = () => {
+  showToast('设置功能开发中...');
+};
+
+document.getElementById('modalOverlay').onclick = (e) => {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+};
+
+// ============ INIT ============
+loadState();
+updateSidebar();
+render();
+
+// 注册 Service Worker 实现 PWA 离线功能
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(() => {
+    console.log('Service Worker 注册成功');
+  });
+}
+</script>
+</body>
+</html>
