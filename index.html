@@ -250,7 +250,7 @@
     <button class="sidebar-item" id="btnMyTeam"><span class="sidebar-item-icon">👤</span>我的球队</button>
     <button class="sidebar-item" id="btnEnterMatch"><span class="sidebar-item-icon">✏️</span>录入比赛</button>
     <button class="sidebar-item" id="btnAdminImport" style="display:none"><span class="sidebar-item-icon">⚙️</span>管理员导入</button>
-    <button class="sidebar-item" id="btnSettings"><span class="sidebar-item-icon">⚙️</span>设置</button>
+    <button class="sidebar-item" id="btnSettings"><span class="sidebar-item-icon">☁️</span>数据同步</button>
     <button class="sidebar-item" id="sidebarLoginBtn"><span class="sidebar-item-icon">🔑</span>登录</button>
     <button class="sidebar-item danger" id="btnLogout" style="display:none"><span class="sidebar-item-icon">🚪</span>退出登录</button>
   </div>
@@ -2279,6 +2279,336 @@ function resetAllData() {
   location.reload();
 }
 
+// ============ CLOUD SYNC MODULE ============
+// 云端同步模块 - 使用 GitHub Gist 作为免费云端数据库
+// 支持多设备数据同步，无需后端服务器
+
+let GIST_ID = localStorage.getItem('pgm_gist_id') || '';
+let GITHUB_TOKEN = localStorage.getItem('pgm_github_token') || '';
+
+const GIST_API = 'https://api.github.com/gists';
+
+function showSyncModal() {
+  const hasToken = !!GITHUB_TOKEN;
+  const hasGist = !!GIST_ID;
+  
+  const content = `
+    <div class="modal-header">
+      <div class="modal-title">☁️ 数据同步中心</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div style="max-height:70vh;overflow-y:auto;padding:4px 0">
+      
+      <!-- GitHub Token 配置 -->
+      <div class="import-section" style="border-color:#2196F3;">
+        <div class="import-section-title" style="color:#2196F3;">🔑 GitHub Token 配置</div>
+        <div class="import-desc">
+          ${hasToken ? '<span style="color:#4CAF50">✅ 已配置 Token</span>' : '需要 GitHub Personal Access Token 才能使用云端同步'}
+        </div>
+        <input type="password" id="syncTokenInput" class="import-textarea" 
+          style="height:auto;padding:10px;font-size:12px;" 
+          placeholder="${hasToken ? '已配置，留空不修改' : '粘贴 GitHub Token...'}" value="">
+        <div style="font-size:11px;color:#888;margin:6px 0;line-height:1.6;">
+          获取方式：<br>
+          1. 电脑浏览器打开 <a href="https://github.com/settings/tokens" target="_blank" style="color:#2196F3;">github.com/settings/tokens</a><br>
+          2. 点 "Generate new token (classic)"<br>
+          3. 勾选 "gist" 权限 → 生成 → 复制 Token
+        </div>
+        <button class="btn btn-primary btn-full" onclick="saveGithubToken()" style="background:#2196F3;">
+          保存 Token
+        </button>
+        ${hasToken ? '<button class="btn btn-full" style="background:#f44336;color:white;margin-top:8px;" onclick="removeGithubToken()">清除 Token</button>' : ''}
+      </div>
+      
+      ${hasToken ? `
+      <!-- 云端同步操作 -->
+      <div class="import-section" style="border-color:#FF9800;">
+        <div class="import-section-title" style="color:#FF9800;">☁️ 云端同步 (Gist)</div>
+        <div class="import-desc">
+          ${hasGist ? '<span style="color:#4CAF50">✅ 已绑定云端</span> (Gist: ' + GIST_ID.substring(0, 8) + '...)' : '首次使用需先上传数据创建云端'}
+        </div>
+        
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <button class="btn btn-primary" style="flex:1;background:#4CAF50;" onclick="syncUpload()">
+            ⬆️ 上传到云端
+          </button>
+          <button class="btn btn-primary" style="flex:1;background:#2196F3;" onclick="syncDownload()">
+            ⬇️ 从云端下载
+          </button>
+        </div>
+        
+        <div style="background:#fff3e0;border-radius:8px;padding:10px;font-size:12px;color:#e65100;line-height:1.6;margin-top:8px;">
+          <b>💡 使用说明：</b><br>
+          • 电脑录入完比赛后 → 点"上传到云端"<br>
+          • 其他教练打开网页 → 点"从云端下载"<br>
+          • 所有教练都能看到最新数据<br>
+          • 手机和电脑都能操作
+        </div>
+        
+        ${hasGist ? `
+        <div style="margin-top:8px;background:#fce4ec;border-radius:8px;padding:10px;font-size:12px;color:#c62828;line-height:1.6;">
+          <b>⚠️ 注意：</b>上传会覆盖云端数据，下载会覆盖本地数据
+        </div>
+        ` : ''}
+      </div>
+      ` : ''}
+      
+      <!-- 手动导入导出 -->
+      <div class="import-section" style="border-color:#9C27B0;">
+        <div class="import-section-title" style="color:#9C27B0;">📁 手动导入 / 导出</div>
+        <div class="import-desc">不依赖网络，通过 JSON 文件同步数据</div>
+        
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" style="flex:1;background:#9C27B0;" onclick="exportDataToFile()">
+            📤 导出为文件
+          </button>
+          <button class="btn btn-primary" style="flex:1;background:#9C27B0;" onclick="document.getElementById('importFileInput').click()">
+            📥 从文件导入
+          </button>
+        </div>
+        <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importDataFromFile(event)">
+        
+        <div style="font-size:11px;color:#888;margin-top:8px;line-height:1.6;">
+          导出后把 JSON 文件发给其他教练，他们点"从文件导入"即可同步数据。
+        </div>
+      </div>
+      
+      <!-- 数据概览 -->
+      <div class="import-section" style="border-color:#607D8B;">
+        <div class="import-section-title" style="color:#607D8B;">📊 本地数据概览</div>
+        <div style="font-size:13px;line-height:2;color:#333;">
+          <div>球队数量：<b>${state.teams ? state.teams.length : 0}</b> 支</div>
+          <div>比赛总数：<b>${state.matches ? state.matches.length : 0}</b> 场</div>
+          <div>已完赛场次：<b>${state.matches ? state.matches.filter(m => m.completed).length : 0}</b> 场</div>
+          <div>数据大小：<b>${(JSON.stringify(state).length / 1024).toFixed(1)} KB</b></div>
+          <div>最后同步：${localStorage.getItem('pgm_last_sync_time') || '从未同步'}</div>
+        </div>
+      </div>
+      
+    </div>
+  `;
+  
+  document.getElementById('modalContent').innerHTML = content;
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+// 保存 GitHub Token
+async function saveGithubToken() {
+  const token = document.getElementById('syncTokenInput').value.trim();
+  if (!token) {
+    showToast('请输入 Token');
+    return;
+  }
+  
+  // 验证 Token 是否有效
+  try {
+    const resp = await fetch('https://api.github.com/user', {
+      headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if (!resp.ok) throw new Error('Token 无效');
+    const user = await resp.json();
+    
+    GITHUB_TOKEN = token;
+    localStorage.setItem('pgm_github_token', token);
+    showToast('Token 验证成功！用户：' + user.login);
+    
+    // 刷新界面
+    setTimeout(() => showSyncModal(), 500);
+  } catch(e) {
+    showToast('Token 验证失败：' + e.message);
+  }
+}
+
+// 清除 GitHub Token
+function removeGithubToken() {
+  if (!confirm('确定要清除已保存的 GitHub Token 吗？')) return;
+  GITHUB_TOKEN = '';
+  GIST_ID = '';
+  localStorage.removeItem('pgm_github_token');
+  localStorage.removeItem('pgm_gist_id');
+  showToast('Token 已清除');
+  setTimeout(() => showSyncModal(), 500);
+}
+
+// 上传数据到云端
+async function syncUpload() {
+  if (!GITHUB_TOKEN) { showToast('请先配置 GitHub Token'); return; }
+  if (!confirm('确定要上传数据到云端吗？这将覆盖云端现有数据。')) return;
+  
+  showToast('正在上传...');
+  
+  try {
+    const dataStr = JSON.stringify(state, null, 2);
+    const filename = 'pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json';
+    
+    const body = {
+      description: 'PGM足球经理联赛数据 - 自动同步',
+      public: false,
+      files: {}
+    };
+    
+    if (GIST_ID) {
+      // 更新已有 Gist：需要传入所有文件（包括旧文件名）
+      // 先获取当前 Gist 的文件列表
+      const getResp = await fetch(GIST_API + '/' + GIST_ID, {
+        headers: { 'Authorization': 'Bearer ' + GITHUB_TOKEN }
+      });
+      if (getResp.ok) {
+        const gist = await getResp.json();
+        // 保留旧文件但清空内容（GitHub 要求更新时必须包含所有文件）
+        for (const fname of Object.keys(gist.files)) {
+          body.files[fname] = null; // null 表示删除旧文件
+        }
+      }
+      body.files[filename] = { content: dataStr };
+      
+      const resp = await fetch(GIST_API + '/' + GIST_ID, {
+        method: 'PATCH',
+        headers: { 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' },
+        body: JSON.stringify(body)
+      });
+      
+      if (!resp.ok) throw new Error('上传失败 ' + resp.status);
+      const result = await resp.json();
+      GIST_ID = result.id;
+      localStorage.setItem('pgm_gist_id', GIST_ID);
+    } else {
+      // 创建新 Gist
+      body.files[filename] = { content: dataStr };
+      
+      const resp = await fetch(GIST_API, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' },
+        body: JSON.stringify(body)
+      });
+      
+      if (!resp.ok) throw new Error('创建失败 ' + resp.status);
+      const result = await resp.json();
+      GIST_ID = result.id;
+      localStorage.setItem('pgm_gist_id', GIST_ID);
+    }
+    
+    // 记录同步时间
+    const now = new Date();
+    const timeStr = now.getFullYear() + '-' + 
+      String(now.getMonth()+1).padStart(2,'0') + '-' + 
+      String(now.getDate()).padStart(2,'0') + ' ' + 
+      String(now.getHours()).padStart(2,'0') + ':' + 
+      String(now.getMinutes()).padStart(2,'0');
+    localStorage.setItem('pgm_last_sync_time', timeStr);
+    
+    showToast('✅ 上传成功！数据已同步到云端');
+    setTimeout(() => showSyncModal(), 500);
+  } catch(e) {
+    showToast('上传失败：' + e.message);
+    console.error('Sync upload error:', e);
+  }
+}
+
+// 从云端下载数据
+async function syncDownload() {
+  if (!GITHUB_TOKEN) { showToast('请先配置 GitHub Token'); return; }
+  if (!GIST_ID) { showToast('还没有云端数据，请先上传一次'); return; }
+  if (!confirm('确定要从云端下载数据吗？这将覆盖本地所有数据！')) return;
+  if (!confirm('再次确认：本地修改将被云端数据覆盖！')) return;
+  
+  showToast('正在下载...');
+  
+  try {
+    const resp = await fetch(GIST_API + '/' + GIST_ID, {
+      headers: { 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' }
+    });
+    
+    if (!resp.ok) throw new Error('下载失败 ' + resp.status);
+    const gist = await resp.json();
+    
+    // 找到数据文件
+    const files = gist.files;
+    const dataFile = Object.values(files)[0];
+    if (!dataFile || !dataFile.content) throw new Error('云端数据为空');
+    
+    const cloudData = JSON.parse(dataFile.content);
+    
+    // 写入本地
+    state = cloudData;
+    saveState();
+    
+    // 记录同步时间
+    const now = new Date();
+    const timeStr = now.getFullYear() + '-' + 
+      String(now.getMonth()+1).padStart(2,'0') + '-' + 
+      String(now.getDate()).padStart(2,'0') + ' ' + 
+      String(now.getHours()).padStart(2,'0') + ':' + 
+      String(now.getMinutes()).padStart(2,'0');
+    localStorage.setItem('pgm_last_sync_time', timeStr);
+    
+    closeModal();
+    updateSidebar();
+    render();
+    showToast('✅ 下载成功！数据已更新');
+  } catch(e) {
+    showToast('下载失败：' + e.message);
+    console.error('Sync download error:', e);
+  }
+}
+
+// 导出数据为 JSON 文件
+function exportDataToFile() {
+  const dataStr = JSON.stringify(state, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = 'PGM联赛数据_' + date + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  showToast('数据已导出为文件');
+}
+
+// 从 JSON 文件导入数据
+function importDataFromFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (!confirm('确定要导入文件数据吗？这将覆盖本地所有数据！')) {
+    event.target.value = '';
+    return;
+  }
+  if (!confirm('再次确认：本地数据将被文件数据覆盖！')) {
+    event.target.value = '';
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      
+      // 基本验证
+      if (!data.teams || !data.matches) {
+        showToast('文件格式不正确，不是有效的联赛数据');
+        return;
+      }
+      
+      state = data;
+      saveState();
+      closeModal();
+      updateSidebar();
+      render();
+      showToast('✅ 数据导入成功！共 ' + data.teams.length + ' 支球队');
+    } catch(err) {
+      showToast('文件解析失败：' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
 // ============ EVENT LISTENERS ============
 document.getElementById('menuBtn').onclick = () => {
   document.getElementById('sidebar').classList.toggle('active');
@@ -2337,9 +2667,7 @@ document.getElementById('btnEnterMatch').onclick = () => {
   }
 };
 document.getElementById('btnAdminImport').onclick = () => showAdminImportModal();
-document.getElementById('btnSettings').onclick = () => {
-  showToast('设置功能开发中...');
-};
+document.getElementById('btnSettings').onclick = () => showSyncModal();
 
 document.getElementById('modalOverlay').onclick = (e) => {
   if (e.target === document.getElementById('modalOverlay')) closeModal();
