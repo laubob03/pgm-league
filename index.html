@@ -1896,26 +1896,21 @@ function submitMatchResult(matchId) {
 function showLoginModal() {
   const content = `
     <div class="modal-header">
-      <div class="modal-title">🔑 教练登录</div>
+      <div class="modal-title">🔑 登录</div>
       <button class="modal-close" onclick="closeModal()">×</button>
     </div>
     <form id="loginForm">
       <div class="form-group">
-        <div class="form-label">选择球队</div>
-        <select class="form-select" id="loginTeamId" required>
-          <option value="">-- 选择你的球队 --</option>
-          <option value="laubob">👑 超级管理员</option>
-          <option value="laubob">👑 超级管理员</option>
-          ${state.teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}
-        </select>
+        <div class="form-label">ID</div>
+        <input type="text" class="form-input" id="loginTeamId" placeholder="输入球队ID或账号" required autocomplete="username">
       </div>
       <div class="form-group">
         <div class="form-label">密码</div>
-        <input type="password" class="form-input" id="loginPassword" placeholder="请输入密码" required>
+        <input type="password" class="form-input" id="loginPassword" placeholder="请输入密码" required autocomplete="current-password">
       </div>
       <button type="submit" class="btn btn-primary btn-full">登录</button>
       <div style="margin-top:12px;font-size:12px;color:var(--text-secondary);text-align:center">
-        默认密码: 123456
+        教练默认密码: 123456
       </div>
     </form>
   `;
@@ -1923,7 +1918,7 @@ function showLoginModal() {
   
   document.getElementById('loginForm').onsubmit = (e) => {
     e.preventDefault();
-    const teamId = document.getElementById('loginTeamId').value;
+    const teamId = document.getElementById('loginTeamId').value.trim();
     const password = document.getElementById('loginPassword').value;
 
     // 超级管理员登录
@@ -1952,7 +1947,7 @@ function showLoginModal() {
         render();
         showToast(`欢迎, ${team.coach}！`);
       } else {
-        showToast('球队不存在！');
+        showToast('ID或密码错误！');
       }
     } else {
       showToast('密码错误！');
