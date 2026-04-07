@@ -2289,12 +2289,73 @@ let GITHUB_TOKEN = localStorage.getItem('pgm_github_token') || '';
 const GIST_API = 'https://api.github.com/gists';
 
 function showSyncModal() {
+  const isAdmin = state.currentUser && state.currentUser.isSuperAdmin;
   const hasToken = !!GITHUB_TOKEN;
   const hasGist = !!GIST_ID;
   
+  // 非管理员只能看到数据概览和文件导入导出
+  if (!isAdmin) {
+    const content = `
+      <div class="modal-header">
+        <div class="modal-title">☁️ 数据同步中心</div>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div style="max-height:70vh;overflow-y:auto;padding:4px 0">
+        
+        <!-- 提示 -->
+        <div class="import-section" style="border-color:#FF9800;">
+          <div class="import-section-title" style="color:#FF9800;">📋 使用说明</div>
+          <div style="font-size:13px;color:#333;line-height:1.8;">
+            数据由管理员统一管理，你只需点击下方按钮获取最新数据。
+          </div>
+        </div>
+        
+        <!-- 从云端下载 -->
+        ${hasToken && hasGist ? `
+        <div class="import-section" style="border-color:#2196F3;">
+          <div class="import-section-title" style="color:#2196F3;">⬇️ 获取最新数据</div>
+          <div class="import-desc">从云端下载管理员最新上传的联赛数据</div>
+          <button class="btn btn-primary btn-full" onclick="syncDownload()" style="background:#2196F3;">
+            ⬇️ 从云端下载
+          </button>
+          <div style="font-size:11px;color:#888;margin-top:6px;">
+            最后同步：${localStorage.getItem('pgm_last_sync_time') || '未知'}
+          </div>
+        </div>
+        ` : ''}
+        
+        <!-- 手动导入 -->
+        <div class="import-section" style="border-color:#9C27B0;">
+          <div class="import-section-title" style="color:#9C27B0;">📥 从文件导入</div>
+          <div class="import-desc">管理员发的 JSON 数据文件，点这里导入</div>
+          <button class="btn btn-primary btn-full" onclick="document.getElementById('importFileInput').click()" style="background:#9C27B0;">
+            📥 选择 JSON 文件导入
+          </button>
+          <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importDataFromFile(event)">
+        </div>
+        
+        <!-- 数据概览 -->
+        <div class="import-section" style="border-color:#607D8B;">
+          <div class="import-section-title" style="color:#607D8B;">📊 数据概览</div>
+          <div style="font-size:13px;line-height:2;color:#333;">
+            <div>球队数量：<b>${state.teams ? state.teams.length : 0}</b> 支</div>
+            <div>比赛总数：<b>${state.matches ? state.matches.length : 0}</b> 场</div>
+            <div>已完赛场次：<b>${state.matches ? state.matches.filter(m => m.completed).length : 0}</b> 场</div>
+            <div>本地数据更新：${localStorage.getItem('pgm_last_sync_time') || '从未同步'}</div>
+          </div>
+        </div>
+        
+      </div>
+    `;
+    document.getElementById('modalContent').innerHTML = content;
+    document.getElementById('modalOverlay').classList.add('active');
+    return;
+  }
+  
+  // ===== 管理员视图 =====
   const content = `
     <div class="modal-header">
-      <div class="modal-title">☁️ 数据同步中心</div>
+      <div class="modal-title">☁️ 数据同步中心（管理员）</div>
       <button class="modal-close" onclick="closeModal()">×</button>
     </div>
     <div style="max-height:70vh;overflow-y:auto;padding:4px 0">
@@ -2339,10 +2400,9 @@ function showSyncModal() {
         
         <div style="background:#fff3e0;border-radius:8px;padding:10px;font-size:12px;color:#e65100;line-height:1.6;margin-top:8px;">
           <b>💡 使用说明：</b><br>
-          • 电脑录入完比赛后 → 点"上传到云端"<br>
-          • 其他教练打开网页 → 点"从云端下载"<br>
-          • 所有教练都能看到最新数据<br>
-          • 手机和电脑都能操作
+          • 你录入完比赛后 → 点"上传到云端"<br>
+          • 教练们打开网页 → 点"从云端下载"<br>
+          • 所有教练都能看到最新数据
         </div>
         
         ${hasGist ? `
@@ -2356,20 +2416,20 @@ function showSyncModal() {
       <!-- 手动导入导出 -->
       <div class="import-section" style="border-color:#9C27B0;">
         <div class="import-section-title" style="color:#9C27B0;">📁 手动导入 / 导出</div>
-        <div class="import-desc">不依赖网络，通过 JSON 文件同步数据</div>
+        <div class="import-desc">通过 JSON 文件同步数据，发给教练们导入即可</div>
         
         <div style="display:flex;gap:8px;">
           <button class="btn btn-primary" style="flex:1;background:#9C27B0;" onclick="exportDataToFile()">
             📤 导出为文件
           </button>
-          <button class="btn btn-primary" style="flex:1;background:#9C27B0;" onclick="document.getElementById('importFileInput').click()">
+          <button class="btn btn-primary" style="flex:1;background:#9C27B0;" onclick="document.getElementById('importFileInput2').click()">
             📥 从文件导入
           </button>
         </div>
-        <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importDataFromFile(event)">
+        <input type="file" id="importFileInput2" accept=".json" style="display:none" onchange="importDataFromFile(event)">
         
         <div style="font-size:11px;color:#888;margin-top:8px;line-height:1.6;">
-          导出后把 JSON 文件发给其他教练，他们点"从文件导入"即可同步数据。
+          导出后把 JSON 文件发给教练，他们导入即可同步。
         </div>
       </div>
       
