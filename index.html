@@ -2293,7 +2293,7 @@ function showSyncModal() {
   const hasToken = !!GITHUB_TOKEN;
   const hasGist = !!GIST_ID;
   
-  // 非管理员只能看到数据概览和文件导入导出
+  // 非管理员只能看到云端下载和数据概览
   if (!isAdmin) {
     const content = `
       <div class="modal-header">
@@ -2322,17 +2322,14 @@ function showSyncModal() {
             最后同步：${localStorage.getItem('pgm_last_sync_time') || '未知'}
           </div>
         </div>
-        ` : ''}
-        
-        <!-- 手动导入 -->
-        <div class="import-section" style="border-color:#9C27B0;">
-          <div class="import-section-title" style="color:#9C27B0;">📥 从文件导入</div>
-          <div class="import-desc">管理员发的 JSON 数据文件，点这里导入</div>
-          <button class="btn btn-primary btn-full" onclick="document.getElementById('importFileInput').click()" style="background:#9C27B0;">
-            📥 选择 JSON 文件导入
-          </button>
-          <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importDataFromFile(event)">
+        ` : `
+        <div class="import-section" style="border-color:#9E9E9E;">
+          <div class="import-section-title" style="color:#9E9E9E;">⏳ 等待管理员配置</div>
+          <div style="font-size:13px;color:#888;line-height:1.8;">
+            管理员还未配置云端同步，请等待通知。
+          </div>
         </div>
+        `}
         
         <!-- 数据概览 -->
         <div class="import-section" style="border-color:#607D8B;">
