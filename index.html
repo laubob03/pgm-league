@@ -2504,7 +2504,8 @@ async function syncUpload() {
       'Content-Type': 'application/json'
     };
 
-    if (GIST_ID) {
+    const hasValidGistId = GIST_ID && GIST_ID !== 'BUILTIN_GIST_ID_PLACEHOLDER';
+    if (hasValidGistId) {
       // 更新已有 Gist
       const getResp = await fetch(GIST_API + '/' + GIST_ID, {
         headers: { 'Authorization': 'Bearer ' + GITHUB_TOKEN }
@@ -2534,10 +2535,15 @@ async function syncUpload() {
         GIST_ID = result.id;
         localStorage.setItem('pgm_gist_id', GIST_ID);
       } else {
-        throw new Error('无法读取已有云端数据');
+        // 旧 Gist 读取失败，清除并走创建新 Gist 流程
+        console.warn('旧 Gist 无法访问，将创建新的');
+        localStorage.removeItem('pgm_gist_id');
+        GIST_ID = '';
+        // 继续走到下面的创建逻辑
       }
-    } else {
-      // 创建新 Gist（公开，教练无需 Token 即可下载）
+    }
+    // 创建或重建 Gist（公开，教练无需 Token 即可下载）
+    if (!GIST_ID || GIST_ID === 'BUILTIN_GIST_ID_PLACEHOLDER') {
       const body = {
         description: 'PGM足球经理联赛数据 - 自动同步',
         public: true,
