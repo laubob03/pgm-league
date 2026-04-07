@@ -1108,7 +1108,7 @@ function renderSchedule() {
           + (awayAssistStr ? '<div>\uD83D\uDC5F ' + awayAssistStr + '</div>' : '')
           + (awayMotmStr ? '<div style="color:#f5a623">\u2B50 ' + awayMotmStr + '</div>' : '')
           + '</div>' : '';
-      const canEnter = state.currentUser && (state.currentUser.isSuperAdmin || state.currentUser.teamId === m.homeTeam || state.currentUser.teamId === m.awayTeam) && !isCompleted;
+      const canEnter = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && home.league === state.currentUser.league) || state.currentUser.teamId === m.homeTeam || state.currentUser.teamId === m.awayTeam) && !isCompleted;
       const enterBtn = canEnter
         ? '<div style="text-align:center;margin-top:4px"><button class="btn btn-primary btn-small" onclick="showEnterMatchModal(\'' + m.id + '\')">\u5F55\u5165\u6BD4\u8D5B</button></div>'
         : '';
@@ -1126,7 +1126,7 @@ function renderSchedule() {
           + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px">'
             + '<span style="font-size:9px;color:' + (isCompleted?'#2E7D32':'#E65100') + ';margin-bottom:1px">' + (isCompleted?'\u5DF2\u7ED3\u675F':'\u5F85\u8FDB\u884C') + '</span>'
             + (isCompleted
-              ? (state.currentUser && state.currentUser.isSuperAdmin
+              ? (state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && home.league === state.currentUser.league))
                 ? '<div class="match-score" style="cursor:pointer" onclick="showEnterMatchModal(\'' + m.id + '\')"><span>' + m.homeScore + '</span><span class="dash">-</span><span>' + m.awayScore + '</span></div>'
                 : '<div class="match-score"><span>' + m.homeScore + '</span><span class="dash">-</span><span>' + m.awayScore + '</span></div>')
               : '<span style="font-size:20px">\u2694\uFE0F</span>')
@@ -1451,8 +1451,9 @@ function showTeamDetail(teamId) {
     const teamDetail = isCompleted && (teamGoals || teamAssists)
       ? `<div style="font-size:9px;color:#666;line-height:1.2">${teamGoals ? '⚽' + teamGoals : ''}${teamGoals && teamAssists ? ' ' : ''}${teamAssists ? '👟' + teamAssists : ''}</div>` : '';
 
-    // 判断是否可以录入（管理员或相关球队）
-    const canEnter = state.currentUser && (state.currentUser.isSuperAdmin || state.currentUser.teamId === m.homeTeam || state.currentUser.teamId === m.awayTeam);
+    // 判断是否可以录入（管理员、数据员或相关球队）
+    const matchHome = state.teams.find(t => t.id === m.homeTeam);
+    const canEnter = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && matchHome && matchHome.league === state.currentUser.league) || state.currentUser.teamId === m.homeTeam || state.currentUser.teamId === m.awayTeam);
     const enterAttr = canEnter ? `onclick="closeModal();setTimeout(()=>showEnterMatchModal('${m.id}'),100)" style="cursor:pointer"` : '';
 
     return `
@@ -1933,6 +1934,14 @@ function showLoginModal() {
       updateSidebar();
       render();
       showToast('欢迎，超级管理员！');
+    } else if (teamId === 'ezhidao' && password === 'ezhidao') {
+      // 乙西数据员登录
+      state.currentUser = { teamId: 'ezhidao', teamName: '乙西数据员', coachName: '乙西数据员', isDataRecorder: true, league: 'yiWest' };
+      saveState();
+      closeModal();
+      updateSidebar();
+      render();
+      showToast('欢迎，乙西数据员！');
     } else if (password === '123456') {
       const team = state.teams.find(t => t.id === teamId);
       if (team) {
@@ -1994,7 +2003,7 @@ function updateSidebar() {
     if (sidebarLoginBtn) sidebarLoginBtn.style.display = "none";
     logoutBtn.style.display = 'flex';
     userName.textContent = state.currentUser.coachName;
-    userRole.textContent = state.currentUser.isSuperAdmin ? '超级管理员' : (state.currentUser.teamName + ' 主教练');
+    userRole.textContent = state.currentUser.isSuperAdmin ? '超级管理员' : (state.currentUser.isDataRecorder ? '数据员' : (state.currentUser.teamName + ' 主教练'));
     // 超级管理员显示导入按钮
     if (adminImportBtn) {
       adminImportBtn.style.display = state.currentUser.isSuperAdmin ? 'flex' : 'none';
@@ -2284,16 +2293,104 @@ function resetAllData() {
 // 支持多设备数据同步，无需后端服务器
 
 let GIST_ID = localStorage.getItem('pgm_gist_id') || '4a08491692074f35f0f2320434826e41';
+let YIWEST_GIST_ID = localStorage.getItem('pgm_yiwest_gist_id') || '';
 let GITHUB_TOKEN = localStorage.getItem('pgm_github_token') || '';
 
 const GIST_API = 'https://api.github.com/gists';
 
 function showSyncModal() {
   const isAdmin = state.currentUser && state.currentUser.isSuperAdmin;
+  const isRecorder = state.currentUser && state.currentUser.isDataRecorder;
   const hasToken = !!GITHUB_TOKEN;
   const hasGist = !!GIST_ID;
-  
-  // 非管理员只能看到云端下载和数据概览（无需 Token）
+
+  // 数据员视图：独立 Gist，上传/下载乙西数据
+  if (isRecorder) {
+    const recorderGist = YIWEST_GIST_ID;
+    const league = state.currentUser.league;
+    const leagueName = league === 'yiWest' ? '乙西' : league;
+    const yiWestTeams = state.teams.filter(t => t.league === league);
+    const yiWestMatches = state.matches.filter(m => {
+      const home = state.teams.find(t => t.id === m.homeTeam);
+      return home && home.league === league;
+    });
+    const content = `
+      <div class="modal-header">
+        <div class="modal-title">☁️ ${leagueName}数据同步</div>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div style="max-height:70vh;overflow-y:auto;padding:4px 0">
+        
+        <div class="import-section" style="border-color:#FF9800;">
+          <div class="import-section-title" style="color:#FF9800;">📋 数据员模式</div>
+          <div style="font-size:13px;color:#333;line-height:1.8;">
+            你是 <b>${leagueName}数据员</b>，可录入${leagueName}比赛数据并同步到独立云端。
+          </div>
+        </div>
+
+        <!-- GitHub Token 配置 -->
+        <div class="import-section" style="border-color:#2196F3;">
+          <div class="import-section-title" style="color:#2196F3;">🔑 GitHub Token 配置</div>
+          <div class="import-desc">
+            ${hasToken ? '<span style="color:#4CAF50">✅ 已配置 Token</span>' : '需要 GitHub Personal Access Token'}
+          </div>
+          <input type="password" id="syncTokenInput" class="import-textarea" 
+            style="height:auto;padding:10px;font-size:12px;" 
+            placeholder="${hasToken ? '已配置，留空不修改' : '粘贴 GitHub Token...'}" value="">
+          <div style="font-size:11px;color:#888;margin:6px 0;line-height:1.6;">
+            1. 打开 <a href="https://github.com/settings/tokens/new" target="_blank" style="color:#2196F3;">github.com/settings/tokens/new</a><br>
+            2. 勾选 "gist" 权限 → 生成 → 复制 Token
+          </div>
+          <button class="btn btn-primary btn-full" onclick="saveGithubToken()" style="background:#2196F3;">
+            保存 Token
+          </button>
+        </div>
+
+        ${hasToken ? `
+        <!-- ${leagueName}专属云端同步 -->
+        <div class="import-section" style="border-color:#4CAF50;">
+          <div class="import-section-title" style="color:#4CAF50;">☁️ ${leagueName}云端同步</div>
+          <div class="import-desc">
+            ${recorderGist ? '<span style="color:#4CAF50">✅ 已绑定云端</span> (Gist: ' + recorderGist.substring(0, 8) + '...)' : '首次使用需先上传数据创建云端'}
+          </div>
+          
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <button class="btn btn-primary" style="flex:1;background:#4CAF50;" onclick="recorderUpload()">
+              ⬆️ 上传${leagueName}数据
+            </button>
+            <button class="btn btn-primary" style="flex:1;background:#2196F3;" onclick="recorderDownload()">
+              ⬇️ 下载${leagueName}数据
+            </button>
+          </div>
+
+          <div style="background:#fff3e0;border-radius:8px;padding:10px;font-size:12px;color:#e65100;line-height:1.6;margin-top:8px;">
+            <b>💡 说明：</b><br>
+            • 录入完${leagueName}比赛 → 点"上传${leagueName}数据"<br>
+            • 超级管理员可合并所有联赛数据<br>
+            • 教练们从主云端下载即可查看
+          </div>
+        </div>
+        ` : ''}
+        
+        <!-- 数据概览 -->
+        <div class="import-section" style="border-color:#607D8B;">
+          <div class="import-section-title" style="color:#607D8B;">📊 ${leagueName}数据概览</div>
+          <div style="font-size:13px;line-height:2;color:#333;">
+            <div>球队数量：<b>${yiWestTeams.length}</b> 支</div>
+            <div>比赛总数：<b>${yiWestMatches.length}</b> 场</div>
+            <div>已完赛场次：<b>${yiWestMatches.filter(m => m.completed).length}</b> 场</div>
+            <div>最后同步：${localStorage.getItem('pgm_yiwest_last_sync_time') || '从未同步'}</div>
+          </div>
+        </div>
+        
+      </div>
+    `;
+    document.getElementById('modalContent').innerHTML = content;
+    document.getElementById('modalOverlay').classList.add('active');
+    return;
+  }
+
+  // 非管理员（普通教练）只能看到云端下载和数据概览（无需 Token）
   if (!isAdmin) {
     const hasGist = !!GIST_ID;
     const content = `
@@ -2448,6 +2545,147 @@ function showSyncModal() {
   
   document.getElementById('modalContent').innerHTML = content;
   document.getElementById('modalOverlay').classList.add('active');
+}
+
+// ============ 数据员专属同步函数 ============
+
+// 提取指定联赛的数据
+function extractLeagueData(league) {
+  const teams = state.teams.filter(t => t.league === league);
+  const teamIds = new Set(teams.map(t => t.id));
+  const matches = state.matches.filter(m => teamIds.has(m.homeTeam) || teamIds.has(m.awayTeam));
+  return { teams, matches, league, exportedAt: new Date().toISOString() };
+}
+
+// 合并联赛数据到本地
+function mergeLeagueData(leagueData) {
+  if (!leagueData || !leagueData.teams) return;
+  const league = leagueData.league;
+  // 替换该联赛的球队
+  state.teams = state.teams.filter(t => t.league !== league).concat(leagueData.teams);
+  // 替换该联赛的比赛
+  const leagueTeamIds = new Set(leagueData.teams.map(t => t.id));
+  state.matches = state.matches.filter(m => !leagueTeamIds.has(m.homeTeam) && !leagueTeamIds.has(m.awayTeam)).concat(leagueData.matches);
+  saveState();
+}
+
+// 数据员上传乙西数据到独立 Gist
+async function recorderUpload() {
+  if (!GITHUB_TOKEN) { showToast('请先配置 GitHub Token'); return; }
+  const league = state.currentUser ? state.currentUser.league : 'yiWest';
+  const leagueName = league === 'yiWest' ? '乙西' : league;
+  if (!confirm('确定要上传' + leagueName + '数据到云端吗？这将覆盖云端' + leagueName + '数据。')) return;
+
+  showToast('正在上传...');
+
+  try {
+    const leagueData = extractLeagueData(league);
+    const dataStr = JSON.stringify(leagueData, null, 2);
+    const filename = league + '_data_' + new Date().toISOString().slice(0, 10) + '.json';
+    const headers = {
+      'Authorization': 'Bearer ' + GITHUB_TOKEN,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    };
+
+    if (YIWEST_GIST_ID) {
+      // 更新已有 Gist
+      const getResp = await fetch(GIST_API + '/' + YIWEST_GIST_ID, {
+        headers: { 'Authorization': 'Bearer ' + GITHUB_TOKEN }
+      });
+      if (getResp.ok) {
+        const gist = await getResp.json();
+        const body = { description: 'PGM ' + leagueName + '联赛数据 - 数据员同步', files: {} };
+        for (const fname of Object.keys(gist.files)) {
+          body.files[fname] = null;
+        }
+        body.files[filename] = { content: dataStr };
+
+        const resp = await fetch(GIST_API + '/' + YIWEST_GIST_ID, {
+          method: 'PATCH', headers, body: JSON.stringify(body)
+        });
+        if (!resp.ok) {
+          const errData = await resp.json().catch(() => ({}));
+          if (resp.status === 403) throw new Error('权限不足(403)，请确认 Token 勾选了 gist 权限');
+          throw new Error('上传失败 ' + resp.status + ': ' + (errData.message || ''));
+        }
+        const result = await resp.json();
+        YIWEST_GIST_ID = result.id;
+        localStorage.setItem('pgm_yiwest_gist_id', YIWEST_GIST_ID);
+      } else {
+        console.warn('旧' + leagueName + ' Gist 无法访问，将创建新的');
+        localStorage.removeItem('pgm_yiwest_gist_id');
+        YIWEST_GIST_ID = '';
+      }
+    }
+
+    if (!YIWEST_GIST_ID) {
+      const body = {
+        description: 'PGM ' + leagueName + '联赛数据 - 数据员同步',
+        public: true,
+        files: { [filename]: { content: dataStr } }
+      };
+      const resp = await fetch(GIST_API, {
+        method: 'POST', headers, body: JSON.stringify(body)
+      });
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        if (resp.status === 403) throw new Error('权限不足(403)，请确认：1)创建的是 classic Token 2)勾选了 gist 权限');
+        if (resp.status === 401) throw new Error('Token 无效(401)，请重新生成');
+        throw new Error('创建失败 ' + resp.status + ': ' + (errData.message || ''));
+      }
+      const result = await resp.json();
+      YIWEST_GIST_ID = result.id;
+      localStorage.setItem('pgm_yiwest_gist_id', YIWEST_GIST_ID);
+    }
+
+    const now = new Date();
+    const timeStr = now.getFullYear() + '-' +
+      String(now.getMonth()+1).padStart(2,'0') + '-' +
+      String(now.getDate()).padStart(2,'0') + ' ' +
+      String(now.getHours()).padStart(2,'0') + ':' +
+      String(now.getMinutes()).padStart(2,'0');
+    localStorage.setItem('pgm_yiwest_last_sync_time', timeStr);
+
+    showToast(leagueName + '数据上传成功！Gist: ' + YIWEST_GIST_ID);
+    setTimeout(() => showSyncModal(), 1000);
+  } catch(e) {
+    showToast(e.message);
+    console.error('Recorder upload error:', e);
+  }
+}
+
+// 数据员从独立 Gist 下载乙西数据
+async function recorderDownload() {
+  const league = state.currentUser ? state.currentUser.league : 'yiWest';
+  const leagueName = league === 'yiWest' ? '乙西' : league;
+  if (!YIWEST_GIST_ID) { showToast(leagueName + '还没有云端数据，请先上传'); return; }
+  if (!confirm('确定要从云端下载' + leagueName + '数据吗？这将覆盖本地' + leagueName + '数据！')) return;
+
+  showToast('正在下载...');
+  try {
+    const resp = await fetch(GIST_API + '/' + YIWEST_GIST_ID);
+    if (!resp.ok) throw new Error('下载失败 ' + resp.status);
+    const gist = await resp.json();
+    const files = Object.values(gist.files);
+    if (!files.length) throw new Error('云端没有数据文件');
+    const data = JSON.parse(files[0].content);
+
+    mergeLeagueData(data);
+    const now = new Date();
+    const timeStr = now.getFullYear() + '-' +
+      String(now.getMonth()+1).padStart(2,'0') + '-' +
+      String(now.getDate()).padStart(2,'0') + ' ' +
+      String(now.getHours()).padStart(2,'0') + ':' +
+      String(now.getMinutes()).padStart(2,'0');
+    localStorage.setItem('pgm_yiwest_last_sync_time', timeStr);
+
+    showToast(leagueName + '数据下载成功！');
+    setTimeout(() => { showSyncModal(); render(); }, 500);
+  } catch(e) {
+    showToast(e.message);
+    console.error('Recorder download error:', e);
+  }
 }
 
 // 保存 GitHub Token
