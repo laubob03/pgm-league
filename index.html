@@ -2323,24 +2323,6 @@ function showSyncModal() {
           </div>
         </div>
 
-        <!-- GitHub Token 配置 -->
-        <div class="import-section" style="border-color:#2196F3;">
-          <div class="import-section-title" style="color:#2196F3;">🔑 GitHub Token 配置</div>
-          <div class="import-desc">
-            ${hasToken ? '<span style="color:#4CAF50">✅ 已配置 Token</span>' : '需要 GitHub Personal Access Token'}
-          </div>
-          <input type="password" id="syncTokenInput" class="import-textarea" 
-            style="height:auto;padding:10px;font-size:12px;" 
-            placeholder="${hasToken ? '已配置，留空不修改' : '粘贴 GitHub Token...'}" value="">
-          <div style="font-size:11px;color:#888;margin:6px 0;line-height:1.6;">
-            1. 打开 <a href="https://github.com/settings/tokens/new" target="_blank" style="color:#2196F3;">github.com/settings/tokens/new</a><br>
-            2. 勾选 "gist" 权限 → 生成 → 复制 Token
-          </div>
-          <button class="btn btn-primary btn-full" onclick="saveGithubToken()" style="background:#2196F3;">
-            保存 Token
-          </button>
-        </div>
-
         ${hasToken ? `
         <!-- ${leagueName}专属云端同步 -->
         <div class="import-section" style="border-color:#4CAF50;">
@@ -2365,7 +2347,14 @@ function showSyncModal() {
             • 教练们从主云端下载即可查看
           </div>
         </div>
-        ` : ''}
+        ` : `
+        <div class="import-section" style="border-color:#9E9E9E;">
+          <div class="import-section-title" style="color:#9E9E9E;">⏳ 等待管理员配置</div>
+          <div style="font-size:13px;color:#888;line-height:1.8;">
+            GitHub Token 尚未配置，请联系超级管理员配置后即可使用云端同步。
+          </div>
+        </div>
+        `}
         
         <!-- 数据概览 -->
         <div class="import-section" style="border-color:#607D8B;">
