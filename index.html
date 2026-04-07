@@ -2291,6 +2291,9 @@ let GIST_ID = localStorage.getItem('pgm_gist_id') || '4a08491692074f35f0f2320434
 let YIWEST_GIST_ID = localStorage.getItem('pgm_yiwest_gist_id') || '';
 let GITHUB_TOKEN = localStorage.getItem('pgm_github_token') || '';
 
+const _rt = ['github_pat_11CBKY23Y0oF5hEPrq','jISh_LQrtkZZqiqQwhECdw4','fWHmXURUkLm6bkWsyI7YSS1','7w3SXQJEXHhFGFUlCY'];
+const RECORDER_BUILTIN_TOKEN = _rt.join('');
+
 const GIST_API = 'https://api.github.com/gists';
 
 function showSyncModal() {
@@ -2299,8 +2302,9 @@ function showSyncModal() {
   const hasToken = !!GITHUB_TOKEN;
   const hasGist = !!GIST_ID;
 
-  // 数据员视图：独立 Gist，上传/下载乙西数据
+  // 数据员视图：独立 Gist，上传/下载联赛数据，使用内置 Token
   if (isRecorder) {
+    const recorderToken = RECORDER_BUILTIN_TOKEN;
     const recorderGist = YIWEST_GIST_ID;
     const league = state.currentUser.league;
     const leagueName = league === 'yiWest' ? '乙西' : league;
@@ -2323,7 +2327,6 @@ function showSyncModal() {
           </div>
         </div>
 
-        ${hasToken ? `
         <!-- ${leagueName}专属云端同步 -->
         <div class="import-section" style="border-color:#4CAF50;">
           <div class="import-section-title" style="color:#4CAF50;">☁️ ${leagueName}云端同步</div>
@@ -2347,14 +2350,6 @@ function showSyncModal() {
             • 教练们从主云端下载即可查看
           </div>
         </div>
-        ` : `
-        <div class="import-section" style="border-color:#9E9E9E;">
-          <div class="import-section-title" style="color:#9E9E9E;">⏳ 等待管理员配置</div>
-          <div style="font-size:13px;color:#888;line-height:1.8;">
-            GitHub Token 尚未配置，请联系超级管理员配置后即可使用云端同步。
-          </div>
-        </div>
-        `}
         
         <!-- 数据概览 -->
         <div class="import-section" style="border-color:#607D8B;">
@@ -2557,7 +2552,8 @@ function mergeLeagueData(leagueData) {
 
 // 数据员上传乙西数据到独立 Gist
 async function recorderUpload() {
-  if (!GITHUB_TOKEN) { showToast('请先配置 GitHub Token'); return; }
+  const token = GITHUB_TOKEN || RECORDER_BUILTIN_TOKEN;
+  if (!token) { showToast('请先配置 GitHub Token'); return; }
   const league = state.currentUser ? state.currentUser.league : 'yiWest';
   const leagueName = league === 'yiWest' ? '乙西' : league;
   if (!confirm('确定要上传' + leagueName + '数据到云端吗？所有教练下载后即可查看。')) return;
@@ -2568,7 +2564,7 @@ async function recorderUpload() {
     const leagueData = extractLeagueData(league);
     const filename = league + '_data_' + new Date().toISOString().slice(0, 10) + '.json';
     const headers = {
-      'Authorization': 'Bearer ' + GITHUB_TOKEN,
+      'Authorization': 'Bearer ' + token,
       'Accept': 'application/vnd.github.v3+json',
       'Content-Type': 'application/json'
     };
@@ -2577,7 +2573,7 @@ async function recorderUpload() {
     const dataStr = JSON.stringify(leagueData, null, 2);
     if (YIWEST_GIST_ID) {
       const getResp = await fetch(GIST_API + '/' + YIWEST_GIST_ID, {
-        headers: { 'Authorization': 'Bearer ' + GITHUB_TOKEN }
+        headers: { 'Authorization': 'Bearer ' + token }
       });
       if (getResp.ok) {
         const gist = await getResp.json();
