@@ -2491,73 +2491,92 @@ function removeGithubToken() {
 async function syncUpload() {
   if (!GITHUB_TOKEN) { showToast('请先配置 GitHub Token'); return; }
   if (!confirm('确定要上传数据到云端吗？这将覆盖云端现有数据。')) return;
-  
+
   showToast('正在上传...');
-  
+
   try {
     const dataStr = JSON.stringify(state, null, 2);
     const filename = 'pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json';
-    
-    const body = {
-      description: 'PGM足球经理联赛数据 - 自动同步',
-      public: false,
-      files: {}
+    const headers = {
+      'Authorization': 'Bearer ' + GITHUB_TOKEN,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
     };
-    
+
     if (GIST_ID) {
-      // 更新已有 Gist：需要传入所有文件（包括旧文件名）
-      // 先获取当前 Gist 的文件列表
+      // 更新已有 Gist
       const getResp = await fetch(GIST_API + '/' + GIST_ID, {
         headers: { 'Authorization': 'Bearer ' + GITHUB_TOKEN }
       });
       if (getResp.ok) {
         const gist = await getResp.json();
-        // 保留旧文件但清空内容（GitHub 要求更新时必须包含所有文件）
+        const body = { description: 'PGM足球经理联赛数据 - 自动同步', files: {} };
         for (const fname of Object.keys(gist.files)) {
-          body.files[fname] = null; // null 表示删除旧文件
+          body.files[fname] = null;
         }
+        body.files[filename] = { content: dataStr };
+
+        const resp = await fetch(GIST_API + '/' + GIST_ID, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify(body)
+        });
+
+        if (!resp.ok) {
+          const errData = await resp.json().catch(() => ({}));
+          if (resp.status === 403) {
+            throw new Error('权限不足(403)，请确认 Token 勾选了 gist 权限');
+          }
+          throw new Error('上传失败 ' + resp.status + ': ' + (errData.message || ''));
+        }
+        const result = await resp.json();
+        GIST_ID = result.id;
+        localStorage.setItem('pgm_gist_id', GIST_ID);
+      } else {
+        throw new Error('无法读取已有云端数据');
       }
-      body.files[filename] = { content: dataStr };
-      
-      const resp = await fetch(GIST_API + '/' + GIST_ID, {
-        method: 'PATCH',
-        headers: { 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' },
-        body: JSON.stringify(body)
-      });
-      
-      if (!resp.ok) throw new Error('上传失败 ' + resp.status);
-      const result = await resp.json();
-      GIST_ID = result.id;
-      localStorage.setItem('pgm_gist_id', GIST_ID);
     } else {
-      // 创建新 Gist
-      body.files[filename] = { content: dataStr };
-      
+      // 创建新 Gist（Secret）
+      const body = {
+        description: 'PGM足球经理联赛数据 - 自动同步',
+        public: false,
+        files: { [filename]: { content: dataStr } }
+      };
+
       const resp = await fetch(GIST_API, {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' },
+        headers,
         body: JSON.stringify(body)
       });
-      
-      if (!resp.ok) throw new Error('创建失败 ' + resp.status);
+
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        if (resp.status === 403) {
+          throw new Error('权限不足(403)，请确认：1)创建的是 classic Token 2)勾选了 gist 权限');
+        }
+        if (resp.status === 401) {
+          throw new Error('Token 无效(401)，请重新生成');
+        }
+        throw new Error('创建失败 ' + resp.status + ': ' + (errData.message || ''));
+      }
       const result = await resp.json();
       GIST_ID = result.id;
       localStorage.setItem('pgm_gist_id', GIST_ID);
     }
-    
+
     // 记录同步时间
     const now = new Date();
-    const timeStr = now.getFullYear() + '-' + 
-      String(now.getMonth()+1).padStart(2,'0') + '-' + 
-      String(now.getDate()).padStart(2,'0') + ' ' + 
-      String(now.getHours()).padStart(2,'0') + ':' + 
+    const timeStr = now.getFullYear() + '-' +
+      String(now.getMonth()+1).padStart(2,'0') + '-' +
+      String(now.getDate()).padStart(2,'0') + ' ' +
+      String(now.getHours()).padStart(2,'0') + ':' +
       String(now.getMinutes()).padStart(2,'0');
     localStorage.setItem('pgm_last_sync_time', timeStr);
-    
-    showToast('✅ 上传成功！数据已同步到云端');
+
+    showToast('上传成功！数据已同步到云端');
     setTimeout(() => showSyncModal(), 500);
   } catch(e) {
-    showToast('上传失败：' + e.message);
+    showToast(e.message);
     console.error('Sync upload error:', e);
   }
 }
