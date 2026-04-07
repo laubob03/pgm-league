@@ -1884,12 +1884,28 @@ function submitMatchResult(matchId) {
     else { hs2.draw++; as2.draw++; hs2.points++; as2.points++; }
   }
 
-  alert('保存中...');
   saveState();
   closeModal();
   render();
   showToast(isEdit ? '比赛结果已更新！' : '比赛结果已保存！');
-  alert('保存完成！');
+
+  // 保存后自动跳转到下一场未录入的比赛
+  if (!isEdit) {
+    const currentMatch = state.matches.find(m => m.id === matchId);
+    const homeTeam = state.teams.find(t => t.id === currentMatch.homeTeam);
+    const league = homeTeam ? homeTeam.league : null;
+    if (league) {
+      const pendingMatches = state.matches
+        .filter(m => {
+          const ht = state.teams.find(t => t.id === m.homeTeam);
+          return ht && ht.league === league && m.status !== 'completed' && m.id !== matchId;
+        })
+        .sort((a, b) => (a.round - b.round) || (a.id.localeCompare(b.id)));
+      if (pendingMatches.length > 0) {
+        setTimeout(() => showEnterMatchModal(pendingMatches[0].id), 300);
+      }
+    }
+  }
 }
 
 
