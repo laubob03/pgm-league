@@ -250,7 +250,7 @@
     <button class="sidebar-item" id="btnMyTeam"><span class="sidebar-item-icon">👤</span>我的球队</button>
     <button class="sidebar-item" id="btnEnterMatch"><span class="sidebar-item-icon">✏️</span>录入比赛</button>
     <button class="sidebar-item" id="btnAdminImport" style="display:none"><span class="sidebar-item-icon">⚙️</span>管理员导入</button>
-    <button class="sidebar-item" id="btnSettings"><span class="sidebar-item-icon">☁️</span>数据同步</button>
+    <button class="sidebar-item" id="btnSyncCloud"><span class="sidebar-item-icon">☁️</span>数据同步</button>
     <button class="sidebar-item" id="sidebarLoginBtn"><span class="sidebar-item-icon">🔑</span>登录</button>
     <button class="sidebar-item danger" id="btnLogout" style="display:none"><span class="sidebar-item-icon">🚪</span>退出登录</button>
   </div>
@@ -2667,7 +2667,7 @@ document.getElementById('btnEnterMatch').onclick = () => {
   }
 };
 document.getElementById('btnAdminImport').onclick = () => showAdminImportModal();
-document.getElementById('btnSettings').onclick = () => showSyncModal();
+document.getElementById('btnSyncCloud').onclick = () => showSyncModal();
 
 document.getElementById('modalOverlay').onclick = (e) => {
   if (e.target === document.getElementById('modalOverlay')) closeModal();
