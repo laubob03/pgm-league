@@ -2283,7 +2283,7 @@ function resetAllData() {
 // 云端同步模块 - 使用 GitHub Gist 作为免费云端数据库
 // 支持多设备数据同步，无需后端服务器
 
-let GIST_ID = localStorage.getItem('pgm_gist_id') || 'BUILTIN_GIST_ID_PLACEHOLDER';
+let GIST_ID = localStorage.getItem('pgm_gist_id') || '4a08491692074f35f0f2320434826e41';
 let GITHUB_TOKEN = localStorage.getItem('pgm_github_token') || '';
 
 const GIST_API = 'https://api.github.com/gists';
@@ -2295,7 +2295,7 @@ function showSyncModal() {
   
   // 非管理员只能看到云端下载和数据概览（无需 Token）
   if (!isAdmin) {
-    const hasGist = !!GIST_ID && GIST_ID !== 'BUILTIN_GIST_ID_PLACEHOLDER';
+    const hasGist = !!GIST_ID;
     const content = `
       <div class="modal-header">
         <div class="modal-title">☁️ 数据同步中心</div>
@@ -2504,7 +2504,7 @@ async function syncUpload() {
       'Content-Type': 'application/json'
     };
 
-    const hasValidGistId = GIST_ID && GIST_ID !== 'BUILTIN_GIST_ID_PLACEHOLDER';
+    const hasValidGistId = !!GIST_ID;
     if (hasValidGistId) {
       // 更新已有 Gist
       const getResp = await fetch(GIST_API + '/' + GIST_ID, {
@@ -2543,7 +2543,7 @@ async function syncUpload() {
       }
     }
     // 创建或重建 Gist（公开，教练无需 Token 即可下载）
-    if (!GIST_ID || GIST_ID === 'BUILTIN_GIST_ID_PLACEHOLDER') {
+    if (!GIST_ID) {
       const body = {
         description: 'PGM足球经理联赛数据 - 自动同步',
         public: true,
@@ -2590,7 +2590,7 @@ async function syncUpload() {
 
 // 从云端下载数据（Public Gist 无需 Token）
 async function syncDownload() {
-  if (!GIST_ID || GIST_ID === 'BUILTIN_GIST_ID_PLACEHOLDER') { showToast('还没有云端数据，请等待管理员上传'); return; }
+  if (!GIST_ID) { showToast('还没有云端数据，请等待管理员上传'); return; }
   if (!confirm('确定要从云端下载数据吗？这将覆盖本地所有数据！')) return;
   
   showToast('正在下载...');
