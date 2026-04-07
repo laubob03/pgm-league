@@ -2558,13 +2558,12 @@ async function recorderUpload() {
   if (!GITHUB_TOKEN) { showToast('请先配置 GitHub Token'); return; }
   const league = state.currentUser ? state.currentUser.league : 'yiWest';
   const leagueName = league === 'yiWest' ? '乙西' : league;
-  if (!confirm('确定要上传' + leagueName + '数据到云端吗？这将覆盖云端' + leagueName + '数据。')) return;
+  if (!confirm('确定要上传' + leagueName + '数据到云端吗？所有教练下载后即可查看。')) return;
 
   showToast('正在上传...');
 
   try {
     const leagueData = extractLeagueData(league);
-    const dataStr = JSON.stringify(leagueData, null, 2);
     const filename = league + '_data_' + new Date().toISOString().slice(0, 10) + '.json';
     const headers = {
       'Authorization': 'Bearer ' + GITHUB_TOKEN,
@@ -2572,55 +2571,79 @@ async function recorderUpload() {
       'Content-Type': 'application/json'
     };
 
+    // 步骤1：上传到独立 Gist（备份）
+    const dataStr = JSON.stringify(leagueData, null, 2);
     if (YIWEST_GIST_ID) {
-      // 更新已有 Gist
       const getResp = await fetch(GIST_API + '/' + YIWEST_GIST_ID, {
         headers: { 'Authorization': 'Bearer ' + GITHUB_TOKEN }
       });
       if (getResp.ok) {
         const gist = await getResp.json();
         const body = { description: 'PGM ' + leagueName + '联赛数据 - 数据员同步', files: {} };
-        for (const fname of Object.keys(gist.files)) {
-          body.files[fname] = null;
-        }
+        for (const fname of Object.keys(gist.files)) { body.files[fname] = null; }
         body.files[filename] = { content: dataStr };
-
-        const resp = await fetch(GIST_API + '/' + YIWEST_GIST_ID, {
-          method: 'PATCH', headers, body: JSON.stringify(body)
-        });
+        const resp = await fetch(GIST_API + '/' + YIWEST_GIST_ID, { method: 'PATCH', headers, body: JSON.stringify(body) });
         if (!resp.ok) {
           const errData = await resp.json().catch(() => ({}));
           if (resp.status === 403) throw new Error('权限不足(403)，请确认 Token 勾选了 gist 权限');
-          throw new Error('上传失败 ' + resp.status + ': ' + (errData.message || ''));
+          throw new Error('独立Gist上传失败 ' + resp.status + ': ' + (errData.message || ''));
         }
         const result = await resp.json();
         YIWEST_GIST_ID = result.id;
         localStorage.setItem('pgm_yiwest_gist_id', YIWEST_GIST_ID);
       } else {
-        console.warn('旧' + leagueName + ' Gist 无法访问，将创建新的');
         localStorage.removeItem('pgm_yiwest_gist_id');
         YIWEST_GIST_ID = '';
       }
     }
-
     if (!YIWEST_GIST_ID) {
-      const body = {
-        description: 'PGM ' + leagueName + '联赛数据 - 数据员同步',
-        public: true,
-        files: { [filename]: { content: dataStr } }
-      };
-      const resp = await fetch(GIST_API, {
-        method: 'POST', headers, body: JSON.stringify(body)
-      });
+      const body = { description: 'PGM ' + leagueName + '联赛数据 - 数据员同步', public: true, files: { [filename]: { content: dataStr } } };
+      const resp = await fetch(GIST_API, { method: 'POST', headers, body: JSON.stringify(body) });
       if (!resp.ok) {
         const errData = await resp.json().catch(() => ({}));
-        if (resp.status === 403) throw new Error('权限不足(403)，请确认：1)创建的是 classic Token 2)勾选了 gist 权限');
-        if (resp.status === 401) throw new Error('Token 无效(401)，请重新生成');
+        if (resp.status === 403) throw new Error('权限不足(403)');
+        if (resp.status === 401) throw new Error('Token 无效(401)');
         throw new Error('创建失败 ' + resp.status + ': ' + (errData.message || ''));
       }
       const result = await resp.json();
       YIWEST_GIST_ID = result.id;
       localStorage.setItem('pgm_yiwest_gist_id', YIWEST_GIST_ID);
+    }
+
+    // 步骤2：合并到主 Gist，让所有教练都能下载到
+    if (GIST_ID) {
+      showToast('正在合并到主云端...');
+      const mainResp = await fetch(GIST_API + '/' + GIST_ID);
+      if (mainResp.ok) {
+        const mainGist = await mainResp.json();
+        const mainFiles = Object.values(mainGist.files);
+        let mainState = state; // 默认用本地数据
+        if (mainFiles.length > 0) {
+          try {
+            mainState = JSON.parse(mainFiles[0].content);
+          } catch(e) { console.warn('主Gist数据解析失败，使用本地数据'); }
+        }
+        // 合并乙西数据到主数据
+        if (leagueData.teams) {
+          mainState.teams = mainState.teams.filter(t => t.league !== league).concat(leagueData.teams);
+        }
+        if (leagueData.matches) {
+          const leagueTeamIds = new Set(leagueData.teams.map(t => t.id));
+          mainState.matches = mainState.matches.filter(m => !leagueTeamIds.has(m.homeTeam) && !leagueTeamIds.has(m.awayTeam)).concat(leagueData.matches);
+        }
+        // 上传合并后的完整数据到主 Gist
+        const mainDataStr = JSON.stringify(mainState, null, 2);
+        const mainFilename = 'pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json';
+        const mainBody = { description: 'PGM足球经理联赛数据 - 自动同步', files: {} };
+        for (const fname of Object.keys(mainGist.files)) { mainBody.files[fname] = null; }
+        mainBody.files[mainFilename] = { content: mainDataStr };
+        const patchResp = await fetch(GIST_API + '/' + GIST_ID, { method: 'PATCH', headers, body: JSON.stringify(mainBody) });
+        if (patchResp.ok) {
+          console.log('已合并' + leagueName + '数据到主云端');
+        } else {
+          console.warn('合并到主云端失败:', patchResp.status);
+        }
+      }
     }
 
     const now = new Date();
@@ -2631,7 +2654,7 @@ async function recorderUpload() {
       String(now.getMinutes()).padStart(2,'0');
     localStorage.setItem('pgm_yiwest_last_sync_time', timeStr);
 
-    showToast(leagueName + '数据上传成功！Gist: ' + YIWEST_GIST_ID);
+    showToast(leagueName + '数据上传成功！所有人可下载查看');
     setTimeout(() => showSyncModal(), 1000);
   } catch(e) {
     showToast(e.message);
