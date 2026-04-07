@@ -1705,20 +1705,16 @@ function showEnterMatchModal(matchId) {
 }
 
 function submitMatchResult(matchId) {
-  alert('开始保存...');
   const match = state.matches.find(m => m.id === matchId);
-  if (!match) { alert('比赛未找到'); return; }
-  alert('比赛找到: ' + match.id);
+  if (!match) { showToast('比赛未找到'); return; }
 
   const homeScore = parseInt(document.getElementById('homeScore').value) || 0;
   const awayScore = parseInt(document.getElementById('awayScore').value) || 0;
   const motmId = document.getElementById('motm').value;
-  alert('比分: ' + homeScore + ' - ' + awayScore);
 
   const homeTeam = state.teams.find(t => t.id === match.homeTeam);
   const awayTeam = state.teams.find(t => t.id === match.awayTeam);
-  if (!homeTeam || !awayTeam) { alert('球队未找到'); return; }
-  alert('球队: ' + homeTeam.name + ' vs ' + awayTeam.name);
+  if (!homeTeam || !awayTeam) { showToast('球队未找到'); return; }
 
   const isEdit = window.isEditing;
   
@@ -1884,12 +1880,10 @@ function submitMatchResult(matchId) {
     else { hs2.draw++; as2.draw++; hs2.points++; as2.points++; }
   }
 
-  alert('保存中...');
   saveState();
   closeModal();
   render();
   showToast(isEdit ? '比赛结果已更新！' : '比赛结果已保存！');
-  alert('保存完成！');
 }
 
 
