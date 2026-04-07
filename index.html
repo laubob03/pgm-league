@@ -2856,8 +2856,10 @@ async function syncDownload() {
     
     const cloudData = JSON.parse(dataFile.content);
     
-    // 写入本地
+    // 写入本地（清除登录状态，防止变成管理员）
+    const loginUser = state.currentUser;
     state = cloudData;
+    state.currentUser = loginUser;
     saveState();
     
     // 记录同步时间
