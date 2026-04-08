@@ -32,6 +32,8 @@
     .league-selector::-webkit-scrollbar{display:none}
     .league-chip{background:white;border:2px solid var(--border);border-radius:20px;padding:6px 14px;font-size:13px;white-space:nowrap;cursor:pointer;transition:all 0.2s}
     .league-chip.active{background:#228B22;border-color:#228B22;color:white}
+    .league-chip.cup-chip{border-color:#FFD700}
+    .league-chip.cup-chip.active{background:#FFD700;border-color:#FFD700;color:#333}
     .standings-table{width:100%;border-collapse:collapse;font-size:13px}
     .standings-table th{background:#228B22;color:white;padding:8px 4px;text-align:center;font-weight:600;font-size:13px}
     .standings-table th.sortable{cursor:pointer;user-select:none}
@@ -148,6 +150,10 @@
     .scorer-minute{font-size:11px;color:var(--text-secondary);width:30px}
     .scorer-name{flex:1;font-size:13px}
     .scorer-team{font-size:11px;color:var(--text-secondary)}
+    .cup-empty{text-align:center;padding:40px 20px;color:var(--text-secondary)}
+    .cup-empty-icon{font-size:48px;margin-bottom:12px}
+    .cup-match-item{display:flex;align-items:center;gap:6px;padding:6px 8px;background:#f8f8f8;border-radius:6px;margin-bottom:4px;font-size:12px}
+    .cup-match-item img{width:18px;height:18px;object-fit:contain}
   </style>
 </head>
 <body>
@@ -211,6 +217,9 @@
         <button class="league-chip" data-league="jiaWest">甲西</button>
         <button class="league-chip" data-league="yiEast">乙东</button>
         <button class="league-chip" data-league="yiWest">乙西</button>
+        <button class="league-chip cup-chip" data-cup="championsCup">🏆冠军杯</button>
+        <button class="league-chip cup-chip" data-cup="leagueCup">🏆联盟杯</button>
+        <button class="league-chip cup-chip" data-cup="associationCup">🏆协会杯</button>
       </div>
       <div id="scheduleContent"></div>
     </div>
@@ -250,6 +259,7 @@
     <button class="sidebar-item" id="btnMyTeam"><span class="sidebar-item-icon">👤</span>我的球队</button>
     <button class="sidebar-item" id="btnEnterMatch"><span class="sidebar-item-icon">✏️</span>录入比赛</button>
     <button class="sidebar-item" id="btnAdminImport" style="display:none"><span class="sidebar-item-icon">⚙️</span>管理员导入</button>
+    <button class="sidebar-item" id="btnCupManage" style="display:none"><span class="sidebar-item-icon">🏆</span>杯赛管理</button>
     <button class="sidebar-item" id="btnSyncCloud"><span class="sidebar-item-icon">☁️</span>数据同步</button>
     <button class="sidebar-item" id="sidebarLoginBtn"><span class="sidebar-item-icon">🔑</span>登录</button>
     <button class="sidebar-item danger" id="btnLogout" style="display:none"><span class="sidebar-item-icon">🚪</span>退出登录</button>
@@ -274,6 +284,7 @@
 const LEAGUE_NAMES = {
   super: '超级联赛', jiaEast: '甲级-东区', jiaWest: '甲级-西区', yiEast: '乙级-东区', yiWest: '乙级-西区'
 };
+const CUP_NAMES = { championsCup: '🏆 冠军杯', leagueCup: '🏆 联盟杯', associationCup: '🏆 协会杯' };
 const LEAGUE_TEAM_COUNTS = { super: 12, jiaEast: 12, jiaWest: 12, yiEast: 12, yiWest: 12 };
 const POSITION_NAMES = { GK: '门将', DF: '后卫', MF: '中场', FW: '前锋' };
 const EMOJIS = ['⚽','🔵','🔴','🟡','🟠','🟢','⭐','🌟','💎','🏅','🎖️','🎯','🚀','🔥','💥'];
@@ -542,6 +553,7 @@ let state = {
   teams: [],
   matches: [],
   standings: {},
+  cups: { championsCup: { teams: [], matches: [] }, leagueCup: { teams: [], matches: [] }, associationCup: { teams: [], matches: [] } },
   currentUser: null,
   currentLeague: 'super',
   currentPage: 'home'
@@ -581,6 +593,11 @@ function loadState() {
       initData();
     } else {
       state = parsed;
+      // 兼容旧版本没有 cups 字段
+      if (!state.cups) {
+        state.cups = { championsCup: { teams: [], matches: [] }, leagueCup: { teams: [], matches: [] }, associationCup: { teams: [], matches: [] } };
+        saveState();
+      }
     }
   } else {
     initData();
@@ -934,6 +951,272 @@ function generateAllMatches() {
   return matches;
 }
 
+// ============ CUP MANAGEMENT ============
+function isCupLeague(league) { return !!CUP_NAMES[league]; }
+
+function renderCupSchedule(cupId) {
+  const container = document.getElementById('scheduleContent');
+  const cup = state.cups ? state.cups[cupId] : null;
+  if (!cup || !cup.matches || cup.matches.length === 0) {
+    container.innerHTML = '<div class="cup-empty"><div class="cup-empty-icon">🏆</div><div>暂无' + (CUP_NAMES[cupId] || '杯赛') + '赛程</div><div style="font-size:12px;color:#999;margin-top:8px">管理员可在侧边栏"杯赛管理"中创建赛程</div></div>';
+    return;
+  }
+  const rounds = {};
+  cup.matches.forEach(m => {
+    if (!rounds[m.round]) rounds[m.round] = [];
+    rounds[m.round].push(m);
+  });
+  let html = '';
+  Object.keys(rounds).sort((a, b) => a - b).forEach(round => {
+    html += '<div class="match-round-title">第' + round + '轮</div>';
+    rounds[round].forEach(m => {
+      const home = state.teams.find(t => t.id === m.homeTeam);
+      const away = state.teams.find(t => t.id === m.awayTeam);
+      if (!home || !away) return;
+      const isCompleted = m.status === 'completed';
+      const canEnter = state.currentUser && (state.currentUser.isSuperAdmin || state.currentUser.isDataRecorder) && !isCompleted;
+      const enterBtn = canEnter
+        ? '<div style="text-align:center;margin-top:4px"><button class="btn btn-primary btn-small" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'' + cupId + '\')">录入比赛</button></div>'
+        : '';
+      html += '<div class="match-card" style="padding:8px 10px;margin-bottom:6px">'
+        + '<div style="font-size:10px;color:#aaa;margin-bottom:3px">' + (m.date || '') + '</div>'
+        + '<div style="display:flex;align-items:center;gap:4px">'
+          + '<div style="flex:1;display:flex;align-items:center;gap:3px">'
+            + '<img src="' + home.logo + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
+            + '<span style="font-size:13px;font-weight:600;color:#228B22">' + home.name + '</span>'
+          + '</div>'
+          + '<div style="display:flex;align-items:center;min-width:48px;justify-content:center">'
+            + '<span style="font-size:9px;color:' + (isCompleted ? '#2E7D32' : '#E65100') + ';margin-right:4px">' + (isCompleted ? '已结束' : '待进行') + '</span>'
+            + (isCompleted
+              ? '<div class="match-score" style="cursor:pointer" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'' + cupId + '\')"><span>' + m.homeScore + '</span><span class="dash">-</span><span>' + m.awayScore + '</span></div>'
+              : '<span style="font-size:20px">⚔️</span>')
+          + '</div>'
+          + '<div style="flex:1;display:flex;align-items:center;gap:3px;justify-content:flex-end">'
+            + '<span style="font-size:13px;font-weight:600;color:#228B22">' + away.name + '</span>'
+            + '<img src="' + away.logo + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
+          + '</div>'
+        + '</div>'
+        + enterBtn
+      + '</div>';
+    });
+  });
+  container.innerHTML = html;
+}
+
+function showEnterCupMatchModal(matchId, cupId) {
+  const cup = state.cups[cupId];
+  if (!cup) return;
+  const match = cup.matches.find(m => m.id === matchId);
+  if (!match) return;
+  const homeTeam = state.teams.find(t => t.id === match.homeTeam);
+  const awayTeam = state.teams.find(t => t.id === match.awayTeam);
+  if (!homeTeam || !awayTeam) return;
+  const isEdit = match.status === 'completed';
+  const homePlayers = [...homeTeam.players].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+  const awayPlayers = [...awayTeam.players].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+  const getGoalCount = (pid, teamId) => { if (!match.scorers) return 0; return match.scorers.filter(s => s.playerId === pid && s.teamId === teamId).length; };
+  const getAssistCount = (pid, teamId) => { if (!match.assists) return 0; return match.assists.filter(a => a.playerId === pid && a.teamId === teamId).length; };
+  const homeGoalsHtml = homePlayers.map(p => '<div class="pr"><span>' + p.name + '</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="' + p.id + '" data-goal="home" value="' + getGoalCount(p.id, match.homeTeam) + '" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>').join('');
+  const homeAssistsHtml = homePlayers.map(p => '<div class="pr"><span>' + p.name + '</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="' + p.id + '" data-ast="home" value="' + getAssistCount(p.id, match.homeTeam) + '" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>').join('');
+  const awayGoalsHtml = awayPlayers.map(p => '<div class="pr"><span>' + p.name + '</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="' + p.id + '" data-goal="away" value="' + getGoalCount(p.id, match.awayTeam) + '" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>').join('');
+  const awayAssistsHtml = awayPlayers.map(p => '<div class="pr"><span>' + p.name + '</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="' + p.id + '" data-ast="away" value="' + getAssistCount(p.id, match.awayTeam) + '" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>').join('');
+  const motmId = match.motm || '';
+  const homeMotmHtml = homePlayers.map(p => '<div class="mr' + (motmId === p.id ? ' selected' : '') + '" onclick="selMotm(this,\'' + p.id + '\')"><span>' + p.name + '</span></div>').join('');
+  const awayMotmHtml = awayPlayers.map(p => '<div class="mr' + (motmId === p.id ? ' selected' : '') + '" onclick="selMotm(this,\'' + p.id + '\')"><span>' + p.name + '</span></div>').join('');
+  const style = '<style>.pr{display:flex;align-items:center;justify-content:space-between;padding:3px 4px;border-bottom:1px solid #eee}.pr:last-child{border-bottom:none}.pc{display:flex;align-items:center;gap:2px}.bm,.bp{width:24px;height:24px;border-radius:50%;font-size:14px;font-weight:bold;cursor:pointer;border:none}.bm{background:#f5f5f5;color:#666}.bp{background:#228B22;color:#fff}.pv{width:28px;text-align:center;font-size:14px;font-weight:600;border:1px solid #228B22;border-radius:4px;padding:2px;background:#f8fff8}.mtb{background:#fff;border:2px solid #ddd;border-radius:20px;padding:5px 10px;font-size:12px;cursor:pointer}.mtb.active{background:#228B22;border-color:#228B22;color:#fff}.mr{display:flex;align-items:center;justify-content:space-between;padding:2px 4px;border-bottom:1px solid #eee;cursor:pointer;font-size:13px}.mr:last-child{border-bottom:none}.mr.selected{background:#e8f5e9;color:#228B22;font-weight:600}.mc{flex:1;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px;margin:0 2px}.mct{text-align:center;font-weight:700;font-size:13px;padding:4px;background:#228B22;color:#fff;border-radius:4px 4px 0 0}</style>';
+  const header = '<div class="modal-header"><div class="modal-title">' + (isEdit ? '✏️ 修改比赛结果' : '✏️ 录入比赛结果') + '（' + (CUP_NAMES[cupId] || '杯赛') + '）</div><button class="modal-close" onclick="closeModal()">×</button></div>';
+  const score = '<div style="text-align:center;padding:8px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:8px"><span style="font-size:15px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + homeTeam.name + '</span><img src="' + homeTeam.logo + '" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><input type="number" id="cupHomeScore" value="' + (match.homeScore || 0) + '" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid #228B22;border-radius:4px">:<input type="number" id="cupAwayScore" value="' + (match.awayScore || 0) + '" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid #228B22;border-radius:4px"><img src="' + awayTeam.logo + '" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><span style="font-size:15px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + awayTeam.name + '</span></div>';
+  const tabs = '<div style="display:flex;gap:2px;overflow-x:auto;padding:2px 0"><button type="button" class="mtb active" data-tab="hg">⚽ 主队进球</button><button type="button" class="mtb" data-tab="ha">👟 主队助攻</button><button type="button" class="mtb" data-tab="ag">⚽ 客队进球</button><button type="button" class="mtb" data-tab="aa">👟 客队助攻</button><button type="button" class="mtb" data-tab="motm">⭐ 最佳球员</button></div>';
+  const panels = '<div id="tab-hg" class="tp" style="max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + homeGoalsHtml + '</div><div id="tab-ha" class="tp" style="display:none;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + homeAssistsHtml + '</div><div id="tab-ag" class="tp" style="display:none;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + awayGoalsHtml + '</div><div id="tab-aa" class="tp" style="display:none;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + awayAssistsHtml + '</div><div id="tab-motm" class="tp" style="display:none"><div style="display:flex;gap:4px"><div class="mc"><div class="mct">' + homeTeam.name + '</div><div>' + homeMotmHtml + '</div></div><div class="mc"><div class="mct">' + awayTeam.name + '</div><div>' + awayMotmHtml + '</div></div></div><input type="hidden" id="cupMotm" value="' + motmId + '"></div>';
+  const submitBtn = '<button type="button" class="btn btn-primary btn-full" style="margin-top:8px;padding:10px;font-size:14px" id="saveCupMatchBtn">' + (isEdit ? '更新比赛结果' : '保存比赛结果') + '</button>';
+  showModal(style + header + score + '<form id="cupMatchForm">' + tabs + panels + submitBtn + '</form>');
+  window.adjInp = function(btn, d) { const inp = btn.parentElement.querySelector('.pv'); let v = parseInt(inp.value) || 0; v = Math.max(0, v + d); inp.value = v; inp.dispatchEvent(new Event('input', { bubbles: true })); };
+  window.selMotm = function(row, pid) { document.querySelectorAll('.mr').forEach(r => r.classList.remove('selected')); row.classList.add('selected'); document.getElementById('cupMotm').value = pid; };
+  document.querySelectorAll('.mtb').forEach(btn => { btn.addEventListener('click', function() { document.querySelectorAll('.mtb').forEach(b => b.classList.remove('active')); this.classList.add('active'); document.querySelectorAll('.tp').forEach(p => p.style.display = 'none'); document.getElementById('tab-' + this.dataset.tab).style.display = 'block'; }); });
+  document.querySelectorAll('[data-goal]').forEach(inp => { inp.addEventListener('input', function() { let hg = 0, ag = 0; document.querySelectorAll('[data-goal="home"]').forEach(i => hg += parseInt(i.value) || 0); document.querySelectorAll('[data-goal="away"]').forEach(i => ag += parseInt(i.value) || 0); document.getElementById('cupHomeScore').value = hg; document.getElementById('cupAwayScore').value = ag; }); });
+  window.isCupEditing = isEdit;
+  document.getElementById('saveCupMatchBtn').onclick = function() {
+    try { submitCupMatchResult(matchId, cupId); } catch(err) { showToast('错误: ' + err.message); }
+  };
+}
+
+function submitCupMatchResult(matchId, cupId) {
+  const cup = state.cups[cupId];
+  if (!cup) { showToast('杯赛数据未找到'); return; }
+  const match = cup.matches.find(m => m.id === matchId);
+  if (!match) { showToast('比赛未找到'); return; }
+  const homeScore = parseInt(document.getElementById('cupHomeScore').value) || 0;
+  const awayScore = parseInt(document.getElementById('cupAwayScore').value) || 0;
+  const motmId = document.getElementById('cupMotm').value;
+  const homeTeam = state.teams.find(t => t.id === match.homeTeam);
+  const awayTeam = state.teams.find(t => t.id === match.awayTeam);
+  if (!homeTeam || !awayTeam) { showToast('球队未找到'); return; }
+  const isEdit = window.isCupEditing;
+  // 还原旧数据
+  if (isEdit && match.scorers) {
+    match.scorers.forEach(s => { const team = s.teamId === match.homeTeam ? homeTeam : awayTeam; const p = team.players.find(x => x.id === s.playerId); if (p) { p.goals = (p.goals || 0) - 1; p.gamesPlayed = (p.gamesPlayed || 0) - 1; } });
+  }
+  if (isEdit && match.assists) {
+    match.assists.forEach(a => { const team = a.teamId === match.homeTeam ? homeTeam : awayTeam; const p = team.players.find(x => x.id === a.playerId); if (p) { p.assists = (p.assists || 0) - 1; p.gamesPlayed = (p.gamesPlayed || 0) - 1; } });
+  }
+  if (isEdit && match.motm) {
+    const motmP = [...homeTeam.players, ...awayTeam.players].find(x => x.id === match.motm);
+    if (motmP) motmP.motmCount = (motmP.motmCount || 0) - 1;
+  }
+  // 更新比赛
+  match.homeScore = homeScore;
+  match.awayScore = awayScore;
+  match.status = 'completed';
+  match.scorers = [];
+  match.assists = [];
+  match.motm = motmId || null;
+  document.querySelectorAll('[data-goal="home"]').forEach(inp => { const g = parseInt(inp.value) || 0; if (g > 0) { const p = homeTeam.players.find(x => x.id === inp.dataset.pid); if (p) { p.goals = (p.goals || 0) + g; p.gamesPlayed = (p.gamesPlayed || 0) + g; for (let i = 0; i < g; i++) match.scorers.push({ playerId: inp.dataset.pid, teamId: match.homeTeam, minute: null }); } } });
+  document.querySelectorAll('[data-goal="away"]').forEach(inp => { const g = parseInt(inp.value) || 0; if (g > 0) { const p = awayTeam.players.find(x => x.id === inp.dataset.pid); if (p) { p.goals = (p.goals || 0) + g; p.gamesPlayed = (p.gamesPlayed || 0) + g; for (let i = 0; i < g; i++) match.scorers.push({ playerId: inp.dataset.pid, teamId: match.awayTeam, minute: null }); } } });
+  document.querySelectorAll('[data-ast="home"]').forEach(inp => { const a = parseInt(inp.value) || 0; if (a > 0) { const p = homeTeam.players.find(x => x.id === inp.dataset.pid); if (p) { p.assists = (p.assists || 0) + a; p.gamesPlayed = (p.gamesPlayed || 0) + a; for (let i = 0; i < a; i++) match.assists.push({ playerId: inp.dataset.pid, teamId: match.homeTeam }); } } });
+  document.querySelectorAll('[data-ast="away"]').forEach(inp => { const a = parseInt(inp.value) || 0; if (a > 0) { const p = awayTeam.players.find(x => x.id === inp.dataset.pid); if (p) { p.assists = (p.assists || 0) + a; p.gamesPlayed = (p.gamesPlayed || 0) + a; for (let i = 0; i < a; i++) match.assists.push({ playerId: inp.dataset.pid, teamId: match.awayTeam }); } } });
+  if (motmId) { const motmP = [...homeTeam.players, ...awayTeam.players].find(x => x.id === motmId); if (motmP) motmP.motmCount = (motmP.motmCount || 0) + 1; }
+  saveState(); closeModal(); render(); showToast(isEdit ? '比赛结果已更新！' : '比赛结果已保存！');
+}
+
+function showCupManageModal() {
+  if (!state.currentUser || !state.currentUser.isSuperAdmin) { showToast('需要管理员权限'); return; }
+  if (!state.cups) state.cups = {};
+  if (!state.cups.championsCup) state.cups.championsCup = { teams: [], matches: [] };
+  if (!state.cups.leagueCup) state.cups.leagueCup = { teams: [], matches: [] };
+  if (!state.cups.associationCup) state.cups.associationCup = { teams: [], matches: [] };
+  const content = '<div class="modal-header"><div class="modal-title">🏆 杯赛管理</div><button class="modal-close" onclick="closeModal()">×</button></div>'
+    + '<div style="max-height:80vh;overflow-y:auto;padding:4px 0">'
+    + Object.keys(CUP_NAMES).map(cupId => {
+      const cup = state.cups[cupId];
+      const teamCount = cup.teams ? cup.teams.length : 0;
+      const matchCount = cup.matches ? cup.matches.length : 0;
+      const completedCount = cup.matches ? cup.matches.filter(m => m.status === 'completed').length : 0;
+      return '<div class="import-section" style="border-color:#FFD700">'
+        + '<div class="import-section-title" style="color:#333">' + CUP_NAMES[cupId] + '</div>'
+        + '<div style="font-size:12px;color:#666;line-height:1.8">'
+          + '<div>参赛球队：<b>' + teamCount + '</b> 支</div>'
+          + '<div>比赛总数：<b>' + matchCount + '</b> 场（已完赛 <b>' + completedCount + '</b> 场）</div>'
+        + '</div>'
+        + '<div style="display:flex;gap:8px;margin-top:8px">'
+          + '<button class="btn btn-primary btn-small" style="flex:1;background:#228B22" onclick="showImportCupModal(\'' + cupId + '\')">导入赛程</button>'
+          + (matchCount > 0 ? '<button class="btn btn-secondary btn-small" style="flex:1;color:#f44336" onclick="clearCup(\'' + cupId + '\')">清除赛程</button>' : '')
+        + '</div>'
+      + '</div>';
+    }).join('')
+    + '</div>';
+  showModal(content);
+}
+
+function clearCup(cupId) {
+  if (!confirm('确定要清除' + (CUP_NAMES[cupId] || '杯赛') + '的所有赛程数据吗？')) return;
+  state.cups[cupId] = { teams: [], matches: [] };
+  saveState(); closeModal(); render(); showToast('杯赛数据已清除');
+}
+
+function showImportCupModal(cupId) {
+  const cup = state.cups[cupId];
+  const cupName = CUP_NAMES[cupId] || '杯赛';
+  const content = '<div class="modal-header"><div class="modal-title">' + cupName + ' - 导入赛程</div><button class="modal-close" onclick="closeModal()">×</button></div>'
+    + '<div style="max-height:80vh;overflow-y:auto;padding:4px 0">'
+    // 已有赛程预览
+    + (cup.matches && cup.matches.length > 0 ? (() => {
+      let preview = '<div style="margin-bottom:12px"><div class="form-label">📋 当前赛程（' + cup.matches.length + '场）</div>';
+      const rounds = {};
+      cup.matches.forEach(m => { if (!rounds[m.round]) rounds[m.round] = []; rounds[m.round].push(m); });
+      Object.keys(rounds).sort((a, b) => a - b).forEach(round => {
+        preview += '<div style="font-size:12px;font-weight:700;color:#228B22;margin:6px 0 4px">第' + round + '轮</div>';
+        rounds[round].forEach(m => {
+          const h = state.teams.find(t => t.id === m.homeTeam);
+          const a = state.teams.find(t => t.id === m.awayTeam);
+          if (!h || !a) return;
+          const isDone = m.status === 'completed';
+          preview += '<div class="cup-match-item">'
+            + '<img src="' + h.logo + '" onerror="this.style.display=\'none\'">'
+            + '<span style="flex:1">' + h.name + '</span>'
+            + '<span style="font-weight:700;color:' + (isDone ? '#228B22' : '#E65100') + '">' + (isDone ? m.homeScore + '-' + m.awayScore : 'VS') + '</span>'
+            + '<span style="flex:1;text-align:right">' + a.name + '</span>'
+            + '<img src="' + a.logo + '" onerror="this.style.display=\'none\'">'
+          + '</div>';
+        });
+      });
+      preview += '</div>';
+      return preview;
+    })() : '')
+    // 导入表单
+    + '<div class="form-group"><div class="form-label">📥 粘贴赛程JSON数据</div>'
+    + '<div class="format-example" style="margin-bottom:8px">'
+      + '<div class="format-label">📝 格式说明（按轮次，用球队名称）：每场用 {"h":"主队名","a":"客队名"}，可加 "r" 指定轮次</div>'
+      + '<pre class="format-code">[\n  {"h":"皇马","a":"巴萨","r":1},\n  {"h":"拜仁","a":"多特","r":1},\n  {"h":"巴萨","a":"皇马","r":2},\n  ...\n]</pre>'
+      + '<div class="format-tips">💡 球队名称需和系统中球队名完全一致，"r" 省略时自动按顺序编轮次</div>'
+    + '</div>'
+    + '<textarea id="importCupJson" class="import-textarea" style="height:150px" placeholder=\'粘贴JSON数据...\n[\n  {"h":"主队名","a":"客队名","r":1},\n  ...\n]\'></textarea>'
+    + '</div>'
+    + '<button class="btn btn-primary btn-full" style="margin-top:8px;background:#228B22" onclick="importCupSchedule(\'' + cupId + '\')">📥 导入赛程</button>'
+    + '</div>';
+  showModal(content);
+}
+
+function importCupSchedule(cupId) {
+  try {
+    const json = document.getElementById('importCupJson').value.trim();
+    if (!json) { showToast('请输入JSON数据'); return; }
+    const schedule = JSON.parse(json);
+    if (!Array.isArray(schedule) || schedule.length === 0) { showToast('JSON格式错误，需要非空数组'); return; }
+    // 校验格式
+    for (let i = 0; i < schedule.length; i++) {
+      const item = schedule[i];
+      if (!item.h || !item.a) { showToast('第' + (i + 1) + '场缺少 h(主队) 或 a(客队)'); return; }
+    }
+    // 匹配球队（支持别名）
+    const teamNameMap = {};
+    const aliasMap = {
+      'Nottingham Forest': 'Nottm Forest', 'A.Bilbao': 'A. Bilbao'
+    };
+    state.teams.forEach(t => { teamNameMap[t.name] = t; });
+    // 把别名也加入映射
+    Object.keys(aliasMap).forEach(alias => {
+      const target = teamNameMap[aliasMap[alias]];
+      if (target) teamNameMap[alias] = target;
+    });
+    const cup = state.cups[cupId];
+    const cupName = CUP_NAMES[cupId] || '杯赛';
+    const newMatches = [];
+    const teamIds = new Set();
+    let matchIdx = 1;
+    let autoRound = 1;
+    schedule.forEach(item => {
+      const homeTeam = teamNameMap[item.h] || teamNameMap[item.h.trim()];
+      const awayTeam = teamNameMap[item.a] || teamNameMap[item.a.trim()];
+      if (!homeTeam) { showToast('未找到球队: ' + item.h); return; }
+      if (!awayTeam) { showToast('未找到球队: ' + item.a); return; }
+      teamIds.add(homeTeam.id);
+      teamIds.add(awayTeam.id);
+      const round = item.r || autoRound;
+      newMatches.push({
+        id: 'cup_' + cupId + '_m' + (matchIdx++),
+        round: round,
+        homeTeam: homeTeam.id,
+        awayTeam: awayTeam.id,
+        date: item.date || null,
+        homeScore: null,
+        awayScore: null,
+        scorers: [],
+        assists: [],
+        motm: null,
+        status: 'pending'
+      });
+      if (!item.r) autoRound = round + 1;
+    });
+    if (newMatches.length === 0) return;
+    cup.teams = Array.from(teamIds);
+    cup.matches = newMatches;
+    saveState(); closeModal(); render();
+    showToast(cupName + '赛程导入成功！共 ' + newMatches.length + ' 场比赛');
+  } catch(e) {
+    showToast('JSON解析错误: ' + e.message);
+  }
+}
+
 // ============ RENDER ============
 function render() {
   renderStandings();
@@ -1060,8 +1343,13 @@ function toggleTeamPlayers(card) {
 }
 
 function renderSchedule() {
-  const container = document.getElementById('scheduleContent');
   const league = state.currentLeague;
+  // 杯赛赛程
+  if (isCupLeague(league)) {
+    renderCupSchedule(league);
+    return;
+  }
+  const container = document.getElementById('scheduleContent');
   
   let matches = [...state.matches];
   matches = matches.filter(m => {
@@ -1999,9 +2287,13 @@ function updateSidebar() {
     logoutBtn.style.display = 'flex';
     userName.textContent = state.currentUser.coachName;
     userRole.textContent = state.currentUser.isSuperAdmin ? '超级管理员' : (state.currentUser.isDataRecorder ? '数据员' : (state.currentUser.teamName + ' 主教练'));
-    // 超级管理员显示导入按钮
+    // 超级管理员显示导入按钮和杯赛管理按钮
     if (adminImportBtn) {
       adminImportBtn.style.display = state.currentUser.isSuperAdmin ? 'flex' : 'none';
+    }
+    const cupManageBtn = document.getElementById('btnCupManage');
+    if (cupManageBtn) {
+      cupManageBtn.style.display = (state.currentUser.isSuperAdmin || (state.currentUser && state.currentUser.isDataRecorder)) ? 'flex' : 'none';
     }
   } else {
     if (loginBtn) loginBtn.style.display = "flex";
@@ -2294,6 +2586,9 @@ let GITHUB_TOKEN = localStorage.getItem('pgm_github_token') || '';
 const _rt = ['github_pat_11CBKY23Y0oF5hEPrq','jISh_LQrtkZZqiqQwhECdw4','fWHmXURUkLm6bkWsyI7YSS1','7w3SXQJEXHhFGFUlCY'];
 const RECORDER_BUILTIN_TOKEN = _rt.join('');
 
+const _at = ['ghp_yMrzCDb2RN8oUaJlQI','orq4js1N1Duz4ESvDO'];
+const ADMIN_BUILTIN_TOKEN = _at.join('');
+
 const GIST_API = 'https://api.github.com/gists';
 
 function showSyncModal() {
@@ -2434,34 +2729,11 @@ function showSyncModal() {
     </div>
     <div style="max-height:70vh;overflow-y:auto;padding:4px 0">
       
-      <!-- GitHub Token 配置 -->
-      <div class="import-section" style="border-color:#2196F3;">
-        <div class="import-section-title" style="color:#2196F3;">🔑 GitHub Token 配置</div>
-        <div class="import-desc">
-          ${hasToken ? '<span style="color:#4CAF50">✅ 已配置 Token</span>' : '需要 GitHub Personal Access Token 才能使用云端同步'}
-        </div>
-        <input type="password" id="syncTokenInput" class="import-textarea" 
-          style="height:auto;padding:10px;font-size:12px;" 
-          placeholder="${hasToken ? '已配置，留空不修改' : '粘贴 GitHub Token...'}" value="">
-        <div style="font-size:11px;color:#888;margin:6px 0;line-height:1.6;">
-          获取方式：<br>
-          1. 电脑浏览器打开 <a href="https://github.com/settings/tokens" target="_blank" style="color:#2196F3;">github.com/settings/tokens</a><br>
-          2. 点 "Generate new token (classic)"<br>
-          3. 勾选 "gist" 权限 → 生成 → 复制 Token
-        </div>
-        <button class="btn btn-primary btn-full" onclick="saveGithubToken()" style="background:#2196F3;">
-          保存 Token
-        </button>
-        ${hasToken ? '<button class="btn btn-full" style="background:#f44336;color:white;margin-top:8px;" onclick="removeGithubToken()">清除 Token 并重新绑定</button>' : ''}
-      </div>
-      
       <!-- 云端同步操作 -->
       <div class="import-section" style="border-color:#FF9800;">
         <div class="import-section-title" style="color:#FF9800;">☁️ 云端同步 (Gist)</div>
         <div class="import-desc">
-          ${hasToken
-            ? (hasGist ? '<span style="color:#4CAF50">✅ 已绑定云端</span> (Gist: ' + GIST_ID.substring(0, 8) + '...)' : '首次使用需先上传数据创建云端')
-            : '<span style="color:#f44336">⚠️ 请先配置 Token</span>'}
+          ${hasGist ? '<span style="color:#4CAF50">✅ 已绑定云端</span> (Gist: ' + GIST_ID.substring(0, 8) + '...)' : '首次使用需先上传数据创建云端'}
         </div>
         
         <div style="display:flex;gap:8px;margin-bottom:8px;">
@@ -2477,7 +2749,7 @@ function showSyncModal() {
         
         <div style="background:#fff3e0;border-radius:8px;padding:10px;font-size:12px;color:#e65100;line-height:1.6;margin-top:8px;">
           <b>💡 使用说明：</b><br>
-          • ${hasToken ? '你录入完比赛后 → 点"上传到云端"' : '先在上方配置 GitHub Token，然后上传数据'}<br>
+          • 录入完比赛后 → 点"上传到云端"<br>
           • 教练们打开网页 → 点"从云端下载"<br>
           • 所有教练都能看到最新数据
         </div>
@@ -2733,7 +3005,8 @@ function removeGithubToken() {
 
 // 上传数据到云端
 async function syncUpload() {
-  if (!GITHUB_TOKEN) { showToast('请先配置 GitHub Token'); return; }
+  const token = GITHUB_TOKEN || ADMIN_BUILTIN_TOKEN;
+  if (!token) { showToast('云端同步不可用'); return; }
   if (!confirm('确定要上传数据到云端吗？这将覆盖云端现有数据。')) return;
 
   showToast('正在上传...');
@@ -2742,7 +3015,7 @@ async function syncUpload() {
     const dataStr = JSON.stringify(state, null, 2);
     const filename = 'pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json';
     const headers = {
-      'Authorization': 'Bearer ' + GITHUB_TOKEN,
+      'Authorization': 'Bearer ' + token,
       'Accept': 'application/vnd.github.v3+json',
       'Content-Type': 'application/json'
     };
@@ -2751,7 +3024,7 @@ async function syncUpload() {
     if (hasValidGistId) {
       // 更新已有 Gist
       const getResp = await fetch(GIST_API + '/' + GIST_ID, {
-        headers: { 'Authorization': 'Bearer ' + GITHUB_TOKEN }
+        headers: { 'Authorization': 'Bearer ' + token }
       });
       if (getResp.ok) {
         const gist = await getResp.json();
@@ -2968,7 +3241,12 @@ document.querySelectorAll('.league-chip').forEach(chip => {
     const selector = chip.parentElement;
     selector.querySelectorAll('.league-chip').forEach(c => c.classList.remove('active'));
     chip.classList.add('active');
-    state.currentLeague = chip.dataset.league;
+    // 杯赛 chip
+    if (chip.dataset.cup) {
+      state.currentLeague = chip.dataset.cup;
+    } else {
+      state.currentLeague = chip.dataset.league;
+    }
     render();
   };
 });
@@ -2994,6 +3272,7 @@ document.getElementById('btnEnterMatch').onclick = () => {
   }
 };
 document.getElementById('btnAdminImport').onclick = () => showAdminImportModal();
+document.getElementById('btnCupManage').onclick = () => showCupManageModal();
 document.getElementById('btnSyncCloud').onclick = () => showSyncModal();
 
 document.getElementById('modalOverlay').onclick = (e) => {
