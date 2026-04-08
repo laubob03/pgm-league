@@ -989,7 +989,7 @@ function renderCupSchedule(cupId) {
         + '<div style="display:flex;align-items:center;gap:4px">'
           + '<div style="flex:1;display:flex;align-items:center;gap:3px">'
             + '<img src="' + home.logo + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
-            + '<span style="font-size:13px;font-weight:600;color:#228B22">' + home.name + '</span>'
+            + '<span style="font-size:13px;font-weight:600;color:#228B22;cursor:pointer" onclick="showTeamDetail(\'' + home.id + '\')">' + home.name + '</span>'
           + '</div>'
           + '<div style="display:flex;align-items:center;min-width:48px;justify-content:center">'
             + '<span style="font-size:9px;color:' + (isCompleted ? '#2E7D32' : '#E65100') + ';margin-right:4px">' + (isCompleted ? '已结束' : '待进行') + '</span>'
@@ -998,7 +998,7 @@ function renderCupSchedule(cupId) {
               : '<span style="font-size:20px">⚔️</span>')
           + '</div>'
           + '<div style="flex:1;display:flex;align-items:center;gap:3px;justify-content:flex-end">'
-            + '<span style="font-size:13px;font-weight:600;color:#228B22">' + away.name + '</span>'
+            + '<span style="font-size:13px;font-weight:600;color:#228B22;cursor:pointer" onclick="showTeamDetail(\'' + away.id + '\')">' + away.name + '</span>'
             + '<img src="' + away.logo + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
           + '</div>'
         + '</div>'
