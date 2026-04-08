@@ -291,6 +291,17 @@ const LEAGUE_NAMES = {
   super: '超级联赛', jiaEast: '甲级-东区', jiaWest: '甲级-西区', yiEast: '乙级-东区', yiWest: '乙级-西区'
 };
 const CUP_NAMES = { championsCup: '🏆 冠军杯', leagueCup: '🏆 联盟杯', associationCup: '🏆 协会杯' };
+
+// 数据员配置表
+const DATA_RECORDERS = {
+  jiadong:    { id: 'jiadong',    name: '甲东数据员', league: 'jiaEast',       type: 'league', cupId: null },
+  jiaxi:      { id: 'jiaxi',      name: '甲西数据员', league: 'jiaWest',       type: 'league', cupId: null },
+  yidong:     { id: 'yidong',     name: '乙东数据员', league: 'yiEast',        type: 'league', cupId: null },
+  yixi:       { id: 'yixi',       name: '乙西数据员', league: 'yiWest',        type: 'league', cupId: null },
+  guanjunbei: { id: 'guanjunbei', name: '冠军杯数据员', league: 'championsCup', type: 'cup', cupId: 'championsCup' },
+  lianmengbei:{ id: 'lianmengbei',name: '联盟杯数据员', league: 'leagueCup',    type: 'cup', cupId: 'leagueCup' },
+  xiehuibei:  { id: 'xiehuibei', name: '协会杯数据员', league: 'associationCup',type: 'cup', cupId: 'associationCup' }
+};
 const LEAGUE_TEAM_COUNTS = { super: 12, jiaEast: 12, jiaWest: 12, yiEast: 12, yiWest: 12 };
 const POSITION_NAMES = { GK: '门将', DF: '后卫', MF: '中场', FW: '前锋' };
 const EMOJIS = ['⚽','🔵','🔴','🟡','🟠','🟢','⭐','🌟','💎','🏅','🎖️','🎯','🚀','🔥','💥'];
@@ -1012,8 +1023,8 @@ function renderCupSchedule(cupId) {
           + (awayAssistStr ? '<div>\uD83D\uDC5F ' + awayAssistStr + '</div>' : '')
           + (awayMotmStr ? '<div style="color:#f5a623">\u2B50 ' + awayMotmStr + '</div>' : '')
           + '</div>' : '';
-      const canEnter = state.currentUser && state.currentUser.isSuperAdmin && !isCompleted;
-      const enterBtn = canEnter
+      const canEnterCup = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cupId)) && !isCompleted;
+      const enterBtn = canEnterCup
         ? '<div style="text-align:center;margin-top:4px"><button class="btn btn-primary btn-small" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'' + cupId + '\')">录入比赛</button></div>'
         : '';
       html += '<div class="match-card" style="padding:8px 10px;margin-bottom:6px">'
@@ -1029,7 +1040,7 @@ function renderCupSchedule(cupId) {
           + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px">'
             + '<span style="font-size:9px;color:' + (isCompleted ? '#2E7D32' : '#E65100') + ';margin-bottom:1px">' + (isCompleted ? '已结束' : '待进行') + '</span>'
             + (isCompleted
-              ? (state.currentUser && state.currentUser.isSuperAdmin
+              ? (state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cupId))
                 ? '<div class="match-score" style="cursor:pointer" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'' + cupId + '\')"><span>' + m.homeScore + '</span><span class="dash">-</span><span>' + m.awayScore + '</span></div>'
                 : '<div class="match-score"><span>' + m.homeScore + '</span><span class="dash">-</span><span>' + m.awayScore + '</span></div>')
               : '<span style="font-size:20px">⚔️</span>')
@@ -2005,8 +2016,8 @@ function showTeamDetail(teamId) {
         const cupTeamMotmStr = cupTeamMotm ? cupTeamMotm.name : '';
         const cupTeamDetail = isCompleted && (cupTeamGoals || cupTeamAssists || cupTeamMotmStr)
           ? `<div style="font-size:9px;color:#666;line-height:1.2">${cupTeamGoals ? '⚽' + cupTeamGoals : ''}${cupTeamGoals && cupTeamAssists ? ' ' : ''}${cupTeamAssists ? '👟' + cupTeamAssists : ''}${cupTeamMotmStr ? (cupTeamGoals || cupTeamAssists ? ' ' : '') + '<span style="color:#f5a623">⭐' + cupTeamMotmStr + '</span>' : ''}</div>` : '';
-        const canEnterMatch = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && (state.teams.find(t => t.id === m.homeTeam) || {}).league === state.currentUser.league)) && !isCompleted;
-        const canEditScore = state.currentUser && state.currentUser.isSuperAdmin && isCompleted;
+        const canEnterMatch = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === m.cupId) || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'league' && (state.teams.find(t => t.id === m.homeTeam) || {}).league === state.currentUser.league)) && !isCompleted;
+        const canEditScore = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === m.cupId)) && isCompleted;
         const enterAttr = (canEnterMatch || canEditScore) ? `onclick="closeModal();setTimeout(()=>showEnterCupMatchModal('${m.id}','${m.cupId}'),100)" style="cursor:pointer"` : '';
         const homeTeamId = isHome ? teamId : (opponent ? opponent.id : '');
         const awayTeamId = isHome ? (opponent ? opponent.id : '') : teamId;
@@ -2533,14 +2544,15 @@ function showLoginModal() {
       updateSidebar();
       render();
       showToast('欢迎，超级管理员！');
-    } else if (teamId === 'ezhidao' && password === 'ezhidao') {
-      // 乙西数据员登录
-      state.currentUser = { teamId: 'ezhidao', teamName: '乙西数据员', coachName: '乙西数据员', isDataRecorder: true, league: 'yiWest' };
+    } else if (DATA_RECORDERS[teamId] && password === teamId) {
+      // 数据员登录
+      const rec = DATA_RECORDERS[teamId];
+      state.currentUser = { teamId: rec.id, teamName: rec.name, coachName: rec.name, isDataRecorder: true, league: rec.league, recorderType: rec.type, cupId: rec.cupId };
       saveState();
       closeModal();
       updateSidebar();
       render();
-      showToast('欢迎，乙西数据员！');
+      showToast('欢迎，' + rec.name + '！');
     } else if (password === '123456') {
       const team = state.teams.find(t => t.id === teamId);
       if (team) {
@@ -2602,7 +2614,7 @@ function updateSidebar() {
     if (sidebarLoginBtn) sidebarLoginBtn.style.display = "none";
     logoutBtn.style.display = 'flex';
     userName.textContent = state.currentUser.coachName;
-    userRole.textContent = state.currentUser.isSuperAdmin ? '超级管理员' : (state.currentUser.isDataRecorder ? '数据员' : (state.currentUser.teamName + ' 主教练'));
+    userRole.textContent = state.currentUser.isSuperAdmin ? '超级管理员' : (state.currentUser.isDataRecorder ? state.currentUser.teamName : (state.currentUser.teamName + ' 主教练'));
     // 超级管理员显示导入按钮和杯赛管理按钮
     if (adminImportBtn) {
       adminImportBtn.style.display = state.currentUser.isSuperAdmin ? 'flex' : 'none';
@@ -2896,7 +2908,6 @@ function resetAllData() {
 // 支持多设备数据同步，无需后端服务器
 
 let GIST_ID = localStorage.getItem('pgm_gist_id') || '4a08491692074f35f0f2320434826e41';
-let YIWEST_GIST_ID = localStorage.getItem('pgm_yiwest_gist_id') || '';
 let GITHUB_TOKEN = localStorage.getItem('pgm_github_token') || '';
 
 const _rt = ['ghp_Zpr9aIrHm','Gzv5hB3Xbn1Hh1BI','0TDx24Wbe5k'];
@@ -2913,17 +2924,32 @@ function showSyncModal() {
   const hasToken = !!GITHUB_TOKEN;
   const hasGist = !!GIST_ID;
 
-  // 数据员视图：独立 Gist，上传/下载联赛数据，使用内置 Token
+  // 数据员视图：独立 Gist，上传/下载联赛/杯赛数据，使用内置 Token
   if (isRecorder) {
     const recorderToken = RECORDER_BUILTIN_TOKEN;
-    const recorderGist = YIWEST_GIST_ID;
     const league = state.currentUser.league;
-    const leagueName = league === 'yiWest' ? '乙西' : league;
-    const yiWestTeams = state.teams.filter(t => t.league === league);
-    const yiWestMatches = state.matches.filter(m => {
-      const home = state.teams.find(t => t.id === m.homeTeam);
-      return home && home.league === league;
-    });
+    const recorderType = state.currentUser.recorderType || 'league';
+    const cupId = state.currentUser.cupId || null;
+    const leagueName = getRecorderDisplayName(league);
+    const gistKey = 'pgm_recorder_gist_' + state.currentUser.teamId;
+    const recorderGist = localStorage.getItem(gistKey) || '';
+    const isCup = recorderType === 'cup';
+
+    // 获取该数据员负责的数据概览
+    let dataTeams, dataMatches;
+    if (isCup && cupId && state.cups && state.cups[cupId]) {
+      const cup = state.cups[cupId];
+      dataTeams = cup.teams ? cup.teams.map(tid => state.teams.find(t => t.id === tid)).filter(Boolean) : [];
+      dataMatches = cup.matches || [];
+    } else {
+      dataTeams = state.teams.filter(t => t.league === league);
+      dataMatches = state.matches.filter(m => {
+        const home = state.teams.find(t => t.id === m.homeTeam);
+        return home && home.league === league;
+      });
+    }
+    const completedMatches = isCup ? dataMatches.filter(m => m.status === 'completed') : dataMatches.filter(m => m.completed);
+    const lastSyncKey = 'pgm_recorder_last_sync_' + state.currentUser.teamId;
     const content = `
       <div class="modal-header">
         <div class="modal-title">☁️ ${leagueName}数据同步</div>
@@ -2949,8 +2975,8 @@ function showSyncModal() {
             <button class="btn btn-primary" style="flex:1;background:#4CAF50;" onclick="recorderUpload()">
               ⬆️ 上传${leagueName}数据
             </button>
-            <button class="btn btn-primary" style="flex:1;background:#2196F3;" onclick="syncDownload()">
-              ⬇️ 从云端下载
+            <button class="btn btn-primary" style="flex:1;background:#2196F3;" onclick="recorderDownload()">
+              ⬇️ 下载${leagueName}数据
             </button>
           </div>
 
@@ -2966,10 +2992,10 @@ function showSyncModal() {
         <div class="import-section" style="border-color:#607D8B;">
           <div class="import-section-title" style="color:#607D8B;">📊 ${leagueName}数据概览</div>
           <div style="font-size:13px;line-height:2;color:#333;">
-            <div>球队数量：<b>${yiWestTeams.length}</b> 支</div>
-            <div>比赛总数：<b>${yiWestMatches.length}</b> 场</div>
-            <div>已完赛场次：<b>${yiWestMatches.filter(m => m.completed).length}</b> 场</div>
-            <div>最后同步：${localStorage.getItem('pgm_yiwest_last_sync_time') || '从未同步'}</div>
+            <div>球队数量：<b>${dataTeams.length}</b> 支</div>
+            <div>比赛总数：<b>${dataMatches.length}</b> 场</div>
+            <div>已完赛场次：<b>${completedMatches.length}</b> 场</div>
+            <div>最后同步：${localStorage.getItem(lastSyncKey) || '从未同步'}</div>
           </div>
         </div>
         
@@ -3118,12 +3144,61 @@ function showSyncModal() {
 
 // ============ 数据员专属同步函数 ============
 
+// 获取数据员显示名称
+function getRecorderDisplayName(league) {
+  const map = { jiaEast: '甲东', jiaWest: '甲西', yiEast: '乙东', yiWest: '乙西' };
+  if (map[league]) return map[league];
+  if (CUP_NAMES[league]) return CUP_NAMES[league].replace('🏆 ', '');
+  return league;
+}
+
+// 获取数据员的 Gist ID
+function getRecorderGistKey() {
+  if (!state.currentUser || !state.currentUser.isDataRecorder) return '';
+  return 'pgm_recorder_gist_' + state.currentUser.teamId;
+}
+
+function getRecorderGistId() {
+  const key = getRecorderGistKey();
+  return key ? (localStorage.getItem(key) || '') : '';
+}
+
+function setRecorderGistId(gistId) {
+  const key = getRecorderGistKey();
+  if (key) localStorage.setItem(key, gistId);
+}
+
+function getRecorderLastSyncKey() {
+  if (!state.currentUser || !state.currentUser.isDataRecorder) return '';
+  return 'pgm_recorder_last_sync_' + state.currentUser.teamId;
+}
+
+function recordSyncTime() {
+  const key = getRecorderLastSyncKey();
+  if (!key) return;
+  const now = new Date();
+  const timeStr = now.getFullYear() + '-' +
+    String(now.getMonth()+1).padStart(2,'0') + '-' +
+    String(now.getDate()).padStart(2,'0') + ' ' +
+    String(now.getHours()).padStart(2,'0') + ':' +
+    String(now.getMinutes()).padStart(2,'0');
+  localStorage.setItem(key, timeStr);
+}
+
 // 提取指定联赛的数据
 function extractLeagueData(league) {
   const teams = state.teams.filter(t => t.league === league);
   const teamIds = new Set(teams.map(t => t.id));
   const matches = state.matches.filter(m => teamIds.has(m.homeTeam) || teamIds.has(m.awayTeam));
-  return { teams, matches, league, exportedAt: new Date().toISOString() };
+  return { teams, matches, league, type: 'league', exportedAt: new Date().toISOString() };
+}
+
+// 提取指定杯赛的数据
+function extractCupData(cupId) {
+  const cup = state.cups ? state.cups[cupId] : null;
+  if (!cup) return null;
+  const cupTeams = (cup.teams || []).map(tid => state.teams.find(t => t.id === tid)).filter(Boolean);
+  return { cupTeams, cupMatches: cup.matches || [], cupId, type: 'cup', cups: { [cupId]: { teams: cup.teams || [], matches: cup.matches || [] } }, exportedAt: new Date().toISOString() };
 }
 
 // 合并联赛数据到本地
@@ -3138,52 +3213,57 @@ function mergeLeagueData(leagueData) {
   saveState();
 }
 
-// 数据员上传乙西数据到独立 Gist
+// 数据员上传数据到独立 Gist
 async function recorderUpload() {
   const token = GITHUB_TOKEN || RECORDER_BUILTIN_TOKEN;
   if (!token) { showToast('请先配置 GitHub Token'); return; }
-  const league = state.currentUser ? state.currentUser.league : 'yiWest';
-  const leagueName = league === 'yiWest' ? '乙西' : league;
+  const league = state.currentUser ? state.currentUser.league : '';
+  const recorderType = state.currentUser ? (state.currentUser.recorderType || 'league') : 'league';
+  const cupId = state.currentUser ? (state.currentUser.cupId || null) : null;
+  const leagueName = getRecorderDisplayName(league);
   if (!confirm('确定要上传' + leagueName + '数据到云端吗？所有教练下载后即可查看。')) return;
 
   showToast('正在上传...');
 
   try {
-    const leagueData = extractLeagueData(league);
-    const filename = league + '_data_' + new Date().toISOString().slice(0, 10) + '.json';
+    // 根据类型提取数据
+    const leagueData = recorderType === 'cup' ? extractCupData(cupId) : extractLeagueData(league);
+    if (!leagueData) { showToast('没有可上传的数据'); return; }
+    const filename = (recorderType === 'cup' ? 'cup_' + cupId : league) + '_data_' + new Date().toISOString().slice(0, 10) + '.json';
     const headers = {
       'Authorization': 'Bearer ' + token,
       'Accept': 'application/vnd.github.v3+json',
       'Content-Type': 'application/json'
     };
 
-    // 步骤1：上传到独立 Gist（备份）
+    // 步骤1：上传到独立 Gist
     const dataStr = JSON.stringify(leagueData, null, 2);
-    if (YIWEST_GIST_ID) {
-      const getResp = await fetch(GIST_API + '/' + YIWEST_GIST_ID, {
+    let recorderGistId = getRecorderGistId();
+    if (recorderGistId) {
+      const getResp = await fetch(GIST_API + '/' + recorderGistId, {
         headers: { 'Authorization': 'Bearer ' + token }
       });
       if (getResp.ok) {
         const gist = await getResp.json();
-        const body = { description: 'PGM ' + leagueName + '联赛数据 - 数据员同步', files: {} };
+        const body = { description: 'PGM ' + leagueName + '数据 - 数据员同步', files: {} };
         for (const fname of Object.keys(gist.files)) { body.files[fname] = null; }
         body.files[filename] = { content: dataStr };
-        const resp = await fetch(GIST_API + '/' + YIWEST_GIST_ID, { method: 'PATCH', headers, body: JSON.stringify(body) });
+        const resp = await fetch(GIST_API + '/' + recorderGistId, { method: 'PATCH', headers, body: JSON.stringify(body) });
         if (!resp.ok) {
           const errData = await resp.json().catch(() => ({}));
           if (resp.status === 403) throw new Error('权限不足(403)，请确认 Token 勾选了 gist 权限');
           throw new Error('独立Gist上传失败 ' + resp.status + ': ' + (errData.message || ''));
         }
         const result = await resp.json();
-        YIWEST_GIST_ID = result.id;
-        localStorage.setItem('pgm_yiwest_gist_id', YIWEST_GIST_ID);
+        setRecorderGistId(result.id);
       } else {
-        localStorage.removeItem('pgm_yiwest_gist_id');
-        YIWEST_GIST_ID = '';
+        const key = getRecorderGistKey();
+        if (key) localStorage.removeItem(key);
+        recorderGistId = '';
       }
     }
-    if (!YIWEST_GIST_ID) {
-      const body = { description: 'PGM ' + leagueName + '联赛数据 - 数据员同步', public: true, files: { [filename]: { content: dataStr } } };
+    if (!recorderGistId) {
+      const body = { description: 'PGM ' + leagueName + '数据 - 数据员同步', public: true, files: { [filename]: { content: dataStr } } };
       const resp = await fetch(GIST_API, { method: 'POST', headers, body: JSON.stringify(body) });
       if (!resp.ok) {
         const errData = await resp.json().catch(() => ({}));
@@ -3192,24 +3272,20 @@ async function recorderUpload() {
         throw new Error('创建失败 ' + resp.status + ': ' + (errData.message || ''));
       }
       const result = await resp.json();
-      YIWEST_GIST_ID = result.id;
-      localStorage.setItem('pgm_yiwest_gist_id', YIWEST_GIST_ID);
+      setRecorderGistId(result.id);
     }
 
-    // 步骤2：合并到主 Gist，让所有教练都能下载到
-    if (GIST_ID) {
+    // 步骤2：合并到主 Gist（仅联赛数据员合并联赛数据，杯赛数据员不合并）
+    if (recorderType === 'league' && GIST_ID) {
       showToast('正在合并到主云端...');
       const mainResp = await fetch(GIST_API + '/' + GIST_ID);
       if (mainResp.ok) {
         const mainGist = await mainResp.json();
         const mainFiles = Object.values(mainGist.files);
-        let mainState = state; // 默认用本地数据
+        let mainState = state;
         if (mainFiles.length > 0) {
-          try {
-            mainState = JSON.parse(mainFiles[0].content);
-          } catch(e) { console.warn('主Gist数据解析失败，使用本地数据'); }
+          try { mainState = JSON.parse(mainFiles[0].content); } catch(e) { console.warn('主Gist数据解析失败，使用本地数据'); }
         }
-        // 合并乙西数据到主数据
         if (leagueData.teams) {
           mainState.teams = mainState.teams.filter(t => t.league !== league).concat(leagueData.teams);
         }
@@ -3217,7 +3293,14 @@ async function recorderUpload() {
           const leagueTeamIds = new Set(leagueData.teams.map(t => t.id));
           mainState.matches = mainState.matches.filter(m => !leagueTeamIds.has(m.homeTeam) && !leagueTeamIds.has(m.awayTeam)).concat(leagueData.matches);
         }
-        // 上传合并后的完整数据到主 Gist
+        // 杯赛数据也要合并
+        if (mainState.cups && leagueData.cups) {
+          Object.keys(leagueData.cups).forEach(cid => {
+            if (leagueData.cups[cid]) {
+              mainState.cups[cid] = leagueData.cups[cid];
+            }
+          });
+        }
         const mainDataStr = JSON.stringify(mainState, null, 2);
         const mainFilename = 'pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json';
         const mainBody = { description: 'PGM足球经理联赛数据 - 自动同步', files: {} };
@@ -3232,14 +3315,7 @@ async function recorderUpload() {
       }
     }
 
-    const now = new Date();
-    const timeStr = now.getFullYear() + '-' +
-      String(now.getMonth()+1).padStart(2,'0') + '-' +
-      String(now.getDate()).padStart(2,'0') + ' ' +
-      String(now.getHours()).padStart(2,'0') + ':' +
-      String(now.getMinutes()).padStart(2,'0');
-    localStorage.setItem('pgm_yiwest_last_sync_time', timeStr);
-
+    recordSyncTime();
     showToast(leagueName + '数据上传成功！所有人可下载查看');
     setTimeout(() => showSyncModal(), 1000);
   } catch(e) {
@@ -3248,31 +3324,43 @@ async function recorderUpload() {
   }
 }
 
-// 数据员从独立 Gist 下载乙西数据
+// 数据员从独立 Gist 下载数据
 async function recorderDownload() {
-  const league = state.currentUser ? state.currentUser.league : 'yiWest';
-  const leagueName = league === 'yiWest' ? '乙西' : league;
-  if (!YIWEST_GIST_ID) { showToast(leagueName + '还没有云端数据，请先上传'); return; }
+  const league = state.currentUser ? state.currentUser.league : '';
+  const recorderType = state.currentUser ? (state.currentUser.recorderType || 'league') : 'league';
+  const cupId = state.currentUser ? (state.currentUser.cupId || null) : null;
+  const leagueName = getRecorderDisplayName(league);
+  const recorderGistId = getRecorderGistId();
+  if (!recorderGistId) { showToast(leagueName + '还没有云端数据，请先上传'); return; }
   if (!confirm('确定要从云端下载' + leagueName + '数据吗？这将覆盖本地' + leagueName + '数据！')) return;
 
   showToast('正在下载...');
   try {
-    const resp = await fetch(GIST_API + '/' + YIWEST_GIST_ID);
+    const resp = await fetch(GIST_API + '/' + recorderGistId);
     if (!resp.ok) throw new Error('下载失败 ' + resp.status);
     const gist = await resp.json();
     const files = Object.values(gist.files);
     if (!files.length) throw new Error('云端没有数据文件');
     const data = JSON.parse(files[0].content);
 
-    mergeLeagueData(data);
-    const now = new Date();
-    const timeStr = now.getFullYear() + '-' +
-      String(now.getMonth()+1).padStart(2,'0') + '-' +
-      String(now.getDate()).padStart(2,'0') + ' ' +
-      String(now.getHours()).padStart(2,'0') + ':' +
-      String(now.getMinutes()).padStart(2,'0');
-    localStorage.setItem('pgm_yiwest_last_sync_time', timeStr);
+    // 根据类型合并数据
+    if (recorderType === 'cup' && data.cupMatches) {
+      // 杯赛数据
+      if (!state.cups) state.cups = {};
+      if (data.cups && data.cups[cupId]) {
+        state.cups[cupId] = data.cups[cupId];
+      } else if (data.cupMatches) {
+        if (!state.cups[cupId]) state.cups[cupId] = { teams: [], matches: [] };
+        state.cups[cupId].matches = data.cupMatches;
+        state.cups[cupId].teams = data.cupTeams ? data.cupTeams.map(t => t.id) : [];
+      }
+      saveState();
+    } else if (data.teams && data.league) {
+      // 联赛数据
+      mergeLeagueData(data);
+    }
 
+    recordSyncTime();
     showToast(leagueName + '数据下载成功！');
     setTimeout(() => { showSyncModal(); render(); }, 500);
   } catch(e) {
