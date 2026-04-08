@@ -980,26 +980,64 @@ function renderCupSchedule(cupId) {
       const away = state.teams.find(t => t.id === m.awayTeam);
       if (!home || !away) return;
       const isCompleted = m.status === 'completed';
+      const homeGoals = isCompleted ? (m.scorers||[]).filter(s => s.teamId === m.homeTeam) : [];
+      const awayGoals = isCompleted ? (m.scorers||[]).filter(s => s.teamId === m.awayTeam) : [];
+      const homeAssists = isCompleted && m.assists ? m.assists.filter(a => a.teamId === m.homeTeam) : [];
+      const awayAssists = isCompleted && m.assists ? m.assists.filter(a => a.teamId === m.awayTeam) : [];
+      const countNames = (arr, team) => {
+        const counts = {};
+        arr.forEach(s => {
+          const p = team.players.find(x => x.id === s.playerId);
+          if (p) counts[p.name] = (counts[p.name] || 0) + 1;
+        });
+        return Object.entries(counts).map(([name, c]) => c > 1 ? name + '(' + c + ')' : name).join(', ');
+      };
+      const homeScorerStr = countNames(homeGoals, home);
+      const homeAssistStr = countNames(homeAssists, home);
+      const awayScorerStr = countNames(awayGoals, away);
+      const awayAssistStr = countNames(awayAssists, away);
+      const homeMotmPlayer = isCompleted && m.motm ? home.players.find(p => p.id === m.motm) : null;
+      const homeMotmStr = homeMotmPlayer ? homeMotmPlayer.name : '';
+      const homeDetail = isCompleted && (homeScorerStr || homeAssistStr || homeMotmStr)
+        ? '<div style="font-size:10px;color:#666;line-height:1.3;padding:0 0 0 0">'
+          + (homeScorerStr ? '<div>\u26BD ' + homeScorerStr + '</div>' : '')
+          + (homeAssistStr ? '<div>\uD83D\uDC5F ' + homeAssistStr + '</div>' : '')
+          + (homeMotmStr ? '<div style="color:#f5a623">\u2B50 ' + homeMotmStr + '</div>' : '')
+          + '</div>' : '';
+      const awayMotmPlayer = isCompleted && m.motm ? away.players.find(p => p.id === m.motm) : null;
+      const awayMotmStr = awayMotmPlayer ? awayMotmPlayer.name : '';
+      const awayDetail = isCompleted && (awayScorerStr || awayAssistStr || awayMotmStr)
+        ? '<div style="font-size:10px;color:#666;line-height:1.3;padding:0 0 0 0;text-align:right">'
+          + (awayScorerStr ? '<div>\u26BD ' + awayScorerStr + '</div>' : '')
+          + (awayAssistStr ? '<div>\uD83D\uDC5F ' + awayAssistStr + '</div>' : '')
+          + (awayMotmStr ? '<div style="color:#f5a623">\u2B50 ' + awayMotmStr + '</div>' : '')
+          + '</div>' : '';
       const canEnter = state.currentUser && (state.currentUser.isSuperAdmin || state.currentUser.isDataRecorder) && !isCompleted;
       const enterBtn = canEnter
         ? '<div style="text-align:center;margin-top:4px"><button class="btn btn-primary btn-small" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'' + cupId + '\')">录入比赛</button></div>'
         : '';
       html += '<div class="match-card" style="padding:8px 10px;margin-bottom:6px">'
         + '<div style="font-size:10px;color:#aaa;margin-bottom:3px">' + (m.date || '') + '</div>'
-        + '<div style="display:flex;align-items:center;gap:4px">'
-          + '<div style="flex:1;display:flex;align-items:center;gap:3px">'
-            + '<img src="' + home.logo + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
-            + '<span style="font-size:13px;font-weight:600;color:#228B22;cursor:pointer" onclick="showTeamDetail(\'' + home.id + '\')">' + home.name + '</span>'
+        + '<div style="display:flex;align-items:stretch;gap:4px">'
+          + '<div style="flex:1;display:flex;flex-direction:column;gap:0">'
+            + '<div style="display:flex;align-items:center;gap:3px">'
+              + '<img src="' + home.logo + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
+              + '<span style="font-size:13px;font-weight:600;color:#228B22;cursor:pointer" onclick="showTeamDetail(\'' + home.id + '\')">' + home.name + '</span>'
+            + '</div>'
+            + homeDetail
           + '</div>'
-          + '<div style="display:flex;align-items:center;min-width:48px;justify-content:center">'
-            + '<span style="font-size:9px;color:' + (isCompleted ? '#2E7D32' : '#E65100') + ';margin-right:4px">' + (isCompleted ? '已结束' : '待进行') + '</span>'
+          + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px">'
+            + '<span style="font-size:9px;color:' + (isCompleted ? '#2E7D32' : '#E65100') + ';margin-bottom:1px">' + (isCompleted ? '已结束' : '待进行') + '</span>'
             + (isCompleted
               ? '<div class="match-score" style="cursor:pointer" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'' + cupId + '\')"><span>' + m.homeScore + '</span><span class="dash">-</span><span>' + m.awayScore + '</span></div>'
               : '<span style="font-size:20px">⚔️</span>')
           + '</div>'
-          + '<div style="flex:1;display:flex;align-items:center;gap:3px;justify-content:flex-end">'
-            + '<span style="font-size:13px;font-weight:600;color:#228B22;cursor:pointer" onclick="showTeamDetail(\'' + away.id + '\')">' + away.name + '</span>'
-            + '<img src="' + away.logo + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
+          + '<div style="flex:1;display:flex;flex-direction:column;gap:0;align-items:flex-end">'
+            + '<div style="display:flex;align-items:center;gap:3px">'
+              + '<span style="font-size:13px;font-weight:600;color:#228B22;cursor:pointer" onclick="showTeamDetail(\'' + away.id + '\')">' + away.name + '</span>'
+              + '<img src="' + away.logo + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
+            + '</div>'
+            + awayDetail
           + '</div>'
         + '</div>'
         + enterBtn
