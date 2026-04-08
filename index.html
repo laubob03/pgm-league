@@ -2964,19 +2964,16 @@ function showSyncModal() {
           </div>
         </div>
 
-        <!-- ${leagueName}专属云端同步 -->
+        <!-- 云端同步 -->
         <div class="import-section" style="border-color:#4CAF50;">
           <div class="import-section-title" style="color:#4CAF50;">☁️ ${leagueName}云端同步</div>
           <div class="import-desc">
             ${recorderGist ? '<span style="color:#4CAF50">✅ 已绑定云端</span> (Gist: ' + recorderGist.substring(0, 8) + '...)' : '首次使用需先上传数据创建云端'}
           </div>
           
-          <div style="display:flex;gap:8px;margin-bottom:8px;">
-            <button class="btn btn-primary" style="flex:1;background:#4CAF50;" onclick="recorderUpload()">
+          <div style="margin-bottom:8px;">
+            <button class="btn btn-primary btn-full" style="background:#4CAF50;" onclick="recorderUpload()">
               ⬆️ 上传${leagueName}数据
-            </button>
-            <button class="btn btn-primary" style="flex:1;background:#2196F3;" onclick="recorderDownload()">
-              ⬇️ 下载${leagueName}数据
             </button>
           </div>
 
@@ -2984,7 +2981,7 @@ function showSyncModal() {
             <b>💡 说明：</b><br>
             • 录入完${leagueName}比赛 → 点"上传${leagueName}数据"<br>
             • 上传后会自动合并到主云端<br>
-            • 教练们从主云端下载即可查看
+            • 所有人从主云端下载即可查看
           </div>
         </div>
 
