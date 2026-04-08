@@ -187,6 +187,9 @@
         <button class="league-chip" data-league="jiaWest">甲西</button>
         <button class="league-chip" data-league="yiEast">乙东</button>
         <button class="league-chip" data-league="yiWest">乙西</button>
+        <button class="league-chip cup-chip" data-cup="championsCup">🏆冠军杯</button>
+        <button class="league-chip cup-chip" data-cup="leagueCup">🏆联盟杯</button>
+        <button class="league-chip cup-chip" data-cup="associationCup">🏆协会杯</button>
       </div>
       <div id="standingsContent"></div>
     </div>
@@ -235,6 +238,9 @@
         <button class="league-chip" data-league="jiaWest">甲西</button>
         <button class="league-chip" data-league="yiEast">乙东</button>
         <button class="league-chip" data-league="yiWest">乙西</button>
+        <button class="league-chip cup-chip" data-cup="championsCup">🏆冠军杯</button>
+        <button class="league-chip cup-chip" data-cup="leagueCup">🏆联盟杯</button>
+        <button class="league-chip cup-chip" data-cup="associationCup">🏆协会杯</button>
       </div>
     </div>
     <div class="card">
@@ -1230,6 +1236,12 @@ function renderStandings() {
   const container = document.getElementById('standingsContent');
   const league = state.currentLeague;
 
+  // 杯赛积分榜
+  if (isCupLeague(league)) {
+    renderCupStandings(league, container);
+    return;
+  }
+
   const teams = state.teams.filter(t => t.league === league);
   let standings = calculateStandings(teams);
 
@@ -1312,13 +1324,13 @@ function renderTeams() {
     const assistantStr = t.assistantCoaches && t.assistantCoaches.length > 0 ? '、' + t.assistantCoaches.join('、') : '';
     html += `
       <div class="team-card">
-        <div class="team-item" onclick="toggleTeamPlayers(this)">
+        <div class="team-item">
           <img src="${t.logo}" class="team-item-logo" onerror="this.style.display='none'">
-          <div class="team-item-info">
+          <div class="team-item-info" onclick="showTeamDetail('${t.id}')" style="flex:1;cursor:pointer">
             <div class="team-item-name">${t.name} <span class="team-league-tag">${LEAGUE_NAMES[t.league]}</span></div>
             <div class="team-item-coach">主教练:${t.coach}${assistantStr}</div>
           </div>
-          <span class="team-item-arrow">›</span>
+          <span class="team-item-arrow" onclick="toggleTeamPlayers(this.parentElement)">›</span>
         </div>
         <div class="team-players">
           <div class="player-names">${playersLines || '暂无球员'}</div>
@@ -1524,12 +1536,14 @@ function renderStats() {
     window.currentStatsTab = type;
     const container = document.getElementById('statsContent');
     let players = [];
-    if (type === 'goals') {
-      players = getTopScorers(20, league);
-    } else if (type === 'assists') {
-      players = getTopAssists(20, league);
-    } else if (type === 'motm') {
-      players = getTopMotm(20, league);
+    if (isCupLeague(league)) {
+      if (type === 'goals') players = getCupTopScorers(20, league);
+      else if (type === 'assists') players = getCupTopAssists(20, league);
+      else if (type === 'motm') players = getCupTopMotm(20, league);
+    } else {
+      if (type === 'goals') players = getTopScorers(20, league);
+      else if (type === 'assists') players = getTopAssists(20, league);
+      else if (type === 'motm') players = getTopMotm(20, league);
     }
     container.innerHTML = renderScorersList(players, type);
   }
@@ -1611,6 +1625,59 @@ function sortStats(col) {
 }
 
 // ============ CALCULATIONS ============
+function calculateCupStandings(cupId) {
+  const cup = state.cups ? state.cups[cupId] : null;
+  if (!cup || !cup.matches || cup.matches.length === 0) return [];
+
+  // 从已完成的比赛计算积分
+  const stats = {};
+  cup.matches.filter(m => m.status === 'completed').forEach(m => {
+    [m.homeTeam, m.awayTeam].forEach(tid => {
+      if (!stats[tid]) stats[tid] = { teamId: tid, played: 0, won: 0, draw: 0, lost: 0, gf: 0, ga: 0, points: 0 };
+    });
+    const home = stats[m.homeTeam];
+    const away = stats[m.awayTeam];
+    home.played++; away.played++;
+    home.gf += m.homeScore; home.ga += m.awayScore;
+    away.gf += m.awayScore; away.ga += m.homeScore;
+    if (m.homeScore > m.awayScore) { home.won++; home.points += 3; away.lost++; }
+    else if (m.homeScore < m.awayScore) { away.won++; away.points += 3; home.lost++; }
+    else { home.draw++; away.draw++; home.points++; away.points++; }
+  });
+
+  // 转成带球队信息的数组
+  return Object.values(stats).map(s => ({
+    ...s,
+    team: state.teams.find(t => t.id === s.teamId)
+  })).filter(s => s.team).sort((a, b) => b.points - a.points || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf);
+}
+
+function renderCupStandings(cupId, container) {
+  const cup = state.cups ? state.cups[cupId] : null;
+  const standings = calculateCupStandings(cupId);
+
+  if (!cup || !cup.matches || cup.matches.length === 0) {
+    container.innerHTML = '<div class="cup-empty"><div class="cup-empty-icon">🏆</div><div>暂无' + (CUP_NAMES[cupId] || '杯赛') + '数据</div></div>';
+    return;
+  }
+
+  let html = '<table class="standings-table"><thead><tr>';
+  html += '<th>#</th><th>球队</th><th>场</th><th>胜</th><th>平</th><th>负</th><th>进</th><th>失</th><th>净</th><th>分</th>';
+  html += '</tr></thead><tbody>';
+
+  standings.forEach((s, i) => {
+    html += '<tr>';
+    html += '<td class="rank">' + (i + 1) + '</td>';
+    html += '<td class="team-cell"><img src="' + s.team.logo + '" style="width:24px;height:24px;object-fit:contain;border-radius:4px" onerror="this.style.display=\'none\'"><span class="team-name-clickable" onclick="showTeamDetail(\'' + s.team.id + '\')">' + s.team.name + '</span></td>';
+    html += '<td>' + s.played + '</td><td>' + s.won + '</td><td>' + s.draw + '</td><td>' + s.lost + '</td>';
+    html += '<td>' + s.gf + '</td><td>' + s.ga + '</td><td>' + (s.gf - s.ga) + '</td><td><strong>' + s.points + '</strong></td>';
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
 function calculateStandings(teams) {
   const standings = teams.map(t => ({
     team: t,
@@ -1692,6 +1759,43 @@ function getTopMotm(limit = 10, league = 'super') {
     });
   });
   return allPlayers.sort((a, b) => b.motmCount - a.motmCount).slice(0, limit);
+}
+
+// 杯赛数据榜单
+function getCupTopScorers(limit, cupId) {
+  return getCupPlayerStats(cupId, 'goals', limit);
+}
+function getCupTopAssists(limit, cupId) {
+  return getCupPlayerStats(cupId, 'assists', limit);
+}
+function getCupTopMotm(limit, cupId) {
+  return getCupPlayerStats(cupId, 'motm', limit);
+}
+function getCupPlayerStats(cupId, type, limit) {
+  const cup = state.cups ? state.cups[cupId] : null;
+  if (!cup || !cup.matches) return [];
+  const stats = {};
+  cup.matches.filter(m => m.status === 'completed').forEach(m => {
+    [m.homeTeam, m.awayTeam].forEach(tid => {
+      const t = state.teams.find(x => x.id === tid);
+      if (!t) return;
+      if (!stats[tid]) stats[tid] = { teamId: tid, teamName: t.name, players: {} };
+      t.players.forEach(p => { if (!stats[tid].players[p.id]) stats[tid].players[p.id] = { id: p.id, name: p.name, goals: 0, assists: 0, motm: 0 }; });
+    });
+    if (m.scorers) m.scorers.forEach(s => { if (stats[m.homeTeam] && stats[m.homeTeam].players[s.playerId]) stats[m.homeTeam].players[s.playerId].goals++; if (stats[m.awayTeam] && stats[m.awayTeam].players[s.playerId]) stats[m.awayTeam].players[s.playerId].goals++; });
+    if (m.assists) m.assists.forEach(a => { if (stats[m.homeTeam] && stats[m.homeTeam].players[a.playerId]) stats[m.homeTeam].players[a.playerId].assists++; if (stats[m.awayTeam] && stats[m.awayTeam].players[a.playerId]) stats[m.awayTeam].players[a.playerId].assists++; });
+    if (m.motm) { [m.homeTeam, m.awayTeam].forEach(tid => { if (stats[tid] && stats[tid].players[m.motm]) stats[tid].players[m.motm].motm++; }); }
+  });
+  const all = [];
+  Object.values(stats).forEach(s => {
+    Object.values(s.players).forEach(p => {
+      if (type === 'goals' && p.goals > 0) all.push({ name: p.name, teamId: s.teamId, teamName: s.teamName, goals: p.goals, assists: p.assists, motmCount: p.motm });
+      else if (type === 'assists' && p.assists > 0) all.push({ name: p.name, teamId: s.teamId, teamName: s.teamName, goals: p.goals, assists: p.assists, motmCount: p.motm });
+      else if (type === 'motm' && p.motm > 0) all.push({ name: p.name, teamId: s.teamId, teamName: s.teamName, goals: p.goals, assists: p.assists, motmCount: p.motm });
+    });
+  });
+  const valKey = type === 'goals' ? 'goals' : type === 'assists' ? 'assists' : 'motmCount';
+  return all.sort((a, b) => b[valKey] - a[valKey]).slice(0, limit || 20);
 }
 
 // ============ MODALS ============
@@ -1823,6 +1927,54 @@ function showTeamDetail(teamId) {
   };
 
   const assistantDisplay = team.assistantCoaches && team.assistantCoaches.length > 0 ? '<span class="coach-assistant">助理教练：' + team.assistantCoaches.join('、') + '</span>' : '';
+
+  // 生成杯赛赛程HTML
+  let cupMatchesHtml = '';
+  if (state.cups) {
+    const cupEntries = [];
+    Object.keys(CUP_NAMES).forEach(cupId => {
+      const cup = state.cups[cupId];
+      if (cup && cup.matches) {
+        cup.matches.forEach(m => {
+          if (m.homeTeam === teamId || m.awayTeam === teamId) {
+            cupEntries.push({ ...m, cupId, cupName: CUP_NAMES[cupId] });
+          }
+        });
+      }
+    });
+    cupEntries.sort((a, b) => (a.round || 0) - (b.round || 0));
+    if (cupEntries.length > 0) {
+      cupMatchesHtml = cupEntries.map(m => {
+        const opponent = m.homeTeam === teamId ? state.teams.find(t => t.id === m.awayTeam) : state.teams.find(t => t.id === m.homeTeam);
+        const isHome = m.homeTeam === teamId;
+        const isCompleted = m.status === 'completed';
+        const homeScore = m.homeScore || 0;
+        const awayScore = m.awayScore || 0;
+        const canEnter = state.currentUser && (state.currentUser.isSuperAdmin || state.currentUser.isDataRecorder) && !isCompleted;
+        const enterAttr = canEnter ? `onclick="closeModal();setTimeout(()=>showEnterCupMatchModal('${m.id}','${m.cupId}'),100)" style="cursor:pointer"` : '';
+        return `
+        <div class="team-match-row" ${enterAttr}>
+          <div class="tm-round">${m.cupName} 第${m.round}轮</div>
+          <div class="tm-teams">
+            <div class="tm-team ${isHome ? 'highlight' : ''}">
+              <img src="${isHome ? team.logo : (opponent ? opponent.logo : '')}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
+              <span>${isHome ? team.name : (opponent ? opponent.name : '未知')}</span>
+            </div>
+            <div class="tm-score-area">
+              ${isCompleted
+                ? `<span class="tm-score" style="${(isHome ? homeScore : awayScore) > (isHome ? awayScore : homeScore) ? 'font-weight:700;color:#4caf50' : ''}">${isHome ? homeScore : awayScore}</span><span class="tm-dash">-</span><span class="tm-score">${isHome ? awayScore : homeScore}</span>`
+                : '<span style="font-size:16px">⚔️</span>'}
+            </div>
+            <div class="tm-team ${!isHome ? 'highlight' : ''}">
+              <span>${isHome ? (opponent ? opponent.name : '未知') : team.name}</span>
+              <img src="${isHome ? (opponent ? opponent.logo : '') : team.logo}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
   const content = `
     <style>
       .team-match-row{padding:4px 8px;border-bottom:1px solid #f0f0f0;line-height:1.3;cursor:default}
@@ -1846,6 +1998,8 @@ function showTeamDetail(teamId) {
       .sort-btns{display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap}
       .sort-btn{font-size:11px;padding:3px 8px;border-radius:12px;border:1px solid #ddd;background:#fff;cursor:pointer}
       .sort-btn.active{background:#228B22;color:#fff;border-color:#228B22}
+      .data-tab{font-size:12px;padding:3px 10px;border-radius:12px;border:1px solid #FFD700;background:#fff;cursor:pointer;color:#666;font-weight:500}
+      .data-tab.active{background:#FFD700;color:#333;border-color:#FFD700}
     </style>
     <div class="modal-header">
       <div class="modal-title"><img src="${team.logo}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;margin-right:8px" onerror="this.style.display='none'">${team.name} <span class="modal-league">联赛: ${LEAGUE_NAMES[team.league]}</span></div>
@@ -1855,11 +2009,18 @@ function showTeamDetail(teamId) {
       <div class="coach-info"><span class="coach-main">主教练：${team.coach}</span>${assistantDisplay}</div>
     </div>
     <div class="form-group">
-      <div class="form-label">📅 赛程战绩</div>
+      <div class="form-label">📅 联赛战绩</div>
       <div style="max-height:220px;overflow-y:auto">${matchesHtml || '<div class="empty-state"><div class="empty-state-emoji">📅</div><div class="empty-state-text">暂无赛程</div></div>'}</div>
     </div>
     <div class="form-group">
-      <div class="form-label">👥 球员名单（${team.players.length}人）</div>
+      <div class="form-label">🏆 杯赛赛程</div>
+      <div style="max-height:220px;overflow-y:auto">${cupMatchesHtml || '<div class="empty-state"><div class="empty-state-emoji">🏆</div><div class="empty-state-text">暂无杯赛</div></div>'}</div>
+    </div>
+    <div class="form-group">
+      <div class="form-label" style="display:flex;align-items:center;gap:8px">
+        <span>👥 联赛球员数据（${team.players.length}人）</span>
+        <span class="data-tab" onclick="showCupPlayerData('${teamId}')">🏆 杯赛球员数据</span>
+      </div>
       <div class="sort-btns">
         <button class="sort-btn active" onclick="sortTeamPlayers('number')">号码</button>
         <button class="sort-btn" onclick="sortTeamPlayers('goals')">进球</button>
@@ -1900,6 +2061,102 @@ function showTeamDetail(teamId) {
       </div>
     `).join('');
     document.getElementById('teamPlayersList').innerHTML = html;
+  };
+}
+
+function showCupPlayerData(teamId) {
+  const team = state.teams.find(t => t.id === teamId);
+  if (!team) return;
+
+  // 从杯赛比赛数据中统计球员数据
+  const playerStats = {};
+  team.players.forEach(p => { playerStats[p.id] = { id: p.id, name: p.name, number: p.number, goals: 0, assists: 0, motmCount: 0 }; });
+
+  if (state.cups) {
+    Object.keys(CUP_NAMES).forEach(cupId => {
+      const cup = state.cups[cupId];
+      if (!cup || !cup.matches) return;
+      cup.matches.filter(m => m.status === 'completed' && (m.homeTeam === teamId || m.awayTeam === teamId)).forEach(m => {
+        if (m.scorers) {
+          m.scorers.filter(s => s.teamId === teamId).forEach(s => {
+            if (playerStats[s.playerId]) playerStats[s.playerId].goals++;
+          });
+        }
+        if (m.assists) {
+          m.assists.filter(a => a.teamId === teamId).forEach(a => {
+            if (playerStats[a.playerId]) playerStats[a.playerId].assists++;
+          });
+        }
+        if (m.motm && playerStats[m.motm]) {
+          playerStats[m.motm].motmCount++;
+        }
+      });
+    });
+  }
+
+  const players = Object.values(playerStats);
+  const generateCupPlayersHtml = (sortBy) => {
+    let sorted;
+    switch(sortBy) {
+      case 'goals': sorted = [...players].sort((a, b) => b.goals - a.goals); break;
+      case 'assists': sorted = [...players].sort((a, b) => b.assists - a.assists); break;
+      case 'motm': sorted = [...players].sort((a, b) => b.motmCount - a.motmCount); break;
+      default: sorted = [...players].sort((a, b) => (a.number || 0) - (b.number || 0));
+    }
+    return sorted.map(p => `
+      <div class="player-row">
+        <span class="player-num">${p.number}</span>
+        <span class="player-nm">${p.name}</span>
+        <span class="player-st">⚽${p.goals} 👟${p.assists} ⭐${p.motmCount}</span>
+      </div>
+    `).join('');
+  };
+
+  const content = `
+    <style>
+      .player-row{display:flex;align-items:center;padding:3px 6px;border-bottom:1px solid #f5f5f5}
+      .player-row:last-child{border-bottom:none}
+      .player-num{width:24px;font-size:11px;color:#999}
+      .player-nm{flex:1;font-size:12px;font-weight:500}
+      .player-st{font-size:10px;color:#666}
+      .sort-btns{display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap}
+      .sort-btn{font-size:11px;padding:3px 8px;border-radius:12px;border:1px solid #ddd;background:#fff;cursor:pointer}
+      .sort-btn.active{background:#228B22;color:#fff;border-color:#228B22}
+    </style>
+    <div class="modal-header">
+      <div class="modal-title"><img src="${team.logo}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;margin-right:8px" onerror="this.style.display='none'">${team.name} <span class="modal-league">🏆 杯赛球员数据</span></div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="form-group">
+      <div class="sort-btns">
+        <button class="sort-btn active" onclick="sortCupTeamPlayers('number','${teamId}')">号码</button>
+        <button class="sort-btn" onclick="sortCupTeamPlayers('goals','${teamId}')">进球</button>
+        <button class="sort-btn" onclick="sortCupTeamPlayers('assists','${teamId}')">助攻</button>
+        <button class="sort-btn" onclick="sortCupTeamPlayers('motm','${teamId}')">MVP</button>
+      </div>
+      <div id="cupTeamPlayersList" style="max-height:400px;overflow-y:auto">${generateCupPlayersHtml('number')}</div>
+    </div>
+    <button class="btn btn-secondary btn-full" onclick="closeModal()">关闭</button>
+  `;
+  showModal(content);
+
+  window.sortCupTeamPlayers = (sortBy, tid) => {
+    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    let sorted;
+    switch(sortBy) {
+      case 'goals': sorted = [...players].sort((a, b) => b.goals - a.goals); break;
+      case 'assists': sorted = [...players].sort((a, b) => b.assists - a.assists); break;
+      case 'motm': sorted = [...players].sort((a, b) => b.motmCount - a.motmCount); break;
+      default: sorted = [...players].sort((a, b) => (a.number || 0) - (b.number || 0));
+    }
+    document.getElementById('cupTeamPlayersList').innerHTML = sorted.map(p => `
+      <div class="player-row">
+        <span class="player-num">${p.number}</span>
+        <span class="player-nm">${p.name}</span>
+        <span class="player-st">⚽${p.goals} 👟${p.assists} ⭐${p.motmCount}</span>
+      </div>
+    `).join('');
   };
 }
 
