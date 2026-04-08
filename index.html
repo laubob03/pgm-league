@@ -1012,7 +1012,7 @@ function renderCupSchedule(cupId) {
           + (awayAssistStr ? '<div>\uD83D\uDC5F ' + awayAssistStr + '</div>' : '')
           + (awayMotmStr ? '<div style="color:#f5a623">\u2B50 ' + awayMotmStr + '</div>' : '')
           + '</div>' : '';
-      const canEnter = state.currentUser && (state.currentUser.isSuperAdmin || state.currentUser.isDataRecorder) && !isCompleted;
+      const canEnter = state.currentUser && state.currentUser.isSuperAdmin && !isCompleted;
       const enterBtn = canEnter
         ? '<div style="text-align:center;margin-top:4px"><button class="btn btn-primary btn-small" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'' + cupId + '\')">录入比赛</button></div>'
         : '';
@@ -1029,7 +1029,9 @@ function renderCupSchedule(cupId) {
           + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px">'
             + '<span style="font-size:9px;color:' + (isCompleted ? '#2E7D32' : '#E65100') + ';margin-bottom:1px">' + (isCompleted ? '已结束' : '待进行') + '</span>'
             + (isCompleted
-              ? '<div class="match-score" style="cursor:pointer" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'' + cupId + '\')"><span>' + m.homeScore + '</span><span class="dash">-</span><span>' + m.awayScore + '</span></div>'
+              ? (state.currentUser && state.currentUser.isSuperAdmin
+                ? '<div class="match-score" style="cursor:pointer" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'' + cupId + '\')"><span>' + m.homeScore + '</span><span class="dash">-</span><span>' + m.awayScore + '</span></div>'
+                : '<div class="match-score"><span>' + m.homeScore + '</span><span class="dash">-</span><span>' + m.awayScore + '</span></div>')
               : '<span style="font-size:20px">⚔️</span>')
           + '</div>'
           + '<div style="flex:1;display:flex;flex-direction:column;gap:0;align-items:flex-end">'
@@ -2003,23 +2005,26 @@ function showTeamDetail(teamId) {
         const cupTeamMotmStr = cupTeamMotm ? cupTeamMotm.name : '';
         const cupTeamDetail = isCompleted && (cupTeamGoals || cupTeamAssists || cupTeamMotmStr)
           ? `<div style="font-size:9px;color:#666;line-height:1.2">${cupTeamGoals ? '⚽' + cupTeamGoals : ''}${cupTeamGoals && cupTeamAssists ? ' ' : ''}${cupTeamAssists ? '👟' + cupTeamAssists : ''}${cupTeamMotmStr ? (cupTeamGoals || cupTeamAssists ? ' ' : '') + '<span style="color:#f5a623">⭐' + cupTeamMotmStr + '</span>' : ''}</div>` : '';
-        const canEnter = state.currentUser && (state.currentUser.isSuperAdmin || state.currentUser.isDataRecorder) && !isCompleted;
-        const enterAttr = canEnter ? `onclick="closeModal();setTimeout(()=>showEnterCupMatchModal('${m.id}','${m.cupId}'),100)" style="cursor:pointer"` : '';
+        const canEnterMatch = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && (state.teams.find(t => t.id === m.homeTeam) || {}).league === state.currentUser.league)) && !isCompleted;
+        const canEditScore = state.currentUser && state.currentUser.isSuperAdmin && isCompleted;
+        const enterAttr = (canEnterMatch || canEditScore) ? `onclick="closeModal();setTimeout(()=>showEnterCupMatchModal('${m.id}','${m.cupId}'),100)" style="cursor:pointer"` : '';
+        const homeTeamId = isHome ? teamId : (opponent ? opponent.id : '');
+        const awayTeamId = isHome ? (opponent ? opponent.id : '') : teamId;
         return `
         <div class="team-match-row" ${enterAttr}>
           <div class="tm-round">${m.cupName} 第${m.round}轮</div>
           <div class="tm-teams">
             <div class="tm-team ${isHome ? 'highlight' : ''}">
               <img src="${isHome ? team.logo : (opponent ? opponent.logo : '')}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
-              <span>${isHome ? team.name : (opponent ? opponent.name : '未知')}</span>
+              <span style="cursor:pointer" onclick="event.stopPropagation();closeModal();setTimeout(()=>showTeamDetail('${homeTeamId}'),100)">${isHome ? team.name : (opponent ? opponent.name : '未知')}</span>
             </div>
             <div class="tm-score-area">
               ${isCompleted
-                ? `<span class="tm-score" style="${(isHome ? homeScore : awayScore) > (isHome ? awayScore : homeScore) ? 'font-weight:700;color:#4caf50' : ''}">${isHome ? homeScore : awayScore}</span><span class="tm-dash">-</span><span class="tm-score">${isHome ? awayScore : homeScore}</span>`
+                ? `<span class="tm-score" style="${homeScore > awayScore === isHome ? 'font-weight:700;color:#4caf50' : ''}">${homeScore}</span><span class="tm-dash">-</span><span class="tm-score" style="${awayScore > homeScore === !isHome ? 'font-weight:700;color:#4caf50' : ''}">${awayScore}</span>`
                 : '<span style="font-size:16px">⚔️</span>'}
             </div>
             <div class="tm-team ${!isHome ? 'highlight' : ''}">
-              <span>${isHome ? (opponent ? opponent.name : '未知') : team.name}</span>
+              <span style="cursor:pointer" onclick="event.stopPropagation();closeModal();setTimeout(()=>showTeamDetail('${awayTeamId}'),100)">${isHome ? (opponent ? opponent.name : '未知') : team.name}</span>
               <img src="${isHome ? (opponent ? opponent.logo : '') : team.logo}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
             </div>
           </div>
