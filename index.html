@@ -3332,44 +3332,90 @@ async function recorderUpload() {
   }
 }
 
-// 数据员从独立 Gist 下载数据
+// 数据员从云端下载数据（优先独立Gist，回退主Gist）
 async function recorderDownload() {
   const league = state.currentUser ? state.currentUser.league : '';
   const recorderType = state.currentUser ? (state.currentUser.recorderType || 'league') : 'league';
   const cupId = state.currentUser ? (state.currentUser.cupId || null) : null;
   const leagueName = getRecorderDisplayName(league);
   const recorderGistId = getRecorderGistId();
-  if (!recorderGistId) { showToast(leagueName + '还没有云端数据，请先上传'); return; }
-  if (!confirm('确定要从云端下载' + leagueName + '数据吗？这将覆盖本地' + leagueName + '数据！')) return;
+
+  // 确定下载来源：优先独立Gist，回退主Gist
+  let dataSource = recorderGistId || GIST_ID;
+  let fromMain = false;
+  if (!dataSource) { showToast('没有可用的云端数据'); return; }
+  if (!recorderGistId && GIST_ID) {
+    fromMain = true;
+    if (!confirm('未找到独立云端记录，将从主云端下载' + leagueName + '数据。继续吗？')) return;
+  } else {
+    if (!confirm('确定要从云端下载' + leagueName + '数据吗？这将覆盖本地' + leagueName + '数据！')) return;
+  }
 
   showToast('正在下载...');
   try {
-    const resp = await fetch(GIST_API + '/' + recorderGistId);
+    const resp = await fetch(GIST_API + '/' + dataSource);
     if (!resp.ok) throw new Error('下载失败 ' + resp.status);
     const gist = await resp.json();
     const files = Object.values(gist.files);
     if (!files.length) throw new Error('云端没有数据文件');
     const data = JSON.parse(files[0].content);
 
-    // 根据类型合并数据
-    if (recorderType === 'cup' && data.cupMatches) {
-      // 杯赛数据
-      if (!state.cups) state.cups = {};
-      if (data.cups && data.cups[cupId]) {
-        state.cups[cupId] = data.cups[cupId];
-      } else if (data.cupMatches) {
-        if (!state.cups[cupId]) state.cups[cupId] = { teams: [], matches: [] };
-        state.cups[cupId].matches = data.cupMatches;
-        state.cups[cupId].teams = data.cupTeams ? data.cupTeams.map(t => t.id) : [];
+    if (fromMain) {
+      // 从主Gist下载：提取对应联赛或杯赛数据
+      if (recorderType === 'cup') {
+        if (data.cups && data.cups[cupId]) {
+          if (!state.cups) state.cups = {};
+          state.cups[cupId] = data.cups[cupId];
+          // 更新杯赛球队数据
+          if (data.cups[cupId].teams && data.teams) {
+            const cupTeamIds = new Set(data.cups[cupId].teams);
+            const cupTeamData = data.teams.filter(t => cupTeamIds.has(t.id));
+            cupTeamData.forEach(ct => {
+              const idx = state.teams.findIndex(t => t.id === ct.id);
+              if (idx >= 0) state.teams[idx] = ct; else state.teams.push(ct);
+            });
+          }
+          saveState();
+        } else {
+          showToast('主云端没有' + leagueName + '的数据');
+          return;
+        }
+      } else {
+        // 联赛数据：从主Gist中提取该联赛
+        const leagueTeams = (data.teams || []).filter(t => t.league === league);
+        if (leagueTeams.length === 0) {
+          showToast('主云端没有' + leagueName + '的数据');
+          return;
+        }
+        const leagueTeamIds = new Set(leagueTeams.map(t => t.id));
+        const leagueMatches = (data.matches || []).filter(m => leagueTeamIds.has(m.homeTeam) || leagueTeamIds.has(m.awayTeam));
+        mergeLeagueData({ teams: leagueTeams, matches: leagueMatches, league });
+        // 杯赛数据也合并
+        if (data.cups) {
+          if (!state.cups) state.cups = {};
+          Object.keys(data.cups).forEach(cid => { state.cups[cid] = data.cups[cid]; });
+          saveState();
+        }
       }
-      saveState();
-    } else if (data.teams && data.league) {
-      // 联赛数据
-      mergeLeagueData(data);
+    } else {
+      // 从独立Gist下载（原有逻辑）
+      if (recorderType === 'cup' && data.cupMatches) {
+        if (!state.cups) state.cups = {};
+        if (data.cups && data.cups[cupId]) {
+          state.cups[cupId] = data.cups[cupId];
+        } else if (data.cupMatches) {
+          if (!state.cups[cupId]) state.cups[cupId] = { teams: [], matches: [] };
+          state.cups[cupId].matches = data.cupMatches;
+          state.cups[cupId].teams = data.cupTeams ? data.cupTeams.map(t => t.id) : [];
+        }
+        saveState();
+      } else if (data.teams && data.league) {
+        mergeLeagueData(data);
+      }
     }
 
     recordSyncTime();
-    showToast(leagueName + '数据下载成功！');
+    showToast(leagueName + '数据下载成功！' + (fromMain ? '（从主云端）' : ''));
     setTimeout(() => { showSyncModal(); render(); }, 500);
   } catch(e) {
     showToast(e.message);
