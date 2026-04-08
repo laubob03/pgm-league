@@ -2338,15 +2338,15 @@ function showSyncModal() {
             <button class="btn btn-primary" style="flex:1;background:#4CAF50;" onclick="recorderUpload()">
               ⬆️ 上传${leagueName}数据
             </button>
-            <button class="btn btn-primary" style="flex:1;background:#2196F3;" onclick="recorderDownload()">
-              ⬇️ 下载${leagueName}数据
+            <button class="btn btn-primary" style="flex:1;background:#2196F3;" onclick="syncDownload()">
+              ⬇️ 从云端下载
             </button>
           </div>
 
           <div style="background:#fff3e0;border-radius:8px;padding:10px;font-size:12px;color:#e65100;line-height:1.6;margin-top:8px;">
             <b>💡 说明：</b><br>
             • 录入完${leagueName}比赛 → 点"上传${leagueName}数据"<br>
-            • 超级管理员可合并所有联赛数据<br>
+            • 上传后会自动合并到主云端<br>
             • 教练们从主云端下载即可查看
           </div>
         </div>
