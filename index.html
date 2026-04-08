@@ -1678,14 +1678,18 @@ function sortStats(col) {
 // ============ CALCULATIONS ============
 function calculateCupStandings(cupId) {
   const cup = state.cups ? state.cups[cupId] : null;
-  if (!cup || !cup.matches || cup.matches.length === 0) return [];
+  if (!cup) return [];
 
-  // 从已完成的比赛计算积分
+  // 先用杯赛所有球队初始化积分
   const stats = {};
-  cup.matches.filter(m => m.status === 'completed').forEach(m => {
-    [m.homeTeam, m.awayTeam].forEach(tid => {
-      if (!stats[tid]) stats[tid] = { teamId: tid, played: 0, won: 0, draw: 0, lost: 0, gf: 0, ga: 0, points: 0 };
-    });
+  (cup.teams || []).forEach(tid => {
+    stats[tid] = { teamId: tid, played: 0, won: 0, draw: 0, lost: 0, gf: 0, ga: 0, points: 0 };
+  });
+
+  // 从已完成的比赛叠加积分
+  (cup.matches || []).filter(m => m.status === 'completed').forEach(m => {
+    if (!stats[m.homeTeam]) stats[m.homeTeam] = { teamId: m.homeTeam, played: 0, won: 0, draw: 0, lost: 0, gf: 0, ga: 0, points: 0 };
+    if (!stats[m.awayTeam]) stats[m.awayTeam] = { teamId: m.awayTeam, played: 0, won: 0, draw: 0, lost: 0, gf: 0, ga: 0, points: 0 };
     const home = stats[m.homeTeam];
     const away = stats[m.awayTeam];
     home.played++; away.played++;
@@ -1707,7 +1711,7 @@ function renderCupStandings(cupId, container) {
   const cup = state.cups ? state.cups[cupId] : null;
   const standings = calculateCupStandings(cupId);
 
-  if (!cup || !cup.matches || cup.matches.length === 0) {
+  if (!cup || !(cup.teams && cup.teams.length > 0)) {
     container.innerHTML = '<div class="cup-empty"><div class="cup-empty-icon">🏆</div><div>暂无' + (CUP_NAMES[cupId] || '杯赛') + '数据</div></div>';
     return;
   }
