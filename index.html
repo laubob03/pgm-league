@@ -1884,8 +1884,10 @@ function showTeamDetail(teamId) {
       return p ? p.name : '';
     }).filter(Boolean).join(', ') : '';
 
-    const teamDetail = isCompleted && (teamGoals || teamAssists)
-      ? `<div style="font-size:9px;color:#666;line-height:1.2">${teamGoals ? '⚽' + teamGoals : ''}${teamGoals && teamAssists ? ' ' : ''}${teamAssists ? '👟' + teamAssists : ''}</div>` : '';
+    const teamMotm = isCompleted && m.motm ? team.players.find(p => p.id === m.motm) : null;
+    const teamMotmStr = teamMotm ? teamMotm.name : '';
+    const teamDetail = isCompleted && (teamGoals || teamAssists || teamMotmStr)
+      ? `<div style="font-size:9px;color:#666;line-height:1.2">${teamGoals ? '⚽' + teamGoals : ''}${teamGoals && teamAssists ? ' ' : ''}${teamAssists ? '👟' + teamAssists : ''}${teamMotmStr ? (teamGoals || teamAssists ? ' ' : '') + '<span style="color:#f5a623">⭐' + teamMotmStr + '</span>' : ''}</div>` : '';
 
     // 判断是否可以录入（管理员、数据员或相关球队）
     const matchHome = state.teams.find(t => t.id === m.homeTeam);
@@ -1988,6 +1990,19 @@ function showTeamDetail(teamId) {
         const isCompleted = m.status === 'completed';
         const homeScore = m.homeScore || 0;
         const awayScore = m.awayScore || 0;
+        // 获取进球助攻MVP
+        const cupTeamGoals = isCompleted && m.scorers ? m.scorers.filter(s => s.teamId === teamId).map(s => {
+          const p = team.players.find(x => x.id === s.playerId);
+          return p ? p.name : '';
+        }).filter(Boolean).join(', ') : '';
+        const cupTeamAssists = isCompleted && m.assists ? m.assists.filter(a => a.teamId === teamId).map(a => {
+          const p = team.players.find(x => x.id === a.playerId);
+          return p ? p.name : '';
+        }).filter(Boolean).join(', ') : '';
+        const cupTeamMotm = isCompleted && m.motm ? team.players.find(p => p.id === m.motm) : null;
+        const cupTeamMotmStr = cupTeamMotm ? cupTeamMotm.name : '';
+        const cupTeamDetail = isCompleted && (cupTeamGoals || cupTeamAssists || cupTeamMotmStr)
+          ? `<div style="font-size:9px;color:#666;line-height:1.2">${cupTeamGoals ? '⚽' + cupTeamGoals : ''}${cupTeamGoals && cupTeamAssists ? ' ' : ''}${cupTeamAssists ? '👟' + cupTeamAssists : ''}${cupTeamMotmStr ? (cupTeamGoals || cupTeamAssists ? ' ' : '') + '<span style="color:#f5a623">⭐' + cupTeamMotmStr + '</span>' : ''}</div>` : '';
         const canEnter = state.currentUser && (state.currentUser.isSuperAdmin || state.currentUser.isDataRecorder) && !isCompleted;
         const enterAttr = canEnter ? `onclick="closeModal();setTimeout(()=>showEnterCupMatchModal('${m.id}','${m.cupId}'),100)" style="cursor:pointer"` : '';
         return `
@@ -2008,6 +2023,7 @@ function showTeamDetail(teamId) {
               <img src="${isHome ? (opponent ? opponent.logo : '') : team.logo}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
             </div>
           </div>
+          <div class="tm-detail">${cupTeamDetail}</div>
         </div>`;
       }).join('');
     }
