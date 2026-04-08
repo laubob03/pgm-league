@@ -1123,7 +1123,7 @@ function submitCupMatchResult(matchId, cupId) {
 }
 
 function showCupManageModal() {
-  if (!state.currentUser || !state.currentUser.isSuperAdmin) { showToast('需要管理员权限'); return; }
+  if (!state.currentUser || (!state.currentUser.isSuperAdmin && !state.currentUser.isDataRecorder)) { showToast('需要管理员或数据员权限'); return; }
   if (!state.cups) state.cups = {};
   if (!state.cups.championsCup) state.cups.championsCup = { teams: [], matches: [] };
   if (!state.cups.leagueCup) state.cups.leagueCup = { teams: [], matches: [] };
