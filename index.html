@@ -3275,8 +3275,8 @@ async function recorderUpload() {
       setRecorderGistId(result.id);
     }
 
-    // 步骤2：合并到主 Gist（仅联赛数据员合并联赛数据，杯赛数据员不合并）
-    if (recorderType === 'league' && GIST_ID) {
+    // 步骤2：合并到主 Gist（联赛和杯赛数据员都合并）
+    if (GIST_ID) {
       showToast('正在合并到主云端...');
       const mainResp = await fetch(GIST_API + '/' + GIST_ID);
       if (mainResp.ok) {
@@ -3286,14 +3286,22 @@ async function recorderUpload() {
         if (mainFiles.length > 0) {
           try { mainState = JSON.parse(mainFiles[0].content); } catch(e) { console.warn('主Gist数据解析失败，使用本地数据'); }
         }
-        if (leagueData.teams) {
-          mainState.teams = mainState.teams.filter(t => t.league !== league).concat(leagueData.teams);
+        if (recorderType === 'league') {
+          // 联赛数据合并：替换该联赛的球队和比赛
+          if (leagueData.teams) {
+            mainState.teams = mainState.teams.filter(t => t.league !== league).concat(leagueData.teams);
+          }
+          if (leagueData.matches) {
+            const leagueTeamIds = new Set(leagueData.teams.map(t => t.id));
+            mainState.matches = mainState.matches.filter(m => !leagueTeamIds.has(m.homeTeam) && !leagueTeamIds.has(m.awayTeam)).concat(leagueData.matches);
+          }
         }
-        if (leagueData.matches) {
-          const leagueTeamIds = new Set(leagueData.teams.map(t => t.id));
-          mainState.matches = mainState.matches.filter(m => !leagueTeamIds.has(m.homeTeam) && !leagueTeamIds.has(m.awayTeam)).concat(leagueData.matches);
+        // 杯赛数据员：更新杯赛相关球队数据
+        if (recorderType === 'cup' && leagueData.cupTeams) {
+          const cupTeamIds = new Set(leagueData.cupTeams.map(t => t.id));
+          mainState.teams = mainState.teams.filter(t => !cupTeamIds.has(t.id)).concat(leagueData.cupTeams);
         }
-        // 杯赛数据也要合并
+        // 杯赛赛程数据合并（所有数据员都可能携带杯赛数据）
         if (mainState.cups && leagueData.cups) {
           Object.keys(leagueData.cups).forEach(cid => {
             if (leagueData.cups[cid]) {
