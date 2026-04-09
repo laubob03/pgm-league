@@ -170,7 +170,7 @@
     .player-expand{cursor:pointer;color:#1B5E20;border-bottom:1px dashed #1B5E20;transition:all 0.2s}
     .player-expand:hover{color:#228B22;border-bottom-color:#228B22}
     .player-expand-active{color:#228B22;border-bottom-style:solid}
-    .player-season-detail{background:#f0f7f0;border:1px solid #c8e6c9;border-radius:8px;margin:6px 0;padding:8px 10px;font-size:13px;animation:slideDown 0.2s ease;max-width:400px}
+    .player-season-detail{background:#f0f7f0;border:1px solid #c8e6c9;border-radius:8px;margin:6px auto;padding:8px 10px;font-size:13px;animation:slideDown 0.2s ease;max-width:400px;width:100%;box-sizing:border-box}
     @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
     .player-season-table{width:100%;border-collapse:collapse}
     .player-season-table th{background:#e8f5e9;padding:4px 6px;font-weight:600;font-size:11px;text-align:center;white-space:nowrap;color:#2e7d32}
@@ -331,7 +331,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 19 };
+const APP_VERSION = { major: 1, minor: 0, patch: 20 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -2073,7 +2073,14 @@ function togglePlayerSeasonDetail(el, uid) {
 
   html += '</div>';
   const target = getDetailInsertTarget(el);
-  target.insertAdjacentHTML('afterend', html);
+  // 表格行内：用 <tr><td colspan> 包裹，使面板跨列居中
+  if (target.tagName === 'TR') {
+    const table = target.closest('table');
+    const colCount = table ? table.rows[0].cells.length : 4;
+    target.insertAdjacentHTML('afterend', `<tr><td colspan="${colCount}" style="padding:0;border:none;background:none">${html}</td></tr>`);
+  } else {
+    target.insertAdjacentHTML('afterend', html);
+  }
 }
 
 // 全局查找球员（支持转会后跨球队查找）
