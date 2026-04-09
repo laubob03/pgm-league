@@ -331,7 +331,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 21 };
+const APP_VERSION = { major: 1, minor: 0, patch: 22 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -1200,8 +1200,7 @@ function renderCupSchedule(cupId) {
       const motmLine = motmPlayer ? (() => {
         const uid = motmPlayer.uid || motmPlayer.id.split('_')[1];
         const nameStr = uid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${uid}')">${motmPlayer.name}</span>` : motmPlayer.name;
-        const align = motmTeamId === m.awayTeam ? 'text-align:right' : '';
-        return `<div style="font-size:10px;color:#f5a623;margin-top:3px;padding:1px 4px;background:#fffbeb;border-radius:3px;${align}">\u2B50 最佳球员：${nameStr}</div>`;
+        return `<div style="font-size:10px;color:#f5a623;margin-top:4px;padding:1px 4px;background:#fffbeb;border-radius:3px;text-align:center">\u2B50 最佳球员：${nameStr}</div>`;
       })() : '';
       const canEnterCup = !viewingSeasonId && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cupId)) && !isCompleted;
       const enterBtn = canEnterCup
@@ -1216,7 +1215,6 @@ function renderCupSchedule(cupId) {
               + '<span style="font-size:13px;font-weight:600;color:#228B22;cursor:pointer" onclick="showTeamDetail(\'' + home.id + '\')">' + home.name + '</span>'
             + '</div>'
             + homeDetail
-            + (motmTeamId === m.homeTeam ? motmLine : '')
           + '</div>'
           + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px">'
             + '<span style="font-size:9px;color:' + (isCompleted ? '#2E7D32' : '#E65100') + ';margin-bottom:1px">' + (isCompleted ? '已结束' : '待进行') + '</span>'
@@ -1232,9 +1230,9 @@ function renderCupSchedule(cupId) {
               + '<img src="' + away.logo + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
             + '</div>'
             + awayDetail
-            + (motmTeamId === m.awayTeam ? motmLine : '')
           + '</div>'
         + '</div>'
+        + motmLine
         + enterBtn
       + '</div>';
     });
@@ -1673,8 +1671,7 @@ function renderSchedule() {
       const motmLine = motmPlayer ? (() => {
         const uid = motmPlayer.uid || motmPlayer.id.split('_')[1];
         const nameStr = uid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${uid}')">${motmPlayer.name}</span>` : motmPlayer.name;
-        const align = motmTeamId === m.awayTeam ? 'text-align:right' : '';
-        return `<div style="font-size:10px;color:#f5a623;margin-top:3px;padding:1px 4px;background:#fffbeb;border-radius:3px;${align}">\u2B50 最佳球员：${nameStr}</div>`;
+        return `<div style="font-size:10px;color:#f5a623;margin-top:4px;padding:1px 4px;background:#fffbeb;border-radius:3px;text-align:center">\u2B50 最佳球员：${nameStr}</div>`;
       })() : '';
       const isArchivedSeason = viewingSeasonId !== null;
       const canEnter = !isArchivedSeason && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && home.league === state.currentUser.league) || state.currentUser.teamId === m.homeTeam || state.currentUser.teamId === m.awayTeam) && !isCompleted;
@@ -1691,7 +1688,6 @@ function renderSchedule() {
               + '<span style="font-size:13px;font-weight:600;color:#228B22;cursor:pointer" onclick="showTeamDetail(\'' + home.id + '\')">' + home.name + '</span>'
             + '</div>'
             + homeDetail
-            + (motmTeamId === m.homeTeam ? motmLine : '')
           + '</div>'
           + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px">'
             + '<span style="font-size:9px;color:' + (isCompleted?'#2E7D32':'#E65100') + ';margin-bottom:1px">' + (isCompleted?'\u5DF2\u7ED3\u675F':'\u5F85\u8FDB\u884C') + '</span>'
@@ -1707,9 +1703,9 @@ function renderSchedule() {
               + '<img src="' + away.logo + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
             + '</div>'
             + awayDetail
-            + (motmTeamId === m.awayTeam ? motmLine : '')
           + '</div>'
         + '</div>'
+        + motmLine
         + enterBtn
       + '</div>';
     });
