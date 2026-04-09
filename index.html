@@ -163,6 +163,7 @@
     .nav-season-info{margin-left:auto;font-size:18px;color:rgba(255,255,255,0.85);display:flex;align-items:center;gap:8px;white-space:nowrap}
     .nav-season-info .season-label{font-weight:700;color:rgba(255,255,255,0.95);font-size:22px}
     .nav-season-info .season-credit{font-size:18px;color:rgba(255,255,255,0.55);font-style:italic}
+    .nav-clock-bar{position:fixed;top:56px;left:0;right:0;background:#1a6b1a;display:flex;justify-content:center;align-items:center;padding:2px 16px;z-index:99;font-size:13px;color:rgba(255,255,255,0.8);font-variant-numeric:tabular-nums;letter-spacing:0.5px}
   </style>
 </head>
 <body>
@@ -174,6 +175,7 @@
   <button class="nav-item" data-page="stats"><span class="nav-item-icon">📊</span><span>榜单</span></button>
   <span class="nav-season-info" id="navSeasonInfo"></span>
 </nav>
+<div class="nav-clock-bar" id="navClockBar"></div>
 
 <header class="header">
   <div class="header-top">
@@ -4007,6 +4009,23 @@ document.getElementById('modalOverlay').onclick = (e) => {
 loadState();
 updateSidebar();
 render();
+
+// 实时时钟
+function updateClock() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const mo = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+  const w = weekDays[now.getDay()];
+  const h = String(now.getHours()).padStart(2, '0');
+  const mi = String(now.getMinutes()).padStart(2, '0');
+  const s = String(now.getSeconds()).padStart(2, '0');
+  const el = document.getElementById('navClockBar');
+  if (el) el.textContent = y + '-' + mo + '-' + d + ' 周' + w + '  ' + h + ':' + mi + ':' + s;
+}
+updateClock();
+setInterval(updateClock, 1000);
 
 // 注册 Service Worker 实现 PWA 离线功能
 if ('serviceWorker' in navigator) {
