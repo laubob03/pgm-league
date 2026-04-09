@@ -1149,16 +1149,20 @@ function renderCupSchedule(cupId) {
         const counts = {};
         arr.forEach(s => {
           const p = findPlayerById(s.playerId);
-          if (p) counts[p.name] = (counts[p.name] || 0) + 1;
+          if (p) counts[p.name] = { count: (counts[p.name]?.count || 0) + 1, uid: p.uid || p.id.split('_')[1] };
         });
-        return Object.entries(counts).map(([name, c]) => c > 1 ? name + '(' + c + ')' : name).join(', ');
+        return Object.entries(counts).map(([name, info]) => {
+          const displayName = info.count > 1 ? name + '(' + info.count + ')' : name;
+          return `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${info.uid}')">${displayName}</span>`;
+        }).join(', ');
       };
       const homeScorerStr = countNames(homeGoals);
       const homeAssistStr = countNames(homeAssists);
       const awayScorerStr = countNames(awayGoals);
       const awayAssistStr = countNames(awayAssists);
       const homeMotmPlayer = isCompleted && m.motm ? findPlayerById(m.motm) : null;
-      const homeMotmStr = homeMotmPlayer ? homeMotmPlayer.name : '';
+      const homeMotmUid = homeMotmPlayer ? (homeMotmPlayer.uid || homeMotmPlayer.id.split('_')[1]) : '';
+      const homeMotmStr = homeMotmPlayer ? (homeMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${homeMotmUid}')">${homeMotmPlayer.name}</span>` : homeMotmPlayer.name) : '';
       const homeDetail = isCompleted && (homeScorerStr || homeAssistStr || homeMotmStr)
         ? '<div style="font-size:10px;color:#666;line-height:1.3;padding:0 0 0 0">'
           + (homeScorerStr ? '<div>\u26BD ' + homeScorerStr + '</div>' : '')
@@ -1166,7 +1170,8 @@ function renderCupSchedule(cupId) {
           + (homeMotmStr ? '<div style="color:#f5a623">\u2B50 ' + homeMotmStr + '</div>' : '')
           + '</div>' : '';
       const awayMotmPlayer = isCompleted && m.motm ? findPlayerById(m.motm) : null;
-      const awayMotmStr = awayMotmPlayer ? awayMotmPlayer.name : '';
+      const awayMotmUid = awayMotmPlayer ? (awayMotmPlayer.uid || awayMotmPlayer.id.split('_')[1]) : '';
+      const awayMotmStr = awayMotmPlayer ? (awayMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${awayMotmUid}')">${awayMotmPlayer.name}</span>` : awayMotmPlayer.name) : '';
       const awayDetail = isCompleted && (awayScorerStr || awayAssistStr || awayMotmStr)
         ? '<div style="font-size:10px;color:#666;line-height:1.3;padding:0 0 0 0;text-align:right">'
           + (awayScorerStr ? '<div>\u26BD ' + awayScorerStr + '</div>' : '')
@@ -1539,7 +1544,7 @@ function renderTeams() {
   teams.forEach(t => {
     // 按球员姓名首字升序排列
     const sortedPlayers = [...t.players].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
-    const playersLines = sortedPlayers.map(p => `${p.name}（${p.uid}）`).join('<br>');
+    const playersLines = sortedPlayers.map(p => `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${p.uid}')">${p.name}</span>（${p.uid}）`).join('<br>');
 
     const assistantStr = t.assistantCoaches && t.assistantCoaches.length > 0 ? '、' + t.assistantCoaches.join('、') : '';
     html += `
@@ -1611,16 +1616,20 @@ function renderSchedule() {
         const counts = {};
         arr.forEach(s => {
           const p = findPlayerById(s.playerId);
-          if (p) counts[p.name] = (counts[p.name] || 0) + 1;
+          if (p) counts[p.name] = { count: (counts[p.name]?.count || 0) + 1, uid: p.uid || p.id.split('_')[1] };
         });
-        return Object.entries(counts).map(([name, c]) => c > 1 ? name + '(' + c + ')' : name).join(', ');
+        return Object.entries(counts).map(([name, info]) => {
+          const displayName = info.count > 1 ? name + '(' + info.count + ')' : name;
+          return `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${info.uid}')">${displayName}</span>`;
+        }).join(', ');
       };
       const homeScorerStr = countNames(homeGoals);
       const homeAssistStr = countNames(homeAssists);
       const awayScorerStr = countNames(awayGoals);
       const awayAssistStr = countNames(awayAssists);
       const homeMotmPlayer = isCompleted && m.motm ? findPlayerById(m.motm) : null;
-      const homeMotmStr = homeMotmPlayer ? homeMotmPlayer.name : '';
+      const homeMotmUid = homeMotmPlayer ? (homeMotmPlayer.uid || homeMotmPlayer.id.split('_')[1]) : '';
+      const homeMotmStr = homeMotmPlayer ? (homeMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${homeMotmUid}')">${homeMotmPlayer.name}</span>` : homeMotmPlayer.name) : '';
       const homeDetail = isCompleted && (homeScorerStr || homeAssistStr || homeMotmStr)
         ? '<div style="font-size:10px;color:#666;line-height:1.3;padding:0 0 0 0">'
           + (homeScorerStr ? '<div>\u26BD ' + homeScorerStr + '</div>' : '')
@@ -1628,7 +1637,8 @@ function renderSchedule() {
           + (homeMotmStr ? '<div style="color:#f5a623">\u2B50 ' + homeMotmStr + '</div>' : '')
           + '</div>' : '';
       const awayMotmPlayer = isCompleted && m.motm ? findPlayerById(m.motm) : null;
-      const awayMotmStr = awayMotmPlayer ? awayMotmPlayer.name : '';
+      const awayMotmUid = awayMotmPlayer ? (awayMotmPlayer.uid || awayMotmPlayer.id.split('_')[1]) : '';
+      const awayMotmStr = awayMotmPlayer ? (awayMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${awayMotmUid}')">${awayMotmPlayer.name}</span>` : awayMotmPlayer.name) : '';
       const awayDetail = isCompleted && (awayScorerStr || awayAssistStr || awayMotmStr)
         ? '<div style="font-size:10px;color:#666;line-height:1.3;padding:0 0 0 0;text-align:right">'
           + (awayScorerStr ? '<div>\u26BD ' + awayScorerStr + '</div>' : '')
@@ -2185,20 +2195,21 @@ function showTeamDetail(teamId) {
       else resultColor = '#ff9800';
     }
 
-    // 获取进球助攻
-    const teamGoals = isCompleted && m.scorers ? m.scorers.filter(s => s.teamId === teamId).map(s => {
+    // 获取进球助攻（带点击链接）
+    const linkPlayer = (s) => {
       const p = findPlayerById(s.playerId);
-      return p ? p.name : '';
-    }).filter(Boolean).join(', ') : '';
-    const teamAssists = isCompleted && m.assists ? m.assists.filter(a => a.teamId === teamId).map(a => {
-      const p = findPlayerById(a.playerId);
-      return p ? p.name : '';
-    }).filter(Boolean).join(', ') : '';
+      if (!p) return '';
+      const uid = p.uid || p.id.split('_')[1];
+      return `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${uid}')">${p.name}</span>`;
+    };
+    const teamGoals = isCompleted && m.scorers ? m.scorers.filter(s => s.teamId === teamId).map(s => linkPlayer(s)).filter(Boolean).join(', ') : '';
+    const teamAssists = isCompleted && m.assists ? m.assists.filter(a => a.teamId === teamId).map(a => linkPlayer(a)).filter(Boolean).join(', ') : '';
 
 
 
     const teamMotm = isCompleted && m.motm ? team.players.find(p => p.id === m.motm) : null;
-    const teamMotmStr = teamMotm ? teamMotm.name : '';
+    const teamMotmUid = teamMotm ? (teamMotm.uid || teamMotm.id.split('_')[1]) : '';
+    const teamMotmStr = teamMotm ? (teamMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${teamMotmUid}')">${teamMotm.name}</span>` : teamMotm.name) : '';
     const teamDetail = isCompleted && (teamGoals || teamAssists || teamMotmStr)
       ? `<div style="font-size:9px;color:#666;line-height:1.2">${teamGoals ? '⚽' + teamGoals : ''}${teamGoals && teamAssists ? ' ' : ''}${teamAssists ? '👟' + teamAssists : ''}${teamMotmStr ? (teamGoals || teamAssists ? ' ' : '') + '<span style="color:#f5a623">⭐' + teamMotmStr + '</span>' : ''}</div>` : '';
 
@@ -2273,7 +2284,7 @@ function showTeamDetail(teamId) {
     return sorted.map(p => `
       <div class="player-row">
         <span class="player-num">${p.number}</span>
-        <span class="player-nm">${p.name}</span>
+        <span class="player-nm"><span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${p.uid}')">${p.name}</span></span>
         <span class="player-st">⚽${p.goals || 0} 👟${p.assists || 0} ⭐${p.motmCount || 0}</span>
       </div>
     `).join('');
@@ -2303,17 +2314,18 @@ function showTeamDetail(teamId) {
         const isCompleted = m.status === 'completed';
         const homeScore = m.homeScore || 0;
         const awayScore = m.awayScore || 0;
-        // 获取进球助攻MVP
-        const cupTeamGoals = isCompleted && m.scorers ? m.scorers.filter(s => s.teamId === teamId).map(s => {
+        // 获取进球助攻MVP（带点击链接）
+        const cupLinkPlayer = (s) => {
           const p = findPlayerById(s.playerId);
-          return p ? p.name : '';
-        }).filter(Boolean).join(', ') : '';
-        const cupTeamAssists = isCompleted && m.assists ? m.assists.filter(a => a.teamId === teamId).map(a => {
-          const p = findPlayerById(a.playerId);
-          return p ? p.name : '';
-        }).filter(Boolean).join(', ') : '';
+          if (!p) return '';
+          const uid = p.uid || p.id.split('_')[1];
+          return `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${uid}')">${p.name}</span>`;
+        };
+        const cupTeamGoals = isCompleted && m.scorers ? m.scorers.filter(s => s.teamId === teamId).map(s => cupLinkPlayer(s)).filter(Boolean).join(', ') : '';
+        const cupTeamAssists = isCompleted && m.assists ? m.assists.filter(a => a.teamId === teamId).map(a => cupLinkPlayer(a)).filter(Boolean).join(', ') : '';
         const cupTeamMotm = isCompleted && m.motm ? findPlayerById(m.motm) : null;
-        const cupTeamMotmStr = cupTeamMotm ? cupTeamMotm.name : '';
+        const cupTeamMotmUid = cupTeamMotm ? (cupTeamMotm.uid || cupTeamMotm.id.split('_')[1]) : '';
+        const cupTeamMotmStr = cupTeamMotm ? (cupTeamMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${cupTeamMotmUid}')">${cupTeamMotm.name}</span>` : cupTeamMotm.name) : '';
         const cupTeamDetail = isCompleted && (cupTeamGoals || cupTeamAssists || cupTeamMotmStr)
           ? `<div style="font-size:9px;color:#666;line-height:1.2">${cupTeamGoals ? '⚽' + cupTeamGoals : ''}${cupTeamGoals && cupTeamAssists ? ' ' : ''}${cupTeamAssists ? '👟' + cupTeamAssists : ''}${cupTeamMotmStr ? (cupTeamGoals || cupTeamAssists ? ' ' : '') + '<span style="color:#f5a623">⭐' + cupTeamMotmStr + '</span>' : ''}</div>` : '';
         const canEnterMatch = !viewingSeasonId && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === m.cupId) || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'league' && (sd.teams.find(t => t.id === m.homeTeam) || {}).league === state.currentUser.league)) && !isCompleted;
@@ -2427,7 +2439,7 @@ function showTeamDetail(teamId) {
     const html = sorted.map(p => `
       <div class="player-row">
         <span class="player-num">${p.number}</span>
-        <span class="player-nm">${p.name}</span>
+        <span class="player-nm"><span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${p.uid}')">${p.name}</span></span>
         <span class="player-st">⚽${p.goals || 0} 👟${p.assists || 0} ⭐${p.motmCount || 0}</span>
       </div>
     `).join('');
@@ -2478,7 +2490,7 @@ function showCupPlayerData(teamId) {
     return sorted.map(p => `
       <div class="player-row">
         <span class="player-num">${p.number}</span>
-        <span class="player-nm">${p.name}</span>
+        <span class="player-nm"><span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${p.uid}')">${p.name}</span></span>
         <span class="player-st">⚽${p.goals} 👟${p.assists} ⭐${p.motmCount}</span>
       </div>
     `).join('');
@@ -2525,7 +2537,7 @@ function showCupPlayerData(teamId) {
     document.getElementById('cupTeamPlayersList').innerHTML = sorted.map(p => `
       <div class="player-row">
         <span class="player-num">${p.number}</span>
-        <span class="player-nm">${p.name}</span>
+        <span class="player-nm"><span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${p.uid}')">${p.name}</span></span>
         <span class="player-st">⚽${p.goals} 👟${p.assists} ⭐${p.motmCount}</span>
       </div>
     `).join('');
