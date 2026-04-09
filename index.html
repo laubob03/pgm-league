@@ -323,7 +323,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 0 };
+const APP_VERSION = { major: 1, minor: 0, patch: 1 };
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-09';
 function getAppVersion() { return `v${APP_VERSION.major}.${APP_VERSION.minor}.${APP_VERSION.patch}`; }
@@ -2158,9 +2158,9 @@ function getCupPlayerStats(cupId, type, limit) {
   const all = [];
   Object.values(stats).forEach(s => {
     Object.values(s.players).forEach(p => {
-      if (type === 'goals' && p.goals > 0) all.push({ name: p.name, teamId: s.teamId, teamName: s.teamName, goals: p.goals, assists: p.assists, motmCount: p.motm });
-      else if (type === 'assists' && p.assists > 0) all.push({ name: p.name, teamId: s.teamId, teamName: s.teamName, goals: p.goals, assists: p.assists, motmCount: p.motm });
-      else if (type === 'motm' && p.motm > 0) all.push({ name: p.name, teamId: s.teamId, teamName: s.teamName, goals: p.goals, assists: p.assists, motmCount: p.motm });
+      if (type === 'goals' && p.goals > 0) all.push({ id: p.id, name: p.name, teamId: s.teamId, teamName: s.teamName, goals: p.goals, assists: p.assists, motmCount: p.motm });
+      else if (type === 'assists' && p.assists > 0) all.push({ id: p.id, name: p.name, teamId: s.teamId, teamName: s.teamName, goals: p.goals, assists: p.assists, motmCount: p.motm });
+      else if (type === 'motm' && p.motm > 0) all.push({ id: p.id, name: p.name, teamId: s.teamId, teamName: s.teamName, goals: p.goals, assists: p.assists, motmCount: p.motm });
     });
   });
   const valKey = type === 'goals' ? 'goals' : type === 'assists' ? 'assists' : 'motmCount';
