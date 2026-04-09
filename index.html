@@ -154,6 +154,12 @@
     .cup-empty-icon{font-size:48px;margin-bottom:12px}
     .cup-match-item{display:flex;align-items:center;gap:6px;padding:6px 8px;background:#f8f8f8;border-radius:6px;margin-bottom:4px;font-size:12px}
     .cup-match-item img{width:18px;height:18px;object-fit:contain}
+    .season-selector{display:none;gap:6px;overflow-x:auto;padding:8px 12px;background:#228B22;scrollbar-width:none}
+    .season-selector::-webkit-scrollbar{display:none}
+    .season-chip{background:rgba(255,255,255,0.15);border:none;color:rgba(255,255,255,0.8);padding:5px 14px;border-radius:14px;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer;transition:all 0.2s}
+    .season-chip.active{background:white;color:#228B22}
+    .season-archive-tag{background:#FFD700;color:#333;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;margin-left:8px}
+    .archive-notice{text-align:center;padding:8px;background:#FFF3E0;color:#E65100;font-size:13px;font-weight:600;border-radius:0}
   </style>
 </head>
 <body>
@@ -175,6 +181,9 @@
     </div>
   </div>
 </header>
+
+<div class="season-selector" id="seasonSelector"></div>
+<div class="archive-notice" id="archiveNotice" style="display:none"></div>
 
 <main class="main-content">
   <!-- Standings Page -->
@@ -266,6 +275,7 @@
     <button class="sidebar-item" id="btnEnterMatch"><span class="sidebar-item-icon">✏️</span>录入比赛</button>
     <button class="sidebar-item" id="btnAdminImport" style="display:none"><span class="sidebar-item-icon">⚙️</span>管理员导入</button>
     <button class="sidebar-item" id="btnCupManage" style="display:none"><span class="sidebar-item-icon">🏆</span>杯赛管理</button>
+    <button class="sidebar-item" id="btnArchiveSeason" style="display:none"><span class="sidebar-item-icon">📦</span>归档赛季</button>
     <button class="sidebar-item" id="btnSyncCloud"><span class="sidebar-item-icon">☁️</span>数据同步</button>
     <button class="sidebar-item" id="sidebarLoginBtn"><span class="sidebar-item-icon">🔑</span>登录</button>
     <button class="sidebar-item danger" id="btnLogout" style="display:none"><span class="sidebar-item-icon">🚪</span>退出登录</button>
@@ -565,6 +575,113 @@ const PLAYERS_DB = {
   ]
 };
 
+// ============ SEASON MANAGEMENT ============
+// 赛季管理：支持多赛季归档和查阅
+let viewingSeasonId = null; // null 表示查看当前赛季
+
+function getCurrentSeasonData() {
+  if (viewingSeasonId && state.seasons && state.seasons[viewingSeasonId]) {
+    return state.seasons[viewingSeasonId];
+  }
+  return state; // 当前赛季直接返回 state
+}
+
+function getSeasonDisplayName(seasonId) {
+  if (!seasonId) return '第' + (state.currentSeasonId || '?') + '届';
+  return '第' + seasonId + '届';
+}
+
+function archiveCurrentSeason() {
+  if (!state.currentUser || !state.currentUser.isSuperAdmin) {
+    showToast('需要超级管理员权限');
+    return;
+  }
+  const sid = state.currentSeasonId || 62;
+  const name = '第' + sid + '届';
+  if (!confirm('确定要将当前赛季（' + name + '）归档吗？\n\n归档后：\n- ' + name + '的所有数据将保存为历史记录\n- 系统将自动创建第' + (sid + 1) + '届新赛季（空数据）\n- 归档数据可随时查阅，不可修改')) return;
+
+  // 归档当前赛季数据（不包含 seasons 本身，避免循环）
+  const archive = {
+    id: sid,
+    teams: JSON.parse(JSON.stringify(state.teams)),
+    matches: JSON.parse(JSON.stringify(state.matches)),
+    standings: JSON.parse(JSON.stringify(state.standings)),
+    cups: JSON.parse(JSON.stringify(state.cups)),
+    archivedAt: new Date().toISOString()
+  };
+
+  if (!state.seasons) state.seasons = {};
+  state.seasons[sid] = archive;
+
+  // 开始新赛季
+  const newSeasonId = sid + 1;
+  state.currentSeasonId = newSeasonId;
+  state.teams = [];
+  state.matches = [];
+  state.standings = {};
+  state.cups = { championsCup: { teams: [], matches: [] }, leagueCup: { teams: [], matches: [] }, associationCup: { teams: [], matches: [] } };
+  viewingSeasonId = null;
+
+  saveState();
+  closeModal();
+  updateSidebar();
+  renderSeasonSelector();
+  render();
+  showToast('✅ ' + name + '已归档，已创建第' + newSeasonId + '届新赛季');
+}
+
+function showArchiveSeasonModal() {
+  if (!state.currentUser || !state.currentUser.isSuperAdmin) {
+    showToast('需要超级管理员权限');
+    return;
+  }
+  const sid = state.currentSeasonId || 62;
+  const hasData = state.teams && state.teams.length > 0;
+  const content = `
+    <div class="modal-header">
+      <div class="modal-title">📦 归档赛季</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div style="padding:8px 0">
+      <p style="margin-bottom:12px">当前赛季：<strong>第${sid}届</strong></p>
+      ${hasData
+        ? '<p style="margin-bottom:12px;color:#E65100">⚠️ 当前赛季已有数据（' + state.teams.length + '支球队），归档后将保存为历史记录。</p>'
+        : '<p style="margin-bottom:12px;color:#999">当前赛季暂无数据。</p>'
+      }
+      <p style="margin-bottom:16px;font-size:13px;color:#666">归档后将自动创建第${sid + 1}届新赛季。</p>
+      <button class="btn btn-primary btn-full" onclick="archiveCurrentSeason()">确认归档第${sid}届</button>
+    </div>
+  `;
+  showModal(content);
+}
+
+function renderSeasonSelector() {
+  const container = document.getElementById('seasonSelector');
+  if (!container) return;
+  const currentId = state.currentSeasonId || 62;
+  const seasons = state.seasons || {};
+  const seasonIds = Object.keys(seasons).map(Number).sort((a, b) => b - a);
+
+  if (seasonIds.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'flex';
+
+  const isViewingArchived = viewingSeasonId !== null;
+  let html = '<button class="season-chip' + (!isViewingArchived ? ' active' : '') + '" onclick="switchSeason(null)">第' + currentId + '届 (当前)</button>';
+  seasonIds.forEach(sid => {
+    html += '<button class="season-chip' + (viewingSeasonId === sid ? ' active' : '') + '" onclick="switchSeason(' + sid + ')">第' + sid + '届</button>';
+  });
+  container.innerHTML = html;
+}
+
+function switchSeason(sid) {
+  viewingSeasonId = sid;
+  renderSeasonSelector();
+  render();
+}
+
 // ============ STATE ============
 let state = {
   teams: [],
@@ -573,7 +690,9 @@ let state = {
   cups: { championsCup: { teams: [], matches: [] }, leagueCup: { teams: [], matches: [] }, associationCup: { teams: [], matches: [] } },
   currentUser: null,
   currentLeague: 'super',
-  currentPage: 'home'
+  currentPage: 'home',
+  currentSeasonId: 62,
+  seasons: {}
 };
 
 // ============ STORAGE ============
@@ -613,8 +732,11 @@ function loadState() {
       // 兼容旧版本没有 cups 字段
       if (!state.cups) {
         state.cups = { championsCup: { teams: [], matches: [] }, leagueCup: { teams: [], matches: [] }, associationCup: { teams: [], matches: [] } };
-        saveState();
       }
+      // 兼容旧版本没有赛季字段 - 自动识别为第62赛季
+      if (!state.currentSeasonId) state.currentSeasonId = 62;
+      if (!state.seasons) state.seasons = {};
+      saveState();
     }
   } else {
     initData();
@@ -973,7 +1095,8 @@ function isCupLeague(league) { return !!CUP_NAMES[league]; }
 
 function renderCupSchedule(cupId) {
   const container = document.getElementById('scheduleContent');
-  const cup = state.cups ? state.cups[cupId] : null;
+  const sd = getCurrentSeasonData();
+  const cup = sd.cups ? sd.cups[cupId] : null;
   if (!cup || !cup.matches || cup.matches.length === 0) {
     container.innerHTML = '<div class="cup-empty"><div class="cup-empty-icon">🏆</div><div>暂无' + (CUP_NAMES[cupId] || '杯赛') + '赛程</div><div style="font-size:12px;color:#999;margin-top:8px">管理员可在侧边栏"杯赛管理"中创建赛程</div></div>';
     return;
@@ -987,8 +1110,8 @@ function renderCupSchedule(cupId) {
   Object.keys(rounds).sort((a, b) => a - b).forEach(round => {
     html += '<div class="match-round-title">第' + round + '轮</div>';
     rounds[round].forEach(m => {
-      const home = state.teams.find(t => t.id === m.homeTeam);
-      const away = state.teams.find(t => t.id === m.awayTeam);
+      const home = sd.teams.find(t => t.id === m.homeTeam);
+      const away = sd.teams.find(t => t.id === m.awayTeam);
       if (!home || !away) return;
       const isCompleted = m.status === 'completed';
       const homeGoals = isCompleted ? (m.scorers||[]).filter(s => s.teamId === m.homeTeam) : [];
@@ -1023,7 +1146,7 @@ function renderCupSchedule(cupId) {
           + (awayAssistStr ? '<div>\uD83D\uDC5F ' + awayAssistStr + '</div>' : '')
           + (awayMotmStr ? '<div style="color:#f5a623">\u2B50 ' + awayMotmStr + '</div>' : '')
           + '</div>' : '';
-      const canEnterCup = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cupId)) && !isCompleted;
+      const canEnterCup = !viewingSeasonId && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cupId)) && !isCompleted;
       const enterBtn = canEnterCup
         ? '<div style="text-align:center;margin-top:4px"><button class="btn btn-primary btn-small" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'' + cupId + '\')">录入比赛</button></div>'
         : '';
@@ -1040,7 +1163,7 @@ function renderCupSchedule(cupId) {
           + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px">'
             + '<span style="font-size:9px;color:' + (isCompleted ? '#2E7D32' : '#E65100') + ';margin-bottom:1px">' + (isCompleted ? '已结束' : '待进行') + '</span>'
             + (isCompleted
-              ? (state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cupId))
+              ? (!viewingSeasonId && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cupId))
                 ? '<div class="match-score" style="cursor:pointer" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'' + cupId + '\')"><span>' + m.homeScore + '</span><span class="dash">-</span><span>' + m.awayScore + '</span></div>'
                 : '<div class="match-score"><span>' + m.homeScore + '</span><span class="dash">-</span><span>' + m.awayScore + '</span></div>')
               : '<span style="font-size:20px">⚔️</span>')
@@ -1276,6 +1399,17 @@ function importCupSchedule(cupId) {
 
 // ============ RENDER ============
 function render() {
+  renderSeasonSelector();
+  // 归档赛季提示横幅
+  const notice = document.getElementById('archiveNotice');
+  if (notice) {
+    if (viewingSeasonId !== null) {
+      notice.style.display = 'block';
+      notice.innerHTML = '📜 历史赛季（第' + viewingSeasonId + '届） - 只读模式';
+    } else {
+      notice.style.display = 'none';
+    }
+  }
   renderStandings();
   renderTeams();
   renderSchedule();
@@ -1286,6 +1420,7 @@ function render() {
 function renderStandings() {
   const container = document.getElementById('standingsContent');
   const league = state.currentLeague;
+  const sd = getCurrentSeasonData();
 
   // 杯赛积分榜
   if (isCupLeague(league)) {
@@ -1293,8 +1428,8 @@ function renderStandings() {
     return;
   }
 
-  const teams = state.teams.filter(t => t.league === league);
-  let standings = calculateStandings(teams);
+  const teams = sd.teams.filter(t => t.league === league);
+  let standings = calculateStandings(teams, sd);
 
   // Get sort params from state or use defaults
   const sortCol = window.standingsSortCol || 'points';
@@ -1363,8 +1498,9 @@ function sortStandings(col) {
 function renderTeams() {
   const container = document.getElementById('teamsContent');
   const league = state.currentLeague;
+  const sd = getCurrentSeasonData();
 
-  const teams = state.teams.filter(t => t.league === league);
+  const teams = sd.teams.filter(t => t.league === league);
 
   let html = '<div class="team-list">';
   teams.forEach(t => {
@@ -1407,6 +1543,7 @@ function toggleTeamPlayers(card) {
 
 function renderSchedule() {
   const league = state.currentLeague;
+  const sd = getCurrentSeasonData();
   // 杯赛赛程
   if (isCupLeague(league)) {
     renderCupSchedule(league);
@@ -1414,9 +1551,9 @@ function renderSchedule() {
   }
   const container = document.getElementById('scheduleContent');
   
-  let matches = [...state.matches];
+  let matches = [...sd.matches];
   matches = matches.filter(m => {
-    const homeTeam = state.teams.find(t => t.id === m.homeTeam);
+    const homeTeam = sd.teams.find(t => t.id === m.homeTeam);
     return homeTeam && homeTeam.league === league;
   });
   
@@ -1430,8 +1567,8 @@ function renderSchedule() {
   Object.keys(rounds).sort((a, b) => a - b).forEach(round => {
     html += '<div class="match-round-title">\u7B2C' + round + '\u8F6E</div>';
     rounds[round].forEach(m => {
-      const home = state.teams.find(t => t.id === m.homeTeam);
-      const away = state.teams.find(t => t.id === m.awayTeam);
+      const home = sd.teams.find(t => t.id === m.homeTeam);
+      const away = sd.teams.find(t => t.id === m.awayTeam);
       const isCompleted = m.status === 'completed';
       const homeGoals = isCompleted ? (m.scorers||[]).filter(s => s.teamId === m.homeTeam) : [];
       const awayGoals = isCompleted ? (m.scorers||[]).filter(s => s.teamId === m.awayTeam) : [];
@@ -1465,7 +1602,8 @@ function renderSchedule() {
           + (awayAssistStr ? '<div>\uD83D\uDC5F ' + awayAssistStr + '</div>' : '')
           + (awayMotmStr ? '<div style="color:#f5a623">\u2B50 ' + awayMotmStr + '</div>' : '')
           + '</div>' : '';
-      const canEnter = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && home.league === state.currentUser.league) || state.currentUser.teamId === m.homeTeam || state.currentUser.teamId === m.awayTeam) && !isCompleted;
+      const isArchivedSeason = viewingSeasonId !== null;
+      const canEnter = !isArchivedSeason && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && home.league === state.currentUser.league) || state.currentUser.teamId === m.homeTeam || state.currentUser.teamId === m.awayTeam) && !isCompleted;
       const enterBtn = canEnter
         ? '<div style="text-align:center;margin-top:4px"><button class="btn btn-primary btn-small" onclick="showEnterMatchModal(\'' + m.id + '\')">\u5F55\u5165\u6BD4\u8D5B</button></div>'
         : '';
@@ -1483,7 +1621,7 @@ function renderSchedule() {
           + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px">'
             + '<span style="font-size:9px;color:' + (isCompleted?'#2E7D32':'#E65100') + ';margin-bottom:1px">' + (isCompleted?'\u5DF2\u7ED3\u675F':'\u5F85\u8FDB\u884C') + '</span>'
             + (isCompleted
-              ? (state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && home.league === state.currentUser.league))
+              ? (!isArchivedSeason && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && home.league === state.currentUser.league))
                 ? '<div class="match-score" style="cursor:pointer" onclick="showEnterMatchModal(\'' + m.id + '\')"><span>' + m.homeScore + '</span><span class="dash">-</span><span>' + m.awayScore + '</span></div>'
                 : '<div class="match-score"><span>' + m.homeScore + '</span><span class="dash">-</span><span>' + m.awayScore + '</span></div>')
               : '<span style="font-size:20px">\u2694\uFE0F</span>')
@@ -1563,6 +1701,7 @@ function renderMatchScorers(m) {
 
 function renderStats() {
   const league = state.currentLeague;
+  const sd = getCurrentSeasonData();
   
   let currentTab = 'goals';
 
@@ -1675,7 +1814,8 @@ function sortStats(col) {
 
 // 全局查找球员（支持转会后跨球队查找）
 function findPlayerById(playerId) {
-  for (const team of state.teams) {
+  const sd = getCurrentSeasonData();
+  for (const team of sd.teams) {
     const p = team.players ? team.players.find(x => x.id === playerId) : null;
     if (p) return p;
   }
@@ -1684,7 +1824,8 @@ function findPlayerById(playerId) {
 
 // ============ CALCULATIONS ============
 function calculateCupStandings(cupId) {
-  const cup = state.cups ? state.cups[cupId] : null;
+  const sd = getCurrentSeasonData();
+  const cup = sd.cups ? sd.cups[cupId] : null;
   if (!cup) return [];
 
   // 先用杯赛所有球队初始化积分
@@ -1710,12 +1851,13 @@ function calculateCupStandings(cupId) {
   // 转成带球队信息的数组
   return Object.values(stats).map(s => ({
     ...s,
-    team: state.teams.find(t => t.id === s.teamId)
+    team: sd.teams.find(t => t.id === s.teamId)
   })).filter(s => s.team).sort((a, b) => b.points - a.points || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf);
 }
 
 function renderCupStandings(cupId, container) {
-  const cup = state.cups ? state.cups[cupId] : null;
+  const sd = getCurrentSeasonData();
+  const cup = sd.cups ? sd.cups[cupId] : null;
   const standings = calculateCupStandings(cupId);
 
   if (!cup || !(cup.teams && cup.teams.length > 0)) {
@@ -1740,13 +1882,14 @@ function renderCupStandings(cupId, container) {
   container.innerHTML = html;
 }
 
-function calculateStandings(teams) {
+function calculateStandings(teams, sd) {
+  if (!sd) sd = state;
   const standings = teams.map(t => ({
     team: t,
     played: 0, won: 0, draw: 0, lost: 0, gf: 0, ga: 0, points: 0
   }));
   
-  state.matches.filter(m => m.status === 'completed').forEach(m => {
+  sd.matches.filter(m => m.status === 'completed').forEach(m => {
     const homeIdx = standings.findIndex(s => s.team.id === m.homeTeam);
     const awayIdx = standings.findIndex(s => s.team.id === m.awayTeam);
     if (homeIdx === -1 || awayIdx === -1) return;
@@ -1788,8 +1931,9 @@ function calculateStandings(teams) {
 }
 
 function getTopScorers(limit = 10, league = 'super') {
+  const sd = getCurrentSeasonData();
   const allPlayers = [];
-  state.teams.filter(t => t.league === league).forEach(t => {
+  sd.teams.filter(t => t.league === league).forEach(t => {
     t.players.forEach(p => {
       if (p.goals > 0) {
         allPlayers.push({ ...p, teamId: t.id, teamName: t.name, teamShortName: t.shortName, logo: t.logo });
@@ -1800,8 +1944,9 @@ function getTopScorers(limit = 10, league = 'super') {
 }
 
 function getTopAssists(limit = 10, league = 'super') {
+  const sd = getCurrentSeasonData();
   const allPlayers = [];
-  state.teams.filter(t => t.league === league).forEach(t => {
+  sd.teams.filter(t => t.league === league).forEach(t => {
     t.players.forEach(p => {
       if (p.assists > 0) {
         allPlayers.push({ ...p, teamId: t.id, teamName: t.name, teamShortName: t.shortName, logo: t.logo });
@@ -1812,8 +1957,9 @@ function getTopAssists(limit = 10, league = 'super') {
 }
 
 function getTopMotm(limit = 10, league = 'super') {
+  const sd = getCurrentSeasonData();
   const allPlayers = [];
-  state.teams.filter(t => t.league === league).forEach(t => {
+  sd.teams.filter(t => t.league === league).forEach(t => {
     t.players.forEach(p => {
       if (p.motmCount && p.motmCount > 0) {
         allPlayers.push({ ...p, teamId: t.id, teamName: t.name, teamShortName: t.shortName, logo: t.logo });
@@ -1834,12 +1980,13 @@ function getCupTopMotm(limit, cupId) {
   return getCupPlayerStats(cupId, 'motm', limit);
 }
 function getCupPlayerStats(cupId, type, limit) {
-  const cup = state.cups ? state.cups[cupId] : null;
+  const sd = getCurrentSeasonData();
+  const cup = sd.cups ? sd.cups[cupId] : null;
   if (!cup || !cup.matches) return [];
   const stats = {};
   cup.matches.filter(m => m.status === 'completed').forEach(m => {
     [m.homeTeam, m.awayTeam].forEach(tid => {
-      const t = state.teams.find(x => x.id === tid);
+      const t = sd.teams.find(x => x.id === tid);
       if (!t) return;
       if (!stats[tid]) stats[tid] = { teamId: tid, teamName: t.name, players: {} };
       t.players.forEach(p => { if (!stats[tid].players[p.id]) stats[tid].players[p.id] = { id: p.id, name: p.name, goals: 0, assists: 0, motm: 0 }; });
@@ -1871,18 +2018,19 @@ function closeModal() {
 }
 
 function showTeamDetail(teamId) {
-  const team = state.teams.find(t => t.id === teamId);
+  const sd = getCurrentSeasonData();
+  const team = sd.teams.find(t => t.id === teamId);
   if (!team) return;
 
   // 获取该队所有比赛
-  const teamMatches = state.matches.filter(m => m.homeTeam === teamId || m.awayTeam === teamId);
+  const teamMatches = sd.matches.filter(m => m.homeTeam === teamId || m.awayTeam === teamId);
   
   // 按轮次排序
   teamMatches.sort((a, b) => (a.round || 0) - (b.round || 0));
 
   // 生成赛程HTML - 采用赛程页对阵模式
   let matchesHtml = teamMatches.map(m => {
-    const opponent = m.homeTeam === teamId ? state.teams.find(t => t.id === m.awayTeam) : state.teams.find(t => t.id === m.homeTeam);
+    const opponent = m.homeTeam === teamId ? sd.teams.find(t => t.id === m.awayTeam) : sd.teams.find(t => t.id === m.homeTeam);
     const isHome = m.homeTeam === teamId;
     const homeScore = m.homeScore || 0;
     const awayScore = m.awayScore || 0;
@@ -1916,8 +2064,8 @@ function showTeamDetail(teamId) {
       ? `<div style="font-size:9px;color:#666;line-height:1.2">${teamGoals ? '⚽' + teamGoals : ''}${teamGoals && teamAssists ? ' ' : ''}${teamAssists ? '👟' + teamAssists : ''}${teamMotmStr ? (teamGoals || teamAssists ? ' ' : '') + '<span style="color:#f5a623">⭐' + teamMotmStr + '</span>' : ''}</div>` : '';
 
     // 判断是否可以录入（管理员、数据员或相关球队）
-    const matchHome = state.teams.find(t => t.id === m.homeTeam);
-    const canEnter = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && matchHome && matchHome.league === state.currentUser.league) || state.currentUser.teamId === m.homeTeam || state.currentUser.teamId === m.awayTeam);
+    const matchHome = sd.teams.find(t => t.id === m.homeTeam);
+    const canEnter = !viewingSeasonId && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && matchHome && matchHome.league === state.currentUser.league) || state.currentUser.teamId === m.homeTeam || state.currentUser.teamId === m.awayTeam);
     const enterAttr = canEnter ? `onclick="closeModal();setTimeout(()=>showEnterMatchModal('${m.id}'),100)" style="cursor:pointer"` : '';
 
     return `
@@ -1947,7 +2095,7 @@ function showTeamDetail(teamId) {
   const getPlayerAvgRating = (playerId) => {
     let totalRating = 0;
     let gameCount = 0;
-    state.matches.forEach(m => {
+    sd.matches.forEach(m => {
       if (m.status === 'completed') {
         const isInMatch = m.scorers && m.scorers.some(s => s.playerId === playerId);
         const isMotm = m.motm === playerId;
@@ -1996,10 +2144,10 @@ function showTeamDetail(teamId) {
 
   // 生成杯赛赛程HTML
   let cupMatchesHtml = '';
-  if (state.cups) {
+  if (sd.cups) {
     const cupEntries = [];
     Object.keys(CUP_NAMES).forEach(cupId => {
-      const cup = state.cups[cupId];
+      const cup = sd.cups[cupId];
       if (cup && cup.matches) {
         cup.matches.forEach(m => {
           if (m.homeTeam === teamId || m.awayTeam === teamId) {
@@ -2011,7 +2159,7 @@ function showTeamDetail(teamId) {
     cupEntries.sort((a, b) => (a.round || 0) - (b.round || 0));
     if (cupEntries.length > 0) {
       cupMatchesHtml = cupEntries.map(m => {
-        const opponent = m.homeTeam === teamId ? state.teams.find(t => t.id === m.awayTeam) : state.teams.find(t => t.id === m.homeTeam);
+        const opponent = m.homeTeam === teamId ? sd.teams.find(t => t.id === m.awayTeam) : sd.teams.find(t => t.id === m.homeTeam);
         const isHome = m.homeTeam === teamId;
         const isCompleted = m.status === 'completed';
         const homeScore = m.homeScore || 0;
@@ -2029,8 +2177,8 @@ function showTeamDetail(teamId) {
         const cupTeamMotmStr = cupTeamMotm ? cupTeamMotm.name : '';
         const cupTeamDetail = isCompleted && (cupTeamGoals || cupTeamAssists || cupTeamMotmStr)
           ? `<div style="font-size:9px;color:#666;line-height:1.2">${cupTeamGoals ? '⚽' + cupTeamGoals : ''}${cupTeamGoals && cupTeamAssists ? ' ' : ''}${cupTeamAssists ? '👟' + cupTeamAssists : ''}${cupTeamMotmStr ? (cupTeamGoals || cupTeamAssists ? ' ' : '') + '<span style="color:#f5a623">⭐' + cupTeamMotmStr + '</span>' : ''}</div>` : '';
-        const canEnterMatch = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === m.cupId) || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'league' && (state.teams.find(t => t.id === m.homeTeam) || {}).league === state.currentUser.league)) && !isCompleted;
-        const canEditScore = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === m.cupId)) && isCompleted;
+        const canEnterMatch = !viewingSeasonId && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === m.cupId) || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'league' && (sd.teams.find(t => t.id === m.homeTeam) || {}).league === state.currentUser.league)) && !isCompleted;
+        const canEditScore = !viewingSeasonId && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === m.cupId)) && isCompleted;
         const enterAttr = (canEnterMatch || canEditScore) ? `onclick="closeModal();setTimeout(()=>showEnterCupMatchModal('${m.id}','${m.cupId}'),100)" style="cursor:pointer"` : '';
         const homeTeamId = isHome ? teamId : (opponent ? opponent.id : '');
         const awayTeamId = isHome ? (opponent ? opponent.id : '') : teamId;
@@ -2149,16 +2297,17 @@ function showTeamDetail(teamId) {
 }
 
 function showCupPlayerData(teamId) {
-  const team = state.teams.find(t => t.id === teamId);
+  const sd = getCurrentSeasonData();
+  const team = sd.teams.find(t => t.id === teamId);
   if (!team) return;
 
   // 从杯赛比赛数据中统计球员数据
   const playerStats = {};
   team.players.forEach(p => { playerStats[p.id] = { id: p.id, name: p.name, number: p.number, goals: 0, assists: 0, motmCount: 0 }; });
 
-  if (state.cups) {
+  if (sd.cups) {
     Object.keys(CUP_NAMES).forEach(cupId => {
-      const cup = state.cups[cupId];
+      const cup = sd.cups[cupId];
       if (!cup || !cup.matches) return;
       cup.matches.filter(m => m.status === 'completed' && (m.homeTeam === teamId || m.awayTeam === teamId)).forEach(m => {
         if (m.scorers) {
@@ -2636,6 +2785,10 @@ function updateSidebar() {
     const cupManageBtn = document.getElementById('btnCupManage');
     if (cupManageBtn) {
       cupManageBtn.style.display = (state.currentUser.isSuperAdmin || (state.currentUser && state.currentUser.isDataRecorder)) ? 'flex' : 'none';
+    }
+    const archiveSeasonBtn = document.getElementById('btnArchiveSeason');
+    if (archiveSeasonBtn) {
+      archiveSeasonBtn.style.display = state.currentUser.isSuperAdmin ? 'flex' : 'none';
     }
   } else {
     if (loginBtn) loginBtn.style.display = "flex";
@@ -3833,6 +3986,7 @@ document.getElementById('btnEnterMatch').onclick = () => {
 };
 document.getElementById('btnAdminImport').onclick = () => showAdminImportModal();
 document.getElementById('btnCupManage').onclick = () => showCupManageModal();
+document.getElementById('btnArchiveSeason').onclick = () => showArchiveSeasonModal();
 document.getElementById('btnSyncCloud').onclick = () => showSyncModal();
 
 document.getElementById('modalOverlay').onclick = (e) => {
