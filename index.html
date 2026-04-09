@@ -331,7 +331,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 8 };
+const APP_VERSION = { major: 1, minor: 0, patch: 9 };
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-09';
 function getAppVersion() { return `v${APP_VERSION.major}.${APP_VERSION.minor}.${APP_VERSION.patch}`; }
@@ -1201,6 +1201,11 @@ function renderCupSchedule(cupId) {
       const enterBtn = canEnterCup
         ? '<div style="text-align:center;margin-top:4px"><button class="btn btn-primary btn-small" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'' + cupId + '\')">录入比赛</button></div>'
         : '';
+      const motmStr = motmPlayer ? (() => {
+        const uid = motmPlayer.uid || motmPlayer.id.split('_')[1];
+        const nameStr = uid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${uid}')">${motmPlayer.name}</span>` : motmPlayer.name;
+        return `<div style="text-align:center;font-size:10px;color:#f5a623;margin-top:2px">⭐ 最佳球员：${nameStr}</div>`;
+      })() : '';
       html += '<div class="match-card" style="padding:8px 10px;margin-bottom:6px">'
         + '<div style="font-size:10px;color:#aaa;margin-bottom:3px">' + (m.date || '') + '</div>'
         + '<div style="display:flex;align-items:stretch;gap:4px">'
@@ -1227,6 +1232,7 @@ function renderCupSchedule(cupId) {
             + awayDetail
           + '</div>'
         + '</div>'
+        + motmStr
         + enterBtn
       + '</div>';
     });
@@ -1670,6 +1676,12 @@ function renderSchedule() {
         ? '<div style="text-align:center;margin-top:4px"><button class="btn btn-primary btn-small" onclick="showEnterMatchModal(\'' + m.id + '\')">\u5F55\u5165\u6BD4\u8D5B</button></div>'
         : '';
 
+      const motmStr = motmPlayer ? (() => {
+        const uid = motmPlayer.uid || motmPlayer.id.split('_')[1];
+        const nameStr = uid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${uid}')">${motmPlayer.name}</span>` : motmPlayer.name;
+        return `<div style="text-align:center;font-size:10px;color:#f5a623;margin-top:2px">⭐ 最佳球员：${nameStr}</div>`;
+      })() : '';
+
       html += '<div class="match-card" style="padding:8px 10px;margin-bottom:6px">'
         + '<div style="font-size:10px;color:#aaa;margin-bottom:3px">' + (m.date||'') + '</div>'
         + '<div style="display:flex;align-items:stretch;gap:4px">'
@@ -1696,6 +1708,7 @@ function renderSchedule() {
             + awayDetail
           + '</div>'
         + '</div>'
+        + motmStr
         + enterBtn
       + '</div>';
     });
