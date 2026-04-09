@@ -2856,18 +2856,6 @@ function showLoginModal() {
       updateSidebar();
       render();
       showToast('欢迎，' + rec.name + '！');
-    } else if (password === '123456') {
-      const team = state.teams.find(t => t.id === teamId);
-      if (team) {
-        state.currentUser = { teamId, teamName: team.name, coachName: team.coach };
-        saveState();
-        closeModal();
-        updateSidebar();
-        render();
-        showToast(`欢迎, ${team.coach}！`);
-      } else {
-        showToast('ID或密码错误！');
-      }
     } else {
       showToast('密码错误！');
     }
