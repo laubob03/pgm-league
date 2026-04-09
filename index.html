@@ -331,7 +331,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 7 };
+const APP_VERSION = { major: 1, minor: 0, patch: 8 };
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-09';
 function getAppVersion() { return `v${APP_VERSION.major}.${APP_VERSION.minor}.${APP_VERSION.patch}`; }
@@ -1967,7 +1967,21 @@ function togglePlayerSeasonDetail(el, uid) {
     return;
   }
 
-  let html = '<div class="player-season-detail"><table class="player-season-table"><thead><tr>';
+  // 获取当前球员的违约金
+  let currentReleaseClause = 0;
+  const sd = getCurrentSeasonData();
+  if (sd.teams) {
+    for (const team of sd.teams) {
+      if (!team.players) continue;
+      const p = team.players.find(x => x.uid === uid || x.id.includes('_' + uid));
+      if (p) { currentReleaseClause = p.releaseClause || 0; break; }
+    }
+  }
+  const clauseHtml = currentReleaseClause > 0
+    ? `<div style="font-size:11px;color:#666;margin-bottom:6px">💰 当前违约金：<b style="color:#f44336">${currentReleaseClause}M</b></div>`
+    : '';
+
+  let html = '<div class="player-season-detail">' + clauseHtml + '<table class="player-season-table"><thead><tr>';
   html += '<th>赛季</th><th>球队</th><th>联赛⚽</th><th>联赛👟</th><th>联赛⭐</th><th>杯赛⚽</th><th>杯赛👟</th><th>杯赛⭐</th>';
   html += '</tr></thead><tbody>';
   stats.forEach(s => {
@@ -3077,10 +3091,10 @@ function showAdminImportModal() {
   {"number": 1, "name": "门将姓名", "position": "GK"},
   {"number": 2, "name": "后卫姓名", "position": "DF"},
   {"number": 10, "name": "中场姓名", "position": "MF"},
-  {"number": 9, "name": "前锋姓名", "position": "FW"},
+  {"number": 9, "name": "前锋姓名", "position": "FW", "releaseClause": 10},
   ...
 ]</pre>
-          <div class="format-tips">💡 position可选：GK(门将) DF(后卫) MF(中场) FW(前锋)</div>
+          <div class="format-tips">💡 position可选：GK(门将) DF(后卫) MF(中场) FW(前锋)　releaseClause: 违约金(单位M)</div>
         </div>
         <textarea id="importPlayersJson" class="import-textarea" placeholder='粘贴JSON数据...'></textarea>
         <button class="btn btn-primary btn-full" onclick="importTeamPlayers()">导入球员名单</button>
@@ -3221,7 +3235,8 @@ function importTeamPlayers() {
         assists: existing ? (existing.assists || 0) : 0,
         motmCount: existing ? (existing.motmCount || 0) : 0,
         gamesPlayed: existing ? (existing.gamesPlayed || 0) : 0,
-        rating: existing ? (existing.rating || 0) : 0
+        rating: existing ? (existing.rating || 0) : 0,
+        releaseClause: p.releaseClause || 0
       };
     });
     
