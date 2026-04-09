@@ -2924,7 +2924,7 @@ function updateSidebar() {
     }
     const cupManageBtn = document.getElementById('btnCupManage');
     if (cupManageBtn) {
-      cupManageBtn.style.display = (state.currentUser.isSuperAdmin || (state.currentUser && state.currentUser.isDataRecorder)) ? 'flex' : 'none';
+      cupManageBtn.style.display = state.currentUser.isSuperAdmin ? 'flex' : 'none';
     }
     const archiveSeasonBtn = document.getElementById('btnArchiveSeason');
     if (archiveSeasonBtn) {
