@@ -331,7 +331,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 10 };
+const APP_VERSION = { major: 1, minor: 0, patch: 11 };
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-09';
 function getAppVersion() { return `v${APP_VERSION.major}.${APP_VERSION.minor}.${APP_VERSION.patch}`; }
@@ -1999,36 +1999,66 @@ function togglePlayerSeasonDetail(el, uid) {
     ? `<div style="font-size:11px;color:#666;margin-bottom:6px">💰 当前违约金：<b style="color:#f44336">${currentReleaseClause}M</b></div>`
     : '';
 
-  let html = '<div class="player-season-detail">' + clauseHtml + '<table class="player-season-table"><thead><tr>';
-  html += '<th>赛季</th><th>球队</th><th>联赛⚽</th><th>联赛👟</th><th>联赛⭐</th><th>杯赛⚽</th><th>杯赛👟</th><th>杯赛⭐</th>';
-  html += '</tr></thead><tbody>';
-  stats.forEach(s => {
-    html += `<tr><td>第${s.seasonId}届</td><td>${s.teamName}</td>`;
-    html += `<td>${s.leagueGoals}</td><td>${s.leagueAssists}</td><td>${s.leagueMotm}</td>`;
-    html += `<td>${s.cupGoals}</td><td>${s.cupAssists}</td><td>${s.cupMotm}</td></tr>`;
-  });
-  // 合计行
+  // 计算总合计
   const totals = stats.reduce((acc, s) => ({
-    lg: acc.lg + s.leagueGoals, la: acc.la + s.leagueAssists, lm: acc.lm + s.leagueMotm,
-    cg: acc.cg + s.cupGoals, ca: acc.ca + s.cupAssists, cm: acc.cm + s.cupMotm
-  }), { lg: 0, la: 0, lm: 0, cg: 0, ca: 0, cm: 0 });
-  html += `<tr class="total-row"><td colspan="2"><strong>合计</strong></td>`;
-  html += `<td><strong>${totals.lg}</strong></td><td><strong>${totals.la}</strong></td><td><strong>${totals.lm}</strong></td>`;
-  html += `<td><strong>${totals.cg}</strong></td><td><strong>${totals.ca}</strong></td><td><strong>${totals.cm}</strong></td></tr>`;
+    goals: acc.goals + s.leagueGoals + s.cupGoals,
+    assists: acc.assists + s.leagueAssists + s.cupAssists,
+    motm: acc.motm + s.leagueMotm + s.cupMotm
+  }), { goals: 0, assists: 0, motm: 0 });
+
+  let html = '<div class="player-season-detail">' + clauseHtml;
+
+  // 总计行
+  html += `<div style="display:flex;align-items:center;gap:0;font-size:11px;padding:4px 6px;background:#f0f7f0;border-radius:6px;margin-bottom:6px">`;
+  html += `<span style="flex:1;font-weight:700;color:#333">总计</span>`;
+  html += `<span style="min-width:50px;text-align:center;color:#333">⚽<b>${totals.goals}</b></span>`;
+  html += `<span style="min-width:50px;text-align:center;color:#333">👟<b>${totals.assists}</b></span>`;
+  html += `<span style="min-width:50px;text-align:center;color:#333">⭐<b>${totals.motm}</b></span>`;
+  html += `</div>`;
+
+  // 每赛季一行，点击展开联赛/杯赛详情
+  html += '<div style="border-left:2px solid #e0e0e0;margin-left:4px;padding-left:6px">';
+  stats.forEach((s, idx) => {
+    const totalGoals = s.leagueGoals + s.cupGoals;
+    const totalAssists = s.leagueAssists + s.cupAssists;
+    const totalMotm = s.leagueMotm + s.cupMotm;
+    const hasLeague = s.leagueGoals > 0 || s.leagueAssists > 0 || s.leagueMotm > 0;
+    const hasCup = s.cupGoals > 0 || s.cupAssists > 0 || s.cupMotm > 0;
+    const hasDetail = hasLeague || hasCup;
+
+    html += `<div class="ps-season-row" onclick="${hasDetail ? "this.querySelector('.ps-season-expand')?.classList.toggle('hidden')" : ''}" style="display:flex;align-items:center;gap:0;font-size:11px;padding:4px 6px;cursor:${hasDetail ? 'pointer' : 'default'};border-bottom:1px solid #f5f5f5" title="${hasDetail ? '点击展开详情' : ''}">`;
+    html += `<span style="flex:1;color:#555">第${s.seasonId}届 <span style="color:#888">${s.teamName}</span>${hasDetail ? ' <span style="font-size:9px;color:#bbb">▸</span>' : ''}</span>`;
+    html += `<span style="min-width:50px;text-align:center">⚽${totalGoals}</span>`;
+    html += `<span style="min-width:50px;text-align:center">👟${totalAssists}</span>`;
+    html += `<span style="min-width:50px;text-align:center">⭐${totalMotm}</span>`;
+    html += `</div>`;
+
+    // 展开详情（默认隐藏）
+    if (hasDetail) {
+      html += '<div class="ps-season-expand hidden" style="padding:4px 6px 6px 10px;font-size:10px;color:#666;border-bottom:1px solid #f5f5f5">';
+      if (hasLeague) {
+        html += `<div style="margin-bottom:2px">🟢 联赛：⚽${s.leagueGoals}　👟${s.leagueAssists}　⭐${s.leagueMotm}</div>`;
+      }
+      if (hasCup) {
+        html += `<div>🏆 杯赛：⚽${s.cupGoals}　👟${s.cupAssists}　⭐${s.cupMotm}</div>`;
+      }
+      html += '</div>';
+    }
+  });
+  html += '</div>';
+
   // 转会记录
   const transfers = stats.filter(s => s.transferFee > 0);
   if (transfers.length > 0) {
-    html += '</tbody></table>';
-    html += '<div style="margin-top:8px;padding:8px 10px;background:#fff8e1;border-radius:8px;border-left:3px solid #FF9800">';
-    html += '<div style="font-size:11px;font-weight:700;color:#e65100;margin-bottom:4px">🔄 转会记录</div>';
+    html += '<div style="margin-top:6px;padding:6px 8px;background:#fff8e1;border-radius:6px;border-left:3px solid #FF9800">';
+    html += '<div style="font-size:10px;font-weight:700;color:#e65100;margin-bottom:3px">🔄 转会记录</div>';
     transfers.forEach(s => {
-      html += `<div style="font-size:11px;color:#666;line-height:1.6">第${s.seasonId}届：${s.transferFrom} → ${s.teamName}　💰 <b style="color:#FF9800">${s.transferFee}M</b>${s.transferDate ? '　📅 ' + s.transferDate : ''}</div>`;
+      html += `<div style="font-size:10px;color:#666;line-height:1.5">第${s.seasonId}届：${s.transferFrom} → ${s.teamName}　💰 <b style="color:#FF9800">${s.transferFee}M</b>${s.transferDate ? '　📅 ' + s.transferDate : ''}</div>`;
     });
     html += '</div>';
-    html += '</div>';
-  } else {
-    html += '</tbody></table></div>';
   }
+
+  html += '</div>';
   el.insertAdjacentHTML('afterend', html);
 }
 
