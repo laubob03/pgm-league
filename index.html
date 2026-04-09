@@ -331,7 +331,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 4 };
+const APP_VERSION = { major: 1, minor: 0, patch: 5 };
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-09';
 function getAppVersion() { return `v${APP_VERSION.major}.${APP_VERSION.minor}.${APP_VERSION.patch}`; }
@@ -3315,7 +3315,7 @@ function showSyncModal() {
         return home && home.league === league;
       });
     }
-    const completedMatches = isCup ? dataMatches.filter(m => m.status === 'completed') : dataMatches.filter(m => m.completed);
+    const completedMatches = dataMatches.filter(m => m.status === 'completed');
     const lastSyncKey = 'pgm_recorder_last_sync_' + state.currentUser.teamId;
 
     // ===== 统计员视图（只读：下载+本地导出导入，无上传） =====
@@ -3488,7 +3488,7 @@ function showSyncModal() {
           <div style="font-size:13px;line-height:2;color:#333;">
             <div>球队数量：<b>${state.teams ? state.teams.length : 0}</b> 支</div>
             <div>比赛总数：<b>${state.matches ? state.matches.length : 0}</b> 场</div>
-            <div>已完赛场次：<b>${state.matches ? state.matches.filter(m => m.completed).length : 0}</b> 场</div>
+            <div>已完赛场次：<b>${state.matches ? state.matches.filter(m => m.status === 'completed').length : 0}</b> 场</div>
             <div>本地数据更新：${localStorage.getItem('pgm_last_sync_time') || '从未同步'}</div>
           </div>
         </div>
@@ -3499,6 +3499,7 @@ function showSyncModal() {
     document.getElementById('modalOverlay').classList.add('active');
     return;
   }
+
   
   // ===== 管理员视图 =====
   const content = `
@@ -3569,7 +3570,7 @@ function showSyncModal() {
         <div style="font-size:13px;line-height:2;color:#333;">
           <div>球队数量：<b>${state.teams ? state.teams.length : 0}</b> 支</div>
           <div>比赛总数：<b>${state.matches ? state.matches.length : 0}</b> 场</div>
-          <div>已完赛场次：<b>${state.matches ? state.matches.filter(m => m.completed).length : 0}</b> 场</div>
+          <div>已完赛场次：<b>${state.matches ? state.matches.filter(m => m.status === 'completed').length : 0}</b> 场</div>
           <div>数据大小：<b>${(JSON.stringify(state).length / 1024).toFixed(1)} KB</b></div>
           <div>最后同步：${localStorage.getItem('pgm_last_sync_time') || '从未同步'}</div>
         </div>
