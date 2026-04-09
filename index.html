@@ -331,7 +331,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 5 };
+const APP_VERSION = { major: 1, minor: 0, patch: 6 };
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-09';
 function getAppVersion() { return `v${APP_VERSION.major}.${APP_VERSION.minor}.${APP_VERSION.patch}`; }
@@ -2300,13 +2300,15 @@ function showTeamDetail(teamId) {
       default:
         sorted = [...team.players].sort((a, b) => (a.number || 0) - (b.number || 0));
     }
-    return sorted.map(p => `
+    return sorted.map(p => {
+      const feeTag = p.transferFee > 0 ? `<span style="font-size:9px;color:#FF9800;margin-left:3px" title="转会费${p.transferFee}M">${p.transferFee}M</span>` : '';
+      return `
       <div class="player-row">
         <span class="player-num">${p.number}</span>
-        <span class="player-nm"><span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${p.uid}')">${p.name}</span></span>
+        <span class="player-nm"><span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${p.uid}')">${p.name}</span>${feeTag}</span>
         <span class="player-st">⚽${p.goals || 0} 👟${p.assists || 0} ⭐${p.motmCount || 0}</span>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
   };
 
   const assistantDisplay = team.assistantCoaches && team.assistantCoaches.length > 0 ? '<span class="coach-assistant">助理教练：' + team.assistantCoaches.join('、') + '</span>' : '';
@@ -3699,6 +3701,10 @@ function showTransferPlayerModal(fromTeamId) {
           ${teamOptions}
         </select>
       </div>
+      <div class="form-group">
+        <label class="form-label">💰 转会费（M）</label>
+        <input type="number" id="transferFee" min="0" step="0.1" placeholder="例如：5.0" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box">
+      </div>
       <div style="background:#fff3e0;border-radius:8px;padding:10px;font-size:12px;color:#e65100;line-height:1.6;margin-top:12px">
         <b>⚠️ 注意：</b><br>
         • 球员的历史比赛数据（进球、助攻等）会一并带走<br>
@@ -3717,6 +3723,8 @@ function showTransferPlayerModal(fromTeamId) {
 function doTransferPlayer(fromTeamId) {
   const playerId = document.getElementById('transferPlayer').value;
   const targetTeamId = document.getElementById('transferTargetTeam').value;
+  const feeInput = document.getElementById('transferFee').value;
+  const transferFee = feeInput ? parseFloat(feeInput) : 0;
 
   const fromTeam = state.teams.find(t => t.id === fromTeamId);
   const toTeam = state.teams.find(t => t.id === targetTeamId);
@@ -3727,11 +3735,14 @@ function doTransferPlayer(fromTeamId) {
 
   const player = fromTeam.players[playerIdx];
 
-  if (!confirm(`确定将 ${player.name} 从 ${fromTeam.name} 转会到 ${toTeam.name} 吗？`)) return;
+  if (!confirm(`确定将 ${player.name} 从 ${fromTeam.name} 转会到 ${toTeam.name} 吗？${transferFee > 0 ? '\n转会费：' + transferFee + 'M' : ''}`)) return;
 
   // 分配新号码（取转入球队最大号码+1）
   const maxNum = toTeam.players.reduce((max, p) => Math.max(max, p.number || 0), 0);
   player.number = maxNum + 1;
+  player.transferFee = transferFee;
+  player.transferFrom = fromTeam.name;
+  player.transferDate = new Date().toISOString().slice(0, 10);
 
   // 移动球员
   fromTeam.players.splice(playerIdx, 1);
