@@ -2130,8 +2130,8 @@ function getCupPlayerStats(cupId, type, limit) {
       if (!stats[tid]) stats[tid] = { teamId: tid, teamName: t.name, players: {} };
       t.players.forEach(p => { if (!stats[tid].players[p.id]) stats[tid].players[p.id] = { id: p.id, name: p.name, goals: 0, assists: 0, motm: 0 }; });
     });
-    if (m.scorers) m.scorers.forEach(s => { if (stats[m.homeTeam] && stats[m.homeTeam].players[s.playerId]) stats[m.homeTeam].players[s.playerId].goals++; if (stats[m.awayTeam] && stats[m.awayTeam].players[s.playerId]) stats[m.awayTeam].players[s.playerId].goals++; });
-    if (m.assists) m.assists.forEach(a => { if (stats[m.homeTeam] && stats[m.homeTeam].players[a.playerId]) stats[m.homeTeam].players[a.playerId].assists++; if (stats[m.awayTeam] && stats[m.awayTeam].players[a.playerId]) stats[m.awayTeam].players[a.playerId].assists++; });
+    if (m.scorers) m.scorers.forEach(s => { if (stats[s.teamId] && stats[s.teamId].players[s.playerId]) stats[s.teamId].players[s.playerId].goals++; });
+    if (m.assists) m.assists.forEach(a => { if (stats[a.teamId] && stats[a.teamId].players[a.playerId]) stats[a.teamId].players[a.playerId].assists++; });
     if (m.motm) { [m.homeTeam, m.awayTeam].forEach(tid => { if (stats[tid] && stats[tid].players[m.motm]) stats[tid].players[m.motm].motm++; }); }
   });
   const all = [];
