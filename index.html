@@ -166,6 +166,15 @@
     .nav-season-info .season-label{font-weight:700;color:rgba(255,255,255,0.95);font-size:14px}
     .nav-season-info .season-credit{font-size:11px;color:rgba(255,255,255,0.55);font-style:italic}
     .nav-clock{font-size:11px;color:rgba(255,255,255,0.7);font-variant-numeric:tabular-nums;letter-spacing:0.3px}
+    .player-expand{cursor:pointer;color:#1B5E20;border-bottom:1px dashed #1B5E20;transition:all 0.2s}
+    .player-expand:hover{color:#228B22;border-bottom-color:#228B22}
+    .player-expand-active{color:#228B22;border-bottom-style:solid}
+    .player-season-detail{background:#f0f7f0;border:1px solid #c8e6c9;border-radius:8px;margin:4px 0;padding:0;font-size:12px;animation:slideDown 0.2s ease}
+    @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+    .player-season-table{width:100%;border-collapse:collapse}
+    .player-season-table th{background:#e8f5e9;padding:4px 6px;font-weight:600;font-size:11px;text-align:center;white-space:nowrap;color:#2e7d32}
+    .player-season-table td{padding:3px 6px;text-align:center;border-bottom:1px solid #e8f5e9;white-space:nowrap}
+    .player-season-table .total-row td{border-top:2px solid #a5d6a7;border-bottom:none;background:#e8f5e9}
   </style>
 </head>
 <body>
@@ -1776,7 +1785,8 @@ function renderScorersList(players, type = 'goals') {
   players.forEach((p, i) => {
     const medal = i === 0 ? 'gold-medal' : i === 1 ? 'silver-medal' : i === 2 ? 'bronze-medal' : '';
     const value = type === 'goals' ? p.goals : type === 'assists' ? p.assists : (p.motmCount || 0);
-    html += `<tr><td class="stats-rank ${medal}">${i + 1}</td><td><strong>${p.name}</strong></td><td><span class="team-name-clickable" onclick="showTeamDetail('${p.teamId}')">${p.teamName}</span></td><td><strong>${value}</strong></td></tr>`;
+    const uid = p.uid || (p.id ? p.id.split('_')[1] : '');
+    html += `<tr><td class="stats-rank ${medal}">${i + 1}</td><td><strong class="player-expand" onclick="togglePlayerSeasonDetail(this,'${uid}')">${p.name}</strong></td><td><span class="team-name-clickable" onclick="showTeamDetail('${p.teamId}')">${p.teamName}</span></td><td><strong>${value}</strong></td></tr>`;
   });
   html += '</tbody></table>';
   return html;
@@ -1829,6 +1839,111 @@ function sortStats(col) {
 }
 
 // ============ UTILITIES ============
+
+// 跨赛季球员统计汇总
+function getPlayerCrossSeasonStats(playerUid, playerName) {
+  const results = [];
+
+  // 收集所有赛季数据源：归档赛季 + 当前赛季
+  const seasonList = [];
+  if (state.seasons) {
+    Object.keys(state.seasons).sort((a, b) => Number(a) - Number(b)).forEach(sid => {
+      seasonList.push({ id: Number(sid), data: state.seasons[sid] });
+    });
+  }
+  // 当前赛季
+  seasonList.push({ id: state.currentSeasonId || 62, data: state });
+
+  seasonList.forEach(season => {
+    const sd = season.data;
+    let leagueGoals = 0, leagueAssists = 0, leagueMotm = 0;
+    let cupGoals = 0, cupAssists = 0, cupMotm = 0;
+    let teamName = '';
+
+    // 联赛统计：从球员对象读取
+    if (sd.teams) {
+      for (const team of sd.teams) {
+        if (!team.players) continue;
+        const p = team.players.find(x => x.uid === playerUid || x.id.includes('_' + playerUid));
+        if (p) {
+          teamName = team.name;
+          leagueGoals = p.goals || 0;
+          leagueAssists = p.assists || 0;
+          leagueMotm = p.motmCount || 0;
+          break;
+        }
+      }
+    }
+
+    // 杯赛统计：从比赛记录实时计算
+    if (sd.cups) {
+      Object.keys(CUP_NAMES || {}).forEach(cupId => {
+        const cup = sd.cups[cupId];
+        if (!cup || !cup.matches) return;
+        cup.matches.filter(m => m.status === 'completed').forEach(m => {
+          if (m.scorers) m.scorers.forEach(s => {
+            if (String(s.playerId).includes('_' + playerUid)) cupGoals++;
+          });
+          if (m.assists) m.assists.forEach(a => {
+            if (String(a.playerId).includes('_' + playerUid)) cupAssists++;
+          });
+          if (m.motm && String(m.motm).includes('_' + playerUid)) cupMotm++;
+        });
+      });
+    }
+
+    if (leagueGoals > 0 || leagueAssists > 0 || leagueMotm > 0 || cupGoals > 0 || cupAssists > 0 || cupMotm > 0) {
+      results.push({
+        seasonId: season.id,
+        teamName: teamName,
+        leagueGoals, leagueAssists, leagueMotm,
+        cupGoals, cupAssists, cupMotm
+      });
+    }
+  });
+
+  return results;
+}
+
+// 展开/收起球员跨赛季详情
+function togglePlayerSeasonDetail(el, uid) {
+  const name = el.textContent;
+  const existing = el.parentElement.querySelector('.player-season-detail');
+  if (existing) {
+    existing.remove();
+    el.classList.remove('player-expand-active');
+    return;
+  }
+  // 关闭其他展开
+  document.querySelectorAll('.player-season-detail').forEach(e => e.remove());
+  document.querySelectorAll('.player-expand-active').forEach(e => e.classList.remove('player-expand-active'));
+  el.classList.add('player-expand-active');
+
+  const stats = getPlayerCrossSeasonStats(uid, name);
+  if (stats.length === 0) {
+    el.insertAdjacentHTML('afterend', '<div class="player-season-detail">暂无跨赛季数据</div>');
+    return;
+  }
+
+  let html = '<div class="player-season-detail"><table class="player-season-table"><thead><tr>';
+  html += '<th>赛季</th><th>球队</th><th>联赛⚽</th><th>联赛👟</th><th>联赛⭐</th><th>杯赛⚽</th><th>杯赛👟</th><th>杯赛⭐</th>';
+  html += '</tr></thead><tbody>';
+  stats.forEach(s => {
+    html += `<tr><td>第${s.seasonId}届</td><td>${s.teamName}</td>`;
+    html += `<td>${s.leagueGoals}</td><td>${s.leagueAssists}</td><td>${s.leagueMotm}</td>`;
+    html += `<td>${s.cupGoals}</td><td>${s.cupAssists}</td><td>${s.cupMotm}</td></tr>`;
+  });
+  // 合计行
+  const totals = stats.reduce((acc, s) => ({
+    lg: acc.lg + s.leagueGoals, la: acc.la + s.leagueAssists, lm: acc.lm + s.leagueMotm,
+    cg: acc.cg + s.cupGoals, ca: acc.ca + s.cupAssists, cm: acc.cm + s.cupMotm
+  }), { lg: 0, la: 0, lm: 0, cg: 0, ca: 0, cm: 0 });
+  html += `<tr class="total-row"><td colspan="2"><strong>合计</strong></td>`;
+  html += `<td><strong>${totals.lg}</strong></td><td><strong>${totals.la}</strong></td><td><strong>${totals.lm}</strong></td>`;
+  html += `<td><strong>${totals.cg}</strong></td><td><strong>${totals.ca}</strong></td><td><strong>${totals.cm}</strong></td></tr>`;
+  html += '</tbody></table></div>';
+  el.insertAdjacentHTML('afterend', html);
+}
 
 // 全局查找球员（支持转会后跨球队查找）
 function findPlayerById(playerId) {
