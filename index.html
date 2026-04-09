@@ -331,7 +331,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 6 };
+const APP_VERSION = { major: 1, minor: 0, patch: 7 };
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-09';
 function getAppVersion() { return `v${APP_VERSION.major}.${APP_VERSION.minor}.${APP_VERSION.patch}`; }
@@ -1894,6 +1894,9 @@ function getPlayerCrossSeasonStats(playerUid, playerName) {
     let leagueGoals = 0, leagueAssists = 0, leagueMotm = 0;
     let cupGoals = 0, cupAssists = 0, cupMotm = 0;
     let teamName = '';
+    let transferFee = 0;
+    let transferFrom = '';
+    let transferDate = '';
 
     // 联赛统计：从球员对象读取
     if (sd.teams) {
@@ -1905,6 +1908,9 @@ function getPlayerCrossSeasonStats(playerUid, playerName) {
           leagueGoals = p.goals || 0;
           leagueAssists = p.assists || 0;
           leagueMotm = p.motmCount || 0;
+          transferFee = p.transferFee || 0;
+          transferFrom = p.transferFrom || '';
+          transferDate = p.transferDate || '';
           break;
         }
       }
@@ -1927,12 +1933,13 @@ function getPlayerCrossSeasonStats(playerUid, playerName) {
       });
     }
 
-    if (leagueGoals > 0 || leagueAssists > 0 || leagueMotm > 0 || cupGoals > 0 || cupAssists > 0 || cupMotm > 0) {
+    if (leagueGoals > 0 || leagueAssists > 0 || leagueMotm > 0 || cupGoals > 0 || cupAssists > 0 || cupMotm > 0 || transferFee > 0) {
       results.push({
         seasonId: season.id,
         teamName: teamName,
         leagueGoals, leagueAssists, leagueMotm,
-        cupGoals, cupAssists, cupMotm
+        cupGoals, cupAssists, cupMotm,
+        transferFee, transferFrom, transferDate
       });
     }
   });
@@ -1976,7 +1983,20 @@ function togglePlayerSeasonDetail(el, uid) {
   html += `<tr class="total-row"><td colspan="2"><strong>合计</strong></td>`;
   html += `<td><strong>${totals.lg}</strong></td><td><strong>${totals.la}</strong></td><td><strong>${totals.lm}</strong></td>`;
   html += `<td><strong>${totals.cg}</strong></td><td><strong>${totals.ca}</strong></td><td><strong>${totals.cm}</strong></td></tr>`;
-  html += '</tbody></table></div>';
+  // 转会记录
+  const transfers = stats.filter(s => s.transferFee > 0);
+  if (transfers.length > 0) {
+    html += '</tbody></table>';
+    html += '<div style="margin-top:8px;padding:8px 10px;background:#fff8e1;border-radius:8px;border-left:3px solid #FF9800">';
+    html += '<div style="font-size:11px;font-weight:700;color:#e65100;margin-bottom:4px">🔄 转会记录</div>';
+    transfers.forEach(s => {
+      html += `<div style="font-size:11px;color:#666;line-height:1.6">第${s.seasonId}届：${s.transferFrom} → ${s.teamName}　💰 <b style="color:#FF9800">${s.transferFee}M</b>${s.transferDate ? '　📅 ' + s.transferDate : ''}</div>`;
+    });
+    html += '</div>';
+    html += '</div>';
+  } else {
+    html += '</tbody></table></div>';
+  }
   el.insertAdjacentHTML('afterend', html);
 }
 
