@@ -331,7 +331,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 20 };
+const APP_VERSION = { major: 1, minor: 0, patch: 21 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -2088,6 +2088,12 @@ function findPlayerById(playerId) {
   const sd = getCurrentSeasonData();
   for (const team of sd.teams) {
     const p = team.players ? team.players.find(x => x.id === playerId) : null;
+    if (p) return p;
+  }
+  // 精确匹配失败：用 uid 部分（playerId 最后一段）回退查找
+  const uid = playerId.includes('_') ? playerId.split('_').pop() : playerId;
+  for (const team of sd.teams) {
+    const p = team.players ? team.players.find(x => x.uid == uid || (x.id && x.id.endsWith('_' + uid))) : null;
     if (p) return p;
   }
   return null;
