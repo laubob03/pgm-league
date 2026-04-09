@@ -303,8 +303,15 @@
     <button class="sidebar-item danger" id="btnLogout" style="display:none"><span class="sidebar-item-icon">🚪</span>退出登录</button>
   </div>
   <div class="sidebar-footer" id="sidebarAbout">
-    <div style="text-align:center;padding:16px 20px;border-top:1px solid #f0f0f0">
-      <div style="font-size:11px;color:#999;cursor:pointer" id="aboutBtn">ℹ️ 关于 PGM联赛</div>
+    <div style="padding:14px 20px;border-top:1px solid #f0f0f0">
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+        <a href="https://www.playgm.cc/" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:6px;font-size:11px;color:#888;text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='#1a7a2e'" onmouseout="this.style.color='#888'"><span style="font-size:13px">🌐</span><span>playgm.cc</span></a>
+        <a href="https://www.playgm.games/" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:6px;font-size:11px;color:#888;text-decoration:none;transition:color 0.2s" onmouseover="this.style.color='#1a7a2e'" onmouseout="this.style.color='#888'"><span style="font-size:13px">🔗</span><span>playgm.games</span></a>
+        <div onclick="navigator.clipboard.writeText('50362211').then(()=>showToast('QQ群号已复制'))" title="点击复制" style="display:flex;align-items:center;gap:6px;font-size:11px;color:#888;cursor:pointer"><span style="font-size:13px">💬</span><span>QQ群: 50362211</span></div>
+      </div>
+      <div style="text-align:center;border-top:1px solid #f5f5f5;padding-top:10px">
+        <div style="font-size:11px;color:#999;cursor:pointer" id="aboutBtn">ℹ️ 关于 PGM联赛</div>
+      </div>
     </div>
   </div>
 </aside>
@@ -324,7 +331,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 3 };
+const APP_VERSION = { major: 1, minor: 0, patch: 4 };
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-09';
 function getAppVersion() { return `v${APP_VERSION.major}.${APP_VERSION.minor}.${APP_VERSION.patch}`; }
