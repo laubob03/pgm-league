@@ -3475,6 +3475,9 @@ function showSyncModal() {
         <div style="margin-top:8px;background:#fce4ec;border-radius:8px;padding:10px;font-size:12px;color:#c62828;line-height:1.6;">
           <b>⚠️ 注意：</b>上传会覆盖云端数据，下载会覆盖本地数据
         </div>
+        <div id="cloudUploadInfo" style="margin-top:8px;background:#e3f2fd;border-radius:8px;padding:10px;font-size:12px;color:#1565c0;line-height:1.6;">
+          正在查询云端上传记录...
+        </div>
         ` : ''}
       </div>
       
@@ -3515,6 +3518,35 @@ function showSyncModal() {
   
   document.getElementById('modalContent').innerHTML = content;
   document.getElementById('modalOverlay').classList.add('active');
+
+  // 管理员：异步读取云端上传记录
+  if (isAdmin && hasGist) {
+    fetchCloudUploadInfo();
+  }
+}
+
+// 获取云端上传记录
+async function fetchCloudUploadInfo() {
+  const infoEl = document.getElementById('cloudUploadInfo');
+  if (!infoEl) return;
+  try {
+    const resp = await fetch(GIST_API + '/' + GIST_ID);
+    if (!resp.ok) { infoEl.innerHTML = '❌ 无法查询云端信息'; return; }
+    const gist = await resp.json();
+    const files = Object.values(gist.files);
+    if (!files.length) { infoEl.innerHTML = '云端暂无数据'; return; }
+    const data = JSON.parse(files[0].content);
+    if (data._lastUpload) {
+      const lu = data._lastUpload;
+      const t = new Date(lu.at);
+      const timeStr = t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0') + ' ' + String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
+      infoEl.innerHTML = '<b>👤 云端最后上传：</b>' + lu.by + '（' + lu.role + '）<br><b>🕐 上传时间：</b>' + timeStr;
+    } else {
+      infoEl.innerHTML = '云端暂无上传记录';
+    }
+  } catch(e) {
+    infoEl.innerHTML = '查询失败';
+  }
 }
 
 // ============ 数据员专属同步函数 ============
@@ -3766,6 +3798,12 @@ async function recorderUpload() {
             }
           });
         }
+        // 附加上传者信息
+        mainState._lastUpload = {
+          by: state.currentUser ? state.currentUser.coachName : '未知',
+          role: state.currentUser ? (state.currentUser.isStatsRecorder ? '统计员' : '数据员') : '未知',
+          at: new Date().toISOString()
+        };
         const mainDataStr = JSON.stringify(mainState, null, 2);
         const mainFilename = 'pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json';
         const mainBody = { description: 'PGM足球经理联赛数据 - 自动同步', files: {} };
@@ -3927,7 +3965,14 @@ async function syncUpload() {
   showToast('正在上传...');
 
   try {
-    const dataStr = JSON.stringify(state, null, 2);
+    // 构建上传数据，附加上传者信息
+    const uploadData = JSON.parse(JSON.stringify(state));
+    uploadData._lastUpload = {
+      by: state.currentUser ? state.currentUser.coachName : '未知',
+      role: state.currentUser ? (state.currentUser.isSuperAdmin ? '超级管理员' : (state.currentUser.isStatsRecorder ? '统计员' : '数据员')) : '未知',
+      at: new Date().toISOString()
+    };
+    const dataStr = JSON.stringify(uploadData, null, 2);
     const filename = 'pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json';
     const headers = {
       'Authorization': 'Bearer ' + token,
@@ -4045,6 +4090,7 @@ async function syncDownload() {
     // 写入本地（清除登录状态，防止变成管理员）
     const loginUser = state.currentUser;
     state = cloudData;
+    delete state._lastUpload; // 清理云端元数据，不保存到本地
     state.currentUser = loginUser;
     saveState();
     
