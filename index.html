@@ -331,7 +331,13 @@ const DATA_RECORDERS = {
   yixi:       { id: 'yixi',       name: '乙西数据员', league: 'yiWest',        type: 'league', cupId: null },
   guanjunbei: { id: 'guanjunbei', name: '冠军杯数据员', league: 'championsCup', type: 'cup', cupId: 'championsCup' },
   lianmengbei:{ id: 'lianmengbei',name: '联盟杯数据员', league: 'leagueCup',    type: 'cup', cupId: 'leagueCup' },
-  xiehuibei:  { id: 'xiehuibei', name: '协会杯数据员', league: 'associationCup',type: 'cup', cupId: 'associationCup' }
+  xiehuibei:  { id: 'xiehuibei', name: '协会杯数据员', league: 'associationCup',type: 'cup', cupId: 'associationCup' },
+  // 积分榜统计员 - 只能录入比分、下载云端、本地导出导入，不能上传云端
+  jfchaolian: { id: 'jfchaolian', name: '超级联赛统计员', league: 'super',       type: 'league', cupId: null, role: 'stats', password: 'chaolian' },
+  jfjiaEast:  { id: 'jfjiaEast',  name: '甲东统计员',     league: 'jiaEast',     type: 'league', cupId: null, role: 'stats', password: 'jiaEast' },
+  jfjiaWest:  { id: 'jfjiaWest',  name: '甲西统计员',     league: 'jiaWest',     type: 'league', cupId: null, role: 'stats', password: 'jiaWest' },
+  jfyiEast:   { id: 'jfyiEast',   name: '乙东统计员',     league: 'yiEast',      type: 'league', cupId: null, role: 'stats', password: 'yiEast' },
+  jfyiWest:   { id: 'jfyiWest',   name: '乙西统计员',     league: 'yiWest',      type: 'league', cupId: null, role: 'stats', password: 'yiWest' }
 };
 const LEAGUE_TEAM_COUNTS = { super: 12, jiaEast: 12, jiaWest: 12, yiEast: 12, yiWest: 12 };
 const POSITION_NAMES = { GK: '门将', DF: '后卫', MF: '中场', FW: '前锋' };
@@ -2841,9 +2847,10 @@ function showLoginModal() {
       render();
       showToast('欢迎，超级管理员！');
     } else if (DATA_RECORDERS[teamId] && password === (DATA_RECORDERS[teamId].password || teamId)) {
-      // 数据员登录
+      // 数据员/统计员登录
       const rec = DATA_RECORDERS[teamId];
-      state.currentUser = { teamId: rec.id, teamName: rec.name, coachName: rec.name, isDataRecorder: true, league: rec.league, recorderType: rec.type, cupId: rec.cupId };
+      const isStats = rec.role === 'stats';
+      state.currentUser = { teamId: rec.id, teamName: rec.name, coachName: rec.name, isDataRecorder: true, isStatsRecorder: isStats, league: rec.league, recorderType: rec.type, cupId: rec.cupId };
       saveState();
       closeModal();
       updateSidebar();
@@ -3224,18 +3231,16 @@ function showSyncModal() {
   const hasToken = !!GITHUB_TOKEN;
   const hasGist = !!GIST_ID;
 
-  // 数据员视图：独立 Gist，上传/下载联赛/杯赛数据，使用内置 Token
+  // 数据员/统计员视图
   if (isRecorder) {
-    const recorderToken = RECORDER_BUILTIN_TOKEN;
     const league = state.currentUser.league;
     const recorderType = state.currentUser.recorderType || 'league';
     const cupId = state.currentUser.cupId || null;
     const leagueName = getRecorderDisplayName(league);
-    const gistKey = 'pgm_recorder_gist_' + state.currentUser.teamId;
-    const recorderGist = localStorage.getItem(gistKey) || '';
     const isCup = recorderType === 'cup';
+    const isStatsRecorder = state.currentUser.isStatsRecorder;
 
-    // 获取该数据员负责的数据概览
+    // 获取该数据员/统计员负责的数据概览
     let dataTeams, dataMatches;
     if (isCup && cupId && state.cups && state.cups[cupId]) {
       const cup = state.cups[cupId];
@@ -3250,6 +3255,70 @@ function showSyncModal() {
     }
     const completedMatches = isCup ? dataMatches.filter(m => m.status === 'completed') : dataMatches.filter(m => m.completed);
     const lastSyncKey = 'pgm_recorder_last_sync_' + state.currentUser.teamId;
+
+    // ===== 统计员视图（只读：下载+本地导出导入，无上传） =====
+    if (isStatsRecorder) {
+      const content = `
+        <div class="modal-header">
+          <div class="modal-title">📊 ${leagueName}数据同步</div>
+          <button class="modal-close" onclick="closeModal()">×</button>
+        </div>
+        <div style="max-height:70vh;overflow-y:auto;padding:4px 0">
+          
+          <div class="import-section" style="border-color:#FF9800;">
+            <div class="import-section-title" style="color:#FF9800;">📋 统计员模式</div>
+            <div style="font-size:13px;color:#333;line-height:1.8;">
+              你是 <b>${leagueName}统计员</b>，可录入${leagueName}比赛比分，查看和下载云端数据，也可本地导出导入备份。<br>
+              <span style="color:#f44336">⚠️ 你没有上传云端权限</span>
+            </div>
+          </div>
+
+          <!-- 全量数据下载 -->
+          <div class="import-section" style="border-color:#2196F3;">
+            <div class="import-section-title" style="color:#2196F3;">⬇️ 获取全量数据</div>
+            <div class="import-desc">从主云端下载所有联赛和杯赛的完整数据</div>
+            <button class="btn btn-primary btn-full" onclick="syncDownload()" style="background:#2196F3;">
+              ⬇️ 从云端下载（全量数据）
+            </button>
+          </div>
+
+          <!-- 本地导入导出 -->
+          <div class="import-section" style="border-color:#9C27B0;">
+            <div class="import-section-title" style="color:#9C27B0;">📁 本地备份 / 导入</div>
+            <div class="import-desc">通过 JSON 文件在本地备份或导入数据</div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary" style="flex:1;background:#9C27B0;" onclick="exportDataToFile()">
+                📤 导出为文件
+              </button>
+              <button class="btn btn-primary" style="flex:1;background:#9C27B0;" onclick="document.getElementById('importFileInput2').click()">
+                📥 从文件导入
+              </button>
+            </div>
+            <input type="file" id="importFileInput2" accept=".json" style="display:none" onchange="importDataFromFile(event)">
+          </div>
+        
+          <!-- 数据概览 -->
+          <div class="import-section" style="border-color:#607D8B;">
+            <div class="import-section-title" style="color:#607D8B;">📊 ${leagueName}数据概览</div>
+            <div style="font-size:13px;line-height:2;color:#333;">
+              <div>球队数量：<b>${dataTeams.length}</b> 支</div>
+              <div>比赛总数：<b>${dataMatches.length}</b> 场</div>
+              <div>已完赛场次：<b>${completedMatches.length}</b> 场</div>
+              <div>最后同步：${localStorage.getItem(lastSyncKey) || '从未同步'}</div>
+            </div>
+          </div>
+          
+        </div>
+      `;
+      document.getElementById('modalContent').innerHTML = content;
+      document.getElementById('modalOverlay').classList.add('active');
+      return;
+    }
+
+    // ===== 数据员视图（完整权限：上传+下载+导出导入） =====
+    const recorderToken = RECORDER_BUILTIN_TOKEN;
+    const gistKey = 'pgm_recorder_gist_' + state.currentUser.teamId;
+    const recorderGist = localStorage.getItem(gistKey) || '';
     const content = `
       <div class="modal-header">
         <div class="modal-title">☁️ ${leagueName}数据同步</div>
@@ -3452,7 +3521,7 @@ function showSyncModal() {
 
 // 获取数据员显示名称
 function getRecorderDisplayName(league) {
-  const map = { jiaEast: '甲东', jiaWest: '甲西', yiEast: '乙东', yiWest: '乙西' };
+  const map = { super: '超级联赛', jiaEast: '甲东', jiaWest: '甲西', yiEast: '乙东', yiWest: '乙西' };
   if (map[league]) return map[league];
   if (CUP_NAMES[league]) return CUP_NAMES[league].replace('🏆 ', '');
   return league;
