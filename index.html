@@ -19,7 +19,7 @@
     .header-tabs::-webkit-scrollbar{display:none}
     .tab-btn{background:rgba(255,255,255,0.12);border:none;color:rgba(255,255,255,0.75);padding:6px 16px;border-radius:16px;font-size:14px;font-weight:500;white-space:nowrap;cursor:pointer;transition:all 0.2s}
     .tab-btn.active{background:white;color:var(--primary);font-weight:600}
-    .main-content{margin-top:90px;padding:0 12px;padding-bottom:50px}
+    .main-content{margin-top:70px;padding:0 12px;padding-bottom:50px}
     .page{display:none}
     .page.active{display:block}
     .card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
@@ -91,7 +91,9 @@
     .gold-medal{color:#FFD700;font-weight:700}
     .silver-medal{color:#C0C0C0;font-weight:700}
     .bronze-medal{color:#CD7F32;font-weight:700}
-    .bottom-nav{position:fixed;top:0;left:0;right:0;background:#228B22;display:flex;justify-content:center;align-items:center;padding:8px 16px;gap:24px;box-shadow:0 2px 10px rgba(0,0,0,0.1);z-index:100}
+    .bottom-nav{position:fixed;top:0;left:0;right:0;background:#228B22;display:flex;justify-content:space-between;align-items:center;padding:6px 16px;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
+    .nav-tabs{display:flex;gap:24px}
+    .nav-right{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
     .nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:rgba(255,255,255,0.8);font-size:10px;cursor:pointer;padding:4px 8px;border-radius:8px;transition:all 0.2s}
     .nav-item.active{color:#fff;background:rgba(144,238,144,0.4);backdrop-filter:blur(4px)}
     .nav-item-icon{font-size:26px}
@@ -160,22 +162,26 @@
     .season-chip.active{background:white;color:#228B22}
     .season-archive-tag{background:#FFD700;color:#333;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;margin-left:8px}
     .archive-notice{text-align:center;padding:8px;background:#FFF3E0;color:#E65100;font-size:13px;font-weight:600;border-radius:0}
-    .nav-season-info{margin-left:auto;font-size:18px;color:rgba(255,255,255,0.85);display:flex;align-items:center;gap:8px;white-space:nowrap}
-    .nav-season-info .season-label{font-weight:700;color:rgba(255,255,255,0.95);font-size:22px}
-    .nav-season-info .season-credit{font-size:18px;color:rgba(255,255,255,0.55);font-style:italic}
-    .nav-clock-bar{position:fixed;top:56px;left:0;right:0;background:#1a6b1a;display:flex;justify-content:center;align-items:center;padding:3px 16px;z-index:99;font-size:14px;color:rgba(255,255,255,0.85);font-variant-numeric:tabular-nums;letter-spacing:0.5px}
+    .nav-season-info{display:flex;align-items:center;gap:8px;white-space:nowrap}
+    .nav-season-info .season-label{font-weight:700;color:rgba(255,255,255,0.95);font-size:14px}
+    .nav-season-info .season-credit{font-size:11px;color:rgba(255,255,255,0.55);font-style:italic}
+    .nav-clock{font-size:11px;color:rgba(255,255,255,0.7);font-variant-numeric:tabular-nums;letter-spacing:0.3px}
   </style>
 </head>
 <body>
 
 
 <nav class="bottom-nav">
-  <button class="nav-item active" data-page="standings"><span class="nav-item-icon">🏆</span><span>积分榜</span></button>
-  <button class="nav-item" data-page="schedule"><span class="nav-item-icon">📅</span><span>赛程</span></button>
-  <button class="nav-item" data-page="stats"><span class="nav-item-icon">📊</span><span>榜单</span></button>
-  <span class="nav-season-info" id="navSeasonInfo"></span>
+  <div class="nav-tabs">
+    <button class="nav-item active" data-page="standings"><span class="nav-item-icon">🏆</span><span>积分榜</span></button>
+    <button class="nav-item" data-page="schedule"><span class="nav-item-icon">📅</span><span>赛程</span></button>
+    <button class="nav-item" data-page="stats"><span class="nav-item-icon">📊</span><span>榜单</span></button>
+  </div>
+  <div class="nav-right">
+    <span class="nav-season-info" id="navSeasonInfo"></span>
+    <span class="nav-clock" id="navClock"></span>
+  </div>
 </nav>
-<div class="nav-clock-bar" id="navClockBar"></div>
 
 <header class="header">
   <div class="header-top">
@@ -4021,7 +4027,7 @@ function updateClock() {
   const h = String(now.getHours()).padStart(2, '0');
   const mi = String(now.getMinutes()).padStart(2, '0');
   const s = String(now.getSeconds()).padStart(2, '0');
-  const el = document.getElementById('navClockBar');
+  const el = document.getElementById('navClock');
   if (el) el.textContent = y + '-' + mo + '-' + d + ' 周' + w + '  ' + h + ':' + mi + ':' + s;
 }
 updateClock();
