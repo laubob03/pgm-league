@@ -995,19 +995,19 @@ function renderCupSchedule(cupId) {
       const awayGoals = isCompleted ? (m.scorers||[]).filter(s => s.teamId === m.awayTeam) : [];
       const homeAssists = isCompleted && m.assists ? m.assists.filter(a => a.teamId === m.homeTeam) : [];
       const awayAssists = isCompleted && m.assists ? m.assists.filter(a => a.teamId === m.awayTeam) : [];
-      const countNames = (arr, team) => {
+      const countNames = (arr) => {
         const counts = {};
         arr.forEach(s => {
-          const p = team.players.find(x => x.id === s.playerId);
+          const p = findPlayerById(s.playerId);
           if (p) counts[p.name] = (counts[p.name] || 0) + 1;
         });
         return Object.entries(counts).map(([name, c]) => c > 1 ? name + '(' + c + ')' : name).join(', ');
       };
-      const homeScorerStr = countNames(homeGoals, home);
-      const homeAssistStr = countNames(homeAssists, home);
-      const awayScorerStr = countNames(awayGoals, away);
-      const awayAssistStr = countNames(awayAssists, away);
-      const homeMotmPlayer = isCompleted && m.motm ? home.players.find(p => p.id === m.motm) : null;
+      const homeScorerStr = countNames(homeGoals);
+      const homeAssistStr = countNames(homeAssists);
+      const awayScorerStr = countNames(awayGoals);
+      const awayAssistStr = countNames(awayAssists);
+      const homeMotmPlayer = isCompleted && m.motm ? findPlayerById(m.motm) : null;
       const homeMotmStr = homeMotmPlayer ? homeMotmPlayer.name : '';
       const homeDetail = isCompleted && (homeScorerStr || homeAssistStr || homeMotmStr)
         ? '<div style="font-size:10px;color:#666;line-height:1.3;padding:0 0 0 0">'
@@ -1015,7 +1015,7 @@ function renderCupSchedule(cupId) {
           + (homeAssistStr ? '<div>\uD83D\uDC5F ' + homeAssistStr + '</div>' : '')
           + (homeMotmStr ? '<div style="color:#f5a623">\u2B50 ' + homeMotmStr + '</div>' : '')
           + '</div>' : '';
-      const awayMotmPlayer = isCompleted && m.motm ? away.players.find(p => p.id === m.motm) : null;
+      const awayMotmPlayer = isCompleted && m.motm ? findPlayerById(m.motm) : null;
       const awayMotmStr = awayMotmPlayer ? awayMotmPlayer.name : '';
       const awayDetail = isCompleted && (awayScorerStr || awayAssistStr || awayMotmStr)
         ? '<div style="font-size:10px;color:#666;line-height:1.3;padding:0 0 0 0;text-align:right">'
@@ -1437,19 +1437,19 @@ function renderSchedule() {
       const awayGoals = isCompleted ? (m.scorers||[]).filter(s => s.teamId === m.awayTeam) : [];
       const homeAssists = isCompleted && m.assists ? m.assists.filter(a => a.teamId === m.homeTeam) : [];
       const awayAssists = isCompleted && m.assists ? m.assists.filter(a => a.teamId === m.awayTeam) : [];
-      const countNames = (arr, team) => {
+      const countNames = (arr) => {
         const counts = {};
         arr.forEach(s => {
-          const p = team.players.find(x => x.id === s.playerId);
+          const p = findPlayerById(s.playerId);
           if (p) counts[p.name] = (counts[p.name] || 0) + 1;
         });
         return Object.entries(counts).map(([name, c]) => c > 1 ? name + '(' + c + ')' : name).join(', ');
       };
-      const homeScorerStr = countNames(homeGoals, home);
-      const homeAssistStr = countNames(homeAssists, home);
-      const awayScorerStr = countNames(awayGoals, away);
-      const awayAssistStr = countNames(awayAssists, away);
-      const homeMotmPlayer = isCompleted && m.motm ? home.players.find(p => p.id === m.motm) : null;
+      const homeScorerStr = countNames(homeGoals);
+      const homeAssistStr = countNames(homeAssists);
+      const awayScorerStr = countNames(awayGoals);
+      const awayAssistStr = countNames(awayAssists);
+      const homeMotmPlayer = isCompleted && m.motm ? findPlayerById(m.motm) : null;
       const homeMotmStr = homeMotmPlayer ? homeMotmPlayer.name : '';
       const homeDetail = isCompleted && (homeScorerStr || homeAssistStr || homeMotmStr)
         ? '<div style="font-size:10px;color:#666;line-height:1.3;padding:0 0 0 0">'
@@ -1457,7 +1457,7 @@ function renderSchedule() {
           + (homeAssistStr ? '<div>\uD83D\uDC5F ' + homeAssistStr + '</div>' : '')
           + (homeMotmStr ? '<div style="color:#f5a623">\u2B50 ' + homeMotmStr + '</div>' : '')
           + '</div>' : '';
-      const awayMotmPlayer = isCompleted && m.motm ? away.players.find(p => p.id === m.motm) : null;
+      const awayMotmPlayer = isCompleted && m.motm ? findPlayerById(m.motm) : null;
       const awayMotmStr = awayMotmPlayer ? awayMotmPlayer.name : '';
       const awayDetail = isCompleted && (awayScorerStr || awayAssistStr || awayMotmStr)
         ? '<div style="font-size:10px;color:#666;line-height:1.3;padding:0 0 0 0;text-align:right">'
@@ -1521,8 +1521,7 @@ function renderMatchScorers(m) {
   if (homeGoals.length > 0) {
     html += '<div><strong>主队进球:</strong> ';
     html += homeGoals.map(s => {
-      const team = state.teams.find(t => t.id === s.teamId);
-      const player = team ? team.players.find(p => p.id === s.playerId) : null;
+      const player = findPlayerById(s.playerId);
       return `${player ? player.name : s.playerId}${s.minute ? s.minute + "'" : ''}`;
     }).join(', ');
     html += '</div>';
@@ -1532,8 +1531,7 @@ function renderMatchScorers(m) {
   if (homeAssists.length > 0) {
     html += '<div><strong>主队助攻:</strong> ';
     html += homeAssists.map(a => {
-      const team = state.teams.find(t => t.id === a.teamId);
-      const player = team ? team.players.find(p => p.id === a.playerId) : null;
+      const player = findPlayerById(a.playerId);
       return `${player ? player.name : a.playerId}`;
     }).join(', ');
     html += '</div>';
@@ -1543,8 +1541,7 @@ function renderMatchScorers(m) {
   if (awayGoals.length > 0) {
     html += '<div><strong>客队进球:</strong> ';
     html += awayGoals.map(s => {
-      const team = state.teams.find(t => t.id === s.teamId);
-      const player = team ? team.players.find(p => p.id === s.playerId) : null;
+      const player = findPlayerById(s.playerId);
       return `${player ? player.name : s.playerId}${s.minute ? s.minute + "'" : ''}`;
     }).join(', ');
     html += '</div>';
@@ -1554,8 +1551,7 @@ function renderMatchScorers(m) {
   if (awayAssists.length > 0) {
     html += '<div><strong>客队助攻:</strong> ';
     html += awayAssists.map(a => {
-      const team = state.teams.find(t => t.id === a.teamId);
-      const player = team ? team.players.find(p => p.id === a.playerId) : null;
+      const player = findPlayerById(a.playerId);
       return `${player ? player.name : a.playerId}`;
     }).join(', ');
     html += '</div>';
@@ -1673,6 +1669,17 @@ function sortStats(col) {
   });
 
   container.innerHTML = renderScorersList(players, currentTab);
+}
+
+// ============ UTILITIES ============
+
+// 全局查找球员（支持转会后跨球队查找）
+function findPlayerById(playerId) {
+  for (const team of state.teams) {
+    const p = team.players ? team.players.find(x => x.id === playerId) : null;
+    if (p) return p;
+  }
+  return null;
 }
 
 // ============ CALCULATIONS ============
@@ -1893,13 +1900,15 @@ function showTeamDetail(teamId) {
 
     // 获取进球助攻
     const teamGoals = isCompleted && m.scorers ? m.scorers.filter(s => s.teamId === teamId).map(s => {
-      const p = team.players.find(x => x.id === s.playerId);
+      const p = findPlayerById(s.playerId);
       return p ? p.name : '';
     }).filter(Boolean).join(', ') : '';
     const teamAssists = isCompleted && m.assists ? m.assists.filter(a => a.teamId === teamId).map(a => {
-      const p = team.players.find(x => x.id === a.playerId);
+      const p = findPlayerById(a.playerId);
       return p ? p.name : '';
     }).filter(Boolean).join(', ') : '';
+
+
 
     const teamMotm = isCompleted && m.motm ? team.players.find(p => p.id === m.motm) : null;
     const teamMotmStr = teamMotm ? teamMotm.name : '';
@@ -1944,7 +1953,7 @@ function showTeamDetail(teamId) {
         const isMotm = m.motm === playerId;
         if (isInMatch || isMotm) {
           gameCount++;
-          const player = team.players.find(p => p.id === playerId);
+          const player = findPlayerById(playerId);
           if (player && player.rating) {
             totalRating += player.rating;
           }
@@ -2009,14 +2018,14 @@ function showTeamDetail(teamId) {
         const awayScore = m.awayScore || 0;
         // 获取进球助攻MVP
         const cupTeamGoals = isCompleted && m.scorers ? m.scorers.filter(s => s.teamId === teamId).map(s => {
-          const p = team.players.find(x => x.id === s.playerId);
+          const p = findPlayerById(s.playerId);
           return p ? p.name : '';
         }).filter(Boolean).join(', ') : '';
         const cupTeamAssists = isCompleted && m.assists ? m.assists.filter(a => a.teamId === teamId).map(a => {
-          const p = team.players.find(x => x.id === a.playerId);
+          const p = findPlayerById(a.playerId);
           return p ? p.name : '';
         }).filter(Boolean).join(', ') : '';
-        const cupTeamMotm = isCompleted && m.motm ? team.players.find(p => p.id === m.motm) : null;
+        const cupTeamMotm = isCompleted && m.motm ? findPlayerById(m.motm) : null;
         const cupTeamMotmStr = cupTeamMotm ? cupTeamMotm.name : '';
         const cupTeamDetail = isCompleted && (cupTeamGoals || cupTeamAssists || cupTeamMotmStr)
           ? `<div style="font-size:9px;color:#666;line-height:1.2">${cupTeamGoals ? '⚽' + cupTeamGoals : ''}${cupTeamGoals && cupTeamAssists ? ' ' : ''}${cupTeamAssists ? '👟' + cupTeamAssists : ''}${cupTeamMotmStr ? (cupTeamGoals || cupTeamAssists ? ' ' : '') + '<span style="color:#f5a623">⭐' + cupTeamMotmStr + '</span>' : ''}</div>` : '';
@@ -2094,6 +2103,7 @@ function showTeamDetail(teamId) {
       <div class="form-label" style="display:flex;align-items:center;gap:8px">
         <span>👥 联赛球员数据（${team.players.length}人）</span>
         <span class="data-tab" onclick="showCupPlayerData('${teamId}')">🏆 杯赛球员数据</span>
+        ${state.currentUser && state.currentUser.isSuperAdmin ? '<span class="data-tab" style="color:#FF9800" onclick="showTransferPlayerModal(\'' + teamId + '\')">🔄 转出球员</span>' : ''}
       </div>
       <div class="sort-btns">
         <button class="sort-btn active" onclick="sortTeamPlayers('number')">号码</button>
@@ -3202,6 +3212,88 @@ function extractLeagueData(league) {
   const matches = state.matches.filter(m => teamIds.has(m.homeTeam) || teamIds.has(m.awayTeam));
   return { teams, matches, league, type: 'league', exportedAt: new Date().toISOString() };
 }
+
+// ============ 球员转会 ============
+
+// 显示转会模态框
+function showTransferPlayerModal(fromTeamId) {
+  const fromTeam = state.teams.find(t => t.id === fromTeamId);
+  if (!fromTeam || !fromTeam.players || fromTeam.players.length === 0) { showToast('该球队没有球员'); return; }
+
+  const playersOptions = fromTeam.players.sort((a, b) => (a.number || 0) - (b.number || 0)).map(p =>
+    `<option value="${p.id}">#${p.number} ${p.name}</option>`
+  ).join('');
+
+  const teamOptions = state.teams.filter(t => t.id !== fromTeamId).sort((a, b) => (a.name || '').localeCompare(b.name || '')).map(t =>
+    `<option value="${t.id}">${t.name}</option>`
+  ).join('');
+
+  const content = `
+    <div class="modal-header">
+      <div class="modal-title">🔄 球员转会</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div style="padding:16px">
+      <div style="font-size:13px;color:#666;margin-bottom:12px">
+        将球员从 <b style="color:#333">${fromTeam.name}</b> 转出到另一支球队
+      </div>
+      <div class="form-group">
+        <label class="form-label">选择球员</label>
+        <select id="transferPlayer" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:14px">
+          ${playersOptions}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">转入球队</label>
+        <select id="transferTargetTeam" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:14px">
+          ${teamOptions}
+        </select>
+      </div>
+      <div style="background:#fff3e0;border-radius:8px;padding:10px;font-size:12px;color:#e65100;line-height:1.6;margin-top:12px">
+        <b>⚠️ 注意：</b><br>
+        • 球员的历史比赛数据（进球、助攻等）会一并带走<br>
+        • 转会后该球员在原球队的历史记录仍可正常显示
+        • 转入球队的球衣号码会自动分配
+      </div>
+      <button class="btn btn-primary btn-full" style="margin-top:12px;background:#FF9800" onclick="doTransferPlayer('${fromTeamId}')">
+        确认转会
+      </button>
+    </div>
+  `;
+  showModal(content);
+}
+
+// 执行转会
+function doTransferPlayer(fromTeamId) {
+  const playerId = document.getElementById('transferPlayer').value;
+  const targetTeamId = document.getElementById('transferTargetTeam').value;
+
+  const fromTeam = state.teams.find(t => t.id === fromTeamId);
+  const toTeam = state.teams.find(t => t.id === targetTeamId);
+  if (!fromTeam || !toTeam) { showToast('球队不存在'); return; }
+
+  const playerIdx = fromTeam.players.findIndex(p => p.id === playerId);
+  if (playerIdx === -1) { showToast('球员不存在'); return; }
+
+  const player = fromTeam.players[playerIdx];
+
+  if (!confirm(`确定将 ${player.name} 从 ${fromTeam.name} 转会到 ${toTeam.name} 吗？`)) return;
+
+  // 分配新号码（取转入球队最大号码+1）
+  const maxNum = toTeam.players.reduce((max, p) => Math.max(max, p.number || 0), 0);
+  player.number = maxNum + 1;
+
+  // 移动球员
+  fromTeam.players.splice(playerIdx, 1);
+  toTeam.players.push(player);
+
+  saveState();
+  closeModal();
+  showToast(`✅ ${player.name} 已从 ${fromTeam.name} 转会到 ${toTeam.name}`);
+  showTeamDetail(fromTeamId);
+}
+
+// ============ 杯赛数据提取 ============
 
 // 提取指定杯赛的数据
 function extractCupData(cupId) {
