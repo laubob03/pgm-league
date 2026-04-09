@@ -327,7 +327,7 @@ const CUP_NAMES = { championsCup: '🏆 冠军杯', leagueCup: '🏆 联盟杯',
 const DATA_RECORDERS = {
   jiadong:    { id: 'jiadong',    name: '甲东数据员', league: 'jiaEast',       type: 'league', cupId: null },
   jiaxi:      { id: 'jiaxi',      name: '甲西数据员', league: 'jiaWest',       type: 'league', cupId: null },
-  yidong:     { id: 'yidong',     name: '乙东数据员', league: 'yiEast',        type: 'league', cupId: null },
+  yidong:     { id: 'yidong',     name: '乙东数据员', league: 'yiEast',        type: 'league', cupId: null, password: '123321' },
   yixi:       { id: 'yixi',       name: '乙西数据员', league: 'yiWest',        type: 'league', cupId: null },
   guanjunbei: { id: 'guanjunbei', name: '冠军杯数据员', league: 'championsCup', type: 'cup', cupId: 'championsCup' },
   lianmengbei:{ id: 'lianmengbei',name: '联盟杯数据员', league: 'leagueCup',    type: 'cup', cupId: 'leagueCup' },
@@ -2840,7 +2840,7 @@ function showLoginModal() {
       updateSidebar();
       render();
       showToast('欢迎，超级管理员！');
-    } else if (DATA_RECORDERS[teamId] && password === teamId) {
+    } else if (DATA_RECORDERS[teamId] && password === (DATA_RECORDERS[teamId].password || teamId)) {
       // 数据员登录
       const rec = DATA_RECORDERS[teamId];
       state.currentUser = { teamId: rec.id, teamName: rec.name, coachName: rec.name, isDataRecorder: true, league: rec.league, recorderType: rec.type, cupId: rec.cupId };
