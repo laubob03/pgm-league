@@ -301,6 +301,11 @@
     <button class="sidebar-item" id="sidebarLoginBtn"><span class="sidebar-item-icon">🔑</span>登录</button>
     <button class="sidebar-item danger" id="btnLogout" style="display:none"><span class="sidebar-item-icon">🚪</span>退出登录</button>
   </div>
+  <div class="sidebar-footer" id="sidebarAbout">
+    <div style="text-align:center;padding:16px 20px;border-top:1px solid #f0f0f0">
+      <div style="font-size:11px;color:#999;cursor:pointer" id="aboutBtn">ℹ️ 关于 PGM联赛</div>
+    </div>
+  </div>
 </aside>
 
 <!-- Modal -->
@@ -317,6 +322,12 @@
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
 <script>
+// ============ VERSION ============
+const APP_VERSION = { major: 3, minor: 2, patch: 1 };
+const APP_AUTHOR = 'J.K';
+const APP_BUILD_DATE = '2026-04-09';
+function getAppVersion() { return `v${APP_VERSION.major}.${APP_VERSION.minor}.${APP_VERSION.patch}`; }
+
 // ============ DATA ============
 const LEAGUE_NAMES = {
   super: '超级联赛', jiaEast: '甲级-东区', jiaWest: '甲级-西区', yiEast: '乙级-东区', yiWest: '乙级-西区'
@@ -2822,6 +2833,42 @@ function submitMatchResult(matchId) {
 }
 
 
+function showAboutModal() {
+  const v = getAppVersion();
+  const buildDays = Math.floor((new Date() - new Date(APP_BUILD_DATE)) / 86400000);
+  const seasonCount = state.currentSeasonId ? state.currentSeasonId : 62;
+  const archiveCount = state.seasons ? Object.keys(state.seasons).length : 0;
+
+  const content = `
+    <div style="text-align:center;padding:24px 24px 16px">
+      <div style="width:72px;height:72px;margin:0 auto 20px;background:linear-gradient(135deg,#1a7a2e 0%,#0d4f1a 100%);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 8px 24px rgba(26,122,46,0.3)">
+        ⚽
+      </div>
+      <h2 style="font-size:20px;font-weight:700;color:#1a1a1a;margin:0 0 4px">PGM 足球联赛管理系统</h2>
+      <div style="font-size:13px;color:#999;margin-bottom:24px">Professional Game Manager League</div>
+
+      <div style="display:inline-block;background:linear-gradient(135deg,#f8f9fa,#e9ecef);border-radius:12px;padding:16px 32px;margin-bottom:24px;border:1px solid #e9ecef">
+        <div style="font-size:28px;font-weight:800;letter-spacing:1px;color:#1a7a2e;font-family:'SF Mono',Consolas,'Courier New',monospace">${v}</div>
+        <div style="font-size:11px;color:#aaa;margin-top:4px;letter-spacing:0.5px">BUILD ${APP_BUILD_DATE.replace(/-/g, '')}</div>
+      </div>
+
+      <div style="text-align:left;background:#fafbfc;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:#555;line-height:2">
+        <div style="display:flex;justify-content:space-between"><span style="color:#999">开发团队</span><span style="font-weight:600;color:#333">by ${APP_AUTHOR}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:#999">更新日期</span><span style="color:#333">${APP_BUILD_DATE}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:#999">当前赛季</span><span style="color:#333">第 ${seasonCount} 届</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:#999">历史归档</span><span style="color:#333">${archiveCount} 个赛季</span></div>
+      </div>
+
+      <div style="font-size:11px;color:#ccc;line-height:1.6">
+        © ${new Date().getFullYear()} PGM League System<br>
+        All Rights Reserved
+      </div>
+    </div>
+  `;
+  showModal(content);
+}
+
+
 function showLoginModal() {
   const content = `
     <div class="modal-header">
@@ -4216,6 +4263,7 @@ document.getElementById("btnLogin").onclick = () => showLoginModal();
   document.getElementById("sidebarLoginBtn").onclick = () => showLoginModal();
 document.getElementById('sidebarLoginBtn').onclick = () => showLoginModal();
 document.getElementById('btnLogout').onclick = () => logout();
+document.getElementById('aboutBtn').onclick = () => showAboutModal();
 document.getElementById('btnMyTeam').onclick = () => {
   if (state.currentUser) {
     showTeamDetail(state.currentUser.teamId);
