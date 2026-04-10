@@ -333,7 +333,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 23 };
+const APP_VERSION = { major: 1, minor: 0, patch: 24 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -2419,6 +2419,9 @@ function showTeamDetail(teamId) {
   };
 
   const assistantDisplay = team.assistantCoaches && team.assistantCoaches.length > 0 ? '<span class="coach-assistant">助理教练：' + team.assistantCoaches.join('、') + '</span>' : '';
+  const coachEditBtn = (!viewingSeasonId && state.currentUser && state.currentUser.isSuperAdmin)
+    ? `<button onclick="showEditCoachModal('${teamId}')" style="margin-left:8px;font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid #228B22;background:#fff;color:#228B22;cursor:pointer">✏️ 编辑</button>`
+    : '';
 
   // 生成杯赛赛程HTML
   let cupMatchesHtml = '';
@@ -2516,7 +2519,7 @@ function showTeamDetail(teamId) {
       <button class="modal-close" onclick="closeModal()">×</button>
     </div>
     <div class="form-group">
-      <div class="coach-info"><span class="coach-main">主教练：${team.coach}</span>${assistantDisplay}</div>
+      <div class="coach-info"><span class="coach-main">主教练：${team.coach}</span>${assistantDisplay}${coachEditBtn}</div>
     </div>
     <div class="form-group">
       <div class="form-label">📅 联赛战绩</div>
@@ -3774,6 +3777,49 @@ function extractLeagueData(league) {
 }
 
 // ============ 球员转会 ============
+
+
+// 编辑球队教练（超管专用）
+function showEditCoachModal(teamId) {
+  const sd = getCurrentSeasonData();
+  const team = sd.teams.find(t => t.id === teamId);
+  if (!team) return;
+  const assistantVal = (team.assistantCoaches || []).join('、');
+  const content = `
+    <div class="modal-header">
+      <div class="modal-title">✏️ 编辑教练 — ${team.name}</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">主教练</label>
+      <input id="editCoachName" class="form-input" type="text" value="${team.coach || ''}" placeholder="主教练姓名">
+    </div>
+    <div class="form-group">
+      <label class="form-label">助理教练（多人用顿号"、"分隔）</label>
+      <input id="editAssistantCoaches" class="form-input" type="text" value="${assistantVal}" placeholder="如：陈明、王伟">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="saveCoachEdit('${teamId}')">保存</button>
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal()">取消</button>
+    </div>
+  `;
+  showModal(content);
+}
+
+function saveCoachEdit(teamId) {
+  const sd = getCurrentSeasonData();
+  const team = sd.teams.find(t => t.id === teamId);
+  if (!team) return;
+  const coachName = document.getElementById('editCoachName').value.trim();
+  const assistantRaw = document.getElementById('editAssistantCoaches').value.trim();
+  if (!coachName) { showToast('主教练姓名不能为空'); return; }
+  team.coach = coachName;
+  team.assistantCoaches = assistantRaw ? assistantRaw.split(/[、,，]/).map(s => s.trim()).filter(Boolean) : [];
+  saveData();
+  showToast('教练信息已更新');
+  closeModal();
+  setTimeout(() => showTeamDetail(teamId), 150);
+}
 
 // 显示转会模态框
 function showTransferPlayerModal(fromTeamId) {
