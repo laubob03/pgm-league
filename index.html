@@ -336,7 +336,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 25 };
+const APP_VERSION = { major: 1, minor: 0, patch: 26 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -3818,7 +3818,7 @@ function saveCoachEdit(teamId) {
   if (!coachName) { showToast('主教练姓名不能为空'); return; }
   team.coach = coachName;
   team.assistantCoaches = assistantRaw ? assistantRaw.split(/[、,，]/).map(s => s.trim()).filter(Boolean) : [];
-  saveData();
+  saveState();
   showToast('教练信息已更新');
   closeModal();
   setTimeout(() => showTeamDetail(teamId), 150);
