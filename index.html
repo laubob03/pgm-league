@@ -336,7 +336,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 28 };
+const APP_VERSION = { major: 1, minor: 0, patch: 29 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -3716,16 +3716,151 @@ function showSyncModal() {
         </div>
       </div>
       
+      <!-- 云端ID备份/恢复 -->
+      <div class="import-section" style="border-color:#E91E63;">
+        <div class="import-section-title" style="color:#E91E63;">🔑 云端ID备份 / 恢复</div>
+        <div class="import-desc">备份所有云端Gist ID到本地文件，防止丢失后无法连接云端</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" style="flex:1;background:#E91E63;" onclick="exportGistIds()">
+            📋 导出所有ID
+          </button>
+          <button class="btn btn-primary" style="flex:1;background:#E91E63;" onclick="document.getElementById('importIdsInput').click()">
+            📥 导入ID
+          </button>
+        </div>
+        <input type="file" id="importIdsInput" accept=".json" style="display:none" onchange="importGistIds(event)">
+        <div id="gistIdsPreview" style="font-size:11px;color:#666;margin-top:8px;line-height:1.8;"></div>
+        <div style="font-size:11px;color:#888;margin-top:4px;line-height:1.6;">
+          💡 导出后保存好文件，更换浏览器或清除缓存时可恢复连接
+        </div>
+      </div>
+      
     </div>
   `;
   
   document.getElementById('modalContent').innerHTML = content;
   document.getElementById('modalOverlay').classList.add('active');
 
+  // 渲染当前ID概览
+  renderGistIdsPreview();
+
   // 管理员：异步读取云端上传记录
   if (isAdmin && hasGist) {
     fetchCloudUploadInfo();
   }
+}
+
+// 渲染云端ID概览
+function renderGistIdsPreview() {
+  const el = document.getElementById('gistIdsPreview');
+  if (!el) return;
+  const ids = collectAllGistIds();
+  let html = '<div style="font-weight:bold;margin-bottom:2px;">当前云端ID：</div>';
+  if (ids.mainGistId) {
+    html += '<div>☁️ 主云端：<span style="color:#1565c0;font-family:monospace">' + ids.mainGistId + '</span></div>';
+  } else {
+    html += '<div style="color:#f44336">❌ 主云端ID：未设置</div>';
+  }
+  const recorderIds = ids.recorderGists;
+  if (recorderIds.length > 0) {
+    html += '<div style="margin-top:2px;">📦 数据员Gist (' + recorderIds.length + '个)：</div>';
+    recorderIds.forEach(r => {
+      html += '<div style="padding-left:12px;">' + r.name + '：<span style="color:#1565c0;font-family:monospace">' + r.gistId + '</span></div>';
+    });
+  }
+  el.innerHTML = html;
+}
+
+// 收集所有Gist ID
+function collectAllGistIds() {
+  const result = {
+    mainGistId: localStorage.getItem('pgm_gist_id') || '',
+    githubToken: localStorage.getItem('pgm_github_token') || '',
+    recorderGists: [],
+    exportedAt: new Date().toISOString()
+  };
+  // 遍历所有数据员的Gist ID
+  const recorderKeys = Object.keys(DATA_RECORDERS);
+  recorderKeys.forEach(key => {
+    const gistKey = 'pgm_recorder_gist_' + key;
+    const gistId = localStorage.getItem(gistKey);
+    if (gistId) {
+      result.recorderGists.push({
+        recorderId: key,
+        name: DATA_RECORDERS[key].name,
+        gistId: gistId
+      });
+    }
+  });
+  return result;
+}
+
+// 导出所有Gist ID为JSON文件
+function exportGistIds() {
+  const ids = collectAllGistIds();
+  const dataStr = JSON.stringify(ids, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = 'PGM云端ID备份_' + date + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('云端ID已导出备份');
+}
+
+// 从JSON文件导入Gist ID
+function importGistIds(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (!confirm('确定要导入云端ID吗？这将覆盖本地已有的ID配置！')) {
+    event.target.value = '';
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      let count = 0;
+      
+      // 导入主Gist ID
+      if (data.mainGistId) {
+        GIST_ID = data.mainGistId;
+        localStorage.setItem('pgm_gist_id', data.mainGistId);
+        count++;
+      }
+      
+      // 导入GitHub Token（如果有）
+      if (data.githubToken) {
+        GITHUB_TOKEN = data.githubToken;
+        localStorage.setItem('pgm_github_token', data.githubToken);
+        count++;
+      }
+      
+      // 导入数据员Gist ID
+      if (data.recorderGists && Array.isArray(data.recorderGists)) {
+        data.recorderGists.forEach(r => {
+          if (r.recorderId && r.gistId) {
+            const gistKey = 'pgm_recorder_gist_' + r.recorderId;
+            localStorage.setItem(gistKey, r.gistId);
+            count++;
+          }
+        });
+      }
+      
+      showToast('✅ 成功导入 ' + count + ' 项ID配置');
+      setTimeout(() => showSyncModal(), 500);
+    } catch(err) {
+      showToast('文件解析失败：' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
 }
 
 // 获取云端上传记录
