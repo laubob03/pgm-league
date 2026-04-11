@@ -336,7 +336,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 34 };
+const APP_VERSION = { major: 1, minor: 0, patch: 35 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -4692,6 +4692,8 @@ document.getElementById('modalOverlay').onclick = (e) => {
   loadState();
   updateSidebar();
   render();
+  // 自动从云端同步最新数据（静默）
+  autoSyncFromCloud();
 })();
 
 // 强制升级弹窗
@@ -4718,6 +4720,108 @@ function showForceUpdateModal(minVer) {
     </div>
   `;
   document.body.prepend(overlay);
+}
+
+// 自动同步云端数据（静默，不弹确认框）
+async function autoSyncFromCloud() {
+  if (!GIST_ID) return; // 无云端ID则跳过
+
+  // 显示顶部同步指示条
+  const bar = document.createElement('div');
+  bar.id = 'autoSyncBar';
+  bar.style.cssText = 'position:fixed;top:0;left:0;right:0;height:4px;z-index:999998;overflow:hidden;';
+  bar.innerHTML = '<div id="autoSyncBarInner" style="height:100%;width:0;background:linear-gradient(90deg,#42a5f5,#29b6f6);transition:width 0.6s ease;border-radius:0 2px 2px 0;"></div>';
+  document.body.prepend(bar);
+  const inner = document.getElementById('autoSyncBarInner');
+
+  try {
+    inner.style.width = '30%';
+
+    const resp = await fetch(GIST_API + '/' + GIST_ID);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const gist = await resp.json();
+
+    inner.style.width = '60%';
+
+    const dataFile = Object.values(gist.files)[0];
+    if (!dataFile) throw new Error('no data');
+
+    // 用 raw_url 获取完整数据
+    let content;
+    if (dataFile.truncated || !dataFile.content) {
+      if (!dataFile.raw_url) throw new Error('no raw_url');
+      const rawResp = await fetch(dataFile.raw_url);
+      if (!rawResp.ok) throw new Error('raw fail');
+      content = await rawResp.text();
+    } else {
+      content = dataFile.content;
+    }
+
+    let cloudData;
+    try {
+      cloudData = JSON.parse(content);
+    } catch(e) {
+      throw new Error('json broken');
+    }
+
+    if (!cloudData.teams || !cloudData.matches) throw new Error('bad format');
+
+    inner.style.width = '85%';
+
+    // 获取本地数据最后同步时间和云端最后上传时间对比
+    const localSync = localStorage.getItem('pgm_last_sync_time') || '';
+    const cloudUpload = (cloudData._lastUpload || '').toString().slice(0, 16);
+    // 比较最后上传时间（如果有）
+    let needUpdate = true;
+    if (localSync && cloudUpload && localSync >= cloudUpload) {
+      needUpdate = false;
+    }
+
+    if (needUpdate) {
+      // 保留当前登录用户
+      const loginUser = state.currentUser;
+      state = cloudData;
+      delete state._lastUpload;
+      state.currentUser = loginUser;
+      saveState();
+
+      const now = new Date();
+      const timeStr = now.getFullYear() + '-' +
+        String(now.getMonth()+1).padStart(2,'0') + '-' +
+        String(now.getDate()).padStart(2,'0') + ' ' +
+        String(now.getHours()).padStart(2,'0') + ':' +
+        String(now.getMinutes()).padStart(2,'0');
+      localStorage.setItem('pgm_last_sync_time', timeStr);
+
+      // 重新渲染
+      updateSidebar();
+      render();
+
+      inner.style.width = '100%';
+      inner.style.background = 'linear-gradient(90deg,#66bb6a,#43a047)';
+      // 显示同步成功提示
+      showToast('✅ 数据已自动同步至最新');
+    } else {
+      inner.style.width = '100%';
+      inner.style.background = 'linear-gradient(90deg,#66bb6a,#43a047)';
+    }
+
+    // 1.5秒后移除进度条
+    setTimeout(() => {
+      bar.style.opacity = '0';
+      bar.style.transition = 'opacity 0.5s';
+      setTimeout(() => bar.remove(), 500);
+    }, 1500);
+
+  } catch(e) {
+    // 静默失败，不影响正常使用
+    console.warn('自动同步失败（不影响正常使用）:', e.message);
+    setTimeout(() => {
+      bar.style.opacity = '0';
+      bar.style.transition = 'opacity 0.3s';
+      setTimeout(() => bar.remove(), 300);
+    }, 800);
+  }
 }
 
 // 实时时钟
