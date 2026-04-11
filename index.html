@@ -31,15 +31,17 @@
     .page.active{display:block}
     .card{background:var(--card);border-radius:12px;padding:16px 16px 12px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
     .card-title{font-size:16px;font-weight:700;color:var(--primary);margin-bottom:4px;display:flex;align-items:center;gap:8px}
-    .stats-tabs{display:flex;gap:4px;margin-bottom:4px;border-bottom:1px solid var(--border)}
+    .stats-tabs{display:flex;gap:4px;margin:0 -16px;padding:0 16px;border-bottom:1px solid var(--border)}
     .stats-tab{padding:6px 12px;font-size:13px;font-weight:600;color:var(--text-secondary);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .2s}
     .stats-tab:hover{color:var(--primary)}
     .stats-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
     .league-selector{display:flex;gap:8px;overflow-x:auto;padding:4px 0 4px;scrollbar-width:none}
     .league-selector::-webkit-scrollbar{display:none}
-    #schedulePage .card-title{position:sticky;top:0;background:#fff;z-index:12;padding:16px 16px 0;margin:-16px -16px 0;border-radius:12px 12px 0 0}
-    #schedulePage .league-selector{position:sticky;top:40px;background:#fff;z-index:11;padding:4px 12px 12px;margin:-4px -12px 8px;transition:box-shadow 0.2s}
-    #schedulePage .league-selector.scrolled{box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+    #schedulePage .card-title{padding:16px 16px 0}
+    #schedulePage .league-selector{padding:4px 12px 12px}
+    #schedulePage .schedule-scroll-area{max-height:calc(100vh - 200px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#ccc transparent}
+    #schedulePage .schedule-scroll-area::-webkit-scrollbar{width:4px}
+    #schedulePage .schedule-scroll-area::-webkit-scrollbar-thumb{background:#ccc;border-radius:2px}
     .league-chip{background:white;border:2px solid var(--border);border-radius:20px;padding:4px 12px;font-size:13px;white-space:nowrap;cursor:pointer;transition:all 0.2s}
     .league-chip.active{background:#228B22;border-color:#228B22;color:white}
     .league-chip.cup-chip{border-color:#FFD700}
@@ -347,7 +349,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 46 };
+const APP_VERSION = { major: 1, minor: 0, patch: 47 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -1277,7 +1279,7 @@ function renderCupSchedule(cupId) {
       + '</div>';
     });
   });
-  container.innerHTML = html;
+  container.innerHTML = '<div class="schedule-scroll-area">' + html + '</div>';
 }
 
 function showEnterCupMatchModal(matchId, cupId) {
@@ -1754,7 +1756,7 @@ function renderSchedule() {
   if (!html) {
     html = '<div class="empty-state"><div class="empty-state-emoji">\uD83D\uDCC5</div><div class="empty-state-text">\u6682\u65E0\u8D5B\u7A0B\u6570\u636E</div></div>';
   }
-  container.innerHTML = html;
+  container.innerHTML = '<div class="schedule-scroll-area">' + html + '</div>';
 }
 
 function renderMatchScorers(m) {
@@ -3108,14 +3110,6 @@ function updateNavAndHeader() {
   const pageEl = document.getElementById(state.currentPage + 'Page');
   if (pageEl) pageEl.classList.add('active');
 }
-
-// 赛程页滚动阴影
-document.addEventListener('scroll', function() {
-  const sel = document.querySelector('#schedulePage .league-selector');
-  if (!sel) return;
-  if (window.scrollY > 70) sel.classList.add('scrolled');
-  else sel.classList.remove('scrolled');
-});
 
 function updateSidebar() {
   const loginBtn = document.getElementById("btnLogin");
