@@ -336,7 +336,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 32 };
+const APP_VERSION = { major: 1, minor: 0, patch: 33 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -4589,9 +4589,63 @@ document.getElementById('modalOverlay').onclick = (e) => {
 };
 
 // ============ INIT ============
-loadState();
-updateSidebar();
-render();
+(async function checkVersion() {
+  const myVer = APP_VERSION.major * 10000 + APP_VERSION.minor * 100 + APP_VERSION.patch;
+  try {
+    // 加时间戳防缓存
+    const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
+    if (r.ok) {
+      const v = await r.json();
+      const notice = v.notice || '';
+      if (notice && notice.trim()) {
+        // 有公告，弹出公告条
+        const banner = document.createElement('div');
+        banner.id = 'versionBanner';
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;box-shadow:0 2px 8px rgba(0,0,0,0.3);';
+        banner.innerHTML = '<div style="max-width:600px;margin:0 auto;">📢 ' + notice + '</div>';
+        document.body.prepend(banner);
+      }
+      if (v.minVersion) {
+        const parts = v.minVersion.split('.').map(Number);
+        const minVer = parts[0] * 10000 + (parts[1] || 0) * 100 + (parts[2] || 0);
+        if (myVer < minVer) {
+          showForceUpdateModal(v.minVersion);
+          return; // 阻止初始化
+        }
+      }
+    }
+  } catch(e) { /* 网络异常忽略 */ }
+  // 版本检查通过，正常初始化
+  loadState();
+  updateSidebar();
+  render();
+})();
+
+// 强制升级弹窗
+function showForceUpdateModal(minVer) {
+  const overlay = document.createElement('div');
+  overlay.id = 'forceUpdateOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:9999999;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:40px 36px;max-width:400px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+      <div style="font-size:64px;margin-bottom:16px;">🚨</div>
+      <div style="font-size:22px;font-weight:bold;color:#e91e63;margin-bottom:8px;">版本过低</div>
+      <div style="font-size:14px;color:#666;margin-bottom:24px;line-height:1.8;">
+        当前版本：<b>v${getAppVersion()}</b><br>
+        最低要求：<b>v${minVer}</b><br>
+        <span style="color:#f44336;font-weight:bold;">请刷新页面以更新到最新版本</span>
+      </div>
+      <button onclick="location.reload()" style="
+        background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;border:none;padding:14px 48px;
+        border-radius:50px;font-size:16px;font-weight:bold;cursor:pointer;
+        box-shadow:0 4px 15px rgba(233,30,99,0.4);transition:transform 0.2s;
+      " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        🔄 立即刷新
+      </button>
+    </div>
+  `;
+  document.body.prepend(overlay);
+}
 
 // 实时时钟
 function updateClock() {
