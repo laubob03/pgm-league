@@ -197,6 +197,7 @@
   <div class="nav-right">
     <span class="nav-season-info" id="navSeasonInfo"></span>
     <span class="nav-clock" id="navClock"></span>
+    <span class="nav-cloud-info" id="navCloudInfo" style="display:none;font-size:11px;color:rgba(255,255,255,0.6);margin-left:12px;border-left:1px solid rgba(255,255,255,0.2);padding-left:12px;white-space:nowrap;"></span>
   </div>
 </nav>
 
@@ -306,7 +307,6 @@
     <button class="sidebar-item" id="btnCupManage" style="display:none"><span class="sidebar-item-icon">🏆</span>杯赛管理</button>
     <button class="sidebar-item" id="btnArchiveSeason" style="display:none"><span class="sidebar-item-icon">📦</span>归档赛季</button>
     <button class="sidebar-item" id="btnSyncCloud"><span class="sidebar-item-icon">☁️</span>数据同步</button>
-    <div id="sidebarCloudInfo" style="display:none;padding:8px 20px;font-size:11px;color:#888;line-height:1.6;border-top:1px dashed #e8e8e8;"></div>
     <button class="sidebar-item" id="sidebarLoginBtn"><span class="sidebar-item-icon">🔑</span>登录</button>
     <button class="sidebar-item danger" id="btnLogout" style="display:none"><span class="sidebar-item-icon">🚪</span>退出登录</button>
   </div>
@@ -344,7 +344,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 37 };
+const APP_VERSION = { major: 1, minor: 0, patch: 38 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -4835,14 +4835,14 @@ async function autoSyncFromCloud() {
   }
 }
 
-// 更新侧边栏云端上传信息
+// 更新导航栏云端上传信息
 function updateSidebarCloudInfo(lastUpload) {
-  const el = document.getElementById('sidebarCloudInfo');
+  const el = document.getElementById('navCloudInfo');
   if (!el) return;
   if (!lastUpload || !lastUpload.at) {
     if (GIST_ID) {
-      el.style.display = 'block';
-      el.innerHTML = '<span style="color:#aaa">☁️ 云端：暂无上传记录</span>';
+      el.style.display = 'inline';
+      el.innerHTML = '<span style="color:rgba(255,255,255,0.4)">☁️ 暂无上传记录</span>';
     }
     return;
   }
@@ -4852,11 +4852,9 @@ function updateSidebarCloudInfo(lastUpload) {
     String(t.getDate()).padStart(2,'0') + ' ' +
     String(t.getHours()).padStart(2,'0') + ':' +
     String(t.getMinutes()).padStart(2,'0');
-  el.style.display = 'block';
-  el.innerHTML =
-    '<div style="margin-bottom:2px"><span style="color:#1976d2">☁️</span> 云端最新更新</div>' +
-    '<div>👤 ' + (lastUpload.by || '未知') + '<span style="color:#aaa;margin-left:4px">（' + (lastUpload.role || '') + '）</span></div>' +
-    '<div>🕐 ' + timeStr + '</div>';
+  const role = lastUpload.role || '';
+  el.style.display = 'inline';
+  el.innerHTML = '☁️ ' + timeStr + (role ? ' · ' + role : '');
 }
 
 // 实时时钟
