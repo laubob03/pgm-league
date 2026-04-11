@@ -364,7 +364,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 66 };
+const APP_VERSION = { major: 1, minor: 0, patch: 67 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-12';
@@ -3852,7 +3852,18 @@ async function fetchCloudUploadInfo() {
     const files = Object.values(gist.files);
     if (!files.length) { infoEl.innerHTML = '云端暂无数据'; return; }
     let data;
-    try { data = JSON.parse(files[0].content); } catch(e) {
+    let dataContent;
+    const mf = files[0];
+    // 大文件Gist会截断content，必须用raw_url
+    if (mf.truncated || !mf.content) {
+      if (!mf.raw_url) { infoEl.innerHTML = '⚠️ 云端数据过大且无法获取'; return; }
+      const rawR = await fetch(mf.raw_url);
+      if (!rawR.ok) { infoEl.innerHTML = '⚠️ 获取完整数据失败'; return; }
+      dataContent = await rawR.text();
+    } else {
+      dataContent = mf.content;
+    }
+    try { data = JSON.parse(dataContent); } catch(e) {
       infoEl.innerHTML = '⚠️ 云端数据已损坏，请联系管理员重新上传';
       return;
     }
@@ -4398,7 +4409,7 @@ async function syncUpload() {
     const dataStr = safeStringify(uploadData, 2);
     if (!dataStr) { showToast('数据序列化失败，请检查数据'); return; }
     showSyncProgress('upload', 2);
-    const filename = 'pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json'; + new Date().toISOString().slice(0, 10) + '.json';
+    const filename = 'pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json';
     const headers = {
       'Authorization': 'Bearer ' + token,
       'Accept': 'application/vnd.github.v3+json',
@@ -4610,7 +4621,9 @@ function importDataFromFile(event) {
         return;
       }
       
+      const loginUser = state.currentUser;
       state = data;
+      state.currentUser = loginUser;
       saveState();
       closeModal();
       updateSidebar();
