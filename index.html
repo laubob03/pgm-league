@@ -336,7 +336,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 26 };
+const APP_VERSION = { major: 1, minor: 0, patch: 27 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -3957,7 +3957,11 @@ async function recorderUpload() {
     };
 
     // 步骤1：上传到独立 Gist
-    const dataStr = JSON.stringify(leagueData, null, 2);
+    const dataStr = JSON.stringify(leagueData, (key, val) => {
+      if (typeof val === 'function' || val === undefined) return undefined;
+      if (typeof val === 'number' && (isNaN(val) || !isFinite(val))) return null;
+      return val;
+    }, 2);
     let recorderGistId = getRecorderGistId();
     if (recorderGistId) {
       const getResp = await fetch(GIST_API + '/' + recorderGistId, {
@@ -4002,9 +4006,16 @@ async function recorderUpload() {
       if (mainResp.ok) {
         const mainGist = await mainResp.json();
         const mainFiles = Object.values(mainGist.files);
-        let mainState = state;
+        let mainState = null;
         if (mainFiles.length > 0) {
           try { mainState = JSON.parse(mainFiles[0].content); } catch(e) { console.warn('主Gist数据解析失败，使用本地数据'); }
+        }
+        if (!mainState) {
+          // 主Gist解析失败，用本地state深拷贝，只保留可序列化字段
+          mainState = JSON.parse(JSON.stringify(state, (key, val) => {
+            if (typeof val === 'function') return undefined;
+            return val;
+          }));
         }
         if (recorderType === 'league') {
           // 联赛数据合并：替换该联赛的球队和比赛
@@ -4035,7 +4046,12 @@ async function recorderUpload() {
           role: state.currentUser ? (state.currentUser.isStatsRecorder ? '统计员' : '数据员') : '未知',
           at: new Date().toISOString()
         };
-        const mainDataStr = JSON.stringify(mainState, null, 2);
+        // 安全序列化：过滤 undefined、函数、循环引用等
+        const mainDataStr = JSON.stringify(mainState, (key, val) => {
+          if (typeof val === 'function' || val === undefined) return undefined;
+          if (typeof val === 'number' && (isNaN(val) || !isFinite(val))) return null;
+          return val;
+        }, 2);
         const mainFilename = 'pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json';
         const mainBody = { description: 'PGM足球经理联赛数据 - 自动同步', files: {} };
         for (const fname of Object.keys(mainGist.files)) { mainBody.files[fname] = null; }
