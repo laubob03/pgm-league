@@ -336,7 +336,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 31 };
+const APP_VERSION = { major: 1, minor: 0, patch: 32 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -4064,7 +4064,18 @@ async function recorderUpload() {
           const mainFiles = Object.values(mainGist.files);
           let mainState = null;
           if (mainFiles.length > 0) {
-            try { mainState = JSON.parse(mainFiles[0].content); } catch(e) { console.warn('主Gist数据解析失败，使用本地数据'); }
+            const mf = mainFiles[0];
+            try {
+              // 大文件Gist会截断content，必须用raw_url
+              if (mf.truncated || !mf.content) {
+                if (mf.raw_url) {
+                  const rawR = await fetch(mf.raw_url);
+                  if (rawR.ok) mainState = JSON.parse(await rawR.text());
+                }
+              } else {
+                mainState = JSON.parse(mf.content);
+              }
+            } catch(e) { console.warn('主Gist数据解析失败，使用本地数据'); }
           }
           if (!mainState) {
             // 主Gist解析失败，用本地state深拷贝
@@ -4158,8 +4169,19 @@ async function recorderDownload() {
     const gist = await resp.json();
     const files = Object.values(gist.files);
     if (!files.length) throw new Error('云端没有数据文件');
+    // 大文件Gist会截断content，必须用raw_url
+    let dataContent;
+    const mf = files[0];
+    if (mf.truncated || !mf.content) {
+      if (!mf.raw_url) throw new Error('数据文件过大且无raw_url');
+      const rawR = await fetch(mf.raw_url);
+      if (!rawR.ok) throw new Error('获取完整数据失败');
+      dataContent = await rawR.text();
+    } else {
+      dataContent = mf.content;
+    }
     let data;
-    try { data = JSON.parse(files[0].content); } catch(e) {
+    try { data = JSON.parse(dataContent); } catch(e) {
       throw new Error('云端数据已损坏，请联系管理员重新上传');
     }
 
@@ -4392,61 +4414,27 @@ async function syncDownload() {
     // 找到数据文件
     const files = gist.files;
     const dataFile = Object.values(files)[0];
-    if (!dataFile || !dataFile.content) throw new Error('云端数据为空');
+    if (!dataFile) throw new Error('云端数据为空');
     
-    // 验证 JSON 合法性，损坏时尝试自动修复
-    const content = dataFile.content;
+    // 关键：Gist API对大文件会截断content，必须用raw_url获取完整内容
+    let content;
+    if (dataFile.truncated || !dataFile.content) {
+      if (!dataFile.raw_url) throw new Error('云端数据文件过大且无raw_url，请联系管理员');
+      showToast('数据较大，正在获取完整内容...');
+      const rawResp = await fetch(dataFile.raw_url);
+      if (!rawResp.ok) throw new Error('获取完整数据失败 ' + rawResp.status);
+      content = await rawResp.text();
+    } else {
+      content = dataFile.content;
+    }
+    if (!content || !content.trim()) throw new Error('云端数据为空');
+    
+    // 解析JSON
     let cloudData;
     try {
       cloudData = JSON.parse(content);
     } catch(parseErr) {
-      console.warn('JSON解析失败，尝试自动修复...');
-      let repaired = false;
-      // 方案1：清理尾部逗号
-      let fixed = content.replace(/,\s*([\]}])/g, '$1');
-      // 方案2：清理非法控制字符
-      fixed = fixed.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, '');
-      try {
-        cloudData = JSON.parse(fixed);
-        repaired = true;
-        console.warn('JSON自动修复成功');
-      } catch(e2) {
-        // 方案3：尝试逐字符修复（替换undefined为null）
-        fixed = content.replace(/\bundefined\b/g, 'null');
-        try {
-          cloudData = JSON.parse(fixed);
-          repaired = true;
-          console.warn('JSON自动修复成功（替换undefined）');
-        } catch(e3) {
-          // 方案4：截断到最后一个完整对象
-          const lastBrace = fixed.lastIndexOf('}');
-          if (lastBrace > 0) {
-            try {
-              cloudData = JSON.parse(fixed.substring(0, lastBrace + 1));
-              repaired = true;
-              console.warn('JSON自动修复成功（截断修复）');
-            } catch(e4) {}
-          }
-        }
-      }
-      if (!repaired) {
-        throw new Error('云端数据已损坏且无法自动修复，请联系管理员重新上传（' + parseErr.message + '）');
-      }
-      // 修复成功，自动保存修复后的数据到云端
-      try {
-        const patchHeaders = { 'Authorization': 'Bearer ' + (GITHUB_TOKEN || ADMIN_BUILTIN_TOKEN), 'Content-Type': 'application/json' };
-        const repairStr = safeStringify(cloudData, 2);
-        if (repairStr) {
-          const patchBody = { description: gist.description || 'PGM足球经理联赛数据', files: {} };
-          for (const fn of Object.keys(files)) patchBody.files[fn] = null;
-          const fn = Object.keys(files)[0] || ('pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json');
-          patchBody.files[fn] = { content: repairStr };
-          await fetch(GIST_API + '/' + GIST_ID, { method: 'PATCH', headers: patchHeaders, body: JSON.stringify(patchBody) });
-          console.warn('修复后的数据已自动回写云端');
-        }
-      } catch(autoFixErr) {
-        console.warn('自动回写云端失败:', autoFixErr);
-      }
+      throw new Error('云端数据已损坏，请联系管理员重新上传（' + parseErr.message + '）');
     }
     if (!cloudData.teams || !cloudData.matches) {
       throw new Error('云端数据格式不正确，请联系管理员重新上传');
