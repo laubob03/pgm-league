@@ -344,7 +344,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 41 };
+const APP_VERSION = { major: 1, minor: 0, patch: 42 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -4740,6 +4740,18 @@ async function autoSyncFromCloud() {
   bar.style.cssText = 'position:fixed;top:0;left:0;right:0;height:4px;z-index:999998;overflow:hidden;';
   bar.innerHTML = '<div id="autoSyncBarInner" style="height:100%;width:0;background:linear-gradient(90deg,#42a5f5,#29b6f6);transition:width 0.6s ease;border-radius:0 2px 2px 0;"></div>';
   document.body.prepend(bar);
+
+  // 首次使用（无本地数据）时显示明显的加载提示
+  const isFirstTime = !localStorage.getItem('pgm_last_sync_time');
+  let tipEl = null;
+  if (isFirstTime && GIST_ID) {
+    tipEl = document.createElement('div');
+    tipEl.id = 'autoSyncTip';
+    tipEl.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:#1a237e;color:#fff;padding:10px 28px;border-radius:24px;font-size:14px;z-index:999998;box-shadow:0 4px 20px rgba(26,35,126,0.4);white-space:nowrap;';
+    tipEl.innerHTML = '⏳ 正在从云端拉取最新数据，请稍候...';
+    document.body.prepend(tipEl);
+  }
+
   const inner = document.getElementById('autoSyncBarInner');
 
   try {
@@ -4761,6 +4773,7 @@ async function autoSyncFromCloud() {
       // 从 Gist description 中提取上传信息（如果有）
       const lastUploadInfo = state._lastUploadHint || null;
       updateSidebarCloudInfo(lastUploadInfo);
+      removeSyncTip();
       setTimeout(() => {
         bar.style.opacity = '0';
         bar.style.transition = 'opacity 0.5s';
@@ -4857,6 +4870,7 @@ async function autoSyncFromCloud() {
     updateSidebarCloudInfo(lastUploadInfo);
 
     // 1.5秒后移除进度条
+    removeSyncTip();
     setTimeout(() => {
       bar.style.opacity = '0';
       bar.style.transition = 'opacity 0.5s';
@@ -4866,11 +4880,21 @@ async function autoSyncFromCloud() {
   } catch(e) {
     // 静默失败，不影响正常使用
     console.warn('自动同步失败（不影响正常使用）:', e.message);
+    removeSyncTip();
     setTimeout(() => {
       bar.style.opacity = '0';
       bar.style.transition = 'opacity 0.3s';
       setTimeout(() => bar.remove(), 300);
     }, 800);
+  }
+}
+
+function removeSyncTip() {
+  const el = document.getElementById('autoSyncTip');
+  if (el) {
+    el.style.opacity = '0';
+    el.style.transition = 'opacity 0.3s';
+    setTimeout(() => el.remove(), 300);
   }
 }
 
