@@ -344,7 +344,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 40 };
+const APP_VERSION = { major: 1, minor: 0, patch: 41 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -4749,10 +4749,30 @@ async function autoSyncFromCloud() {
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const gist = await resp.json();
 
-    inner.style.width = '60%';
+    inner.style.width = '50%';
+
+    // 用 Gist 的 updated_at 快速判断是否有更新（无需下载完整数据）
+    const gistUpdatedAt = gist.updated_at; // ISO 8601
+    const lastKnownUpdate = localStorage.getItem('pgm_gist_updated_at') || '';
+    if (gistUpdatedAt && lastKnownUpdate && gistUpdatedAt === lastKnownUpdate) {
+      // 云端没有变化，跳过下载，直接显示信息
+      inner.style.width = '100%';
+      inner.style.background = 'linear-gradient(90deg,#66bb6a,#43a047)';
+      // 从 Gist description 中提取上传信息（如果有）
+      const lastUploadInfo = state._lastUploadHint || null;
+      updateSidebarCloudInfo(lastUploadInfo);
+      setTimeout(() => {
+        bar.style.opacity = '0';
+        bar.style.transition = 'opacity 0.5s';
+        setTimeout(() => bar.remove(), 500);
+      }, 800);
+      return;
+    }
 
     const dataFile = Object.values(gist.files)[0];
     if (!dataFile) throw new Error('no data');
+
+    inner.style.width = '70%';
 
     // 用 raw_url 获取完整数据
     let content;
@@ -4765,6 +4785,8 @@ async function autoSyncFromCloud() {
       content = dataFile.content;
     }
 
+    inner.style.width = '85%';
+
     let cloudData;
     try {
       cloudData = JSON.parse(content);
@@ -4774,19 +4796,34 @@ async function autoSyncFromCloud() {
 
     if (!cloudData.teams || !cloudData.matches) throw new Error('bad format');
 
-    inner.style.width = '85%';
-
-    // 获取本地数据最后同步时间和云端最后上传时间对比
-    const localSync = localStorage.getItem('pgm_last_sync_time') || '';
-    const cloudUpload = (cloudData._lastUpload || '').toString().slice(0, 16);
-    // 比较最后上传时间（如果有）
-    let needUpdate = true;
-    if (localSync && cloudUpload && localSync >= cloudUpload) {
-      needUpdate = false;
+    // 保存 Gist updated_at，下次快速判断
+    if (gistUpdatedAt) {
+      localStorage.setItem('pgm_gist_updated_at', gistUpdatedAt);
     }
 
     // 保存上传信息（delete前提取）
     const lastUploadInfo = cloudData._lastUpload || null;
+
+    // 无论是否本地需要更新，都保存上传信息提示供下次快速判断用
+    if (lastUploadInfo) {
+      localStorage.setItem('pgm_last_upload_hint', safeStringify(lastUploadInfo) || '');
+    }
+
+    // 判断是否需要覆盖本地数据
+    // 智能比较：用 _lastUpload.at 精确到分钟
+    const localSync = localStorage.getItem('pgm_last_sync_time') || '';
+    const cloudUpload = lastUploadInfo ? lastUploadInfo.at : '';
+    let needUpdate = true;
+    if (localSync && cloudUpload) {
+      const localDate = localSync.replace(/[-: ]/g, '').slice(0, 12); // YYYYMMDDHHmm
+      const cloudDate = new Date(cloudUpload);
+      const cloudStr = cloudDate.getFullYear() +
+        String(cloudDate.getMonth()+1).padStart(2,'0') +
+        String(cloudDate.getDate()).padStart(2,'0') +
+        String(cloudDate.getHours()).padStart(2,'0') +
+        String(cloudDate.getMinutes()).padStart(2,'0');
+      if (localDate >= cloudStr) needUpdate = false;
+    }
 
     if (needUpdate) {
       // 保留当前登录用户
@@ -4810,7 +4847,6 @@ async function autoSyncFromCloud() {
 
       inner.style.width = '100%';
       inner.style.background = 'linear-gradient(90deg,#66bb6a,#43a047)';
-      // 显示同步成功提示
       showToast('✅ 数据已自动同步至最新');
     } else {
       inner.style.width = '100%';
