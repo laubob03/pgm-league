@@ -336,7 +336,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 30 };
+const APP_VERSION = { major: 1, minor: 0, patch: 31 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -4394,13 +4394,59 @@ async function syncDownload() {
     const dataFile = Object.values(files)[0];
     if (!dataFile || !dataFile.content) throw new Error('云端数据为空');
     
-    // 验证 JSON 合法性
+    // 验证 JSON 合法性，损坏时尝试自动修复
     const content = dataFile.content;
     let cloudData;
     try {
       cloudData = JSON.parse(content);
     } catch(parseErr) {
-      throw new Error('云端数据已损坏，请联系管理员重新上传（' + parseErr.message + '）');
+      console.warn('JSON解析失败，尝试自动修复...');
+      let repaired = false;
+      // 方案1：清理尾部逗号
+      let fixed = content.replace(/,\s*([\]}])/g, '$1');
+      // 方案2：清理非法控制字符
+      fixed = fixed.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, '');
+      try {
+        cloudData = JSON.parse(fixed);
+        repaired = true;
+        console.warn('JSON自动修复成功');
+      } catch(e2) {
+        // 方案3：尝试逐字符修复（替换undefined为null）
+        fixed = content.replace(/\bundefined\b/g, 'null');
+        try {
+          cloudData = JSON.parse(fixed);
+          repaired = true;
+          console.warn('JSON自动修复成功（替换undefined）');
+        } catch(e3) {
+          // 方案4：截断到最后一个完整对象
+          const lastBrace = fixed.lastIndexOf('}');
+          if (lastBrace > 0) {
+            try {
+              cloudData = JSON.parse(fixed.substring(0, lastBrace + 1));
+              repaired = true;
+              console.warn('JSON自动修复成功（截断修复）');
+            } catch(e4) {}
+          }
+        }
+      }
+      if (!repaired) {
+        throw new Error('云端数据已损坏且无法自动修复，请联系管理员重新上传（' + parseErr.message + '）');
+      }
+      // 修复成功，自动保存修复后的数据到云端
+      try {
+        const patchHeaders = { 'Authorization': 'Bearer ' + (GITHUB_TOKEN || ADMIN_BUILTIN_TOKEN), 'Content-Type': 'application/json' };
+        const repairStr = safeStringify(cloudData, 2);
+        if (repairStr) {
+          const patchBody = { description: gist.description || 'PGM足球经理联赛数据', files: {} };
+          for (const fn of Object.keys(files)) patchBody.files[fn] = null;
+          const fn = Object.keys(files)[0] || ('pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json');
+          patchBody.files[fn] = { content: repairStr };
+          await fetch(GIST_API + '/' + GIST_ID, { method: 'PATCH', headers: patchHeaders, body: JSON.stringify(patchBody) });
+          console.warn('修复后的数据已自动回写云端');
+        }
+      } catch(autoFixErr) {
+        console.warn('自动回写云端失败:', autoFixErr);
+      }
     }
     if (!cloudData.teams || !cloudData.matches) {
       throw new Error('云端数据格式不正确，请联系管理员重新上传');
