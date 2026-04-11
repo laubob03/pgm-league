@@ -351,7 +351,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 50 };
+const APP_VERSION = { major: 1, minor: 0, patch: 51 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -4778,7 +4778,12 @@ async function autoSyncFromCloud() {
       inner.style.width = '100%';
       inner.style.background = 'linear-gradient(90deg,#66bb6a,#43a047)';
       // 从 Gist description 中提取上传信息（如果有）
-      const lastUploadInfo = state._lastUploadHint || null;
+      // 从 localStorage 读取上次缓存的上传信息
+      const cachedHint = localStorage.getItem('pgm_last_upload_hint');
+      let lastUploadInfo = null;
+      if (cachedHint) {
+        try { lastUploadInfo = JSON.parse(cachedHint); } catch(e) {}
+      }
       updateSidebarCloudInfo(lastUploadInfo);
       removeSyncTip();
       setTimeout(() => {
