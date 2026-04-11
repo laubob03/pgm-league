@@ -144,9 +144,9 @@
     .sidebar-subtitle{font-size:12px;opacity:0.8}
     .sidebar-user-id{font-size:11px;opacity:0.55;margin-top:6px;font-family:'SF Mono',Consolas,'Courier New',monospace;letter-spacing:0.5px;word-break:break-all}
     .sidebar-menu{padding:12px 0}
-    .sidebar-link{font-size:11px;color:#666;text-decoration:none;padding:3px 8px;border-radius:12px;background:#f5f5f5;transition:all 0.2s;white-space:nowrap}
+    .sidebar-link{display:block;font-size:13px;color:#555;text-decoration:none;padding:5px 10px;border-radius:8px;background:#f5f5f5;transition:all 0.2s;white-space:nowrap}
     .sidebar-link:hover{background:#e8f5e9;color:#1a7a2e}
-    .sidebar-item{display:flex;align-items:center;gap:12px;padding:14px 20px;color:var(--text);font-size:15px;cursor:pointer;transition:background 0.2s;border:none;background:none;width:100%;text-align:left}
+    .sidebar-item{display:flex;align-items:center;gap:12px;padding:8px 20px;color:var(--text);font-size:15px;cursor:pointer;transition:background 0.2s;border:none;background:none;width:100%;text-align:left}
     .sidebar-item:active{background:#f0f0f0}
     .sidebar-item-icon{font-size:20px}
     .sidebar-item.danger{color:var(--relegation)}
@@ -320,17 +320,17 @@
     <button class="sidebar-item danger" id="btnLogout" style="display:none"><span class="sidebar-item-icon">🚪</span>退出登录</button>
   </div>
   <div class="sidebar-footer" id="sidebarAbout">
-    <div style="padding:12px 16px">
+    <div style="padding:8px 16px">
       <!-- 社区 -->
-      <div style="font-size:10px;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;padding-left:2px">🏠 社区</div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">
+      <div style="font-size:11px;color:#999;font-weight:600;letter-spacing:1px;margin-bottom:4px;padding-left:4px">🏠 社区</div>
+      <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:10px">
         <a href="https://www.playgm.cc/" target="_blank" rel="noopener" class="sidebar-link">🌐 playgm.cc</a>
         <a href="https://www.playgm.games/" target="_blank" rel="noopener" class="sidebar-link">🔗 playgm.games</a>
         <div onclick="navigator.clipboard.writeText('50362211').then(()=>showToast('QQ群号已复制'))" title="点击复制" class="sidebar-link" style="cursor:pointer">💬 QQ群</div>
       </div>
       <!-- 工具 -->
-      <div style="font-size:10px;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;padding-left:2px">🛠️ 工具</div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">
+      <div style="font-size:11px;color:#999;font-weight:600;letter-spacing:1px;margin-bottom:4px;padding-left:4px">🛠️ 工具</div>
+      <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:10px">
         <a href="https://fm-arena.com/" target="_blank" rel="noopener" class="sidebar-link">🎯 找战术</a>
         <a href="http://81.70.199.249:8080/" target="_blank" rel="noopener" class="sidebar-link">🔍 查CA</a>
         <a href="https://www.sofascore.com/" target="_blank" rel="noopener" class="sidebar-link">📊 SofaScore</a>
@@ -338,7 +338,7 @@
         <a href="https://www.dongqiudi.com/" target="_blank" rel="noopener" class="sidebar-link">⚽ 懂球帝</a>
       </div>
       <!-- 关于 -->
-      <div style="text-align:center;border-top:1px solid #f0f0f0;padding-top:10px">
+      <div style="text-align:center;border-top:1px solid #f0f0f0;padding-top:8px;margin-top:4px">
         <div style="font-size:11px;color:#999;cursor:pointer" id="aboutBtn">ℹ️ 关于 PGM联赛</div>
       </div>
     </div>
@@ -360,10 +360,10 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 54 };
+const APP_VERSION = { major: 1, minor: 0, patch: 55 };
 
 const APP_AUTHOR = 'J.K';
-const APP_BUILD_DATE = '2026-04-10';
+const APP_BUILD_DATE = '2026-04-12';
 function getAppVersion() { return `v${APP_VERSION.major}.${APP_VERSION.minor}.${APP_VERSION.patch}`; }
 
 // ============ DATA ============
