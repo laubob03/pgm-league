@@ -341,6 +341,7 @@
       <div style="text-align:center;border-top:1px solid #f0f0f0;padding-top:10px;margin-top:6px">
         <div style="font-size:14px;color:#666;cursor:pointer;font-weight:500;transition:color .2s" id="aboutBtn" onmouseover="this.style.color='#333'" onmouseout="this.style.color='#666'">ℹ️ 关于 PGM联赛</div>
         <div style="font-size:10px;color:#bbb;margin-top:3px" id="aboutVersion"></div>
+        <div style="font-size:10px;color:#bbb;margin-top:2px" id="aboutDate"></div>
       </div>
     </div>
   </div>
@@ -361,7 +362,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 63 };
+const APP_VERSION = { major: 1, minor: 0, patch: 64 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-12';
@@ -4669,6 +4670,7 @@ document.getElementById('sidebarLoginBtn').onclick = () => showLoginModal();
 document.getElementById('btnLogout').onclick = () => logout();
 document.getElementById('aboutBtn').onclick = () => showAboutModal();
 document.getElementById('aboutVersion').textContent = 'v' + APP_VERSION.major + '.' + APP_VERSION.minor + '.' + APP_VERSION.patch;
+document.getElementById('aboutDate').textContent = APP_BUILD_DATE;
 document.getElementById('btnEnterMatch').onclick = () => {
   if (state.currentUser) {
     state.currentPage = 'schedule';
