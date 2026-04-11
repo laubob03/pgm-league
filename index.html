@@ -29,18 +29,18 @@
     .main-content{margin-top:70px;padding:0 12px;padding-bottom:50px}
     .page{display:none}
     .page.active{display:block}
-    .card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
-    .card-title{font-size:16px;font-weight:700;color:var(--primary);margin-bottom:12px;display:flex;align-items:center;gap:8px}
-    .stats-tabs{display:flex;gap:4px;margin-bottom:12px;border-bottom:1px solid var(--border)}
-    .stats-tab{padding:8px 12px;font-size:13px;font-weight:600;color:var(--text-secondary);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .2s}
+    .card{background:var(--card);border-radius:12px;padding:16px 16px 12px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+    .card-title{font-size:16px;font-weight:700;color:var(--primary);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+    .stats-tabs{display:flex;gap:4px;margin-bottom:8px;border-bottom:1px solid var(--border)}
+    .stats-tab{padding:6px 12px;font-size:13px;font-weight:600;color:var(--text-secondary);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .2s}
     .stats-tab:hover{color:var(--primary)}
     .stats-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
-    .league-selector{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none}
+    .league-selector{display:flex;gap:8px;overflow-x:auto;padding:4px 0 4px;scrollbar-width:none}
     .league-selector::-webkit-scrollbar{display:none}
     #schedulePage .card-title{position:sticky;top:0;background:#fff;z-index:12;padding:16px 16px 0;margin:-16px -16px 0;border-radius:12px 12px 0 0}
     #schedulePage .league-selector{position:sticky;top:40px;background:#fff;z-index:11;padding:4px 12px 12px;margin:-4px -12px 8px;transition:box-shadow 0.2s}
     #schedulePage .league-selector.scrolled{box-shadow:0 4px 12px rgba(0,0,0,0.08)}
-    .league-chip{background:white;border:2px solid var(--border);border-radius:20px;padding:6px 14px;font-size:13px;white-space:nowrap;cursor:pointer;transition:all 0.2s}
+    .league-chip{background:white;border:2px solid var(--border);border-radius:20px;padding:4px 12px;font-size:13px;white-space:nowrap;cursor:pointer;transition:all 0.2s}
     .league-chip.active{background:#228B22;border-color:#228B22;color:white}
     .league-chip.cup-chip{border-color:#FFD700}
     .league-chip.cup-chip.active{background:#FFD700;border-color:#FFD700;color:#333}
@@ -93,10 +93,10 @@
     .btn-full{width:100%}
     .btn-small{padding:6px 14px;font-size:12px}
     .stats-table{width:100%;border-collapse:collapse;font-size:13px}
-    .stats-table th{background:#228B22;color:white;padding:10px 8px;text-align:left;font-weight:600;font-size:12px}
+    .stats-table th{background:#228B22;color:white;padding:7px 8px;text-align:left;font-weight:600;font-size:12px}
     .stats-table th.sortable{cursor:pointer;user-select:none}
     .stats-table th.sortable:hover{opacity:0.85}
-    .stats-table td{padding:6px 8px;border-bottom:1px solid var(--border)}
+    .stats-table td{padding:5px 8px;border-bottom:1px solid var(--border)}
     .stats-rank{font-weight:700;color:var(--primary);width:30px}
     .gold-medal{color:#FFD700;font-weight:700}
     .silver-medal{color:#C0C0C0;font-weight:700}
@@ -347,7 +347,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 44 };
+const APP_VERSION = { major: 1, minor: 0, patch: 45 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
