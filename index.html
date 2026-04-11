@@ -306,6 +306,7 @@
     <button class="sidebar-item" id="btnCupManage" style="display:none"><span class="sidebar-item-icon">🏆</span>杯赛管理</button>
     <button class="sidebar-item" id="btnArchiveSeason" style="display:none"><span class="sidebar-item-icon">📦</span>归档赛季</button>
     <button class="sidebar-item" id="btnSyncCloud"><span class="sidebar-item-icon">☁️</span>数据同步</button>
+    <div id="sidebarCloudInfo" style="display:none;padding:8px 20px;font-size:11px;color:#888;line-height:1.6;border-top:1px dashed #e8e8e8;"></div>
     <button class="sidebar-item" id="sidebarLoginBtn"><span class="sidebar-item-icon">🔑</span>登录</button>
     <button class="sidebar-item danger" id="btnLogout" style="display:none"><span class="sidebar-item-icon">🚪</span>退出登录</button>
   </div>
@@ -343,7 +344,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 36 };
+const APP_VERSION = { major: 1, minor: 0, patch: 37 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -4820,6 +4821,9 @@ async function autoSyncFromCloud() {
       setTimeout(() => bar.remove(), 500);
     }, 1500);
 
+    // 更新侧边栏云端信息
+    updateSidebarCloudInfo(cloudData._lastUpload || null);
+
   } catch(e) {
     // 静默失败，不影响正常使用
     console.warn('自动同步失败（不影响正常使用）:', e.message);
@@ -4829,6 +4833,30 @@ async function autoSyncFromCloud() {
       setTimeout(() => bar.remove(), 300);
     }, 800);
   }
+}
+
+// 更新侧边栏云端上传信息
+function updateSidebarCloudInfo(lastUpload) {
+  const el = document.getElementById('sidebarCloudInfo');
+  if (!el) return;
+  if (!lastUpload || !lastUpload.at) {
+    if (GIST_ID) {
+      el.style.display = 'block';
+      el.innerHTML = '<span style="color:#aaa">☁️ 云端：暂无上传记录</span>';
+    }
+    return;
+  }
+  const t = new Date(lastUpload.at);
+  const timeStr = t.getFullYear() + '-' +
+    String(t.getMonth()+1).padStart(2,'0') + '-' +
+    String(t.getDate()).padStart(2,'0') + ' ' +
+    String(t.getHours()).padStart(2,'0') + ':' +
+    String(t.getMinutes()).padStart(2,'0');
+  el.style.display = 'block';
+  el.innerHTML =
+    '<div style="margin-bottom:2px"><span style="color:#1976d2">☁️</span> 云端最新更新</div>' +
+    '<div>👤 ' + (lastUpload.by || '未知') + '<span style="color:#aaa;margin-left:4px">（' + (lastUpload.role || '') + '）</span></div>' +
+    '<div>🕐 ' + timeStr + '</div>';
 }
 
 // 实时时钟
