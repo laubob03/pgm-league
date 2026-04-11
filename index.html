@@ -336,7 +336,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 27 };
+const APP_VERSION = { major: 1, minor: 0, patch: 28 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -655,10 +655,10 @@ function archiveCurrentSeason() {
   // 归档当前赛季数据（不包含 seasons 本身，避免循环）
   const archive = {
     id: sid,
-    teams: JSON.parse(JSON.stringify(state.teams)),
-    matches: JSON.parse(JSON.stringify(state.matches)),
-    standings: JSON.parse(JSON.stringify(state.standings)),
-    cups: JSON.parse(JSON.stringify(state.cups)),
+    teams: JSON.parse(safeStringify(state.teams) || '[]'),
+    matches: JSON.parse(safeStringify(state.matches) || '[]'),
+    standings: JSON.parse(safeStringify(state.standings) || '{}'),
+    cups: JSON.parse(safeStringify(state.cups) || '{}'),
     archivedAt: new Date().toISOString()
   };
 
@@ -747,9 +747,33 @@ let state = {
   seasons: {}
 };
 
+// ============ SAFE JSON ============
+// 安全序列化：过滤 undefined/NaN/Infinity/函数，并验证输出
+function safeStringify(obj, indent) {
+  try {
+    const seen = new WeakSet();
+    const json = JSON.stringify(obj, (key, val) => {
+      if (val === undefined || typeof val === 'function') return undefined;
+      if (typeof val === 'number' && (isNaN(val) || !isFinite(val))) return null;
+      if (typeof val === 'symbol') return undefined;
+      if (val && typeof val === 'object') {
+        if (seen.has(val)) return undefined; // 循环引用
+        seen.add(val);
+      }
+      return val;
+    }, indent);
+    // 验证输出的 JSON 是否合法
+    if (json) JSON.parse(json);
+    return json;
+  } catch (e) {
+    console.error('safeStringify failed:', e);
+    return null;
+  }
+}
+
 // ============ STORAGE ============
 function saveState() {
-  localStorage.setItem('pgm_football_state', JSON.stringify(state));
+  localStorage.setItem('pgm_football_state', safeStringify(state) || '{}');
 }
 
 function loadState() {
@@ -3687,7 +3711,7 @@ function showSyncModal() {
           <div>球队数量：<b>${state.teams ? state.teams.length : 0}</b> 支</div>
           <div>比赛总数：<b>${state.matches ? state.matches.length : 0}</b> 场</div>
           <div>已完赛场次：<b>${state.matches ? state.matches.filter(m => m.status === 'completed').length : 0}</b> 场</div>
-          <div>数据大小：<b>${(JSON.stringify(state).length / 1024).toFixed(1)} KB</b></div>
+          <div>数据大小：<b>${((safeStringify(state) || '{}').length / 1024).toFixed(1)} KB</b></div>
           <div>最后同步：${localStorage.getItem('pgm_last_sync_time') || '从未同步'}</div>
         </div>
       </div>
@@ -3714,7 +3738,11 @@ async function fetchCloudUploadInfo() {
     const gist = await resp.json();
     const files = Object.values(gist.files);
     if (!files.length) { infoEl.innerHTML = '云端暂无数据'; return; }
-    const data = JSON.parse(files[0].content);
+    let data;
+    try { data = JSON.parse(files[0].content); } catch(e) {
+      infoEl.innerHTML = '⚠️ 云端数据已损坏，请联系管理员重新上传';
+      return;
+    }
     if (data._lastUpload) {
       const lu = data._lastUpload;
       const t = new Date(lu.at);
@@ -3957,11 +3985,8 @@ async function recorderUpload() {
     };
 
     // 步骤1：上传到独立 Gist
-    const dataStr = JSON.stringify(leagueData, (key, val) => {
-      if (typeof val === 'function' || val === undefined) return undefined;
-      if (typeof val === 'number' && (isNaN(val) || !isFinite(val))) return null;
-      return val;
-    }, 2);
+    const dataStr = safeStringify(leagueData, 2);
+    if (!dataStr) { showToast('数据序列化失败，请检查数据'); return; }
     let recorderGistId = getRecorderGistId();
     if (recorderGistId) {
       const getResp = await fetch(GIST_API + '/' + recorderGistId, {
@@ -4002,66 +4027,69 @@ async function recorderUpload() {
     // 步骤2：合并到主 Gist（联赛和杯赛数据员都合并）
     if (GIST_ID) {
       showToast('正在合并到主云端...');
-      const mainResp = await fetch(GIST_API + '/' + GIST_ID);
-      if (mainResp.ok) {
-        const mainGist = await mainResp.json();
-        const mainFiles = Object.values(mainGist.files);
-        let mainState = null;
-        if (mainFiles.length > 0) {
-          try { mainState = JSON.parse(mainFiles[0].content); } catch(e) { console.warn('主Gist数据解析失败，使用本地数据'); }
-        }
-        if (!mainState) {
-          // 主Gist解析失败，用本地state深拷贝，只保留可序列化字段
-          mainState = JSON.parse(JSON.stringify(state, (key, val) => {
-            if (typeof val === 'function') return undefined;
-            return val;
-          }));
-        }
-        if (recorderType === 'league') {
-          // 联赛数据合并：替换该联赛的球队和比赛
-          if (leagueData.teams) {
-            mainState.teams = mainState.teams.filter(t => t.league !== league).concat(leagueData.teams);
+      try {
+        const mainResp = await fetch(GIST_API + '/' + GIST_ID);
+        if (mainResp.ok) {
+          const mainGist = await mainResp.json();
+          const mainFiles = Object.values(mainGist.files);
+          let mainState = null;
+          if (mainFiles.length > 0) {
+            try { mainState = JSON.parse(mainFiles[0].content); } catch(e) { console.warn('主Gist数据解析失败，使用本地数据'); }
           }
-          if (leagueData.matches) {
-            const leagueTeamIds = new Set(leagueData.teams.map(t => t.id));
-            mainState.matches = mainState.matches.filter(m => !leagueTeamIds.has(m.homeTeam) && !leagueTeamIds.has(m.awayTeam)).concat(leagueData.matches);
+          if (!mainState) {
+            // 主Gist解析失败，用本地state深拷贝
+            mainState = JSON.parse(safeStringify(state) || '{}');
           }
-        }
-        // 杯赛数据员：更新杯赛相关球队数据
-        if (recorderType === 'cup' && leagueData.cupTeams) {
-          const cupTeamIds = new Set(leagueData.cupTeams.map(t => t.id));
-          mainState.teams = mainState.teams.filter(t => !cupTeamIds.has(t.id)).concat(leagueData.cupTeams);
-        }
-        // 杯赛赛程数据合并（所有数据员都可能携带杯赛数据）
-        if (mainState.cups && leagueData.cups) {
-          Object.keys(leagueData.cups).forEach(cid => {
-            if (leagueData.cups[cid]) {
-              mainState.cups[cid] = leagueData.cups[cid];
+          if (recorderType === 'league') {
+            // 联赛数据合并：替换该联赛的球队和比赛
+            if (leagueData.teams) {
+              mainState.teams = mainState.teams.filter(t => t.league !== league).concat(leagueData.teams);
             }
-          });
-        }
-        // 附加上传者信息
-        mainState._lastUpload = {
-          by: state.currentUser ? state.currentUser.coachName : '未知',
-          role: state.currentUser ? (state.currentUser.isStatsRecorder ? '统计员' : '数据员') : '未知',
-          at: new Date().toISOString()
-        };
-        // 安全序列化：过滤 undefined、函数、循环引用等
-        const mainDataStr = JSON.stringify(mainState, (key, val) => {
-          if (typeof val === 'function' || val === undefined) return undefined;
-          if (typeof val === 'number' && (isNaN(val) || !isFinite(val))) return null;
-          return val;
-        }, 2);
-        const mainFilename = 'pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json';
-        const mainBody = { description: 'PGM足球经理联赛数据 - 自动同步', files: {} };
-        for (const fname of Object.keys(mainGist.files)) { mainBody.files[fname] = null; }
-        mainBody.files[mainFilename] = { content: mainDataStr };
-        const patchResp = await fetch(GIST_API + '/' + GIST_ID, { method: 'PATCH', headers, body: JSON.stringify(mainBody) });
-        if (patchResp.ok) {
-          console.log('已合并' + leagueName + '数据到主云端');
+            if (leagueData.matches) {
+              const leagueTeamIds = new Set(leagueData.teams.map(t => t.id));
+              mainState.matches = mainState.matches.filter(m => !leagueTeamIds.has(m.homeTeam) && !leagueTeamIds.has(m.awayTeam)).concat(leagueData.matches);
+            }
+          }
+          // 杯赛数据员：更新杯赛相关球队数据
+          if (recorderType === 'cup' && leagueData.cupTeams) {
+            const cupTeamIds = new Set(leagueData.cupTeams.map(t => t.id));
+            mainState.teams = mainState.teams.filter(t => !cupTeamIds.has(t.id)).concat(leagueData.cupTeams);
+          }
+          // 杯赛赛程数据合并（所有数据员都可能携带杯赛数据）
+          if (mainState.cups && leagueData.cups) {
+            Object.keys(leagueData.cups).forEach(cid => {
+              if (leagueData.cups[cid]) {
+                mainState.cups[cid] = leagueData.cups[cid];
+              }
+            });
+          }
+          // 附加上传者信息
+          mainState._lastUpload = {
+            by: state.currentUser ? state.currentUser.coachName : '未知',
+            role: state.currentUser ? (state.currentUser.isStatsRecorder ? '统计员' : '数据员') : '未知',
+            at: new Date().toISOString()
+          };
+          // 安全序列化
+          const mainDataStr = safeStringify(mainState, 2);
+          if (!mainDataStr) { showToast('合并数据序列化失败'); } else {
+            const mainFilename = 'pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json';
+            const mainBody = { description: 'PGM足球经理联赛数据 - 自动同步', files: {} };
+            for (const fname of Object.keys(mainGist.files)) { mainBody.files[fname] = null; }
+            mainBody.files[mainFilename] = { content: mainDataStr };
+            const patchResp = await fetch(GIST_API + '/' + GIST_ID, { method: 'PATCH', headers, body: JSON.stringify(mainBody) });
+            if (patchResp.ok) {
+              showToast('已合并' + leagueName + '数据到主云端 ✓');
+            } else {
+              showToast('⚠️ 合并到主云端失败(' + patchResp.status + ')，请联系管理员手动上传');
+              console.error('合并到主云端失败:', patchResp.status);
+            }
+          }
         } else {
-          console.warn('合并到主云端失败:', patchResp.status);
+          showToast('⚠️ 无法读取主云端(' + mainResp.status + ')，请联系管理员手动上传');
         }
+      } catch(mergeErr) {
+        showToast('⚠️ 合并到主云端出错: ' + mergeErr.message);
+        console.error('合并到主云端出错:', mergeErr);
       }
     }
 
@@ -4100,7 +4128,10 @@ async function recorderDownload() {
     const gist = await resp.json();
     const files = Object.values(gist.files);
     if (!files.length) throw new Error('云端没有数据文件');
-    const data = JSON.parse(files[0].content);
+    let data;
+    try { data = JSON.parse(files[0].content); } catch(e) {
+      throw new Error('云端数据已损坏，请联系管理员重新上传');
+    }
 
     if (fromMain) {
       // 从主Gist下载：提取对应联赛或杯赛数据
@@ -4213,13 +4244,14 @@ async function syncUpload() {
 
   try {
     // 构建上传数据，附加上传者信息
-    const uploadData = JSON.parse(JSON.stringify(state));
+    const uploadData = JSON.parse(safeStringify(state) || '{}');
     uploadData._lastUpload = {
       by: state.currentUser ? state.currentUser.coachName : '未知',
       role: state.currentUser ? (state.currentUser.isSuperAdmin ? '超级管理员' : (state.currentUser.isStatsRecorder ? '统计员' : '数据员')) : '未知',
       at: new Date().toISOString()
     };
-    const dataStr = JSON.stringify(uploadData, null, 2);
+    const dataStr = safeStringify(uploadData, 2);
+    if (!dataStr) { showToast('数据序列化失败，请检查数据'); return; }
     const filename = 'pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json';
     const headers = {
       'Authorization': 'Bearer ' + token,
@@ -4332,7 +4364,17 @@ async function syncDownload() {
     const dataFile = Object.values(files)[0];
     if (!dataFile || !dataFile.content) throw new Error('云端数据为空');
     
-    const cloudData = JSON.parse(dataFile.content);
+    // 验证 JSON 合法性
+    const content = dataFile.content;
+    let cloudData;
+    try {
+      cloudData = JSON.parse(content);
+    } catch(parseErr) {
+      throw new Error('云端数据已损坏，请联系管理员重新上传（' + parseErr.message + '）');
+    }
+    if (!cloudData.teams || !cloudData.matches) {
+      throw new Error('云端数据格式不正确，请联系管理员重新上传');
+    }
     
     // 写入本地（清除登录状态，防止变成管理员）
     const loginUser = state.currentUser;
@@ -4362,7 +4404,7 @@ async function syncDownload() {
 
 // 导出数据为 JSON 文件
 function exportDataToFile() {
-  const dataStr = JSON.stringify(state, null, 2);
+  const dataStr = safeStringify(state, 2) || '{}';
   const blob = new Blob([dataStr], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   
