@@ -351,7 +351,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 49 };
+const APP_VERSION = { major: 1, minor: 0, patch: 50 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -4917,18 +4917,9 @@ function updateSidebarCloudInfo(lastUpload) {
     return;
   }
   const t = new Date(lastUpload.at);
-  const timeStr = t.getFullYear() + '-' +
-    String(t.getMonth()+1).padStart(2,'0') + '-' +
-    String(t.getDate()).padStart(2,'0') + ' ' +
-    String(t.getHours()).padStart(2,'0') + ':' +
-    String(t.getMinutes()).padStart(2,'0');
-  const by = lastUpload.by || '未知';
-  const role = lastUpload.role || '';
-  const t = new Date(lastUpload.at);
   const dateStr = (t.getMonth()+1) + '-' + t.getDate();
   const timeStr = String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
-  el.style.display = 'inline';
-  el.innerHTML = '☁️ ' + by + ' · ' + dateStr + ' ' + timeStr;
+  const by = lastUpload.by || '未知';
 }
 
 // 实时时钟
