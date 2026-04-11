@@ -336,7 +336,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 33 };
+const APP_VERSION = { major: 1, minor: 0, patch: 34 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-10';
@@ -3148,6 +3148,61 @@ function showToast(msg) {
   setTimeout(() => { toast.style.display = 'none'; }, 2500);
 }
 
+// ============ 云端同步进度条 ============
+function showSyncProgress(type, step) {
+  // type: 'upload' | 'download'
+  // step: 0=开始, 1=获取数据, 2=处理中, 3=完成
+  let overlay = document.getElementById('syncProgressOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'syncProgressOverlay';
+    document.body.prepend(overlay);
+  }
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:999999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px);';
+
+  const isUp = type === 'upload';
+  const icon = isUp ? '☁️' : '📥';
+  const title = isUp ? '上传到云端' : '从云端下载';
+  const color = isUp ? '#ff6f00' : '#1976d2';
+  const steps = isUp
+    ? ['准备数据...', '序列化数据...', '上传到GitHub...', '合并云端数据...']
+    : ['连接云端...', '拉取数据...', '解析数据...', '写入本地...'];
+
+  const pct = step < 0 ? 100 : Math.min(step * 25, 75);
+  const barColor = step < 0
+    ? 'background:linear-gradient(90deg,#4caf50,#8bc34a);width:100%'
+    : 'width:' + pct + '%;background:linear-gradient(90deg,' + color + ',' + color + 'dd);transition:width 0.4s ease';
+
+  const stepText = step < 0
+    ? (isUp ? '✅ 上传成功！' : '✅ 下载成功！')
+    : (steps[step] || '处理中...');
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;padding:36px 44px;max-width:360px;width:88%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:syncPop 0.3s ease">
+      <div id="syncIcon" style="font-size:52px;margin-bottom:14px;">${step < 0 ? (isUp ? '✅' : '✅') : icon}</div>
+      <div id="syncTitle" style="font-size:18px;font-weight:bold;color:#333;margin-bottom:6px;">${step < 0 ? '完成' : title}</div>
+      <div id="syncStepText" style="font-size:13px;color:#888;margin-bottom:20px;min-height:20px;">${stepText}</div>
+      <div style="background:#f0f0f0;border-radius:10px;height:8px;overflow:hidden;">
+        <div id="syncBar" style="height:100%;border-radius:10px;${barColor}"></div>
+      </div>
+      <div id="syncPct" style="font-size:12px;color:#aaa;margin-top:8px;">${pct}%</div>
+    </div>
+    <style>@keyframes syncPop{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}</style>
+  `;
+}
+
+function updateSyncProgress(step) {
+  showSyncProgress(
+    document.getElementById('syncIcon')?.textContent.includes('☁️') ? 'upload' : 'download',
+    step
+  );
+}
+
+function hideSyncProgress() {
+  const overlay = document.getElementById('syncProgressOverlay');
+  if (overlay) overlay.remove();
+}
+
 // ============ 超级管理员导入功能 ============
 function showAdminImportModal() {
   if (!state.currentUser || !state.currentUser.isSuperAdmin) {
@@ -4001,12 +4056,13 @@ async function recorderUpload() {
   const leagueName = getRecorderDisplayName(league);
   if (!confirm('确定要上传' + leagueName + '数据到云端吗？所有教练下载后即可查看。')) return;
 
-  showToast('正在上传...');
+  showSyncProgress('upload', 0);
 
   try {
     // 根据类型提取数据
     const leagueData = recorderType === 'cup' ? extractCupData(cupId) : extractLeagueData(league);
-    if (!leagueData) { showToast('没有可上传的数据'); return; }
+    if (!leagueData) { hideSyncProgress(); showToast('没有可上传的数据'); return; }
+    showSyncProgress('upload', 1);
     const filename = (recorderType === 'cup' ? 'cup_' + cupId : league) + '_data_' + new Date().toISOString().slice(0, 10) + '.json';
     const headers = {
       'Authorization': 'Bearer ' + token,
@@ -4016,7 +4072,8 @@ async function recorderUpload() {
 
     // 步骤1：上传到独立 Gist
     const dataStr = safeStringify(leagueData, 2);
-    if (!dataStr) { showToast('数据序列化失败，请检查数据'); return; }
+    if (!dataStr) { hideSyncProgress(); showToast('数据序列化失败，请检查数据'); return; }
+    showSyncProgress('upload', 2);
     let recorderGistId = getRecorderGistId();
     if (recorderGistId) {
       const getResp = await fetch(GIST_API + '/' + recorderGistId, {
@@ -4056,7 +4113,7 @@ async function recorderUpload() {
 
     // 步骤2：合并到主 Gist（联赛和杯赛数据员都合并）
     if (GIST_ID) {
-      showToast('正在合并到主云端...');
+      showSyncProgress('upload', 3);
       try {
         const mainResp = await fetch(GIST_API + '/' + GIST_ID);
         if (mainResp.ok) {
@@ -4135,9 +4192,10 @@ async function recorderUpload() {
     }
 
     recordSyncTime();
-    showToast(leagueName + '数据上传成功！所有人可下载查看');
-    setTimeout(() => showSyncModal(), 1000);
+    showSyncProgress('upload', -1);
+    setTimeout(() => { hideSyncProgress(); showSyncModal(); }, 1200);
   } catch(e) {
+    hideSyncProgress();
     showToast(e.message);
     console.error('Recorder upload error:', e);
   }
@@ -4163,7 +4221,10 @@ async function recorderDownload() {
   }
 
   showToast('正在下载...');
+
+  showSyncProgress('download', 0);
   try {
+    showSyncProgress('download', 1);
     const resp = await fetch(GIST_API + '/' + dataSource);
     if (!resp.ok) throw new Error('下载失败 ' + resp.status);
     const gist = await resp.json();
@@ -4184,6 +4245,7 @@ async function recorderDownload() {
     try { data = JSON.parse(dataContent); } catch(e) {
       throw new Error('云端数据已损坏，请联系管理员重新上传');
     }
+    showSyncProgress('download', 2);
 
     if (fromMain) {
       // 从主Gist下载：提取对应联赛或杯赛数据
@@ -4241,8 +4303,10 @@ async function recorderDownload() {
 
     recordSyncTime();
     showToast(leagueName + '数据下载成功！' + (fromMain ? '（从主云端）' : ''));
-    setTimeout(() => { showSyncModal(); render(); }, 500);
+    showSyncProgress('download', -1);
+    setTimeout(() => { hideSyncProgress(); showSyncModal(); render(); }, 1200);
   } catch(e) {
+    hideSyncProgress();
     showToast(e.message);
     console.error('Recorder download error:', e);
   }
@@ -4292,9 +4356,10 @@ async function syncUpload() {
   if (!token) { showToast('云端同步不可用'); return; }
   if (!confirm('确定要上传数据到云端吗？这将覆盖云端现有数据。')) return;
 
-  showToast('正在上传...');
+  showSyncProgress('upload', 0);
 
   try {
+    showSyncProgress('upload', 1);
     // 构建上传数据，附加上传者信息
     const uploadData = JSON.parse(safeStringify(state) || '{}');
     uploadData._lastUpload = {
@@ -4304,7 +4369,8 @@ async function syncUpload() {
     };
     const dataStr = safeStringify(uploadData, 2);
     if (!dataStr) { showToast('数据序列化失败，请检查数据'); return; }
-    const filename = 'pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json';
+    showSyncProgress('upload', 2);
+    const filename = 'pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json'; + new Date().toISOString().slice(0, 10) + '.json';
     const headers = {
       'Authorization': 'Bearer ' + token,
       'Accept': 'application/vnd.github.v3+json',
@@ -4388,8 +4454,10 @@ async function syncUpload() {
     localStorage.setItem('pgm_last_sync_time', timeStr);
 
     showToast('上传成功！Gist: ' + GIST_ID);
-    setTimeout(() => showSyncModal(), 1000);
+    showSyncProgress('upload', -1);
+    setTimeout(() => { hideSyncProgress(); showSyncModal(); }, 1200);
   } catch(e) {
+    hideSyncProgress();
     showToast(e.message);
     console.error('Sync upload error:', e);
   }
@@ -4400,9 +4468,10 @@ async function syncDownload() {
   if (!GIST_ID) { showToast('还没有云端数据，请等待管理员上传'); return; }
   if (!confirm('确定要从云端下载数据吗？这将覆盖本地所有数据！')) return;
   
-  showToast('正在下载...');
+  showSyncProgress('download', 0);
   
   try {
+    showSyncProgress('download', 1);
     const resp = await fetch(GIST_API + '/' + GIST_ID);
     
     if (!resp.ok) {
@@ -4439,6 +4508,7 @@ async function syncDownload() {
     if (!cloudData.teams || !cloudData.matches) {
       throw new Error('云端数据格式不正确，请联系管理员重新上传');
     }
+    showSyncProgress('download', 2);
     
     // 写入本地（清除登录状态，防止变成管理员）
     const loginUser = state.currentUser;
@@ -4460,7 +4530,10 @@ async function syncDownload() {
     updateSidebar();
     render();
     showToast('✅ 下载成功！数据已更新');
+    showSyncProgress('download', -1);
+    setTimeout(() => hideSyncProgress(), 1200);
   } catch(e) {
+    hideSyncProgress();
     showToast('下载失败：' + e.message);
     console.error('Sync download error:', e);
   }
