@@ -364,7 +364,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 71 };
+const APP_VERSION = { major: 1, minor: 0, patch: 72 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-13';
@@ -1308,7 +1308,7 @@ function renderCupSchedule(cupId) {
         + '<div style="display:flex;align-items:stretch;gap:4px">'
           + '<div style="flex:1;display:flex;flex-direction:column;gap:0">'
             + '<div style="display:flex;align-items:center;gap:3px">'
-              + '<img src="' + home.logo + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
+              + '<img src="' + getTeamLogo(home) + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
               + '<span style="font-size:13px;font-weight:600;color:#228B22;cursor:pointer" onclick="showTeamDetail(\'' + home.id + '\')">' + home.name + '</span>'
             + '</div>'
             + homeDetail
@@ -1324,7 +1324,7 @@ function renderCupSchedule(cupId) {
           + '<div style="flex:1;display:flex;flex-direction:column;gap:0;align-items:flex-end">'
             + '<div style="display:flex;align-items:center;gap:3px">'
               + '<span style="font-size:13px;font-weight:600;color:#228B22;cursor:pointer" onclick="showTeamDetail(\'' + away.id + '\')">' + away.name + '</span>'
-              + '<img src="' + away.logo + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
+              + '<img src="' + getTeamLogo(away) + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
             + '</div>'
             + awayDetail
           + '</div>'
@@ -1359,7 +1359,7 @@ function showEnterCupMatchModal(matchId, cupId) {
   const awayMotmHtml = awayPlayers.map(p => '<div class="mr' + (motmId === p.id ? ' selected' : '') + '" onclick="selMotm(this,\'' + p.id + '\')"><span>' + p.name + '</span></div>').join('');
   const style = '<style>.pr{display:flex;align-items:center;justify-content:space-between;padding:3px 4px;border-bottom:1px solid #eee}.pr:last-child{border-bottom:none}.pc{display:flex;align-items:center;gap:2px}.bm,.bp{width:24px;height:24px;border-radius:50%;font-size:14px;font-weight:bold;cursor:pointer;border:none}.bm{background:#f5f5f5;color:#666}.bp{background:#228B22;color:#fff}.pv{width:28px;text-align:center;font-size:14px;font-weight:600;border:1px solid #228B22;border-radius:4px;padding:2px;background:#f8fff8}.mtb{background:#fff;border:2px solid #ddd;border-radius:20px;padding:5px 10px;font-size:12px;cursor:pointer}.mtb.active{background:#228B22;border-color:#228B22;color:#fff}.mr{display:flex;align-items:center;justify-content:space-between;padding:2px 4px;border-bottom:1px solid #eee;cursor:pointer;font-size:13px}.mr:last-child{border-bottom:none}.mr.selected{background:#e8f5e9;color:#228B22;font-weight:600}.mc{flex:1;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px;margin:0 2px}.mct{text-align:center;font-weight:700;font-size:13px;padding:4px;background:#228B22;color:#fff;border-radius:4px 4px 0 0}</style>';
   const header = '<div class="modal-header"><div class="modal-title">' + (isEdit ? '✏️ 修改比赛结果' : '✏️ 录入比赛结果') + '（' + (CUP_NAMES[cupId] || '杯赛') + '）</div><button class="modal-close" onclick="closeModal()">×</button></div>';
-  const score = '<div style="text-align:center;padding:8px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:8px"><span style="font-size:15px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + homeTeam.name + '</span><img src="' + homeTeam.logo + '" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><input type="number" id="cupHomeScore" value="' + (match.homeScore || 0) + '" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid #228B22;border-radius:4px">:<input type="number" id="cupAwayScore" value="' + (match.awayScore || 0) + '" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid #228B22;border-radius:4px"><img src="' + awayTeam.logo + '" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><span style="font-size:15px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + awayTeam.name + '</span></div>';
+  const score = '<div style="text-align:center;padding:8px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:8px"><span style="font-size:15px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + homeTeam.name + '</span><img src="' + getTeamLogo(homeTeam) + '" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><input type="number" id="cupHomeScore" value="' + (match.homeScore || 0) + '" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid #228B22;border-radius:4px">:<input type="number" id="cupAwayScore" value="' + (match.awayScore || 0) + '" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid #228B22;border-radius:4px"><img src="' + getTeamLogo(awayTeam) + '" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><span style="font-size:15px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + awayTeam.name + '</span></div>';
   const tabs = '<div style="display:flex;gap:2px;overflow-x:auto;padding:2px 0"><button type="button" class="mtb active" data-tab="hg">⚽ 主队进球</button><button type="button" class="mtb" data-tab="ha">👟 主队助攻</button><button type="button" class="mtb" data-tab="ag">⚽ 客队进球</button><button type="button" class="mtb" data-tab="aa">👟 客队助攻</button><button type="button" class="mtb" data-tab="motm">⭐ 最佳球员</button></div>';
   const panels = '<div id="tab-hg" class="tp" style="max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + homeGoalsHtml + '</div><div id="tab-ha" class="tp" style="display:none;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + homeAssistsHtml + '</div><div id="tab-ag" class="tp" style="display:none;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + awayGoalsHtml + '</div><div id="tab-aa" class="tp" style="display:none;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + awayAssistsHtml + '</div><div id="tab-motm" class="tp" style="display:none"><div style="display:flex;gap:4px"><div class="mc"><div class="mct">' + homeTeam.name + '</div><div>' + homeMotmHtml + '</div></div><div class="mc"><div class="mct">' + awayTeam.name + '</div><div>' + awayMotmHtml + '</div></div></div><input type="hidden" id="cupMotm" value="' + motmId + '"></div>';
   const submitBtn = '<button type="button" class="btn btn-primary btn-full" style="margin-top:8px;padding:10px;font-size:14px" id="saveCupMatchBtn">' + (isEdit ? '更新比赛结果' : '保存比赛结果') + '</button>';
@@ -1465,11 +1465,11 @@ function showImportCupModal(cupId) {
           if (!h || !a) return;
           const isDone = m.status === 'completed';
           preview += '<div class="cup-match-item">'
-            + '<img src="' + h.logo + '" onerror="this.style.display=\'none\'">'
+            + '<img src="' + getTeamLogo(h) + '" onerror="this.style.display=\'none\'">'
             + '<span style="flex:1">' + h.name + '</span>'
             + '<span style="font-weight:700;color:' + (isDone ? '#228B22' : '#E65100') + '">' + (isDone ? m.homeScore + '-' + m.awayScore : 'VS') + '</span>'
             + '<span style="flex:1;text-align:right">' + a.name + '</span>'
-            + '<img src="' + a.logo + '" onerror="this.style.display=\'none\'">'
+            + '<img src="' + getTeamLogo(a) + '" onerror="this.style.display=\'none\'">'
           + '</div>';
         });
       });
@@ -1635,7 +1635,7 @@ function renderStandings() {
     const promotionClass = i < topPromotionCount ? 'promotion-bg' : (i >= standings.length - 2 ? 'relegation-bg' : '');
     html += `<tr class="${promotionClass}">`;
     html += `<td class="rank">${i + 1}</td>`;
-    html += `<td class="team-cell"><img src="${s.team.logo}" style="width:24px;height:24px;object-fit:contain;border-radius:4px" onerror="this.style.display='none'"><span class="team-name-clickable" onclick="showTeamDetail('${s.team.id}')">${s.team.name}</span></td>`;
+    html += `<td class="team-cell"><img src="${getTeamLogo(s.team)}" style="width:24px;height:24px;object-fit:contain;border-radius:4px" onerror="this.style.display='none'"><span class="team-name-clickable" onclick="showTeamDetail('${s.team.id}')">${s.team.name}</span></td>`;
     html += `<td>${s.played}</td><td>${s.won}</td><td>${s.draw}</td><td>${s.lost}</td>`;
     html += `<td>${s.gf}</td><td>${s.ga}</td><td>${s.gf - s.ga}</td><td><strong>${s.points}</strong></td>`;
     html += '</tr>';
@@ -1672,7 +1672,7 @@ function renderTeams() {
     html += `
       <div class="team-card">
         <div class="team-item">
-          <img src="${t.logo}" class="team-item-logo" onerror="this.style.display='none'">
+          <img src="${getTeamLogo(t)}" class="team-item-logo" onerror="this.style.display='none'">
           <div class="team-item-info" onclick="showTeamDetail('${t.id}')" style="flex:1;cursor:pointer">
             <div class="team-item-name">${t.name} <span class="team-league-tag">${LEAGUE_NAMES[t.league]}</span></div>
             <div class="team-item-coach">主教练:${t.coach}${assistantStr}</div>
@@ -1781,7 +1781,7 @@ function renderSchedule() {
         + '<div style="display:flex;align-items:stretch;gap:4px">'
           + '<div style="flex:1;display:flex;flex-direction:column;gap:0">'
             + '<div style="display:flex;align-items:center;gap:3px">'
-              + '<img src="' + home.logo + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
+              + '<img src="' + getTeamLogo(home) + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
               + '<span style="font-size:13px;font-weight:600;color:#228B22;cursor:pointer" onclick="showTeamDetail(\'' + home.id + '\')">' + home.name + '</span>'
             + '</div>'
             + homeDetail
@@ -1797,7 +1797,7 @@ function renderSchedule() {
           + '<div style="flex:1;display:flex;flex-direction:column;gap:0;align-items:flex-end">'
             + '<div style="display:flex;align-items:center;gap:3px">'
               + '<span style="font-size:13px;font-weight:600;color:#228B22;cursor:pointer" onclick="showTeamDetail(\'' + away.id + '\')">' + away.name + '</span>'
-              + '<img src="' + away.logo + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
+              + '<img src="' + getTeamLogo(away) + '" style="width:18px;height:18px;object-fit:contain" onerror="this.style.display=\'none\'">'
             + '</div>'
             + awayDetail
           + '</div>'
@@ -1928,7 +1928,7 @@ function renderScorersList(players, type = 'goals') {
     const medal = i === 0 ? 'gold-medal' : i === 1 ? 'silver-medal' : i === 2 ? 'bronze-medal' : '';
     const value = type === 'goals' ? p.goals : type === 'assists' ? p.assists : (p.motmCount || 0);
     const uid = p.uid || (p.id ? p.id.split('_')[1] : '');
-    html += `<tr><td class="stats-rank ${medal}">${i + 1}</td><td><strong class="player-expand" onclick="togglePlayerSeasonDetail(this,'${uid}')">${p.name}</strong></td><td>${p.logo ? '<img src="'+p.logo+'" style="width:14px;height:14px;object-fit:contain;border-radius:3px;vertical-align:middle;margin-right:3px" onerror="this.style.display=\'none\'">' : ''}<span class="team-name-clickable" onclick="showTeamDetail('${p.teamId}')">${p.teamName}</span></td><td><strong>${value}</strong></td></tr>`;
+    html += `<tr><td class="stats-rank ${medal}">${i + 1}</td><td><strong class="player-expand" onclick="togglePlayerSeasonDetail(this,'${uid}')">${p.name}</strong></td><td>${getTeamLogo(p) ? '<img src="'+getTeamLogo(p)+'" style="width:14px;height:14px;object-fit:contain;border-radius:3px;vertical-align:middle;margin-right:3px" onerror="this.style.display=\'none\'">' : ''}<span class="team-name-clickable" onclick="showTeamDetail('${p.teamId}')">${p.teamName}</span></td><td><strong>${value}</strong></td></tr>`;
   });
   html += '</tbody></table>';
   return html;
@@ -2242,7 +2242,7 @@ function renderCupStandings(cupId, container) {
   standings.forEach((s, i) => {
     html += '<tr>';
     html += '<td class="rank">' + (i + 1) + '</td>';
-    html += '<td class="team-cell"><img src="' + s.team.logo + '" style="width:24px;height:24px;object-fit:contain;border-radius:4px" onerror="this.style.display=\'none\'"><span class="team-name-clickable" onclick="showTeamDetail(\'' + s.team.id + '\')">' + s.team.name + '</span></td>';
+    html += '<td class="team-cell"><img src="' + getTeamLogo(s.team) + '" style="width:24px;height:24px;object-fit:contain;border-radius:4px" onerror="this.style.display=\'none\'"><span class="team-name-clickable" onclick="showTeamDetail(\'' + s.team.id + '\')">' + s.team.name + '</span></td>';
     html += '<td>' + s.played + '</td><td>' + s.won + '</td><td>' + s.draw + '</td><td>' + s.lost + '</td>';
     html += '<td>' + s.gf + '</td><td>' + s.ga + '</td><td>' + (s.gf - s.ga) + '</td><td><strong>' + s.points + '</strong></td>';
     html += '</tr>';
@@ -2306,7 +2306,7 @@ function getTopScorers(limit = 10, league = 'super') {
   sd.teams.filter(t => t.league === league).forEach(t => {
     t.players.forEach(p => {
       if (p.goals > 0) {
-        allPlayers.push({ ...p, teamId: t.id, teamName: t.name, teamShortName: t.shortName, logo: t.logo });
+        allPlayers.push({ ...p, teamId: t.id, teamName: t.name, teamShortName: t.shortName, logo: getTeamLogo(t) });
       }
     });
   });
@@ -2319,7 +2319,7 @@ function getTopAssists(limit = 10, league = 'super') {
   sd.teams.filter(t => t.league === league).forEach(t => {
     t.players.forEach(p => {
       if (p.assists > 0) {
-        allPlayers.push({ ...p, teamId: t.id, teamName: t.name, teamShortName: t.shortName, logo: t.logo });
+        allPlayers.push({ ...p, teamId: t.id, teamName: t.name, teamShortName: t.shortName, logo: getTeamLogo(t) });
       }
     });
   });
@@ -2332,7 +2332,7 @@ function getTopMotm(limit = 10, league = 'super') {
   sd.teams.filter(t => t.league === league).forEach(t => {
     t.players.forEach(p => {
       if (p.motmCount && p.motmCount > 0) {
-        allPlayers.push({ ...p, teamId: t.id, teamName: t.name, teamShortName: t.shortName, logo: t.logo });
+        allPlayers.push({ ...p, teamId: t.id, teamName: t.name, teamShortName: t.shortName, logo: getTeamLogo(t) });
       }
     });
   });
@@ -2358,7 +2358,7 @@ function getCupPlayerStats(cupId, type, limit) {
     [m.homeTeam, m.awayTeam].forEach(tid => {
       const t = sd.teams.find(x => x.id === tid);
       if (!t) return;
-      if (!stats[tid]) stats[tid] = { teamId: tid, teamName: t.name, logo: t.logo, players: {} };
+      if (!stats[tid]) stats[tid] = { teamId: tid, teamName: t.name, logo: getTeamLogo(t), players: {} };
       t.players.forEach(p => { if (!stats[tid].players[p.id]) stats[tid].players[p.id] = { id: p.id, name: p.name, goals: 0, assists: 0, motm: 0 }; });
     });
     if (m.scorers) m.scorers.forEach(s => { if (stats[s.teamId] && stats[s.teamId].players[s.playerId]) stats[s.teamId].players[s.playerId].goals++; });
@@ -2368,9 +2368,9 @@ function getCupPlayerStats(cupId, type, limit) {
   const all = [];
   Object.values(stats).forEach(s => {
     Object.values(s.players).forEach(p => {
-      if (type === 'goals' && p.goals > 0) all.push({ id: p.id, name: p.name, teamId: s.teamId, teamName: s.teamName, logo: s.logo, goals: p.goals, assists: p.assists, motmCount: p.motm });
-      else if (type === 'assists' && p.assists > 0) all.push({ id: p.id, name: p.name, teamId: s.teamId, teamName: s.teamName, logo: s.logo, goals: p.goals, assists: p.assists, motmCount: p.motm });
-      else if (type === 'motm' && p.motm > 0) all.push({ id: p.id, name: p.name, teamId: s.teamId, teamName: s.teamName, logo: s.logo, goals: p.goals, assists: p.assists, motmCount: p.motm });
+      if (type === 'goals' && p.goals > 0) all.push({ id: p.id, name: p.name, teamId: s.teamId, teamName: s.teamName, logo: getTeamLogo(s), goals: p.goals, assists: p.assists, motmCount: p.motm });
+      else if (type === 'assists' && p.assists > 0) all.push({ id: p.id, name: p.name, teamId: s.teamId, teamName: s.teamName, logo: getTeamLogo(s), goals: p.goals, assists: p.assists, motmCount: p.motm });
+      else if (type === 'motm' && p.motm > 0) all.push({ id: p.id, name: p.name, teamId: s.teamId, teamName: s.teamName, logo: getTeamLogo(s), goals: p.goals, assists: p.assists, motmCount: p.motm });
     });
   });
   const valKey = type === 'goals' ? 'goals' : type === 'assists' ? 'assists' : 'motmCount';
@@ -2444,7 +2444,7 @@ function showTeamDetail(teamId) {
       <div class="tm-round">第${m.round}轮</div>
       <div class="tm-teams">
         <div class="tm-team ${isHome ? 'highlight' : ''}">
-          <img src="${isHome ? team.logo : (opponent ? opponent.logo : '')}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
+          <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
           <span>${isHome ? team.name : (opponent ? opponent.name : '未知')}</span>
         </div>
         <div class="tm-score-area">
@@ -2454,7 +2454,7 @@ function showTeamDetail(teamId) {
         </div>
         <div class="tm-team ${!isHome ? 'highlight' : ''}">
           <span>${isHome ? (opponent ? opponent.name : '未知') : team.name}</span>
-          <img src="${isHome ? (opponent ? opponent.logo : '') : team.logo}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
+          <img src="${isHome ? (opponent ? getTeamLogo(opponent) : '') : getTeamLogo(team)}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
         </div>
       </div>
       <div class="tm-detail">${teamDetail}</div>
@@ -2564,7 +2564,7 @@ function showTeamDetail(teamId) {
           <div class="tm-round">${m.cupName} 第${m.round}轮</div>
           <div class="tm-teams">
             <div class="tm-team ${isHome ? 'highlight' : ''}">
-              <img src="${isHome ? team.logo : (opponent ? opponent.logo : '')}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
+              <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
               <span style="cursor:pointer" onclick="event.stopPropagation();closeModal();setTimeout(()=>showTeamDetail('${homeTeamId}'),100)">${isHome ? team.name : (opponent ? opponent.name : '未知')}</span>
             </div>
             <div class="tm-score-area">
@@ -2574,7 +2574,7 @@ function showTeamDetail(teamId) {
             </div>
             <div class="tm-team ${!isHome ? 'highlight' : ''}">
               <span style="cursor:pointer" onclick="event.stopPropagation();closeModal();setTimeout(()=>showTeamDetail('${awayTeamId}'),100)">${isHome ? (opponent ? opponent.name : '未知') : team.name}</span>
-              <img src="${isHome ? (opponent ? opponent.logo : '') : team.logo}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
+              <img src="${isHome ? (opponent ? getTeamLogo(opponent) : '') : getTeamLogo(team)}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
             </div>
           </div>
           <div class="tm-detail">${cupTeamDetail}</div>
@@ -2610,7 +2610,7 @@ function showTeamDetail(teamId) {
       .data-tab.active{background:#FFD700;color:#333;border-color:#FFD700}
     </style>
     <div class="modal-header">
-      <div class="modal-title"><img src="${team.logo}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;margin-right:8px" onerror="this.style.display='none'">${team.name} <span class="modal-league">联赛: ${LEAGUE_NAMES[team.league]}</span></div>
+      <div class="modal-title"><img src="${getTeamLogo(team)}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;margin-right:8px" onerror="this.style.display='none'">${team.name} <span class="modal-league">联赛: ${LEAGUE_NAMES[team.league]}</span></div>
       <button class="modal-close" onclick="closeModal()">×</button>
     </div>
     <div class="form-group">
@@ -2734,7 +2734,7 @@ function showCupPlayerData(teamId) {
       .sort-btn.active{background:#228B22;color:#fff;border-color:#228B22}
     </style>
     <div class="modal-header">
-      <div class="modal-title"><img src="${team.logo}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;margin-right:8px" onerror="this.style.display='none'">${team.name} <span class="modal-league">🏆 杯赛球员数据</span></div>
+      <div class="modal-title"><img src="${getTeamLogo(team)}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;margin-right:8px" onerror="this.style.display='none'">${team.name} <span class="modal-league">🏆 杯赛球员数据</span></div>
       <button class="modal-close" onclick="closeModal()">×</button>
     </div>
     <div class="form-group">
@@ -2805,7 +2805,7 @@ function showEnterMatchModal(matchId) {
 
   const header = '<div class="modal-header"><div class="modal-title">'+(isEdit?'✏️ 修改比赛结果':'✏️ 录入比赛结果')+'</div><button class="modal-close" onclick="closeModal()">×</button></div>';
 
-  const score = '<div style="text-align:center;padding:8px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:8px"><span style="font-size:15px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+homeTeam.name+'</span><img src="'+homeTeam.logo+'" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><input type="number" id="homeScore" value="'+(match.homeScore||0)+'" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid #228B22;border-radius:4px">:<input type="number" id="awayScore" value="'+(match.awayScore||0)+'" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid #228B22;border-radius:4px"><img src="'+awayTeam.logo+'" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><span style="font-size:15px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+awayTeam.name+'</span></div>';
+  const score = '<div style="text-align:center;padding:8px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:8px"><span style="font-size:15px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+homeTeam.name+'</span><img src="'+getTeamLogo(homeTeam)+'" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><input type="number" id="homeScore" value="'+(match.homeScore||0)+'" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid #228B22;border-radius:4px">:<input type="number" id="awayScore" value="'+(match.awayScore||0)+'" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid #228B22;border-radius:4px"><img src="'+getTeamLogo(awayTeam)+'" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><span style="font-size:15px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+awayTeam.name+'</span></div>';
 
   const tabs = '<div style="display:flex;gap:2px;overflow-x:auto;padding:2px 0;scrollbar-width:none"><button type="button" class="mtb active" data-tab="hg">⚽ 主队进球</button><button type="button" class="mtb" data-tab="ha">👟 主队助攻</button><button type="button" class="mtb" data-tab="ag">⚽ 客队进球</button><button type="button" class="mtb" data-tab="aa">👟 客队助攻</button><button type="button" class="mtb" data-tab="motm">⭐ 最佳球员</button></div>';
 
