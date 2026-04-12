@@ -107,7 +107,8 @@
     .bronze-medal{color:#CD7F32;font-weight:700}
     .bottom-nav{position:fixed;top:0;left:0;right:0;background:#228B22;display:flex;justify-content:space-between;align-items:center;padding:6px 16px;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
     .nav-tabs{display:flex;gap:6px}
-    .nav-right{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+    .nav-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+    .nav-right-info{display:flex;flex-direction:column;align-items:flex-end;gap:0;line-height:1.3}
     .nav-item{display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:none;color:rgba(255,255,255,0.8);font-size:10px;cursor:pointer;padding:4px 6px;border-radius:8px;transition:all 0.2s;flex-shrink:0}
     .nav-item.active{color:#fff;background:rgba(144,238,144,0.4);backdrop-filter:blur(4px)}
     .nav-item-icon{font-size:20px}
@@ -179,10 +180,11 @@
     .season-chip.active{background:white;color:#228B22}
     .season-archive-tag{background:#FFD700;color:#333;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;margin-left:8px}
     .archive-notice{text-align:center;padding:8px;background:#FFF3E0;color:#E65100;font-size:13px;font-weight:600;border-radius:0}
-    .nav-season-info{display:flex;align-items:center;gap:8px;white-space:nowrap}
-    .nav-season-info .season-label{font-weight:700;color:rgba(255,255,255,0.95);font-size:14px}
-    .nav-season-info .season-credit{font-size:11px;color:rgba(255,255,255,0.55);font-style:italic}
-    .nav-clock{font-size:11px;color:rgba(255,255,255,0.7);font-variant-numeric:tabular-nums;letter-spacing:0.3px}
+    .nav-season-info{white-space:nowrap}
+    .nav-season-info .season-label{font-weight:700;color:rgba(255,255,255,0.95);font-size:12px}
+    .nav-season-info .season-credit{font-size:10px;color:rgba(255,255,255,0.5);font-style:italic}
+    .nav-clock{font-size:10px;color:rgba(255,255,255,0.6);font-variant-numeric:tabular-nums;letter-spacing:0.2px}
+    .nav-cloud-info{font-size:9px;color:rgba(255,255,255,0.45);white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis}
     .player-expand{cursor:pointer;color:#1B5E20;border-bottom:1px dashed #1B5E20;transition:all 0.2s}
     .player-expand:hover{color:#228B22;border-bottom-color:#228B22}
     .player-expand-active{color:#228B22;border-bottom-style:solid}
@@ -204,7 +206,11 @@
     <button class="nav-item" data-page="stats"><span class="nav-item-icon">📊</span><span>榜单</span></button>
   </div>
   <div class="nav-right">
-    <span class="nav-season-info" id="navSeasonInfo"></span>
+    <div class="nav-right-info">
+      <span class="nav-season-info" id="navSeasonInfo"></span>
+      <span class="nav-clock" id="navClock"></span>
+      <span class="nav-cloud-info" id="navCloudInfo" style="display:none"></span>
+    </div>
     <button class="menu-btn" id="menuBtn">☰</button>
   </div>
 </nav>
@@ -352,7 +358,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 80 };
+const APP_VERSION = { major: 1, minor: 0, patch: 81 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-13';
