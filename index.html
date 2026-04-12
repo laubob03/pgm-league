@@ -364,7 +364,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 72 };
+const APP_VERSION = { major: 1, minor: 0, patch: 73 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-13';
@@ -873,10 +873,10 @@ function loadState() {
           if (!t.teamUid && TEAM_UID_MAP[t.name]) t.teamUid = TEAM_UID_MAP[t.name];
         });
       }
-      // 兼容旧版本球队没有 logo 字段 - 自动补充
+      // 兼容旧版本球队 logo 字段 - 统一使用本地 TEAM_LOGOS 路径
       if (typeof TEAM_LOGOS !== 'undefined') {
         state.teams.forEach(t => {
-          if (!t.logo && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
+          if (TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
         });
       }
       saveState();
@@ -4604,7 +4604,7 @@ async function syncDownload() {
     state.currentUser = loginUser;
     // 兼容旧数据没有 logo/teamUid - 自动补充
     state.teams.forEach(t => {
-      if (!t.logo && TEAM_LOGOS && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
+      if (TEAM_LOGOS && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
       if (!t.teamUid && TEAM_UID_MAP && TEAM_UID_MAP[t.name]) t.teamUid = TEAM_UID_MAP[t.name];
     });
     saveState();
@@ -4677,7 +4677,7 @@ function importDataFromFile(event) {
       state.currentUser = loginUser;
       // 兼容旧数据没有 logo/teamUid - 自动补充
       state.teams.forEach(t => {
-        if (!t.logo && TEAM_LOGOS && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
+        if (TEAM_LOGOS && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
         if (!t.teamUid && TEAM_UID_MAP && TEAM_UID_MAP[t.name]) t.teamUid = TEAM_UID_MAP[t.name];
       });
       saveState();
@@ -4942,7 +4942,7 @@ async function autoSyncFromCloud() {
       state.currentUser = loginUser;
       // 兼容旧数据没有 logo/teamUid - 自动补充
       state.teams.forEach(t => {
-        if (!t.logo && TEAM_LOGOS && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
+        if (TEAM_LOGOS && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
         if (!t.teamUid && TEAM_UID_MAP && TEAM_UID_MAP[t.name]) t.teamUid = TEAM_UID_MAP[t.name];
       });
       saveState();
