@@ -364,7 +364,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 69 };
+const APP_VERSION = { major: 1, minor: 0, patch: 70 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-12';
@@ -417,7 +417,7 @@ const EMOJIS = ['⚽','🔵','🔴','🟡','🟠','🟢','⭐','🌟','💎','�
 
 const TEAM_NAMES = {
   super: ['A. Bilbao','Arsenal','Aston Villa','Barcelona','Benfica','FC Bayern','Juventus','Man City','Palmeiras','Paris SG','River','Wrexham'],
-  jiaEast: ['1860 Munchen','Aberdeen','AS Roma','Atl. Tucuman','Dortmund','Fulham','Hertha BSC','Liverpool','Marseille','Monaco','Newcastle','Nottm Forest'],
+  jiaEast: ['1860 Munchen','Aberdeen','AS Roma','Atl. Tucuman','Dortmund','Fulham','Hertha BSC','Liverpool','Marseille','Monaco','Newcastle','Nottingham Forest'],
   jiaWest: ['Ajax','Brighton','Chelsea','Everton','Fiorentina','Frankfurt','Genk','Hamburger SV','Lazio','Leicester','RC Lens','Schalke'],
   yiEast: ['A. Madrid','Asante Kotoko','Como','FC Porto','Leverkusen','Oriental Dragon','R. Madrid','Stuttgart','Sunderland','Tottenham','青岛海神','上海申花'],
   yiWest: ['AC Milan','Atalanta','Celtic','FC Koln','Flamengo','Inter','Man Utd','Napoli','PSV','Sporting','West Ham','Wolfsburg']
@@ -425,66 +425,66 @@ const TEAM_NAMES = {
 
 // Team logos from Transfermarkt CDN
 const TEAM_LOGOS = {
-  'A. Bilbao': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/621.png',
-  'Arsenal': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/11.png',
-  'Aston Villa': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/405.png',
-  'Barcelona': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/131.png',
-  'Benfica': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/54.png',
-  'FC Bayern': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/27.png',
-  'Juventus': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/109.png',
-  'Man City': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/281.png',
-  'Palmeiras': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/1027.png',
-  'Paris SG': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/583.png',
-  'River': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/9.png',
-  'Wrexham': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/2595.png',
-  '1860 Munchen': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/79.png',
-  'Aberdeen': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/369.png',
-  'AS Roma': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/92.png',
-  'Atl. Tucuman': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/10083.png',
-  'Dortmund': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/16.png',
-  'Fulham': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/379.png',
-  'Hertha BSC': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/129.png',
-  'Liverpool': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/230.png',
-  'Marseille': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/244.png',
-  'Monaco': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/162.png',
-  'Newcastle': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/762.png',
-  'Nottm Forest': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/703.png',
-  'Ajax': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/610.png',
-  'Brighton': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/1237.png',
-  'Chelsea': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/631.png',
-  'Everton': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/369.png',
-  'Fiorentina': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/166.png',
-  'Frankfurt': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/91.png',
-  'Genk': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/366.png',
-  'Hamburger SV': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/41.png',
-  'Lazio': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/398.png',
-  'Leicester': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/1003.png',
-  'RC Lens': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/826.png',
-  'Schalke': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/33.png',
-  'A. Madrid': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/1060.png',
-  'Asante Kotoko': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/11183.png',
-  'Como': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/199.png',
-  'FC Porto': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/720.png',
-  'Leverkusen': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/3.png',
-  'Oriental Dragon': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/12683.png',
-  'R. Madrid': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/86.png',
-  'Stuttgart': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/79.png',
-  'Sunderland': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/1486.png',
-  'Tottenham': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/148.png',
-  '青岛海神': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/13961.png',
-  '上海申花': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/16798.png',
-  'AC Milan': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/109.png',
-  'Atalanta': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/1028.png',
-  'Celtic': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/294.png',
-  'FC Koln': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/3.png',
-  'Flamengo': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/136.png',
-  'Inter': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/46.png',
-  'Man Utd': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/985.png',
-  'Napoli': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/6195.png',
-  'PSV': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/1044.png',
-  'Sporting': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/368.png',
-  'West Ham': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/379.png',
-  'Wolfsburg': 'https://img.a4manatransfermarkt.de/images/logo-klein/verein/82.png'
+  'A. Bilbao': 'logos/1664.png',
+  'Arsenal': 'logos/602.png',
+  'Aston Villa': 'logos/603.png',
+  'Barcelona': 'logos/1708.png',
+  'Benfica': 'logos/1487.png',
+  'FC Bayern': 'logos/915.png',
+  'Juventus': 'logos/1139.png',
+  'Man City': 'logos/679.png',
+  'Palmeiras': 'logos/329.png',
+  'Paris SG': 'logos/868.png',
+  'River': 'logos/94.png',
+  'Wrexham': 'logos/741.png',
+  '1860 Munchen': 'logos/955.png',
+  'Aberdeen': 'logos/1536.png',
+  'AS Roma': 'logos/1100.png',
+  'Atl. Tucuman': 'logos/102474.png',
+  'Dortmund': 'logos/907.png',
+  'Fulham': 'logos/654.png',
+  'Hertha BSC': 'logos/2247.png',
+  'Liverpool': 'logos/676.png',
+  'Marseille': 'logos/866.png',
+  'Monaco': 'logos/826.png',
+  'Newcastle': 'logos/688.png',
+  'Nottingham Forest': 'logos/692.png',
+  'Ajax': 'logos/992.png',
+  'Brighton': 'logos/618.png',
+  'Chelsea': 'logos/630.png',
+  'Everton': 'logos/650.png',
+  'Fiorentina': 'logos/1129.png',
+  'Frankfurt': 'logos/912.png',
+  'Genk': 'logos/258.png',
+  'Hamburger SV': 'logos/947.png',
+  'Lazio': 'logos/1144.png',
+  'Leicester': 'logos/673.png',
+  'RC Lens': 'logos/871.png',
+  'Schalke': 'logos/920.png',
+  'A. Madrid': 'logos/1687.png',
+  'Asante Kotoko': 'logos/801910.png',
+  'Como': 'logos/1123.png',
+  'FC Porto': 'logos/1478.png',
+  'Leverkusen': 'logos/901.png',
+  'Oriental Dragon': 'logos/83111757.png',
+  'R. Madrid': 'logos/1736.png',
+  'Stuttgart': 'logos/960.png',
+  'Sunderland': 'logos/722.png',
+  'Tottenham': 'logos/728.png',
+  '青岛海神': 'logos/23125629.png',
+  '上海申花': 'logos/414.png',
+  'AC Milan': 'logos/1099.png',
+  'Atalanta': 'logos/1106.png',
+  'Celtic': 'logos/1569.png',
+  'FC Koln': 'logos/916.png',
+  'Flamengo': 'logos/322.png',
+  'Inter': 'logos/1135.png',
+  'Man Utd': 'logos/680.png',
+  'Napoli': 'logos/1150.png',
+  'PSV': 'logos/1028.png',
+  'Sporting': 'logos/1489.png',
+  'West Ham': 'logos/735.png',
+  'Wolfsburg': 'logos/961.png'
 };
 
 const COACH_NAMES = ['李明','王强','张伟','刘洋','陈杰','杨帆','赵磊','孙杰','周宇','吴昊','郑鹏','刘建'];
@@ -564,7 +564,7 @@ const PLAYERS_DB = {
   'Newcastle': [
     {uid:49038942,name:'Benoit Badiashile',age:25.0,releaseClause:90},{uid:2000053516,name:'Adam Wharton',age:22.0,releaseClause:68},{uid:2000257209,name:'Givairo Read',age:20.0,releaseClause:80},{uid:28115831,name:'James Garner',age:25.0,releaseClause:35},{uid:49041157,name:'Melvin Bard',age:25.0,releaseClause:25},{uid:85140301,name:'Christopher Nkunku',age:27.0,releaseClause:40},{uid:28106999,name:'Brahim Díaz',age:25.0,releaseClause:30},{uid:35018013,name:'Kevin Trapp',age:34.0,releaseClause:4},{uid:43272557,name:'Davide Frattesi',age:25.0,releaseClause:30},{uid:48044735,name:'Amine Gouiri',age:25.0,releaseClause:20},{uid:49047065,name:'Mohamed Simakan',age:25.0,releaseClause:30},{uid:53143395,name:'Jorgen Strand Larsen',age:25.0,releaseClause:40},{uid:57178516,name:'Radu Dragusin',age:24.0,releaseClause:60},{uid:73201428,name:'Guela Doué',age:23.0,releaseClause:25},{uid:2000006280,name:'Mohamed-Ali Cho',age:22.0,releaseClause:20},{uid:2000011415,name:'Kévin Danois',age:22.0,releaseClause:15},{uid:2000085414,name:'Keke Topp',age:22.0,releaseClause:10},{uid:2000102722,name:'Wilson Odobert',age:21.0,releaseClause:30},{uid:2000142236,name:'Romain Esse',age:21.0,releaseClause:10},{uid:2000184285,name:'Clement Bischoff',age:20.0,releaseClause:12},{uid:2000190480,name:'Jayden Meghoma',age:20.0,releaseClause:10},{uid:2000205018,name:'Mamadou Diakhon',age:20.0,releaseClause:10},{uid:2000226596,name:'Joeri Jesse Heerkens',age:20.0,releaseClause:6},{uid:2000224700,name:'Adriano Jagusic',age:19.5,releaseClause:5},{uid:2000188079,name:'Dayann Methalie',age:20.0,releaseClause:0},{uid:2000280486,name:'Moustapha Dabo',age:18.0,releaseClause:0},{uid:2000288364,name:'Ibrahim Kanté',age:19.0,releaseClause:0},{uid:2000288697,name:'Harrison Armstrong',age:19.0,releaseClause:0},{uid:2000313833,name:'Alexander Rossing-Lelesiit',age:19.0,releaseClause:0},{uid:2000407283,name:'Marvyn Muzungu',age:18.0,releaseClause:0},{uid:2000475043,name:'Stephan Zagadou',age:17.0,releaseClause:0},{uid:2000368352,name:'Ifeanyi Ndukwe',age:17.5,releaseClause:0},{uid:2000333625,name:'Gessime Yassine',age:19.5,releaseClause:0}
   ],
-  'Nottm Forest': [
+  'Nottingham Forest': [
     {uid:13158205,name:'Victor Osimhen',age:26.0,releaseClause:200},{uid:28127254,name:'Elliot Anderson',age:23.0,releaseClause:75},{uid:49047182,name:'Manu Koné',age:25.0,releaseClause:65},{uid:91138280,name:'Leroy Sané',age:29.0,releaseClause:86},{uid:12094339,name:'Abakar Sylla',age:23.0,releaseClause:25},{uid:12095249,name:'Ibrahim Diarra',age:19.0,releaseClause:4},{uid:18115949,name:'Jackson Tchatchoua',age:24.0,releaseClause:15},{uid:28067800,name:'Jack Grealish',age:29.0,releaseClause:8},{uid:33001438,name:'Hrádecký',age:35.0,releaseClause:4},{uid:37051440,name:'Danilho Doekhi',age:27.0,releaseClause:8},{uid:43317730,name:'Salvatore Esposito',age:25.0,releaseClause:4},{uid:43409366,name:'Lorenzo Lucca',age:25.0,releaseClause:80},{uid:61093823,name:'Josh Doig',age:24.0,releaseClause:15},{uid:67276474,name:'Benat Turrientes',age:24.0,releaseClause:3},{uid:83335582,name:'Diego Callai',age:22.0,releaseClause:1},{uid:2000006158,name:'Willy Kambwala',age:21.0,releaseClause:60},{uid:2000302092,name:'Trevan Sanusi',age:19.0,releaseClause:8},{uid:2000356711,name:'Christopher Cupps',age:18.0,releaseClause:5},{uid:2000447889,name:'victor ozhianvuna',age:17.0,releaseClause:10},{uid:2000496104,name:'Gilberto Mora',age:17.0,releaseClause:40},{uid:19258642,name:'Bruno Henrique',age:34.0,releaseClause:2},{uid:2000382120,name:'Chido Obi-Martin',age:18.0,releaseClause:40},{uid:96088106,name:'Przemysław Płacheta',age:27.0,releaseClause:3},{uid:83174775,name:'Joao Mário',age:25.0,releaseClause:4},{uid:18083491,name:'Leon Bailey',age:27.0,releaseClause:10},{uid:2000268036,name:'Bouziane',age:19.0,releaseClause:0},{uid:2000297774,name:'Shane Kluivert',age:18.0,releaseClause:0},{uid:2000370206,name:'Dastan Satpaev',age:17.0,releaseClause:0},{uid:2000406728,name:'Ilyas Azizi',age:18.0,releaseClause:0},{uid:2000487855,name:'Arone Gadou',age:17.0,releaseClause:0},{uid:2000506287,name:'Finley Grigg',age:16.5,releaseClause:0},{uid:2000203153,name:'Tejiri Adejenughure',age:18.0,releaseClause:0},{uid:2000302495,name:'Anhán Candé',age:17.0,releaseClause:0}
   ],
   'Brighton': [
@@ -1914,7 +1914,7 @@ function renderScorersList(players, type = 'goals') {
     const medal = i === 0 ? 'gold-medal' : i === 1 ? 'silver-medal' : i === 2 ? 'bronze-medal' : '';
     const value = type === 'goals' ? p.goals : type === 'assists' ? p.assists : (p.motmCount || 0);
     const uid = p.uid || (p.id ? p.id.split('_')[1] : '');
-    html += `<tr><td class="stats-rank ${medal}">${i + 1}</td><td><strong class="player-expand" onclick="togglePlayerSeasonDetail(this,'${uid}')">${p.name}</strong></td><td><span class="team-name-clickable" onclick="showTeamDetail('${p.teamId}')">${p.teamName}</span></td><td><strong>${value}</strong></td></tr>`;
+    html += `<tr><td class="stats-rank ${medal}">${i + 1}</td><td><strong class="player-expand" onclick="togglePlayerSeasonDetail(this,'${uid}')">${p.name}</strong></td><td>${p.logo ? '<img src="'+p.logo+'" style="width:14px;height:14px;object-fit:contain;border-radius:3px;vertical-align:middle;margin-right:3px" onerror="this.style.display=\'none\'">' : ''}<span class="team-name-clickable" onclick="showTeamDetail('${p.teamId}')">${p.teamName}</span></td><td><strong>${value}</strong></td></tr>`;
   });
   html += '</tbody></table>';
   return html;
@@ -2344,7 +2344,7 @@ function getCupPlayerStats(cupId, type, limit) {
     [m.homeTeam, m.awayTeam].forEach(tid => {
       const t = sd.teams.find(x => x.id === tid);
       if (!t) return;
-      if (!stats[tid]) stats[tid] = { teamId: tid, teamName: t.name, players: {} };
+      if (!stats[tid]) stats[tid] = { teamId: tid, teamName: t.name, logo: t.logo, players: {} };
       t.players.forEach(p => { if (!stats[tid].players[p.id]) stats[tid].players[p.id] = { id: p.id, name: p.name, goals: 0, assists: 0, motm: 0 }; });
     });
     if (m.scorers) m.scorers.forEach(s => { if (stats[s.teamId] && stats[s.teamId].players[s.playerId]) stats[s.teamId].players[s.playerId].goals++; });
@@ -2354,9 +2354,9 @@ function getCupPlayerStats(cupId, type, limit) {
   const all = [];
   Object.values(stats).forEach(s => {
     Object.values(s.players).forEach(p => {
-      if (type === 'goals' && p.goals > 0) all.push({ id: p.id, name: p.name, teamId: s.teamId, teamName: s.teamName, goals: p.goals, assists: p.assists, motmCount: p.motm });
-      else if (type === 'assists' && p.assists > 0) all.push({ id: p.id, name: p.name, teamId: s.teamId, teamName: s.teamName, goals: p.goals, assists: p.assists, motmCount: p.motm });
-      else if (type === 'motm' && p.motm > 0) all.push({ id: p.id, name: p.name, teamId: s.teamId, teamName: s.teamName, goals: p.goals, assists: p.assists, motmCount: p.motm });
+      if (type === 'goals' && p.goals > 0) all.push({ id: p.id, name: p.name, teamId: s.teamId, teamName: s.teamName, logo: s.logo, goals: p.goals, assists: p.assists, motmCount: p.motm });
+      else if (type === 'assists' && p.assists > 0) all.push({ id: p.id, name: p.name, teamId: s.teamId, teamName: s.teamName, logo: s.logo, goals: p.goals, assists: p.assists, motmCount: p.motm });
+      else if (type === 'motm' && p.motm > 0) all.push({ id: p.id, name: p.name, teamId: s.teamId, teamName: s.teamName, logo: s.logo, goals: p.goals, assists: p.assists, motmCount: p.motm });
     });
   });
   const valKey = type === 'goals' ? 'goals' : type === 'assists' ? 'assists' : 'motmCount';
