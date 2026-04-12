@@ -364,7 +364,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 68 };
+const APP_VERSION = { major: 1, minor: 0, patch: 69 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-12';
@@ -375,6 +375,25 @@ const LEAGUE_NAMES = {
   super: '超级联赛', jiaEast: '甲级-东区', jiaWest: '甲级-西区', yiEast: '乙级-东区', yiWest: '乙级-西区'
 };
 const CUP_NAMES = { championsCup: '🏆 冠军杯', leagueCup: '🏆 联盟杯', associationCup: '🏆 协会杯' };
+
+// 球队名称 → 球队UID 映射（唯一识别码）
+const TEAM_UID_MAP = {
+  'A. Bilbao': 1664, 'Arsenal': 602, 'Aston Villa': 603, 'Barcelona': 1708,
+  'Benfica': 1487, 'FC Bayern': 915, 'Juventus': 1139, 'Man City': 679,
+  'Palmeiras': 329, 'Paris SG': 868, 'River': 94, 'Wrexham': 741,
+  '1860 Munchen': 955, 'Aberdeen': 1536, 'Ajax': 992, 'AS Roma': 1100,
+  'Atl. Tucuman': 102474, 'Brighton': 618, 'Chelsea': 630, 'Dortmund': 907,
+  'Everton': 650, 'Fiorentina': 1129, 'Frankfurt': 912, 'Fulham': 654,
+  'Genk': 258, 'Hamburger SV': 947, 'Hertha BSC': 2247, 'Lazio': 1144,
+  'Leicester': 673, 'Liverpool': 676, 'Marseille': 866, 'Monaco': 826,
+  'Newcastle': 688, 'Nottingham Forest': 692, 'RC Lens': 871, 'Schalke': 920,
+  'AC Milan': 1099, 'A. Madrid': 1687, 'Asante Kotoko': 801910, 'Atalanta': 1106,
+  'Celtic': 1569, 'Como': 1123, 'FC Koln': 916, 'FC Porto': 1478,
+  'Flamengo': 322, 'Inter': 1135, 'Leverkusen': 901, 'Man Utd': 680,
+  'Napoli': 1150, 'Oriental Dragon': 83111757, 'PSV': 1028, 'R. Madrid': 1736,
+  'Sporting': 1489, 'Stuttgart': 960, 'Sunderland': 722, 'Tottenham': 728,
+  'West Ham': 735, 'Wolfsburg': 961, '青岛海神': 23125629, '上海申花': 414
+};
 
 // 数据员配置表
 const DATA_RECORDERS = {
@@ -840,6 +859,12 @@ function loadState() {
       // 兼容旧版本没有赛季字段 - 自动识别为第62赛季
       if (!state.currentSeasonId) state.currentSeasonId = 62;
       if (!state.seasons) state.seasons = {};
+      // 兼容旧版本球队没有 teamUid 字段 - 自动补充
+      if (typeof TEAM_UID_MAP !== 'undefined') {
+        state.teams.forEach(t => {
+          if (!t.teamUid && TEAM_UID_MAP[t.name]) t.teamUid = TEAM_UID_MAP[t.name];
+        });
+      }
       saveState();
     }
   } else {
@@ -903,6 +928,7 @@ function initData() {
         shortName: teamName.slice(0,6),
         logo,
         league,
+        teamUid: TEAM_UID_MAP[teamName] || null,
         coach,
         assistantCoaches,
         players
@@ -3360,6 +3386,7 @@ function importLeagueTeams() {
           shortName: teamName.slice(0, 6),
           logo,
           league,
+          teamUid: TEAM_UID_MAP[teamName] || null,
           coach: '待定',
           assistantCoaches: [],
           players: []
