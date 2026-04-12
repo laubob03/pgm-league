@@ -364,10 +364,10 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 70 };
+const APP_VERSION = { major: 1, minor: 0, patch: 71 };
 
 const APP_AUTHOR = 'J.K';
-const APP_BUILD_DATE = '2026-04-12';
+const APP_BUILD_DATE = '2026-04-13';
 function getAppVersion() { return `v${APP_VERSION.major}.${APP_VERSION.minor}.${APP_VERSION.patch}`; }
 
 // ============ DATA ============
@@ -486,6 +486,14 @@ const TEAM_LOGOS = {
   'West Ham': 'logos/735.png',
   'Wolfsburg': 'logos/961.png'
 };
+
+// 通用获取队徽函数 - 优先用 team.logo，兜底用 TEAM_LOGOS[name]
+function getTeamLogo(team) {
+  if (!team) return '';
+  if (team.logo) return team.logo;
+  if (team.name && TEAM_LOGOS && TEAM_LOGOS[team.name]) return TEAM_LOGOS[team.name];
+  return '';
+}
 
 const COACH_NAMES = ['李明','王强','张伟','刘洋','陈杰','杨帆','赵磊','孙杰','周宇','吴昊','郑鹏','刘建'];
 const ASSISTANT_COACH_NAMES = ['陈明','陈东','陈静','陈文','陈晓','陈华','陈军','陈勇','陈刚','陈波','陈超','陈磊'];
@@ -863,6 +871,12 @@ function loadState() {
       if (typeof TEAM_UID_MAP !== 'undefined') {
         state.teams.forEach(t => {
           if (!t.teamUid && TEAM_UID_MAP[t.name]) t.teamUid = TEAM_UID_MAP[t.name];
+        });
+      }
+      // 兼容旧版本球队没有 logo 字段 - 自动补充
+      if (typeof TEAM_LOGOS !== 'undefined') {
+        state.teams.forEach(t => {
+          if (!t.logo && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
         });
       }
       saveState();
@@ -4588,9 +4602,12 @@ async function syncDownload() {
     state = cloudData;
     delete state._lastUpload; // 清理云端元数据，不保存到本地
     state.currentUser = loginUser;
+    // 兼容旧数据没有 logo/teamUid - 自动补充
+    state.teams.forEach(t => {
+      if (!t.logo && TEAM_LOGOS && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
+      if (!t.teamUid && TEAM_UID_MAP && TEAM_UID_MAP[t.name]) t.teamUid = TEAM_UID_MAP[t.name];
+    });
     saveState();
-    
-    // 记录同步时间
     const now = new Date();
     const timeStr = now.getFullYear() + '-' + 
       String(now.getMonth()+1).padStart(2,'0') + '-' + 
@@ -4658,6 +4675,11 @@ function importDataFromFile(event) {
       const loginUser = state.currentUser;
       state = data;
       state.currentUser = loginUser;
+      // 兼容旧数据没有 logo/teamUid - 自动补充
+      state.teams.forEach(t => {
+        if (!t.logo && TEAM_LOGOS && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
+        if (!t.teamUid && TEAM_UID_MAP && TEAM_UID_MAP[t.name]) t.teamUid = TEAM_UID_MAP[t.name];
+      });
       saveState();
       closeModal();
       updateSidebar();
@@ -4918,6 +4940,11 @@ async function autoSyncFromCloud() {
       state = cloudData;
       delete state._lastUpload;
       state.currentUser = loginUser;
+      // 兼容旧数据没有 logo/teamUid - 自动补充
+      state.teams.forEach(t => {
+        if (!t.logo && TEAM_LOGOS && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
+        if (!t.teamUid && TEAM_UID_MAP && TEAM_UID_MAP[t.name]) t.teamUid = TEAM_UID_MAP[t.name];
+      });
       saveState();
 
       const now = new Date();
