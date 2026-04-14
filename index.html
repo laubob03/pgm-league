@@ -358,10 +358,10 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 81 };
+const APP_VERSION = { major: 1, minor: 0, patch: 82 };
 
 const APP_AUTHOR = 'J.K';
-const APP_BUILD_DATE = '2026-04-13';
+const APP_BUILD_DATE = '2026-04-14';
 function getAppVersion() { return `v${APP_VERSION.major}.${APP_VERSION.minor}.${APP_VERSION.patch}`; }
 
 // ============ DATA ============
@@ -874,10 +874,84 @@ function loadState() {
           if (TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
         });
       }
+      // 从比赛记录重新计算所有球员统计，修复历史数据不一致问题
+      recalculateAllPlayerStats(state);
+      // 同时修复归档赛季数据
+      if (state.seasons) {
+        Object.keys(state.seasons).forEach(sid => recalculateAllPlayerStats(state.seasons[sid]));
+      }
       saveState();
     }
   } else {
     initData();
+  }
+}
+
+// ============ DATA RECALC ============
+// 从 match 记录重新计算所有球员的 goals/assists/motmCount/gamesPlayed（修复历史数据不一致）
+function recalculateAllPlayerStats(sd) {
+  if (!sd || !sd.teams) return;
+  // 先清零所有球员统计
+  sd.teams.forEach(t => {
+    if (!t.players) return;
+    t.players.forEach(p => { p.goals = 0; p.assists = 0; p.motmCount = 0; p.gamesPlayed = 0; });
+  });
+  // 从联赛比赛记录重建
+  if (sd.matches) {
+    const involvedPlayers = new Set();
+    sd.matches.filter(m => m.status === 'completed').forEach(m => {
+      const matchPlayers = new Set();
+      if (m.scorers) m.scorers.forEach(s => {
+        const team = sd.teams.find(t => t.id === s.teamId);
+        if (!team) return;
+        const p = team.players.find(x => x.id === s.playerId);
+        if (p) { p.goals++; matchPlayers.add(p.id); }
+      });
+      if (m.assists) m.assists.forEach(a => {
+        const team = sd.teams.find(t => t.id === a.teamId);
+        if (!team) return;
+        const p = team.players.find(x => x.id === a.playerId);
+        if (p) { p.assists++; matchPlayers.add(p.id); }
+      });
+      if (m.motm) {
+        const team = sd.teams.find(t => t.id === m.motm.split('_')[0]);
+        if (team) { const p = team.players.find(x => x.id === m.motm); if (p) p.motmCount++; }
+      }
+      matchPlayers.forEach(pid => {
+        const p = sd.teams.flatMap(t => t.players || []).find(x => x.id === pid);
+        if (p) p.gamesPlayed++;
+      });
+    });
+  }
+  // 从杯赛比赛记录重建
+  if (sd.cups) {
+    Object.keys(sd.cups).forEach(cid => {
+      const cup = sd.cups[cid];
+      if (!cup || !cup.matches) return;
+      cup.matches.filter(m => m.status === 'completed').forEach(m => {
+        const cupMatchPlayers = new Set();
+        if (m.scorers) m.scorers.forEach(s => {
+          const team = sd.teams.find(t => t.id === s.teamId);
+          if (!team) return;
+          const p = team.players.find(x => x.id === s.playerId);
+          if (p) { p.goals++; cupMatchPlayers.add(p.id); }
+        });
+        if (m.assists) m.assists.forEach(a => {
+          const team = sd.teams.find(t => t.id === a.teamId);
+          if (!team) return;
+          const p = team.players.find(x => x.id === a.playerId);
+          if (p) { p.assists++; cupMatchPlayers.add(p.id); }
+        });
+        if (m.motm) {
+          const team = sd.teams.find(t => t.id === m.motm.split('_')[0]);
+          if (team) { const p = team.players.find(x => x.id === m.motm); if (p) p.motmCount++; }
+        }
+        cupMatchPlayers.forEach(pid => {
+          const p = sd.teams.flatMap(t => t.players || []).find(x => x.id === pid);
+          if (p) p.gamesPlayed++;
+        });
+      });
+    });
   }
 }
 
@@ -1399,10 +1473,16 @@ function submitCupMatchResult(matchId, cupId) {
   match.scorers = [];
   match.assists = [];
   match.motm = motmId || null;
-  document.querySelectorAll('[data-goal="home"]').forEach(inp => { const g = parseInt(inp.value) || 0; if (g > 0) { const p = homeTeam.players.find(x => x.id === inp.dataset.pid); if (p) { p.goals = (p.goals || 0) + g; p.gamesPlayed = (p.gamesPlayed || 0) + g; for (let i = 0; i < g; i++) match.scorers.push({ playerId: inp.dataset.pid, teamId: match.homeTeam, minute: null }); } } });
-  document.querySelectorAll('[data-goal="away"]').forEach(inp => { const g = parseInt(inp.value) || 0; if (g > 0) { const p = awayTeam.players.find(x => x.id === inp.dataset.pid); if (p) { p.goals = (p.goals || 0) + g; p.gamesPlayed = (p.gamesPlayed || 0) + g; for (let i = 0; i < g; i++) match.scorers.push({ playerId: inp.dataset.pid, teamId: match.awayTeam, minute: null }); } } });
-  document.querySelectorAll('[data-ast="home"]').forEach(inp => { const a = parseInt(inp.value) || 0; if (a > 0) { const p = homeTeam.players.find(x => x.id === inp.dataset.pid); if (p) { p.assists = (p.assists || 0) + a; p.gamesPlayed = (p.gamesPlayed || 0) + a; for (let i = 0; i < a; i++) match.assists.push({ playerId: inp.dataset.pid, teamId: match.homeTeam }); } } });
-  document.querySelectorAll('[data-ast="away"]').forEach(inp => { const a = parseInt(inp.value) || 0; if (a > 0) { const p = awayTeam.players.find(x => x.id === inp.dataset.pid); if (p) { p.assists = (p.assists || 0) + a; p.gamesPlayed = (p.gamesPlayed || 0) + a; for (let i = 0; i < a; i++) match.assists.push({ playerId: inp.dataset.pid, teamId: match.awayTeam }); } } });
+  const cupInvolvedPlayers = new Set();
+  document.querySelectorAll('[data-goal="home"]').forEach(inp => { const g = parseInt(inp.value) || 0; if (g > 0) { const p = homeTeam.players.find(x => x.id === inp.dataset.pid); if (p) { p.goals = (p.goals || 0) + g; cupInvolvedPlayers.add(p.id); for (let i = 0; i < g; i++) match.scorers.push({ playerId: inp.dataset.pid, teamId: match.homeTeam, minute: null }); } } });
+  document.querySelectorAll('[data-goal="away"]').forEach(inp => { const g = parseInt(inp.value) || 0; if (g > 0) { const p = awayTeam.players.find(x => x.id === inp.dataset.pid); if (p) { p.goals = (p.goals || 0) + g; cupInvolvedPlayers.add(p.id); for (let i = 0; i < g; i++) match.scorers.push({ playerId: inp.dataset.pid, teamId: match.awayTeam, minute: null }); } } });
+  document.querySelectorAll('[data-ast="home"]').forEach(inp => { const a = parseInt(inp.value) || 0; if (a > 0) { const p = homeTeam.players.find(x => x.id === inp.dataset.pid); if (p) { p.assists = (p.assists || 0) + a; cupInvolvedPlayers.add(p.id); for (let i = 0; i < a; i++) match.assists.push({ playerId: inp.dataset.pid, teamId: match.homeTeam }); } } });
+  document.querySelectorAll('[data-ast="away"]').forEach(inp => { const a = parseInt(inp.value) || 0; if (a > 0) { const p = awayTeam.players.find(x => x.id === inp.dataset.pid); if (p) { p.assists = (p.assists || 0) + a; cupInvolvedPlayers.add(p.id); for (let i = 0; i < a; i++) match.assists.push({ playerId: inp.dataset.pid, teamId: match.awayTeam }); } } });
+  // 统一为每个参与进球/助攻的球员 +1 gamesPlayed（而不是按进球数/助攻数累加）
+  cupInvolvedPlayers.forEach(pid => {
+    const p = [...homeTeam.players, ...awayTeam.players].find(x => x.id === pid);
+    if (p) p.gamesPlayed = (p.gamesPlayed || 0) + 1;
+  });
   if (motmId) { const motmP = [...homeTeam.players, ...awayTeam.players].find(x => x.id === motmId); if (motmP) motmP.motmCount = (motmP.motmCount || 0) + 1; }
   saveState(); closeModal(); render(); showToast(isEdit ? '比赛结果已更新！' : '比赛结果已保存！');
 }
@@ -2000,22 +2080,31 @@ function getPlayerCrossSeasonStats(playerUid, playerName) {
     let transferFrom = '';
     let transferDate = '';
 
-    // 联赛统计：从球员对象读取
+    // 联赛统计：从比赛记录实时计算（与杯赛一致）
     if (sd.teams) {
       for (const team of sd.teams) {
         if (!team.players) continue;
         const p = team.players.find(x => x.uid == playerUid || (x.id && x.id.includes('_' + playerUid)));
         if (p) {
           teamName = team.name;
-          leagueGoals = p.goals || 0;
-          leagueAssists = p.assists || 0;
-          leagueMotm = p.motmCount || 0;
           transferFee = p.transferFee || 0;
           transferFrom = p.transferFrom || '';
           transferDate = p.transferDate || '';
           break;
         }
       }
+    }
+    // 联赛进球/助攻/MVP：从比赛记录实时计算
+    if (sd.matches && teamName) {
+      sd.matches.filter(m => m.status === 'completed').forEach(m => {
+        if (m.scorers) m.scorers.forEach(s => {
+          if (String(s.playerId).includes('_' + playerUid)) leagueGoals++;
+        });
+        if (m.assists) m.assists.forEach(a => {
+          if (String(a.playerId).includes('_' + playerUid)) leagueAssists++;
+        });
+        if (m.motm && String(m.motm).includes('_' + playerUid)) leagueMotm++;
+      });
     }
 
     // 杯赛统计：从比赛记录实时计算
@@ -2296,42 +2385,41 @@ function calculateStandings(teams, sd) {
 }
 
 function getTopScorers(limit = 10, league = 'super') {
-  const sd = getCurrentSeasonData();
-  const allPlayers = [];
-  sd.teams.filter(t => t.league === league).forEach(t => {
-    t.players.forEach(p => {
-      if (p.goals > 0) {
-        allPlayers.push({ ...p, teamId: t.id, teamName: t.name, teamShortName: t.shortName, logo: getTeamLogo(t) });
-      }
-    });
-  });
-  return allPlayers.sort((a, b) => b.goals - a.goals).slice(0, limit);
+  return getLeaguePlayerStats(league, 'goals', limit);
 }
-
 function getTopAssists(limit = 10, league = 'super') {
-  const sd = getCurrentSeasonData();
-  const allPlayers = [];
-  sd.teams.filter(t => t.league === league).forEach(t => {
-    t.players.forEach(p => {
-      if (p.assists > 0) {
-        allPlayers.push({ ...p, teamId: t.id, teamName: t.name, teamShortName: t.shortName, logo: getTeamLogo(t) });
-      }
-    });
-  });
-  return allPlayers.sort((a, b) => b.assists - a.assists).slice(0, limit);
+  return getLeaguePlayerStats(league, 'assists', limit);
 }
-
 function getTopMotm(limit = 10, league = 'super') {
+  return getLeaguePlayerStats(league, 'motm', limit);
+}
+// 联赛统计：从 match.scorers/assists/motm 实时计算（与杯赛 getCupPlayerStats 一致）
+function getLeaguePlayerStats(league, type, limit) {
   const sd = getCurrentSeasonData();
-  const allPlayers = [];
-  sd.teams.filter(t => t.league === league).forEach(t => {
-    t.players.forEach(p => {
-      if (p.motmCount && p.motmCount > 0) {
-        allPlayers.push({ ...p, teamId: t.id, teamName: t.name, teamShortName: t.shortName, logo: getTeamLogo(t) });
-      }
+  const leagueTeamIds = new Set(sd.teams.filter(t => t.league === league).map(t => t.id));
+  const matches = sd.matches.filter(m => leagueTeamIds.has(m.homeTeam) && leagueTeamIds.has(m.awayTeam) && m.status === 'completed');
+  const stats = {};
+  matches.forEach(m => {
+    [m.homeTeam, m.awayTeam].forEach(tid => {
+      const t = sd.teams.find(x => x.id === tid);
+      if (!t || t.league !== league) return;
+      if (!stats[tid]) stats[tid] = { teamId: tid, teamName: t.name, teamShortName: t.shortName, logo: getTeamLogo(t), players: {} };
+      t.players.forEach(p => { if (!stats[tid].players[p.id]) stats[tid].players[p.id] = { id: p.id, uid: p.uid, name: p.name, goals: 0, assists: 0, motm: 0 }; });
+    });
+    if (m.scorers) m.scorers.forEach(s => { if (stats[s.teamId] && stats[s.teamId].players[s.playerId]) stats[s.teamId].players[s.playerId].goals++; });
+    if (m.assists) m.assists.forEach(a => { if (stats[a.teamId] && stats[a.teamId].players[a.playerId]) stats[a.teamId].players[a.playerId].assists++; });
+    if (m.motm) { [m.homeTeam, m.awayTeam].forEach(tid => { if (stats[tid] && stats[tid].players[m.motm]) stats[tid].players[m.motm].motm++; }); }
+  });
+  const all = [];
+  Object.values(stats).forEach(s => {
+    Object.values(s.players).forEach(p => {
+      if (type === 'goals' && p.goals > 0) all.push({ id: p.id, uid: p.uid, name: p.name, teamId: s.teamId, teamName: s.teamName, teamShortName: s.teamShortName, logo: s.logo, goals: p.goals, assists: p.assists, motmCount: p.motm });
+      else if (type === 'assists' && p.assists > 0) all.push({ id: p.id, uid: p.uid, name: p.name, teamId: s.teamId, teamName: s.teamName, teamShortName: s.teamShortName, logo: s.logo, goals: p.goals, assists: p.assists, motmCount: p.motm });
+      else if (type === 'motm' && p.motm > 0) all.push({ id: p.id, uid: p.uid, name: p.name, teamId: s.teamId, teamName: s.teamName, teamShortName: s.teamShortName, logo: s.logo, goals: p.goals, assists: p.assists, motmCount: p.motm });
     });
   });
-  return allPlayers.sort((a, b) => b.motmCount - a.motmCount).slice(0, limit);
+  const valKey = type === 'goals' ? 'goals' : type === 'assists' ? 'assists' : 'motmCount';
+  return all.sort((a, b) => b[valKey] - a[valKey]).slice(0, limit || 20);
 }
 
 // 杯赛数据榜单
@@ -2873,70 +2961,9 @@ function submitMatchResult(matchId) {
   if (!homeTeam || !awayTeam) { showToast('球队未找到'); return; }
 
   const isEdit = window.isEditing;
-  
-  // 直接使用super联赛
-  let league = 'super';
-  
-  // 确保积分榜存在
-  if (!state.standings) { 
-    state.standings = {super: [], a: [], b: []};
-  }
-  if (!state.standings['super']) {
-    state.standings['super'] = [];
-  }
-  
-  // 如果积分榜为空，初始化
-  if (state.standings['super'].length === 0) {
-    state.teams.forEach(t => {
-      if (t.league === 'super' || !t.league) {
-        state.standings['super'].push({
-          teamId: t.id,
-          played: 0, won: 0, draw: 0, lost: 0,
-          gf: 0, ga: 0, gd: 0, points: 0
-        });
-      }
-    });
-  }
-  
-  const hs = state.standings['super'].find(s => s.teamId === match.homeTeam);
-  const as = state.standings['super'].find(s => s.teamId === match.awayTeam);
-  
-  // 如果积分榜中没找到，添加
-  if (!hs) {
-    state.standings['super'].push({
-      teamId: match.homeTeam,
-      played: 0, won: 0, draw: 0, lost: 0,
-      gf: 0, ga: 0, gd: 0, points: 0
-    });
-  }
-  if (!as) {
-    state.standings['super'].push({
-      teamId: match.awayTeam,
-      played: 0, won: 0, draw: 0, lost: 0,
-      gf: 0, ga: 0, gd: 0, points: 0
-    });
-  }
-  
-  const hs2 = state.standings['super'].find(s => s.teamId === match.homeTeam);
-  const as2 = state.standings['super'].find(s => s.teamId === match.awayTeam);
 
-  if (isEdit && hs2 && as2) {
-    // 还原积分榜
-    const oldHomeScore = match.homeScore || 0;
-    const oldAwayScore = match.awayScore || 0;
-    hs2.played--;
-    as2.played--;
-    hs2.gf -= oldHomeScore;
-    hs2.ga -= oldAwayScore;
-    as2.gf -= oldAwayScore;
-    as2.ga -= oldHomeScore;
-    hs2.gd = hs2.gf - hs2.ga;
-    as2.gd = as2.gf - as2.ga;
-    if (oldHomeScore > oldAwayScore) { hs2.won--; hs2.points -= 3; as2.lost--; }
-    else if (oldHomeScore < oldAwayScore) { as2.won--; as2.points -= 3; hs2.lost--; }
-    else { hs2.draw--; hs2.points--; as2.draw--; as2.points--; }
-
-    // 还原球员数据
+  // 还原旧球员数据
+  if (isEdit) {
     if (match.scorers) {
       match.scorers.forEach(s => {
         const team = s.teamId === match.homeTeam ? homeTeam : awayTeam;
@@ -3023,17 +3050,6 @@ function submitMatchResult(matchId) {
   if (motmId) {
     const motmP = [...homeTeam.players, ...awayTeam.players].find(x => x.id === motmId);
     if (motmP) motmP.motmCount = (motmP.motmCount || 0) + 1;
-  }
-
-  // 更新积分榜
-  if (hs2 && as2) {
-    hs2.played++; as2.played++;
-    hs2.gf += homeScore; hs2.ga += awayScore;
-    as2.gf += awayScore; as2.ga += homeScore;
-    hs2.gd = hs2.gf - hs2.ga; as2.gd = as2.gf - as2.ga;
-    if (homeScore > awayScore) { hs2.won++; hs2.points += 3; as2.lost++; }
-    else if (homeScore < awayScore) { as2.won++; as2.points += 3; hs2.lost++; }
-    else { hs2.draw++; as2.draw++; hs2.points++; as2.points++; }
   }
 
   saveState();
@@ -3125,6 +3141,16 @@ function showLoginModal() {
       updateSidebar();
       render();
       showToast('欢迎，' + rec.name + '！');
+    } else if (state.teams && state.teams.find(t => t.id === teamId)) {
+      // 教练登录（球队ID: t1-t60，默认密码: 123456）
+      if (password !== '123456') { showToast('密码错误！'); return; }
+      const team = state.teams.find(t => t.id === teamId);
+      state.currentUser = { teamId: team.id, teamName: team.name, coachName: team.coach || team.name };
+      saveState();
+      closeModal();
+      updateSidebar();
+      render();
+      showToast('欢迎，' + (team.coach || team.name) + '主教练！');
     } else {
       showToast('密码错误！');
     }
@@ -4364,8 +4390,10 @@ async function recorderDownload() {
         if (data.cups) {
           if (!state.cups) state.cups = {};
           Object.keys(data.cups).forEach(cid => { state.cups[cid] = data.cups[cid]; });
-          saveState();
         }
+        // 合并后重新计算所有球员统计，确保一致性
+        recalculateAllPlayerStats(state);
+        saveState();
       }
     } else {
       // 从独立Gist下载（原有逻辑）
@@ -4603,6 +4631,11 @@ async function syncDownload() {
       if (TEAM_LOGOS && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
       if (!t.teamUid && TEAM_UID_MAP && TEAM_UID_MAP[t.name]) t.teamUid = TEAM_UID_MAP[t.name];
     });
+    // 下载后重新计算所有球员统计，确保一致性
+    recalculateAllPlayerStats(state);
+    if (state.seasons) {
+      Object.keys(state.seasons).forEach(sid => recalculateAllPlayerStats(state.seasons[sid]));
+    }
     saveState();
     const now = new Date();
     const timeStr = now.getFullYear() + '-' + 
@@ -4676,6 +4709,11 @@ function importDataFromFile(event) {
         if (TEAM_LOGOS && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
         if (!t.teamUid && TEAM_UID_MAP && TEAM_UID_MAP[t.name]) t.teamUid = TEAM_UID_MAP[t.name];
       });
+      // 导入后重新计算所有球员统计，确保一致性
+      recalculateAllPlayerStats(state);
+      if (state.seasons) {
+        Object.keys(state.seasons).forEach(sid => recalculateAllPlayerStats(state.seasons[sid]));
+      }
       saveState();
       closeModal();
       updateSidebar();
