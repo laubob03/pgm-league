@@ -405,7 +405,7 @@ const APP_BUILD_DATE = '2026-04-19';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.172', date: '2026-04-20', items: ['🎨 加大球队详情页队徽：16px → 18px'] },  { v: '1.0.171', date: '2026-04-20', items: ['📱 优化球队详情页手机端显示：缩小队徽、紧凑间距、队名截断、比分区域优化'] },  { v: '1.0.170', date: '2026-04-20', items: ['🐛 修复球队详情页队徽位置：主队队徽在右，客队队徽在左（对称布局）'] },  { v: '1.0.169', date: '2026-04-20', items: ['🐛 修复球队详情页主队队名对齐问题（轮次标题移到内部后CSS选择器失效）'] },  { v: '1.0.168', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛芯片选中状态不更新的问题', '📋 新增杯赛与联赛同步规则文档'] },
+  { v: '1.0.173', date: '2026-04-20', items: ['🎨 球队详情页轮次标题单独一行显示，对阵信息更完整'] },  { v: '1.0.172', date: '2026-04-20', items: ['🎨 加大球队详情页队徽：16px → 18px'] },  { v: '1.0.171', date: '2026-04-20', items: ['📱 优化球队详情页手机端显示：缩小队徽、紧凑间距、队名截断、比分区域优化'] },  { v: '1.0.170', date: '2026-04-20', items: ['🐛 修复球队详情页队徽位置：主队队徽在右，客队队徽在左（对称布局）'] },  { v: '1.0.169', date: '2026-04-20', items: ['🐛 修复球队详情页主队队名对齐问题（轮次标题移到内部后CSS选择器失效）'] },  { v: '1.0.168', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛芯片选中状态不更新的问题', '📋 新增杯赛与联赛同步规则文档'] },
   { v: '1.0.167', date: '2026-04-20', items: ['🎨 更新日志页面尺寸缩小、比例优化', '🎨 返回按钮重新设计（绿色渐变+阴影+hover放大）'] },
   { v: '1.0.166', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛状态丢失的问题', '🔗 所有页面URL hash保存联赛状态'] },
   { v: '1.0.165', date: '2026-04-20', items: ['🎨 更新日志页面紧凑化', '⬅️ 添加圆形灰色返回按钮'] },
@@ -2857,8 +2857,11 @@ function showTeamDetail(teamId) {
 
     return `
     <div class="team-match-row" ${enterAttr} style="${matchRowBg};${matchRowBorder}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+        <div class="${roundClass}">${isCompleted ? '✓ ' : '○ '}第${m.round}轮</div>
+        <div style="font-size:9px;color:#999">${isHome ? '主场' : '客场'}</div>
+      </div>
       <div class="tm-teams">
-        <div class="${roundClass}" style="flex-shrink:0;margin-right:8px">${isCompleted ? '✓ ' : '○ '}第${m.round}轮</div>
         <div class="tm-team ${isHome ? 'highlight' : ''}">
           <span>${isHome ? team.name : (opponent ? opponent.name : '未知')}</span>
           <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:18px;height:18px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">
@@ -2980,8 +2983,11 @@ function showTeamDetail(teamId) {
         const cupRoundClass = isCompleted ? 'tm-round done' : 'tm-round pending';
         return `
         <div class="team-match-row" ${enterAttr} style="${cupMatchRowBg};${cupMatchRowBorder}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+            <div class="${cupRoundClass}">${isCompleted ? '✓ ' : '○ '}${isCompleted ? '' : '待定　'}${m.cupName} 第${m.round}轮</div>
+            <div style="font-size:9px;color:#999">${isHome ? '主场' : '客场'}</div>
+          </div>
           <div class="tm-teams">
-            <div class="${cupRoundClass}" style="flex-shrink:0;margin-right:8px">${isCompleted ? '✓ ' : '○ '}${isCompleted ? '' : '待定　'}${m.cupName} 第${m.round}轮</div>
             <div class="tm-team ${isHome ? 'highlight' : ''}">
               <span style="cursor:pointer" onclick="event.stopPropagation();closeModal();setTimeout(()=>showTeamDetail('${homeTeamId}'),100)">${isHome ? team.name : (opponent ? opponent.name : '未知')}</span>
               <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:18px;height:18px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">
@@ -3011,13 +3017,12 @@ function showTeamDetail(teamId) {
       .tm-round.done{background:#e8f5e9;color:#2e7d32}
       .tm-round.pending{background:#fff3e0;color:#e65100}
       .tm-round.mixed{background:#f5f5f5;color:#555}
-      .tm-teams{display:flex;align-items:center;gap:2px}
+      .tm-teams{display:flex;align-items:center;gap:4px}
       .tm-team{display:flex;align-items:center;gap:2px;flex:1;font-size:13px;font-weight:500;min-width:0}
       .tm-team.highlight{font-weight:600;color:#228B22}
       .tm-team:first-child{justify-content:flex-end}
       .tm-team:last-child{justify-content:flex-start}
-      .tm-team:nth-child(2){justify-content:flex-end}
-      .tm-team span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px}
+      .tm-team span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px}
       .tm-score-area{display:flex;align-items:center;gap:2px;min-width:50px;justify-content:center;flex-shrink:0}
       .tm-score{font-size:12px;font-weight:600}
       .tm-dash{color:#ccc}
