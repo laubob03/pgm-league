@@ -1397,10 +1397,15 @@ function renderCupSchedule(cupId) {
   if (!window[cupKey] || !rounds[window[cupKey]]) window[cupKey] = roundKeys[0] || 1;
   const curRound = window[cupKey];
   const curIdx = roundKeys.indexOf(String(curRound));
+  // 判断当前轮次是否全部完赛
+  const curRoundCompleted = (rounds[curRound]||[]).every(m => m.status === 'completed');
+  const roundTitleBg = curRoundCompleted ? 'linear-gradient(135deg,#d1d1d6,#86868b)' : 'linear-gradient(135deg,#f093fb,#f5576c)';
+  const roundTitleShadow = curRoundCompleted ? '0 2px 8px rgba(134,134,139,0.3)' : '0 2px 8px rgba(245,87,108,0.3)';
+  
   // 轮次切换栏
   let html = '<div style="display:flex;align-items:center;justify-content:center;gap:16px;padding:8px 0 12px;position:sticky;top:0;z-index:10;background:var(--card);">';
   html += '<button onclick="window[\'_cupSchedRound_' + cupId + '\']=\'' + (roundKeys[curIdx-1]||roundKeys[0]) + '\';renderCupSchedule(\'' + cupId + '\')" style="width:36px;height:36px;border-radius:50%;border:none;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(102,126,234,0.4);' + (curIdx<=0?'opacity:0.3;pointer-events:none;filter:grayscale(1)':'') + '" ' + (curIdx>0?'onmouseover="this.style.transform=\'scale(1.1)\'" onmouseout="this.style.transform=\'scale(1)\'"':'') + '>⏮</button>';
-  html += '<span onclick="showRoundPicker(this,' + JSON.stringify(roundKeys).replace(/"/g,'&quot;') + ',\'' + curRound + '\',\'' + cupId + '\')" style="font-size:15px;font-weight:700;min-width:80px;text-align:center;cursor:pointer;padding:6px 14px;border-radius:20px;position:relative;user-select:none;background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff;box-shadow:0 2px 8px rgba(245,87,108,0.3);" onmouseover="this.style.transform=\'scale(1.05)\'" onmouseout="this.style.transform=\'scale(1)\'">🏆 第' + curRound + '轮 ▾</span>';
+  html += '<span onclick="showRoundPicker(this,' + JSON.stringify(roundKeys).replace(/"/g,'&quot;') + ',\'' + curRound + '\',\'' + cupId + '\')" style="font-size:15px;font-weight:700;min-width:80px;text-align:center;cursor:pointer;padding:6px 14px;border-radius:20px;position:relative;user-select:none;background:' + roundTitleBg + ';color:#fff;box-shadow:' + roundTitleShadow + ';" onmouseover="this.style.transform=\'scale(1.05)\'" onmouseout="this.style.transform=\'scale(1)\'">🏆 第' + curRound + '轮' + (curRoundCompleted ? ' ✓' : '') + ' ▾</span>';
   html += '<button onclick="window[\'_cupSchedRound_' + cupId + '\']=\'' + (roundKeys[curIdx+1]||roundKeys[roundKeys.length-1]) + '\';renderCupSchedule(\'' + cupId + '\')" style="width:36px;height:36px;border-radius:50%;border:none;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(102,126,234,0.4);' + (curIdx>=roundKeys.length-1?'opacity:0.3;pointer-events:none;filter:grayscale(1)':'') + '" ' + (curIdx<roundKeys.length-1?'onmouseover="this.style.transform=\'scale(1.1)\'" onmouseout="this.style.transform=\'scale(1)\'"':'') + '>⏭</button>';
   html += '</div>';
   (rounds[curRound]||[]).forEach(m => {
@@ -2058,11 +2063,14 @@ function renderSchedule() {
   }
   const curRound = window._schedRound;
   const curIdx = roundKeys.indexOf(String(curRound));
+  // 判断当前轮次是否全部完赛
+  const curRoundCompleted = (rounds[curRound]||[]).every(m => m.status === 'completed');
+  const roundTitleColor = curRoundCompleted ? '#86868b' : '#1d1d1f';
   
   // 轮次切换栏 (Apple minimal)
   let html = '<div style="display:flex;align-items:center;justify-content:center;gap:20px;padding:8px 0 10px;">';
   html += '<button onclick="window._schedRound=\'' + (roundKeys[curIdx-1]||roundKeys[0]) + '\';renderSchedule()" style="width:36px;height:36px;border:none;background:transparent;color:' + (curIdx<=0?'#d1d1d6':'#1d1d1f') + ';font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;' + (curIdx>0?'transition:background .15s':'pointer-events:none') + '" ' + (curIdx>0?'onmouseover="this.style.background=\'#f2f2f7\'" onmouseout="this.style.background=\'transparent\'"':'') + '>&lsaquo;</button>';
-  html += '<span onclick="showRoundPicker(this,' + JSON.stringify(roundKeys).replace(/"/g,'&quot;') + ',\'' + curRound + '\')" style="font-size:15px;font-weight:600;color:#1d1d1f;min-width:80px;text-align:center;cursor:pointer;padding:6px 14px;border-radius:10px;user-select:none;transition:background .15s;letter-spacing:0.3px" onmouseover="this.style.background=\'#f2f2f7\'" onmouseout="this.style.background=\'transparent\'">第' + curRound + '轮</span>';
+  html += '<span onclick="showRoundPicker(this,' + JSON.stringify(roundKeys).replace(/"/g,'&quot;') + ',\'' + curRound + '\')" style="font-size:15px;font-weight:600;color:' + roundTitleColor + ';min-width:80px;text-align:center;cursor:pointer;padding:6px 14px;border-radius:10px;user-select:none;transition:background .15s;letter-spacing:0.3px" onmouseover="this.style.background=\'#f2f2f7\'" onmouseout="this.style.background=\'transparent\'">第' + curRound + '轮' + (curRoundCompleted ? ' ✓' : '') + '</span>';
   html += '<button onclick="window._schedRound=\'' + (roundKeys[curIdx+1]||roundKeys[roundKeys.length-1]) + '\';renderSchedule()" style="width:36px;height:36px;border:none;background:transparent;color:' + (curIdx>=roundKeys.length-1?'#d1d1d6':'#1d1d1f') + ';font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;' + (curIdx<roundKeys.length-1?'transition:background .15s':'pointer-events:none') + '" ' + (curIdx<roundKeys.length-1?'onmouseover="this.style.background=\'#f2f2f7\'" onmouseout="this.style.background=\'transparent\'"':'') + '>&rsaquo;</button>';
   html += '</div>';
   
