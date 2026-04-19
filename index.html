@@ -1450,9 +1450,7 @@ function renderCupSchedule(cupId) {
           + '</div>' : '';
       const motmLine = '';
       const canEnterCup = !viewingSeasonId && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cupId)) && !isCompleted;
-      const enterBtn = canEnterCup
-        ? '<div style="text-align:center;margin-top:4px"><button class="btn btn-primary btn-small" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'' + cupId + '\')">录入比赛</button></div>'
-        : '';
+      const canEditCup = !viewingSeasonId && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cupId)) && isCompleted;
             // Apple minimal style cup card
       const statusText = isCompleted ? '✅ 已完赛' : '';
       
@@ -1467,10 +1465,12 @@ function renderCupSchedule(cupId) {
           + '</div>'
           + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:60px;gap:2px">'
             + (isCompleted
-              ? (!viewingSeasonId && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cupId))
+              ? (canEditCup
                 ? '<div class="match-score" style="cursor:pointer" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'' + cupId + '\')"><span>' + m.homeScore + '</span><span class="dash">&ndash;</span><span>' + m.awayScore + '</span></div>'
                 : '<div class="match-score"><span>' + m.homeScore + '</span><span class="dash">&ndash;</span><span>' + m.awayScore + '</span></div>')
-              : '<div class="match-score" style="color:#aeaeb2"><span class="dash">&ndash;</span><span class="dash">&ndash;</span></div>')
+              : (canEnterCup
+                ? '<button class="btn btn-primary btn-small" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'' + cupId + '\')">录入比赛</button>'
+                : '<div class="match-score" style="color:#aeaeb2"><span class="dash">&ndash;</span><span class="dash">&ndash;</span></div>'))
             + (statusText ? '<div style="font-size:10px;color:#86868b;letter-spacing:0.5px">' + statusText + '</div>' : '')
           + '</div>'
           + '<div style="flex:1;min-width:0;text-align:center">'
@@ -1482,7 +1482,6 @@ function renderCupSchedule(cupId) {
           + '</div>'
         + '</div>'
         + motmLine
-        + enterBtn
       + '</div>';
     });
   container.innerHTML = '<div class="schedule-scroll-area">' + html + '</div>';
@@ -2131,9 +2130,7 @@ function renderSchedule() {
       const motmLine = '';
       const isArchivedSeason = viewingSeasonId !== null;
       const canEnter = !isArchivedSeason && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && home.league === state.currentUser.league) || state.currentUser.teamId === m.homeTeam || state.currentUser.teamId === m.awayTeam) && !isCompleted;
-      const enterBtn = canEnter
-        ? '<div style="text-align:center;margin-top:4px"><button class="btn btn-primary btn-small" onclick="showEnterMatchModal(\'' + m.id + '\')">\u5F55\u5165\u6BD4\u8D5B</button></div>'
-        : '';
+      const canEdit = !isArchivedSeason && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && home.league === state.currentUser.league)) && isCompleted;
 
             // Apple minimal style card
       const statusText = isCompleted ? '✅ 已完赛' : '';
@@ -2149,10 +2146,12 @@ function renderSchedule() {
           + '</div>'
           + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:60px;gap:2px">'
             + (isCompleted
-              ? (!isArchivedSeason && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && home.league === state.currentUser.league))
+              ? (canEdit
                 ? '<div class="match-score" style="cursor:pointer" onclick="showEnterMatchModal(\'' + m.id + '\')"><span>' + m.homeScore + '</span><span class="dash">&ndash;</span><span>' + m.awayScore + '</span></div>'
                 : '<div class="match-score"><span>' + m.homeScore + '</span><span class="dash">&ndash;</span><span>' + m.awayScore + '</span></div>')
-              : '<div class="match-score" style="color:#aeaeb2"><span class="dash">&ndash;</span><span class="dash">&ndash;</span></div>')
+              : (canEnter
+                ? '<button class="btn btn-primary btn-small" onclick="showEnterMatchModal(\'' + m.id + '\')">录入比赛</button>'
+                : '<div class="match-score" style="color:#aeaeb2"><span class="dash">&ndash;</span><span class="dash">&ndash;</span></div>'))
             + (statusText ? '<div style="font-size:10px;color:#86868b;letter-spacing:0.5px">' + statusText + '</div>' : '')
           + '</div>'
           + '<div style="flex:1;min-width:0;text-align:center">'
@@ -2164,7 +2163,6 @@ function renderSchedule() {
           + '</div>'
         + '</div>'
         + motmLine
-        + enterBtn
       + '</div>';
     });
   
