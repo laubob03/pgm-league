@@ -398,7 +398,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 106 };
+const APP_VERSION = { major: 1, minor: 0, patch: 107 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-19';
@@ -3023,7 +3023,7 @@ function showTeamDetail(teamId) {
           <button class="sort-btn" onclick="sortLeaguePlayers('assists')">助攻</button>
           <button class="sort-btn" onclick="sortLeaguePlayers('motm')">MVP</button>
         </div>
-        <div id="leaguePlayersInner" style="overflow-y:auto;max-height:400px"></div>`;
+        <div id="leaguePlayersInner" style="overflow-y:auto;max-height:650px"></div>`;
       window._curTeamPlayers = players;
       window._curTeamSortBy = 'number';
       sortLeaguePlayers('number', players);
@@ -3051,7 +3051,7 @@ function showTeamDetail(teamId) {
           <button class="sort-btn" onclick="sortCupPlayers('assists')">助攻</button>
           <button class="sort-btn" onclick="sortCupPlayers('motm')">MVP</button>
         </div>
-        <div id="cupPlayersInner" style="overflow-y:auto;max-height:400px"></div>`;
+        <div id="cupPlayersInner" style="overflow-y:auto;max-height:650px"></div>`;
       window._cupTeamPlayers = players;
       window._curCupTeamSortBy = 'number';
       sortCupPlayers('number');
