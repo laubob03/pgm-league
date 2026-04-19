@@ -405,7 +405,7 @@ const APP_BUILD_DATE = '2026-04-19';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.169', date: '2026-04-20', items: ['🐛 修复球队详情页主队队名对齐问题（轮次标题移到内部后CSS选择器失效）'] },  { v: '1.0.168', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛芯片选中状态不更新的问题', '📋 新增杯赛与联赛同步规则文档'] },
+  { v: '1.0.170', date: '2026-04-20', items: ['🐛 修复球队详情页队徽位置：主队队徽在右，客队队徽在左（对称布局）'] },  { v: '1.0.169', date: '2026-04-20', items: ['🐛 修复球队详情页主队队名对齐问题（轮次标题移到内部后CSS选择器失效）'] },  { v: '1.0.168', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛芯片选中状态不更新的问题', '📋 新增杯赛与联赛同步规则文档'] },
   { v: '1.0.167', date: '2026-04-20', items: ['🎨 更新日志页面尺寸缩小、比例优化', '🎨 返回按钮重新设计（绿色渐变+阴影+hover放大）'] },
   { v: '1.0.166', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛状态丢失的问题', '🔗 所有页面URL hash保存联赛状态'] },
   { v: '1.0.165', date: '2026-04-20', items: ['🎨 更新日志页面紧凑化', '⬅️ 添加圆形灰色返回按钮'] },
@@ -2860,8 +2860,8 @@ function showTeamDetail(teamId) {
       <div class="tm-teams">
         <div class="${roundClass}" style="flex-shrink:0;margin-right:8px">${isCompleted ? '✓ ' : '○ '}第${m.round}轮</div>
         <div class="tm-team ${isHome ? 'highlight' : ''}">
-          <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.display='none'">
           <span>${isHome ? team.name : (opponent ? opponent.name : '未知')}</span>
+          <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.display='none'">
         </div>
           <div class="tm-score-area"${isCompleted ? ` style="background:${teamScore > oppScore ? '#f44336' : teamScore < oppScore ? '#4caf50' : '#9e9e9e'};border-radius:8px;padding:4px 10px"` : ''}>
             ${isCompleted
@@ -2869,8 +2869,8 @@ function showTeamDetail(teamId) {
               : '<span style="font-size:16px">⚔️</span>'}
           </div>
         <div class="tm-team ${!isHome ? 'highlight' : ''}">
-          <span>${isHome ? (opponent ? opponent.name : '未知') : team.name}</span>
           <img src="${isHome ? (opponent ? getTeamLogo(opponent) : '') : getTeamLogo(team)}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.display='none'">
+          <span>${isHome ? (opponent ? opponent.name : '未知') : team.name}</span>
         </div>
       </div>
       <div class="tm-detail">${teamDetail}</div>
@@ -2983,8 +2983,8 @@ function showTeamDetail(teamId) {
           <div class="tm-teams">
             <div class="${cupRoundClass}" style="flex-shrink:0;margin-right:8px">${isCompleted ? '✓ ' : '○ '}${isCompleted ? '' : '待定　'}${m.cupName} 第${m.round}轮</div>
             <div class="tm-team ${isHome ? 'highlight' : ''}">
-              <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.display='none'">
               <span style="cursor:pointer" onclick="event.stopPropagation();closeModal();setTimeout(()=>showTeamDetail('${homeTeamId}'),100)">${isHome ? team.name : (opponent ? opponent.name : '未知')}</span>
+              <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.display='none'">
             </div>
               <div class="tm-score-area"${isCompleted ? ` style="background:${(isHome&&homeScore>awayScore)||(!isHome&&awayScore>homeScore)?'#f44336':(isHome&&homeScore<awayScore)||(!isHome&&awayScore<homeScore)?'#4caf50':'#9e9e9e'};border-radius:8px;padding:4px 10px"` : ''}>
                 ${isCompleted
@@ -2992,8 +2992,8 @@ function showTeamDetail(teamId) {
                   : '<span style="font-size:16px">⚔️</span>'}
               </div>
             <div class="tm-team ${!isHome ? 'highlight' : ''}">
-              <span style="cursor:pointer" onclick="event.stopPropagation();closeModal();setTimeout(()=>showTeamDetail('${awayTeamId}'),100)">${isHome ? (opponent ? opponent.name : '未知') : team.name}</span>
               <img src="${isHome ? (opponent ? getTeamLogo(opponent) : '') : getTeamLogo(team)}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.display='none'">
+              <span style="cursor:pointer" onclick="event.stopPropagation();closeModal();setTimeout(()=>showTeamDetail('${awayTeamId}'),100)">${isHome ? (opponent ? opponent.name : '未知') : team.name}</span>
             </div>
           </div>
           <div class="tm-detail">${cupTeamDetail}</div>
