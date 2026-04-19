@@ -3731,6 +3731,12 @@ function updateNavAndHeader() {
     btn.classList.toggle('active', btn.dataset.page === state.currentPage);
   });
   
+  // Update league chips
+  document.querySelectorAll('.league-chip').forEach(chip => {
+    const chipLeague = chip.dataset.league || chip.dataset.cup;
+    chip.classList.toggle('active', chipLeague === state.currentLeague);
+  });
+  
   // Update page title
   const titles = { home: 'PGM足球经理', standings: '积分榜', teams: '球队列表', schedule: '赛程', stats: '数据榜单' };
   const ptEl = document.getElementById('pageTitle');
