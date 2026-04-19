@@ -1594,15 +1594,27 @@ function showRoundPicker(anchorEl, roundKeys, curRound, cupId) {
   // 移除已有弹窗
   const old = document.getElementById('roundPickerPopup');
   if (old) { old.remove(); return; }
+  
+  // 获取比赛数据，判断每个轮次是否完赛
+  const matches = cupId ? (state.cups[cupId]?.matches || []) : getCurrentSeasonData().matches;
+  const rounds = {};
+  matches.forEach(m => {
+    const r = m.round;
+    if (!rounds[r]) rounds[r] = [];
+    rounds[r].push(m);
+  });
+  
   const rect = anchorEl.getBoundingClientRect();
   const popup = document.createElement('div');
   popup.id = 'roundPickerPopup';
   popup.style.cssText = 'position:fixed;left:50%;top:' + (rect.bottom + 4) + 'px;transform:translateX(-50%);background:#fff;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,0.18);padding:8px;z-index:9999;max-height:240px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:4px;justify-content:center;min-width:200px;';
   roundKeys.forEach(r => {
     const isCur = String(r) === String(curRound);
+    // 判断该轮次是否全部完赛
+    const isCompleted = (rounds[r] || []).every(m => m.status === 'completed');
     const btn = document.createElement('button');
-    btn.textContent = '第' + r + '轮';
-    btn.style.cssText = 'padding:6px 12px;border-radius:6px;border:1px solid ' + (isCur ? '#228B22' : '#ddd') + ';background:' + (isCur ? '#228B22' : '#fff') + ';color:' + (isCur ? '#fff' : '#333') + ';font-size:13px;font-weight:' + (isCur ? '700' : '400') + ';cursor:pointer;transition:all 0.15s;';
+    btn.textContent = '第' + r + '轮' + (isCompleted ? ' ✓' : '');
+    btn.style.cssText = 'padding:6px 12px;border-radius:6px;border:1px solid ' + (isCur ? '#228B22' : (isCompleted ? '#d1d1d6' : '#ddd')) + ';background:' + (isCur ? '#228B22' : '#fff') + ';color:' + (isCur ? '#fff' : (isCompleted ? '#86868b' : '#333')) + ';font-size:13px;font-weight:' + (isCur ? '700' : '400') + ';cursor:pointer;transition:all 0.15s;';
     btn.onmouseover = function() { if (!isCur) this.style.background = '#f0f0f0'; };
     btn.onmouseout = function() { if (!isCur) this.style.background = '#fff'; };
     btn.onclick = function() {
