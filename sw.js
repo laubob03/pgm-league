@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pgm-league-v170';
+const CACHE_NAME = 'pgm-league-v171';
 const urlsToCache = [
   '/index.html',
   '/manifest.json',
