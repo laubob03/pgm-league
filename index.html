@@ -76,7 +76,7 @@
 .player-names{font-size:13px;line-height:1.8;color:var(--text)}
 .player-summary{font-size:11px;color:var(--text-secondary);margin-top:10px;text-align:center}
     .match-round-title{font-size:14px;font-weight:800;color:#fff;background:linear-gradient(135deg,#1B5E20,#2E7D32,#43A047);border:none;margin:16px 0 10px;padding:8px 16px;border-radius:20px;text-align:center;letter-spacing:1px;box-shadow:0 3px 10px rgba(27,94,32,0.3)}
-    .match-card{background:#fff;border-radius:16px;padding:14px 16px;margin-bottom:8px;box-shadow:0 0 0 0.5px rgba(0,0,0,0.04),0 2px 8px rgba(0,0,0,0.06);transition:transform .15s ease,box-shadow .15s ease}
+    .match-card{background:transparent;border-radius:0;padding:12px 0;margin:0;border-bottom:1px solid #f0f0f0}
     .match-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:var(--text-secondary)}
     .match-status{padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
     .match-status.pending{background:#FFF3E0;color:#E65100}
@@ -85,9 +85,9 @@
     .match-team{display:flex;align-items:center;gap:6px;flex:1}
     .match-team.away{flex-direction:row-reverse;text-align:right}
     .match-team-logo{width:32px;height:32px;object-fit:contain;border-radius:8px}
-    .match-team-name{font-weight:600;font-size:16px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#1d1d1f}
+    .match-team-name{font-weight:600;font-size:15px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#1d1d1f}
 .match-team-name-full{font-weight:700;font-size:13px;white-space:normal;text-align:center}
-    .match-score{display:flex;align-items:center;gap:8px;font-size:24px;font-weight:700;color:#1d1d1f;padding:0 8px;font-variant-numeric:tabular-nums;letter-spacing:1px}
+    .match-score{display:flex;align-items:center;gap:4px;font-size:22px;font-weight:700;color:#1d1d1f;padding:0 4px;font-variant-numeric:tabular-nums}
     .match-score .dash{color:var(--text-secondary);font-weight:400}
     .match-actions{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:8px}
     .btn{padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;border:none;cursor:pointer;transition:all 0.2s}
@@ -1431,15 +1431,13 @@ function renderCupSchedule(cupId) {
       const motmTeamId = m.motm ? m.motm.split('_')[0] : null;
       const homeMotmUid = motmPlayer && motmTeamId === m.homeTeam ? (motmPlayer.uid || motmPlayer.id.split('_')[1]) : '';
       const homeMotmStr = motmPlayer && motmTeamId === m.homeTeam ? (homeMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${homeMotmUid}')">${motmPlayer.name}</span>` : motmPlayer.name) : '';
-      const homeDetail = isCompleted && (homeScorerStr || homeAssistStr)
-        ? '<div style="font-size:12px;color:#86868b;line-height:1.5;text-align:right;padding-right:14px">'
+      const homeDetail = isCompleted && (homeScorerStr || homeAssistStr) ? '<div style="font-size:11px;color:#999;line-height:1.4;text-align:right">'
           + (homeScorerStr ? '<div>\u26BD ' + homeScorerStr + '</div>' : '')
           + (homeAssistStr ? '<div>\uD83D\uDC5F ' + homeAssistStr + '</div>' : '')
           + '</div>' : '';
       const awayMotmUid = motmPlayer && motmTeamId === m.awayTeam ? (motmPlayer.uid || motmPlayer.id.split('_')[1]) : '';
       const awayMotmStr = motmPlayer && motmTeamId === m.awayTeam ? (awayMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${awayMotmUid}')">${motmPlayer.name}</span>` : motmPlayer.name) : '';
-      const awayDetail = isCompleted && (awayScorerStr || awayAssistStr)
-        ? '<div style="font-size:12px;color:#86868b;line-height:1.5;padding-left:14px">'
+      const awayDetail = isCompleted && (awayScorerStr || awayAssistStr) ? '<div style="font-size:11px;color:#999;line-height:1.4;padding-left:0">'
           + (awayScorerStr ? '<div>\u26BD ' + awayScorerStr + '</div>' : '')
           + (awayAssistStr ? '<div>\uD83D\uDC5F ' + awayAssistStr + '</div>' : '')
           + '</div>' : '';
@@ -2064,7 +2062,7 @@ function renderSchedule() {
   const curIdx = roundKeys.indexOf(String(curRound));
   
   // 轮次切换栏 (Apple minimal)
-  let html = '<div style="display:flex;align-items:center;justify-content:center;gap:20px;padding:10px 0 14px;position:sticky;top:0;z-index:10;background:var(--card);">';
+  let html = '<div style="display:flex;align-items:center;justify-content:center;gap:20px;padding:8px 0 10px;">';
   html += '<button onclick="window._schedRound=\'' + (roundKeys[curIdx-1]||roundKeys[0]) + '\';renderSchedule()" style="width:36px;height:36px;border:none;background:transparent;color:' + (curIdx<=0?'#d1d1d6':'#1d1d1f') + ';font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;' + (curIdx>0?'transition:background .15s':'pointer-events:none') + '" ' + (curIdx>0?'onmouseover="this.style.background=\'#f2f2f7\'" onmouseout="this.style.background=\'transparent\'"':'') + '>&lsaquo;</button>';
   html += '<span onclick="showRoundPicker(this,' + JSON.stringify(roundKeys).replace(/"/g,'&quot;') + ',\'' + curRound + '\')" style="font-size:15px;font-weight:600;color:#1d1d1f;min-width:80px;text-align:center;cursor:pointer;padding:6px 14px;border-radius:10px;user-select:none;transition:background .15s;letter-spacing:0.3px" onmouseover="this.style.background=\'#f2f2f7\'" onmouseout="this.style.background=\'transparent\'">第' + curRound + '轮</span>';
   html += '<button onclick="window._schedRound=\'' + (roundKeys[curIdx+1]||roundKeys[roundKeys.length-1]) + '\';renderSchedule()" style="width:36px;height:36px;border:none;background:transparent;color:' + (curIdx>=roundKeys.length-1?'#d1d1d6':'#1d1d1f') + ';font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;' + (curIdx<roundKeys.length-1?'transition:background .15s':'pointer-events:none') + '" ' + (curIdx<roundKeys.length-1?'onmouseover="this.style.background=\'#f2f2f7\'" onmouseout="this.style.background=\'transparent\'"':'') + '>&rsaquo;</button>';
@@ -2098,15 +2096,13 @@ function renderSchedule() {
       const motmTeamId = m.motm ? m.motm.split('_')[0] : null;
       const homeMotmUid = motmPlayer && motmTeamId === m.homeTeam ? (motmPlayer.uid || motmPlayer.id.split('_')[1]) : '';
       const homeMotmStr = motmPlayer && motmTeamId === m.homeTeam ? (homeMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${homeMotmUid}')">${motmPlayer.name}</span>` : motmPlayer.name) : '';
-      const homeDetail = isCompleted && (homeScorerStr || homeAssistStr)
-        ? '<div style="font-size:12px;color:#86868b;line-height:1.5;text-align:right;padding-right:14px">'
+      const homeDetail = isCompleted && (homeScorerStr || homeAssistStr) ? '<div style="font-size:11px;color:#999;line-height:1.4;text-align:right">'
           + (homeScorerStr ? '<div>\u26BD ' + homeScorerStr + '</div>' : '')
           + (homeAssistStr ? '<div>\uD83D\uDC5F ' + homeAssistStr + '</div>' : '')
           + '</div>' : '';
       const awayMotmUid = motmPlayer && motmTeamId === m.awayTeam ? (motmPlayer.uid || motmPlayer.id.split('_')[1]) : '';
       const awayMotmStr = motmPlayer && motmTeamId === m.awayTeam ? (awayMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${awayMotmUid}')">${motmPlayer.name}</span>` : motmPlayer.name) : '';
-      const awayDetail = isCompleted && (awayScorerStr || awayAssistStr)
-        ? '<div style="font-size:12px;color:#86868b;line-height:1.5;padding-left:14px">'
+      const awayDetail = isCompleted && (awayScorerStr || awayAssistStr) ? '<div style="font-size:11px;color:#999;line-height:1.4;padding-left:0">'
           + (awayScorerStr ? '<div>\u26BD ' + awayScorerStr + '</div>' : '')
           + (awayAssistStr ? '<div>\uD83D\uDC5F ' + awayAssistStr + '</div>' : '')
           + '</div>' : '';
