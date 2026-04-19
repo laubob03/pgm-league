@@ -359,13 +359,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 83 };
+const APP_VERSION = { major: 1, minor: 0, patch: 84 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-19';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.84', date: '2026-04-19', items: ['🐛 修复录入比分后页面跳回第1轮的问题，现在会停留在当前轮次'] },
   { v: '1.0.83', date: '2026-04-19', items: ['📝 侧边栏新增更新日志，随时查看版本变更', '📋 关于弹窗新增完整更新记录查看'] },
   { v: '1.0.82', date: '2026-04-14', items: ['🐛 修复杯赛录入gamesPlayed按进球数重复累加', '📊 球员统计从比赛记录实时计算，不再累积出错', '👤 新增教练登录功能（球队ID+密码）', '🔄 所有导入/同步/加载后统一触发数据重算'] },
   { v: '1.0.81', date: '2026-04-13', items: ['🎨 右侧恢复赛季信息、时钟、云上传信息', '☰ ☰按钮优化布局'] },
@@ -1333,7 +1334,7 @@ function renderCupSchedule(cupId) {
   });
   let html = '';
   Object.keys(rounds).sort((a, b) => a - b).forEach(round => {
-    html += '<div class="match-round-title">第' + round + '轮</div>';
+    html += '<div class="match-round-title" id="cup-round-' + round + '">第' + round + '轮</div>';
     rounds[round].forEach(m => {
       const home = sd.teams.find(t => t.id === m.homeTeam);
       const away = sd.teams.find(t => t.id === m.awayTeam);
@@ -1496,6 +1497,13 @@ function submitCupMatchResult(matchId, cupId) {
   });
   if (motmId) { const motmP = [...homeTeam.players, ...awayTeam.players].find(x => x.id === motmId); if (motmP) motmP.motmCount = (motmP.motmCount || 0) + 1; }
   saveState(); closeModal(); render(); showToast(isEdit ? '比赛结果已更新！' : '比赛结果已保存！');
+}
+
+// 记住当前赛程滚动轮次，供renderSchedule恢复使用
+function saveScheduleScrollRound(matchId) {
+  const sd = getCurrentSeasonData();
+  const match = sd.matches.find(m => m.id === matchId);
+  if (match && match.round) window._pendingScrollRound = match.round;
 }
 
 function showCupManageModal() {
@@ -1811,7 +1819,7 @@ function renderSchedule() {
   
   let html = '';
   Object.keys(rounds).sort((a, b) => a - b).forEach(round => {
-    html += '<div class="match-round-title">\u7B2C' + round + '\u8F6E</div>';
+    html += '<div class="match-round-title" id="round-' + round + '">\u7B2C' + round + '\u8F6E</div>';
     rounds[round].forEach(m => {
       const home = sd.teams.find(t => t.id === m.homeTeam);
       const away = sd.teams.find(t => t.id === m.awayTeam);
@@ -1898,6 +1906,12 @@ function renderSchedule() {
     html = '<div class="empty-state"><div class="empty-state-emoji">\uD83D\uDCC5</div><div class="empty-state-text">\u6682\u65E0\u8D5B\u7A0B\u6570\u636E</div></div>';
   }
   container.innerHTML = '<div class="schedule-scroll-area">' + html + '</div>';
+  // 恢复滚动位置：录入比赛后停留在当前轮次
+  if (window._pendingScrollRound) {
+    const target = document.getElementById('round-' + window._pendingScrollRound);
+    if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    window._pendingScrollRound = null;
+  }
 }
 
 function renderMatchScorers(m) {
@@ -3064,6 +3078,8 @@ function submitMatchResult(matchId) {
   }
 
   saveState();
+  // 记住当前轮次，渲染后恢复滚动位置
+  window._pendingScrollRound = match.round;
   closeModal();
   render();
   showToast(isEdit ? '比赛结果已更新！' : '比赛结果已保存！');
