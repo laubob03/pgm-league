@@ -398,14 +398,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 102 };
+const APP_VERSION = { major: 1, minor: 0, patch: 103 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-19';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.102', date: '2026-04-19', items: ['🐛 球队详情页-球员：移除leaguePlayersInner和cupPlayersInner的max-height:300px限制，全高显示球员列表'] },
+  { v: '1.0.103', date: '2026-04-19', items: ['🐛 修复getCupPlayerStats的MVP查找：增加motm.split(\'_\')[0]提取teamId，避免同名球员匹配错误', '🐛 修复submitMatchResult的gamesPlayed重复累加：用Set收集参与球员，每人每场只+1（进2球不再+2）'] },
   { v: '1.0.99', date: '2026-04-19', items: ['📺 球队详情页窗口：高度撑满整屏，内容超出一屏才滚动'] },
   { v: '1.0.98', date: '2026-04-19', items: ['📺 球队详情页窗口美化：四周16px边距+居中显示，圆角16px，弹出动画居中'] },
   { v: '1.0.97', date: '2026-04-19', items: ['📺 球队详情页全屏显示：无最大宽度限制，撑满整个页面'] },
@@ -2698,7 +2698,10 @@ function getCupPlayerStats(cupId, type, limit) {
     });
     if (m.scorers) m.scorers.forEach(s => { if (stats[s.teamId] && stats[s.teamId].players[s.playerId]) stats[s.teamId].players[s.playerId].goals++; });
     if (m.assists) m.assists.forEach(a => { if (stats[a.teamId] && stats[a.teamId].players[a.playerId]) stats[a.teamId].players[a.playerId].assists++; });
-    if (m.motm) { [m.homeTeam, m.awayTeam].forEach(tid => { if (stats[tid] && stats[tid].players[m.motm]) stats[tid].players[m.motm].motm++; }); }
+    if (m.motm) {
+      const motmTeamId = m.motm.split('_')[0];
+      if (stats[motmTeamId] && stats[motmTeamId].players[m.motm]) stats[motmTeamId].players[m.motm].motm++;
+    }
   });
   const all = [];
   Object.values(stats).forEach(s => {
@@ -3399,54 +3402,53 @@ function submitMatchResult(matchId) {
   match.assists = [];
   match.motm = motmId || null;
 
-  // 添加新数据
+  // 添加新数据（用 Set 收集参与球员，每人每场 gamesPlayed 只+1）
+  const involvedPlayers = new Set();
   document.querySelectorAll('[data-goal="home"]').forEach(inp => {
     const g = parseInt(inp.value) || 0;
     if (g > 0) {
       const p = homeTeam.players.find(x => x.id === inp.dataset.pid);
       if (p) {
         p.goals = (p.goals || 0) + g;
-        p.gamesPlayed = (p.gamesPlayed || 0) + 1;
+        involvedPlayers.add(p);
         for (let i = 0; i < g; i++) match.scorers.push({ playerId: inp.dataset.pid, teamId: match.homeTeam, minute: null });
       }
     }
   });
-
   document.querySelectorAll('[data-goal="away"]').forEach(inp => {
     const g = parseInt(inp.value) || 0;
     if (g > 0) {
       const p = awayTeam.players.find(x => x.id === inp.dataset.pid);
       if (p) {
         p.goals = (p.goals || 0) + g;
-        p.gamesPlayed = (p.gamesPlayed || 0) + 1;
+        involvedPlayers.add(p);
         for (let i = 0; i < g; i++) match.scorers.push({ playerId: inp.dataset.pid, teamId: match.awayTeam, minute: null });
       }
     }
   });
-
   document.querySelectorAll('[data-ast="home"]').forEach(inp => {
     const a = parseInt(inp.value) || 0;
     if (a > 0) {
       const p = homeTeam.players.find(x => x.id === inp.dataset.pid);
       if (p) {
         p.assists = (p.assists || 0) + a;
-        p.gamesPlayed = (p.gamesPlayed || 0) + 1;
+        involvedPlayers.add(p);
         for (let i = 0; i < a; i++) match.assists.push({ playerId: inp.dataset.pid, teamId: match.homeTeam });
       }
     }
   });
-
   document.querySelectorAll('[data-ast="away"]').forEach(inp => {
     const a = parseInt(inp.value) || 0;
     if (a > 0) {
       const p = awayTeam.players.find(x => x.id === inp.dataset.pid);
       if (p) {
         p.assists = (p.assists || 0) + a;
-        p.gamesPlayed = (p.gamesPlayed || 0) + 1;
+        involvedPlayers.add(p);
         for (let i = 0; i < a; i++) match.assists.push({ playerId: inp.dataset.pid, teamId: match.awayTeam });
       }
     }
   });
+  involvedPlayers.forEach(p => { p.gamesPlayed = (p.gamesPlayed || 0) + 1; });
 
   if (motmId) {
     const motmP = [...homeTeam.players, ...awayTeam.players].find(x => x.id === motmId);
