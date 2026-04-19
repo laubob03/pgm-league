@@ -391,7 +391,7 @@
 <div class="toast" id="toast" style="display:none"></div>
 
 <div id="busuanzi_container" style="text-align:center;padding:6px 0;font-size:11px;color:#999">
-  本站总访问 <span id="busuanzi_site_pv"></span> 次，今日访问 <span id="busuanzi_today_pv"></span> 次
+  本站总访问 <span id="busuanzi_site_pv"></span> 次，今日访问 <span id="busuanzi_today_pv"></span> 次 | <span id="footerVersion" style="color:#228B22"></span>
 </div>
 
 <script async src="https://busuanzi.xiaoying.org.cn/js"></script>
@@ -5099,6 +5099,7 @@ document.getElementById("sidebarLoginBtn").onclick = () => showLoginModal();
 document.getElementById('btnLogout').onclick = () => logout();
 document.getElementById('aboutBtn').onclick = () => showAboutModal();
 document.getElementById('aboutVersion').textContent = 'v' + APP_VERSION.major + '.' + APP_VERSION.minor + '.' + APP_VERSION.patch + ' by J.K';
+document.getElementById('footerVersion').textContent = 'v' + APP_VERSION.major + '.' + APP_VERSION.minor + '.' + APP_VERSION.patch;
 document.getElementById('aboutDate').textContent = APP_BUILD_DATE;
 // 侧边栏底部显示最新版本更新提示
 document.getElementById('changelogHint').innerHTML = '<span style="font-size:10px;color:#1a7a2e;cursor:pointer" onclick="showChangelogModal()">📋 v' + CHANGELOG[0].v + ' 更新 →</span>';
