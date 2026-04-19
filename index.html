@@ -398,14 +398,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 103 };
+const APP_VERSION = { major: 1, minor: 0, patch: 104 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-19';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.103', date: '2026-04-19', items: ['🐛 修复getCupPlayerStats的MVP查找：增加motm.split(\'_\')[0]提取teamId，避免同名球员匹配错误', '🐛 修复submitMatchResult的gamesPlayed重复累加：用Set收集参与球员，每人每场只+1（进2球不再+2）'] },
+  { v: '1.0.104', date: '2026-04-19', items: ['🐛 球队详情球员Tab：leaguePlayersInner和cupPlayersInner改为overflow:hidden，滚动统一由外层teamPlayersList处理，显示所有球员姓名'] },
   { v: '1.0.99', date: '2026-04-19', items: ['📺 球队详情页窗口：高度撑满整屏，内容超出一屏才滚动'] },
   { v: '1.0.98', date: '2026-04-19', items: ['📺 球队详情页窗口美化：四周16px边距+居中显示，圆角16px，弹出动画居中'] },
   { v: '1.0.97', date: '2026-04-19', items: ['📺 球队详情页全屏显示：无最大宽度限制，撑满整个页面'] },
@@ -3023,7 +3023,7 @@ function showTeamDetail(teamId) {
           <button class="sort-btn" onclick="sortLeaguePlayers('assists')">助攻</button>
           <button class="sort-btn" onclick="sortLeaguePlayers('motm')">MVP</button>
         </div>
-        <div id="leaguePlayersInner" style="overflow-y:auto"></div>`;
+        <div id="leaguePlayersInner" style="overflow:hidden"></div>`;
       window._curTeamPlayers = players;
       window._curTeamSortBy = 'number';
       sortLeaguePlayers('number', players);
@@ -3051,7 +3051,7 @@ function showTeamDetail(teamId) {
           <button class="sort-btn" onclick="sortCupPlayers('assists')">助攻</button>
           <button class="sort-btn" onclick="sortCupPlayers('motm')">MVP</button>
         </div>
-        <div id="cupPlayersInner" style="overflow-y:auto"></div>`;
+        <div id="cupPlayersInner" style="overflow:hidden"></div>`;
       window._cupTeamPlayers = players;
       window._curCupTeamSortBy = 'number';
       sortCupPlayers('number');
