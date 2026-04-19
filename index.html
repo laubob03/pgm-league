@@ -398,13 +398,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 99 };
+const APP_VERSION = { major: 1, minor: 0, patch: 100 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-19';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.100', date: '2026-04-19', items: ['🌟 球队详情页-联赛球员MVP显示修复：原来引用了不存在的sd.league.matches，改为正确的sd.matches，MVP次数现已正确计算并显示'] },
   { v: '1.0.99', date: '2026-04-19', items: ['📺 球队详情页窗口：高度撑满整屏，内容超出一屏才滚动'] },
   { v: '1.0.98', date: '2026-04-19', items: ['📺 球队详情页窗口美化：四周16px边距+居中显示，圆角16px，弹出动画居中'] },
   { v: '1.0.97', date: '2026-04-19', items: ['📺 球队详情页全屏显示：无最大宽度限制，撑满整个页面'] },
@@ -3002,14 +3003,13 @@ function showTeamDetail(teamId) {
     if (subTab === 'league') {
       // 联赛球员（含进球/助攻/MVP实时计算）
       const playerStats = {};
-      t.players.forEach(p => { playerStats[p.id] = { ...p }; });
-      if (sd.league && sd.league.matches) {
-        sd.league.matches.filter(m => m.status === 'completed' && (m.homeTeam === teamId || m.awayTeam === teamId)).forEach(m => {
-          if (m.scorers) m.scorers.filter(s => s.teamId === teamId && playerStats[s.playerId]).forEach(s => playerStats[s.playerId].goals = (playerStats[s.playerId].goals || 0) + 1);
-          if (m.assists) m.assists.filter(a => a.teamId === teamId && playerStats[a.playerId]).forEach(a => playerStats[a.playerId].assists = (playerStats[a.playerId].assists || 0) + 1);
-          if (m.motm && playerStats[m.motm]) playerStats[m.motm].motmCount = (playerStats[m.motm].motmCount || 0) + 1;
-        });
-      }
+      t.players.forEach(p => { playerStats[p.id] = { ...p, goals: 0, assists: 0, motmCount: 0 }; });
+      // 从 state.matches（即 sd.matches）中过滤该球队的联赛已完成比赛
+      (sd.matches || []).filter(m => m.status === 'completed' && (m.homeTeam === teamId || m.awayTeam === teamId)).forEach(m => {
+        if (m.scorers) m.scorers.filter(s => s.teamId === teamId && playerStats[s.playerId]).forEach(s => playerStats[s.playerId].goals++);
+        if (m.assists) m.assists.filter(a => a.teamId === teamId && playerStats[a.playerId]).forEach(a => playerStats[a.playerId].assists++);
+        if (m.motm && playerStats[m.motm]) playerStats[m.motm].motmCount++;
+      });
       const players = Object.values(playerStats);
       list.innerHTML = `
         <div class="sort-btns">
