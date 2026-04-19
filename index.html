@@ -2963,8 +2963,8 @@ function showTeamDetail(teamId) {
         const cupRoundClass = isCompleted ? 'tm-round done' : 'tm-round pending';
         return `
         <div class="team-match-row" ${enterAttr} style="${cupMatchRowBg};${cupMatchRowBorder}">
-          <div class="${cupRoundClass}">${isCompleted ? '✓ ' : '○ '}${isCompleted ? '' : '待定　'}${m.cupName} 第${m.round}轮</div>
           <div class="tm-teams">
+            <div class="${cupRoundClass}" style="flex-shrink:0;margin-right:8px">${isCompleted ? '✓ ' : '○ '}${isCompleted ? '' : '待定　'}${m.cupName} 第${m.round}轮</div>
             <div class="tm-team ${isHome ? 'highlight' : ''}">
               <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.display='none'">
               <span style="cursor:pointer" onclick="event.stopPropagation();closeModal();setTimeout(()=>showTeamDetail('${homeTeamId}'),100)">${isHome ? team.name : (opponent ? opponent.name : '未知')}</span>
