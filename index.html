@@ -310,7 +310,6 @@
     <button class="sidebar-item" id="btnCupManage" style="display:none"><span class="sidebar-item-icon">🏆</span>杯赛管理</button>
     <button class="sidebar-item" id="btnArchiveSeason" style="display:none"><span class="sidebar-item-icon">📦</span>归档赛季</button>
     <button class="sidebar-item" id="btnSyncCloud"><span class="sidebar-item-icon">☁️</span>数据同步</button>
-    <button class="sidebar-item" id="btnChangelog"><span class="sidebar-item-icon">📋</span>更新日志</button>
     <button class="sidebar-item" id="sidebarLoginBtn"><span class="sidebar-item-icon">🔑</span>登录</button>
     <button class="sidebar-item danger" id="btnLogout" style="display:none"><span class="sidebar-item-icon">🚪</span>退出登录</button>
   </div>
@@ -4814,7 +4813,6 @@ document.getElementById('btnLogout').onclick = () => logout();
 document.getElementById('aboutBtn').onclick = () => showAboutModal();
 document.getElementById('aboutVersion').textContent = 'v' + APP_VERSION.major + '.' + APP_VERSION.minor + '.' + APP_VERSION.patch + ' by J.K';
 document.getElementById('aboutDate').textContent = APP_BUILD_DATE;
-document.getElementById('btnChangelog').onclick = () => { closeSidebar(); showChangelogModal(); };
 // 侧边栏底部显示最新版本更新提示
 document.getElementById('changelogHint').innerHTML = '<span style="font-size:10px;color:#1a7a2e;cursor:pointer" onclick="showChangelogModal()">📋 v' + CHANGELOG[0].v + ' 更新 →</span>';
 document.getElementById('btnEnterMatch').onclick = () => {
