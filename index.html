@@ -398,13 +398,15 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 111 };
+const APP_VERSION = { major: 1, minor: 0, patch: 112 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-19';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.112', date: '2026-04-19', items: ['🎨 赛程/球队详情比赛卡片：已完成=绿色背景+左侧绿条；待进行=橙色背景+左侧橙条', '🎨 第X轮标签：已完成=绿色徽章(✓)；待进行=橙色徽章(○)；醒目布局'] },
+  { v: '1.0.111', date: '2026-04-19', items: ['👤 球员个人详情页：每个赛季按所在球队分组显示数据（转会后各球队数据分别展示）', '⚡ 球员统计排序：当前球队优先，其余按赛季倒序'] },
   { v: '1.0.110', date: '2026-04-19', items: ['🔄 转会：去除联赛/杯赛数据归零，转会后数据继续累计；修复球队球员Tab的MOTM统计lookup逻辑'] },
   { v: '1.0.107', date: '2026-04-19', items: ['📺 球员列表max-height改为650px'] },
   { v: '1.0.106', date: '2026-04-19', items: ['🐛 球队详情球员Tab：leaguePlayersInner和cupPlayersInner加max-height:400px+overflow-y:auto，独立滚动区域显示全部球员姓名'] },
@@ -1448,8 +1450,13 @@ function renderCupSchedule(cupId) {
       const enterBtn = canEnterCup
         ? '<div style="text-align:center;margin-top:4px"><button class="btn btn-primary btn-small" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'' + cupId + '\')">录入比赛</button></div>'
         : '';
-      html += '<div class="match-card" style="padding:8px 10px;margin-bottom:6px">'
-        + '<div style="font-size:10px;color:#aaa;margin-bottom:3px">' + (m.date || '') + '</div>'
+      const cupCardBorder = isCompleted ? 'border-left:3px solid #4caf50;background:#f0fff0' : 'border-left:3px solid #ff9800;background:#fffbf0';
+      const cupStatusBg = isCompleted ? 'background:#e8f5e9;color:#2E7D32' : 'background:#FFF3E0;color:#E65100';
+      html += '<div class="match-card" style="padding:8px 10px;margin-bottom:6px;' + cupCardBorder + '">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'
+        + '<div style="font-size:10px;color:#aaa">' + (m.date||'') + '</div>'
+        + '<span style="font-size:10px;padding:1px 7px;border-radius:10px;' + cupStatusBg + '">' + (isCompleted ? '已完成' : '待进行') + '</span>'
+        + '</div>'
         + '<div style="display:flex;align-items:stretch;gap:4px">'
           + '<div style="flex:1;display:flex;flex-direction:column;gap:0">'
             + '<div style="display:flex;align-items:center;gap:3px">'
@@ -1459,7 +1466,7 @@ function renderCupSchedule(cupId) {
             + homeDetail
           + '</div>'
           + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px">'
-            + '<span style="font-size:9px;color:' + (isCompleted ? '#2E7D32' : '#E65100') + ';margin-bottom:1px">' + (isCompleted ? '已结束' : '待进行') + '</span>'
+            + '<span style="font-size:9px;color:' + (isCompleted ? '#2E7D32' : '#E65100') + ';margin-bottom:1px;display:none">' + (isCompleted ? '已完成' : '待进行') + '</span>'
             + (isCompleted
               ? (!viewingSeasonId && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cupId))
                 ? '<div class="match-score" style="cursor:pointer" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'' + cupId + '\')"><span>' + m.homeScore + '</span><span class="dash">-</span><span>' + m.awayScore + '</span></div>'
@@ -2106,8 +2113,15 @@ function renderSchedule() {
         ? '<div style="text-align:center;margin-top:4px"><button class="btn btn-primary btn-small" onclick="showEnterMatchModal(\'' + m.id + '\')">\u5F55\u5165\u6BD4\u8D5B</button></div>'
         : '';
 
-      html += '<div class="match-card" style="padding:8px 10px;margin-bottom:6px">'
-        + '<div style="font-size:10px;color:#aaa;margin-bottom:3px">' + (m.date||'') + '</div>'
+      const cardBorder = isCompleted ? 'border-left:3px solid #4caf50;background:#f0fff0' : 'border-left:3px solid #ff9800;background:#fffbf0';
+      const statusBg = isCompleted ? 'background:#e8f5e9;color:#2E7D32' : 'background:#FFF3E0;color:#E65100';
+      const statusLabel = isCompleted ? '已完成' : '待进行';
+
+      html += '<div class="match-card" style="padding:8px 10px;margin-bottom:6px;' + cardBorder + '">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'
+        + '<div style="font-size:10px;color:#aaa">' + (m.date||'') + '</div>'
+        + '<span style="font-size:10px;padding:1px 7px;border-radius:10px;' + statusBg + '">' + statusLabel + '</span>'
+        + '</div>'
         + '<div style="display:flex;align-items:stretch;gap:4px">'
           + '<div style="flex:1;display:flex;flex-direction:column;gap:0">'
             + '<div style="display:flex;align-items:center;gap:3px">'
@@ -2117,7 +2131,7 @@ function renderSchedule() {
             + homeDetail
           + '</div>'
           + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px">'
-            + '<span style="font-size:9px;color:' + (isCompleted?'#2E7D32':'#E65100') + ';margin-bottom:1px">' + (isCompleted?'\u5DF2\u7ED3\u675F':'\u5F85\u8FDB\u884C') + '</span>'
+            + '<span style="font-size:9px;color:' + (isCompleted?'#2E7D32':'#E65100') + ';margin-bottom:1px;display:none">' + (isCompleted?'已完成':'待进行') + '</span>'
             + (isCompleted
               ? (!isArchivedSeason && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && home.league === state.currentUser.league))
                 ? '<div class="match-score" style="cursor:pointer" onclick="showEnterMatchModal(\'' + m.id + '\')"><span>' + m.homeScore + '</span><span class="dash">-</span><span>' + m.awayScore + '</span></div>'
@@ -2803,9 +2817,13 @@ function showTeamDetail(teamId) {
     const canEnter = !viewingSeasonId && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && matchHome && matchHome.league === state.currentUser.league) || state.currentUser.teamId === m.homeTeam || state.currentUser.teamId === m.awayTeam);
     const enterAttr = canEnter ? `onclick="closeModal();setTimeout(()=>showEnterMatchModal('${m.id}'),100)" style="cursor:pointer"` : '';
 
+    const matchRowBg = isCompleted ? 'background:#f0fff0' : 'background:#fffbf0';
+    const roundClass = isCompleted ? 'tm-round done' : 'tm-round pending';
+    const matchRowBorder = isCompleted ? 'border-left:3px solid #4caf50' : 'border-left:3px solid #ff9800';
+
     return `
-    <div class="team-match-row" ${enterAttr}>
-      <div class="tm-round">第${m.round}轮</div>
+    <div class="team-match-row" ${enterAttr} style="${matchRowBg};${matchRowBorder}">
+      <div class="${roundClass}">${isCompleted ? '✓ ' : '○ '}${isCompleted ? '' : '待定　'}第${m.round}轮</div>
       <div class="tm-teams">
         <div class="tm-team ${isHome ? 'highlight' : ''}">
           <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
@@ -2923,9 +2941,12 @@ function showTeamDetail(teamId) {
         const enterAttr = (canEnterMatch || canEditScore) ? `onclick="closeModal();setTimeout(()=>showEnterCupMatchModal('${m.id}','${m.cupId}'),100)" style="cursor:pointer"` : '';
         const homeTeamId = isHome ? teamId : (opponent ? opponent.id : '');
         const awayTeamId = isHome ? (opponent ? opponent.id : '') : teamId;
+        const cupMatchRowBg = isCompleted ? 'background:#f0fff0' : 'background:#fffbf0';
+        const cupMatchRowBorder = isCompleted ? 'border-left:3px solid #4caf50' : 'border-left:3px solid #ff9800';
+        const cupRoundClass = isCompleted ? 'tm-round done' : 'tm-round pending';
         return `
-        <div class="team-match-row" ${enterAttr}>
-          <div class="tm-round">${m.cupName} 第${m.round}轮</div>
+        <div class="team-match-row" ${enterAttr} style="${cupMatchRowBg};${cupMatchRowBorder}">
+          <div class="${cupRoundClass}">${isCompleted ? '✓ ' : '○ '}${isCompleted ? '' : '待定　'}${m.cupName} 第${m.round}轮</div>
           <div class="tm-teams">
             <div class="tm-team ${isHome ? 'highlight' : ''}">
               <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
@@ -2949,10 +2970,13 @@ function showTeamDetail(teamId) {
 
   const content = `
     <style>
-      .team-match-row{padding:4px 8px;border-bottom:1px solid #f0f0f0;line-height:1.3;cursor:default}
+      .team-match-row{padding:6px 10px;border-bottom:1px solid #f0f0f0;line-height:1.3;cursor:default;border-radius:6px;margin-bottom:3px;transition:all .15s}
       .team-match-row[cursor\:pointer]{cursor:pointer}
       .team-match-row:last-child{border-bottom:none}
-      .tm-round{font-size:10px;color:#999;margin-bottom:2px}
+      .tm-round{font-size:11px;font-weight:700;margin-bottom:3px;padding:2px 8px;border-radius:12px;display:inline-block}
+      .tm-round.done{background:#e8f5e9;color:#2e7d32}
+      .tm-round.pending{background:#fff3e0;color:#e65100}
+      .tm-round.mixed{background:#f5f5f5;color:#555}
       .tm-teams{display:flex;align-items:center;gap:4px}
       .tm-team{display:flex;align-items:center;gap:3px;flex:1;font-size:12px}
       .tm-team.highlight{font-weight:600;color:#228B22}
