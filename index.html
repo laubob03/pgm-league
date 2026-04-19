@@ -398,13 +398,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 86 };
+const APP_VERSION = { major: 1, minor: 0, patch: 87 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-19';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.87', date: '2026-04-19', items: ['📋 点击"第X轮"可弹出所有轮次快速跳转'] },
   { v: '1.0.86', date: '2026-04-19', items: ['🔄 赛程页改为单轮显示+左右翻页，录入比分后自动停留在当前轮次', '🏆 杯赛赛程同样支持单轮翻页'] },
   { v: '1.0.85', date: '2026-04-19', items: ['☁️ 主界面新增"上传云端"按钮（管理员/数据员可见）', '🚀 上传成功爆炸式粒子特效+火箭动画', '💀 上传失败全屏红色警告+屏幕震动'] },
   { v: '1.0.84', date: '2026-04-19', items: ['🐛 修复录入比分后页面跳回第1轮的问题，现在会停留在当前轮次'] },
@@ -1381,7 +1382,7 @@ function renderCupSchedule(cupId) {
   // 轮次切换栏
   let html = '<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 0 12px;position:sticky;top:0;z-index:10;background:var(--card);">';
   html += '<button onclick="window[\'_cupSchedRound_' + cupId + '\']=\'' + (roundKeys[curIdx-1]||roundKeys[0]) + '\';renderCupSchedule(\'' + cupId + '\')" style="width:32px;height:32px;border-radius:50%;border:1px solid #ddd;background:var(--card);font-size:16px;cursor:pointer;' + (curIdx<=0?'opacity:0.3;pointer-events:none;':'') + '">◀</button>';
-  html += '<span style="font-size:15px;font-weight:700;min-width:80px;text-align:center;">第' + curRound + '轮</span>';
+  html += '<span onclick="showRoundPicker(this,' + JSON.stringify(roundKeys).replace(/"/g,'&quot;') + ',\'' + curRound + '\',\'' + cupId + '\')" style="font-size:15px;font-weight:700;min-width:80px;text-align:center;cursor:pointer;padding:4px 12px;border-radius:6px;position:relative;user-select:none;" onmouseover="this.style.background=\'#f0f0f0\'" onmouseout="this.style.background=\'transparent\'">第' + curRound + '轮 ▾</span>';
   html += '<button onclick="window[\'_cupSchedRound_' + cupId + '\']=\'' + (roundKeys[curIdx+1]||roundKeys[roundKeys.length-1]) + '\';renderCupSchedule(\'' + cupId + '\')" style="width:32px;height:32px;border-radius:50%;border:1px solid #ddd;background:var(--card);font-size:16px;cursor:pointer;' + (curIdx>=roundKeys.length-1?'opacity:0.3;pointer-events:none;':'') + '">▶</button>';
   html += '</div>';
   (rounds[curRound]||[]).forEach(m => {
@@ -1554,6 +1555,47 @@ function saveScheduleScrollRound(matchId) {
   const sd = getCurrentSeasonData();
   const match = sd.matches.find(m => m.id === matchId);
   if (match && match.round) window._pendingScrollRound = match.round;
+}
+
+// 轮次选择弹窗：点击"第X轮 ▾"显示所有轮次
+function showRoundPicker(anchorEl, roundKeys, curRound, cupId) {
+  // 移除已有弹窗
+  const old = document.getElementById('roundPickerPopup');
+  if (old) { old.remove(); return; }
+  const rect = anchorEl.getBoundingClientRect();
+  const popup = document.createElement('div');
+  popup.id = 'roundPickerPopup';
+  popup.style.cssText = 'position:fixed;left:50%;top:' + (rect.bottom + 4) + 'px;transform:translateX(-50%);background:#fff;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,0.18);padding:8px;z-index:9999;max-height:240px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:4px;justify-content:center;min-width:200px;';
+  roundKeys.forEach(r => {
+    const isCur = String(r) === String(curRound);
+    const btn = document.createElement('button');
+    btn.textContent = '第' + r + '轮';
+    btn.style.cssText = 'padding:6px 12px;border-radius:6px;border:1px solid ' + (isCur ? '#228B22' : '#ddd') + ';background:' + (isCur ? '#228B22' : '#fff') + ';color:' + (isCur ? '#fff' : '#333') + ';font-size:13px;font-weight:' + (isCur ? '700' : '400') + ';cursor:pointer;transition:all 0.15s;';
+    btn.onmouseover = function() { if (!isCur) this.style.background = '#f0f0f0'; };
+    btn.onmouseout = function() { if (!isCur) this.style.background = '#fff'; };
+    btn.onclick = function() {
+      if (cupId) {
+        window['_cupSchedRound_' + cupId] = String(r);
+        renderCupSchedule(cupId);
+      } else {
+        window._schedRound = String(r);
+        renderSchedule();
+      }
+      popup.remove();
+    };
+    popup.appendChild(btn);
+  });
+  document.body.appendChild(popup);
+  // 点击外部关闭
+  setTimeout(() => {
+    const closeHandler = (e) => {
+      if (!popup.contains(e.target) && e.target !== anchorEl) {
+        popup.remove();
+        document.removeEventListener('click', closeHandler);
+      }
+    };
+    document.addEventListener('click', closeHandler);
+  }, 50);
 }
 
 // ===== 主界面上传云端按钮 =====
@@ -1995,7 +2037,7 @@ function renderSchedule() {
   // 轮次切换栏
   let html = '<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 0 12px;position:sticky;top:0;z-index:10;background:var(--card);">';
   html += '<button onclick="window._schedRound=\'' + (roundKeys[curIdx-1]||roundKeys[0]) + '\';renderSchedule()" style="width:32px;height:32px;border-radius:50%;border:1px solid #ddd;background:var(--card);font-size:16px;cursor:pointer;' + (curIdx<=0?'opacity:0.3;pointer-events:none;':'') + '">◀</button>';
-  html += '<span style="font-size:15px;font-weight:700;min-width:80px;text-align:center;">第' + curRound + '轮</span>';
+  html += '<span onclick="showRoundPicker(this,' + JSON.stringify(roundKeys).replace(/"/g,'&quot;') + ',\'' + curRound + '\')" style="font-size:15px;font-weight:700;min-width:80px;text-align:center;cursor:pointer;padding:4px 12px;border-radius:6px;position:relative;user-select:none;" onmouseover="this.style.background=\'#f0f0f0\'" onmouseout="this.style.background=\'transparent\'">第' + curRound + '轮 ▾</span>';
   html += '<button onclick="window._schedRound=\'' + (roundKeys[curIdx+1]||roundKeys[roundKeys.length-1]) + '\';renderSchedule()" style="width:32px;height:32px;border-radius:50%;border:1px solid #ddd;background:var(--card);font-size:16px;cursor:pointer;' + (curIdx>=roundKeys.length-1?'opacity:0.3;pointer-events:none;':'') + '">▶</button>';
   html += '</div>';
   
