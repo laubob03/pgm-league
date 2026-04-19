@@ -2702,7 +2702,9 @@ function getCupPlayerStats(cupId, type, limit) {
 
 // ============ MODALS ============
 function showModal(content) {
-  document.getElementById('modalContent').innerHTML = content;
+  const mc = document.getElementById('modalContent');
+  mc.innerHTML = content;
+  mc.scrollTop = 0;
   document.getElementById('modalOverlay').classList.add('active');
 }
 
