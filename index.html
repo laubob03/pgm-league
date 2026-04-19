@@ -1449,7 +1449,7 @@ function renderCupSchedule(cupId) {
         ? '<div style="text-align:center;margin-top:4px"><button class="btn btn-primary btn-small" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'' + cupId + '\')">录入比赛</button></div>'
         : '';
             // Apple minimal style cup card
-      const statusText = isCompleted ? 'FT' : '';
+      const statusText = isCompleted ? '✅ 已完赛' : '';
       
       html += '<div class="match-card">'
         + '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">'
@@ -2114,7 +2114,7 @@ function renderSchedule() {
         : '';
 
             // Apple minimal style card
-      const statusText = isCompleted ? 'FT' : '';
+      const statusText = isCompleted ? '✅ 已完赛' : '';
       
       html += '<div class="match-card">'
         + '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">'
