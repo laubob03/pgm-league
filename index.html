@@ -1486,6 +1486,8 @@ function renderCupSchedule(cupId) {
       + '</div>';
     });
   container.innerHTML = '<div class="schedule-scroll-area">' + html + '</div>';
+  // 保存当前状态到URL hash
+  saveToUrlHash();
 }
 
 function showEnterCupMatchModal(matchId, cupId) {
@@ -2158,6 +2160,8 @@ function renderSchedule() {
     html = '<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 0 12px;">' + html.split('</div>')[0] + '</div><div class="empty-state"><div class="empty-state-emoji">📅</div><div class="empty-state-text">暂无赛程数据</div></div>';
   }
   container.innerHTML = '<div class="schedule-scroll-area">' + html + '</div>';
+  // 保存当前状态到URL hash
+  saveToUrlHash();
 }
 
 function renderMatchScorers(m) {
@@ -3710,6 +3714,71 @@ function updateNavAndHeader() {
   if (pageEl) pageEl.classList.add('active');
 }
 
+// URL Hash路由 - 保存状态到URL
+function saveToUrlHash() {
+  const page = state.currentPage;
+  const league = state.currentLeague;
+  const round = page === 'schedule' ? (isCupLeague(league) ? window['_cupSchedRound_' + league] : window._schedRound) : null;
+  
+  let hash = page;
+  if (page === 'schedule' && league) {
+    hash += '/' + league;
+    if (round) hash += '/' + round;
+  } else if (page === 'standings' && league) {
+    hash += '/' + league;
+  }
+  
+  // 只在hash变化时更新，避免循环
+  if (location.hash !== '#' + hash) {
+    history.replaceState(null, '', '#' + hash);
+  }
+}
+
+// URL Hash路由 - 从URL恢复状态
+function restoreFromUrlHash() {
+  const hash = location.hash.slice(1); // 去掉#
+  if (!hash) return false;
+  
+  const parts = hash.split('/');
+  const page = parts[0];
+  
+  // 验证页面是否有效
+  const validPages = ['home', 'standings', 'teams', 'schedule', 'stats'];
+  if (!validPages.includes(page)) return false;
+  
+  state.currentPage = page;
+  
+  // 恢复联赛/杯赛
+  if (parts[1]) {
+    const validLeagues = ['super', 'jiaEast', 'jiaWest', 'yiEast', 'yiWest', 'superCup', 'jiaCup', 'yiCup'];
+    if (validLeagues.includes(parts[1])) {
+      state.currentLeague = parts[1];
+    }
+  }
+  
+  // 恢复轮次
+  if (parts[2]) {
+    const round = parseInt(parts[2]);
+    if (!isNaN(round) && round > 0) {
+      if (isCupLeague(state.currentLeague)) {
+        window['_cupSchedRound_' + state.currentLeague] = round;
+      } else {
+        window._schedRound = round;
+      }
+    }
+  }
+  
+  return true;
+}
+
+// 监听hash变化
+window.addEventListener('hashchange', () => {
+  if (restoreFromUrlHash()) {
+    updateNavAndHeader();
+    render();
+  }
+});
+
 function updateSidebar() {
   const loginBtn = document.getElementById("btnLogin");
   const sidebarLoginBtn = document.getElementById("sidebarLoginBtn");
@@ -5176,6 +5245,7 @@ document.getElementById('sidebarOverlay').onclick = () => {
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.onclick = () => {
     state.currentPage = btn.dataset.page;
+    saveToUrlHash();
     updateNavAndHeader();
     render();
   };
@@ -5184,6 +5254,7 @@ document.querySelectorAll('.nav-item').forEach(btn => {
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.onclick = () => {
     state.currentPage = btn.dataset.page;
+    saveToUrlHash();
     updateNavAndHeader();
     render();
   };
@@ -5200,6 +5271,7 @@ document.querySelectorAll('.league-chip').forEach(chip => {
     } else {
       state.currentLeague = chip.dataset.league;
     }
+    saveToUrlHash();
     render();
   };
 });
@@ -5259,9 +5331,13 @@ document.getElementById('modalOverlay').onclick = (e) => {
   } catch(e) { /* 网络异常忽略 */ }
   // 版本检查通过，正常初始化
   loadState();
+  // 从URL hash恢复状态（如果有）
+  restoreFromUrlHash();
   updateSidebar();
   updateNavCloudBtn();
   render();
+  // 保存当前状态到URL hash
+  saveToUrlHash();
   // 自动从云端同步最新数据（静默）
   autoSyncFromCloud();
 })();
