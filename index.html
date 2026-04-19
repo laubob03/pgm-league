@@ -122,7 +122,7 @@
     @keyframes badgePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.5)}}
     .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:center;justify-content:center}
     .modal-overlay.active{display:flex}
-    .modal{background:white;border-radius:16px;width:calc(100vw - 32px);max-width:calc(100vw - 32px);height:100vh;max-height:100vh;overflow-y:auto;padding:20px;animation:slideDown 0.3s ease}
+    .modal{background:white;border-radius:16px;width:calc(100vw - 32px);max-width:calc(100vw - 32px);height:100vh;max-height:100vh;overflow:hidden;padding:20px;animation:slideDown 0.3s ease;display:flex;flex-direction:column}
     @keyframes slideDown{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
     .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
     .modal-title{font-size:18px;font-weight:700}
@@ -398,14 +398,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 100 };
+const APP_VERSION = { major: 1, minor: 0, patch: 101 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-19';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.100', date: '2026-04-19', items: ['🌟 球队详情页-联赛球员MVP显示修复：原来引用了不存在的sd.league.matches，改为正确的sd.matches，MVP次数现已正确计算并显示'] },
+  { v: '1.0.101', date: '2026-04-19', items: ['📺 球队详情页：modal改为flex容器，Tab内容区域去除max-height限制，整页显示完整内容'] },
   { v: '1.0.99', date: '2026-04-19', items: ['📺 球队详情页窗口：高度撑满整屏，内容超出一屏才滚动'] },
   { v: '1.0.98', date: '2026-04-19', items: ['📺 球队详情页窗口美化：四周16px边距+居中显示，圆角16px，弹出动画居中'] },
   { v: '1.0.97', date: '2026-04-19', items: ['📺 球队详情页全屏显示：无最大宽度限制，撑满整个页面'] },
@@ -2953,25 +2953,27 @@ function showTeamDetail(teamId) {
       <div class="modal-title"><img src="${getTeamLogo(team)}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;margin-right:8px" onerror="this.style.display='none'">${team.name} <span class="modal-league">联赛: ${LEAGUE_NAMES[team.league]}</span></div>
       <button class="modal-close" onclick="closeModal()">×</button>
     </div>
-    <div class="form-group">
-      <div class="coach-info"><span class="coach-main">主教练：${team.coach}</span>${assistantDisplay}${coachEditBtn}</div>
-    </div>
-    <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
-      <button class="team-tab-btn active" id="tabBtn_league" onclick="switchTeamTab('league','${teamId}')">📅 联赛战绩</button>
-      <button class="team-tab-btn" id="tabBtn_cup" onclick="switchTeamTab('cup','${teamId}')">🏆 杯赛</button>
-      <button class="team-tab-btn" id="tabBtn_player" onclick="switchTeamTab('player','${teamId}')">👥 球员</button>
-    </div>
-    <div id="teamTabContent_league" style="max-height:320px;overflow-y:auto">${matchesHtml || '<div class="empty-state"><div class="empty-state-emoji">📅</div><div class="empty-state-text">暂无联赛赛程</div></div>'}</div>
-    <div id="teamTabContent_cup" style="display:none;max-height:320px;overflow-y:auto">${cupMatchesHtml || '<div class="empty-state"><div class="empty-state-emoji">🏆</div><div class="empty-state-text">暂无杯赛</div></div>'}</div>
-    <div id="teamTabContent_player" style="display:none">
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">
-        <button class="data-tab active" id="dataTab_league" onclick="switchPlayerSubTab('league','${teamId}')">👥 联赛球员（${team.players.length}人）</button>
-        <button class="data-tab" id="dataTab_cup" onclick="switchPlayerSubTab('cup','${teamId}')">🏆 杯赛球员</button>
-        ${state.currentUser && state.currentUser.isSuperAdmin ? '<button class="data-tab" id="dataTab_transfer" onclick="switchPlayerSubTab(\'transfer\',\'' + teamId + '\')">🔄 转出球员</button>' : ''}
+    <div style="display:flex;flex-direction:column;overflow:hidden;flex:1;min-height:0">
+      <div class="form-group" style="flex-shrink:0">
+        <div class="coach-info"><span class="coach-main">主教练：${team.coach}</span>${assistantDisplay}${coachEditBtn}</div>
       </div>
-      <div id="teamPlayersList" style="max-height:340px;overflow-y:auto"></div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;flex-shrink:0">
+        <button class="team-tab-btn active" id="tabBtn_league" onclick="switchTeamTab('league','${teamId}')">📅 联赛战绩</button>
+        <button class="team-tab-btn" id="tabBtn_cup" onclick="switchTeamTab('cup','${teamId}')">🏆 杯赛</button>
+        <button class="team-tab-btn" id="tabBtn_player" onclick="switchTeamTab('player','${teamId}')">👥 球员</button>
+      </div>
+      <div id="teamTabContent_league" style="overflow-y:auto;flex:1">${matchesHtml || '<div class="empty-state"><div class="empty-state-emoji">📅</div><div class="empty-state-text">暂无联赛赛程</div></div>'}</div>
+      <div id="teamTabContent_cup" style="display:none;overflow-y:auto;flex:1">${cupMatchesHtml || '<div class="empty-state"><div class="empty-state-emoji">🏆</div><div class="empty-state-text">暂无杯赛</div></div>'}</div>
+      <div id="teamTabContent_player" style="display:none;overflow:hidden;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;flex-shrink:0">
+          <button class="data-tab active" id="dataTab_league" onclick="switchPlayerSubTab('league','${teamId}')">👥 联赛球员（${team.players.length}人）</button>
+          <button class="data-tab" id="dataTab_cup" onclick="switchPlayerSubTab('cup','${teamId}')">🏆 杯赛球员</button>
+          ${state.currentUser && state.currentUser.isSuperAdmin ? '<button class="data-tab" id="dataTab_transfer" onclick="switchPlayerSubTab(\'transfer\',\'' + teamId + '\')">🔄 转出球员</button>' : ''}
+        </div>
+        <div id="teamPlayersList" style="overflow-y:auto;flex:1"></div>
+      </div>
     </div>
-    <button class="btn btn-secondary btn-full" onclick="closeModal()">关闭</button>
+    <button class="btn btn-secondary btn-full" onclick="closeModal()" style="flex-shrink:0">关闭</button>
   `;
   showModal(content);
 
