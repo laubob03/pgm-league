@@ -398,7 +398,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 108 };
+const APP_VERSION = { major: 1, minor: 0, patch: 109 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-19';
@@ -3080,6 +3080,14 @@ function showTeamDetail(teamId) {
             <input type="number" id="transferFee" placeholder="如: 5" min="0" step="0.1" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:8px;font-size:13px">
           </div>
           <button class="btn btn-primary" style="width:100%" onclick="doTransferPlayer('${teamId}')">确认转会</button>
+          <div style="margin-top:10px;padding:8px 10px;background:#FFF8E1;border:1px solid #FFE082;border-radius:8px;font-size:11px;color:#795548;line-height:1.6">
+            <div style="font-weight:600;margin-bottom:4px">📋 转会须知</div>
+            <div>• 球员将立即从本球队移至转入球队</div>
+            <div>• 转会后联赛数据（进球/助攻/MVP）<b>归零</b>，从新球队重新计算</div>
+            <div>• 转会费仅做标记，不影响球队预算</div>
+            <div>• 球员号码保留，如与转入球队球员重复请手动调整</div>
+            <div>• 历史赛季数据不受影响，仅当前赛季重置</div>
+          </div>
         </div>`;
     }
   };
