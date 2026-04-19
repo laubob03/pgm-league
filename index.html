@@ -398,14 +398,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 104 };
+const APP_VERSION = { major: 1, minor: 0, patch: 105 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-19';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.104', date: '2026-04-19', items: ['🐛 球队详情球员Tab：leaguePlayersInner和cupPlayersInner改为overflow:hidden，滚动统一由外层teamPlayersList处理，显示所有球员姓名'] },
+  { v: '1.0.105', date: '2026-04-19', items: ['🐛 球队详情球员Tab：给teamPlayersList加min-height:0，修复flex子元素无法收缩导致的滚动失效问题'] },
   { v: '1.0.99', date: '2026-04-19', items: ['📺 球队详情页窗口：高度撑满整屏，内容超出一屏才滚动'] },
   { v: '1.0.98', date: '2026-04-19', items: ['📺 球队详情页窗口美化：四周16px边距+居中显示，圆角16px，弹出动画居中'] },
   { v: '1.0.97', date: '2026-04-19', items: ['📺 球队详情页全屏显示：无最大宽度限制，撑满整个页面'] },
@@ -2973,7 +2973,7 @@ function showTeamDetail(teamId) {
           <button class="data-tab" id="dataTab_cup" onclick="switchPlayerSubTab('cup','${teamId}')">🏆 杯赛球员</button>
           ${state.currentUser && state.currentUser.isSuperAdmin ? '<button class="data-tab" id="dataTab_transfer" onclick="switchPlayerSubTab(\'transfer\',\'' + teamId + '\')">🔄 转出球员</button>' : ''}
         </div>
-        <div id="teamPlayersList" style="overflow-y:auto;flex:1"></div>
+        <div id="teamPlayersList" style="overflow-y:auto;flex:1;min-height:0"></div>
       </div>
     </div>
     <button class="btn btn-secondary btn-full" onclick="closeModal()" style="flex-shrink:0">关闭</button>
