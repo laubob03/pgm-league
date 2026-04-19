@@ -398,14 +398,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 121 };
+const APP_VERSION = { major: 1, minor: 0, patch: 122 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-19';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.121', date: '2026-04-20', items: ['🎨 +按钮有值时：橙色底+橙色发光'] },
+  { v: '1.0.122', date: '2026-04-20', items: ['🐛 修复联赛面板减到0时颜色不恢复'] },
   { v: '1.0.113', date: '2026-04-20', items: ['🎨 录入比赛：球员名移到左侧，+/-按钮和数值移到右侧；有值行高亮绿色'] },
   { v: '1.0.112', date: '2026-04-19', items: ['🎨 赛程/球队详情比赛卡片：已完成=绿色背景+左侧绿条；待进行=橙色背景+左侧橙条', '🎨 第X轮标签：已完成=绿色徽章(✓)；待进行=橙色徽章(○)；醒目布局'] },
   { v: '1.0.111', date: '2026-04-19', items: ['👤 球员个人详情页：每个赛季按所在球队分组显示数据（转会后各球队数据分别展示）', '⚡ 球员统计排序：当前球队优先，其余按赛季倒序'] },
@@ -3398,6 +3398,7 @@ function showEnterMatchModal(matchId) {
     let v = parseInt(inp.value) || 0;
     v = Math.max(0, v + d);
     inp.value = v;
+    inp.closest('.pr').classList.toggle('has-val', v > 0);
     inp.dispatchEvent(new Event('input', { bubbles: true }));
   };
 
