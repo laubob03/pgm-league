@@ -398,14 +398,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 87 };
+const APP_VERSION = { major: 1, minor: 0, patch: 88 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-19';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.87', date: '2026-04-19', items: ['📋 点击"第X轮"可弹出所有轮次快速跳转'] },
+  { v: '1.0.88', date: '2026-04-19', items: ['📋 球队详情页改为Tab切换布局（联赛战绩/杯赛/球员），更简洁'] },
   { v: '1.0.86', date: '2026-04-19', items: ['🔄 赛程页改为单轮显示+左右翻页，录入比分后自动停留在当前轮次', '🏆 杯赛赛程同样支持单轮翻页'] },
   { v: '1.0.85', date: '2026-04-19', items: ['☁️ 主界面新增"上传云端"按钮（管理员/数据员可见）', '🚀 上传成功爆炸式粒子特效+火箭动画', '💀 上传失败全屏红色警告+屏幕震动'] },
   { v: '1.0.84', date: '2026-04-19', items: ['🐛 修复录入比分后页面跳回第1轮的问题，现在会停留在当前轮次'] },
@@ -2931,6 +2931,9 @@ function showTeamDetail(teamId) {
       .sort-btn.active{background:#228B22;color:#fff;border-color:#228B22}
       .data-tab{font-size:12px;padding:3px 10px;border-radius:12px;border:1px solid #FFD700;background:#fff;cursor:pointer;color:#666;font-weight:500}
       .data-tab.active{background:#FFD700;color:#333;border-color:#FFD700}
+      .team-tab-btn{padding:4px 14px;border-radius:16px;border:1px solid #ddd;background:#fff;color:#555;font-size:12px;cursor:pointer;font-weight:500}
+      .team-tab-btn.active{background:#228B22;border-color:#228B22;color:#fff}
+      .team-tab-btn:hover:not(.active){background:#e8f5e9}
     </style>
     <div class="modal-header">
       <div class="modal-title"><img src="${getTeamLogo(team)}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;margin-right:8px" onerror="this.style.display='none'">${team.name} <span class="modal-league">联赛: ${LEAGUE_NAMES[team.league]}</span></div>
@@ -2939,18 +2942,17 @@ function showTeamDetail(teamId) {
     <div class="form-group">
       <div class="coach-info"><span class="coach-main">主教练：${team.coach}</span>${assistantDisplay}${coachEditBtn}</div>
     </div>
-    <div class="form-group">
-      <div class="form-label">📅 联赛战绩</div>
-      <div style="max-height:220px;overflow-y:auto">${matchesHtml || '<div class="empty-state"><div class="empty-state-emoji">📅</div><div class="empty-state-text">暂无赛程</div></div>'}</div>
+    <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+      <button class="team-tab-btn active" id="tabBtn_league" onclick="switchTeamTab('league','${teamId}')">📅 联赛战绩</button>
+      <button class="team-tab-btn" id="tabBtn_cup" onclick="switchTeamTab('cup','${teamId}')">🏆 杯赛</button>
+      <button class="team-tab-btn" id="tabBtn_player" onclick="switchTeamTab('player','${teamId}')">👥 球员</button>
     </div>
-    <div class="form-group">
-      <div class="form-label">🏆 杯赛赛程</div>
-      <div style="max-height:220px;overflow-y:auto">${cupMatchesHtml || '<div class="empty-state"><div class="empty-state-emoji">🏆</div><div class="empty-state-text">暂无杯赛</div></div>'}</div>
-    </div>
-    <div class="form-group">
-      <div class="form-label" style="display:flex;align-items:center;gap:8px">
-        <span>👥 联赛球员数据（${team.players.length}人）</span>
-        <span class="data-tab" onclick="showCupPlayerData('${teamId}')">🏆 杯赛球员数据</span>
+    <div id="teamTabContent_league" style="max-height:320px;overflow-y:auto">${matchesHtml || '<div class="empty-state"><div class="empty-state-emoji">📅</div><div class="empty-state-text">暂无联赛赛程</div></div>'}</div>
+    <div id="teamTabContent_cup" style="display:none;max-height:320px;overflow-y:auto">${cupMatchesHtml || '<div class="empty-state"><div class="empty-state-emoji">🏆</div><div class="empty-state-text">暂无杯赛</div></div>'}</div>
+    <div id="teamTabContent_player" style="display:none">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+        <span style="font-size:12px;font-weight:600;color:#333">👥 联赛球员（${team.players.length}人）</span>
+        <span class="data-tab" onclick="showCupPlayerData('${teamId}')">🏆 杯赛球员</span>
         ${state.currentUser && state.currentUser.isSuperAdmin ? '<span class="data-tab" style="color:#FF9800" onclick="showTransferPlayerModal(\'' + teamId + '\')">🔄 转出球员</span>' : ''}
       </div>
       <div class="sort-btns">
@@ -2965,34 +2967,33 @@ function showTeamDetail(teamId) {
   `;
   showModal(content);
 
+  // 切换球队详情Tab
+  window.switchTeamTab = (tab, teamId) => {
+    ['league','cup','player'].forEach(t => {
+      const btn = document.getElementById('tabBtn_' + t);
+      const content = document.getElementById('teamTabContent_' + t);
+      if (btn) btn.classList.toggle('active', t === tab);
+      if (content) content.style.display = t === tab ? '' : 'none';
+    });
+  };
+
   // 排序函数
   window.sortTeamPlayers = (sortBy) => {
     document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
-    
     let sorted;
     switch(sortBy) {
-      case 'goals':
-        sorted = [...team.players].sort((a, b) => (b.goals || 0) - (a.goals || 0));
-        break;
-      case 'assists':
-        sorted = [...team.players].sort((a, b) => (b.assists || 0) - (a.assists || 0));
-        break;
-      case 'motm':
-        sorted = [...team.players].sort((a, b) => (b.motmCount || 0) - (a.motmCount || 0));
-        break;
-      case 'number':
-      default:
-        sorted = [...team.players].sort((a, b) => (a.number || 0) - (b.number || 0));
+      case 'goals': sorted = [...team.players].sort((a, b) => (b.goals || 0) - (a.goals || 0)); break;
+      case 'assists': sorted = [...team.players].sort((a, b) => (b.assists || 0) - (a.assists || 0)); break;
+      case 'motm': sorted = [...team.players].sort((a, b) => (b.motmCount || 0) - (a.motmCount || 0)); break;
+      default: sorted = [...team.players].sort((a, b) => (a.number || 0) - (b.number || 0));
     }
-    const html = sorted.map(p => `
+    document.getElementById('teamPlayersList').innerHTML = sorted.map(p => `
       <div class="player-row">
         <span class="player-num">${p.number}</span>
         <span class="player-nm"><span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${p.uid}')">${p.name}</span></span>
         <span class="player-st">⚽${p.goals || 0} 👟${p.assists || 0} ⭐${p.motmCount || 0}</span>
-      </div>
-    `).join('');
-    document.getElementById('teamPlayersList').innerHTML = html;
+      </div>`).join('');
   };
 }
 
