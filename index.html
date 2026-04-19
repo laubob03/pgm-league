@@ -1455,7 +1455,7 @@ function renderCupSchedule(cupId) {
       
       html += '<div class="match-card">'
         + '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--apple-separator,#e5e5ea)">'
-          + '<div style="flex:1;min-width:0;text-align:center">
+          + '<div style="flex:1;min-width:0;text-align:center">'
             + '<div style="display:flex;align-items:center;justify-content:center;gap:8px">'
               + '<img class="match-team-logo" src="' + getTeamLogo(home) + '" onerror="this.style.display=\'none\'">'
               + '<span class="match-team-name" onclick="showTeamDetail(\'' + home.id + '\')">' + home.name + '</span>'
@@ -1470,7 +1470,7 @@ function renderCupSchedule(cupId) {
               : '<div class="match-score" style="color:#aeaeb2"><span class="dash">&ndash;</span><span class="dash">&ndash;</span></div>')
             + (statusText ? '<div style="font-size:10px;color:#86868b;letter-spacing:0.5px">' + statusText + '</div>' : '')
           + '</div>'
-          + '<div style="flex:1;min-width:0;text-align:center">
+          + '<div style="flex:1;min-width:0;text-align:center">'
             + '<div style="display:flex;align-items:center;justify-content:center;gap:8px">'
               + '<span class="match-team-name" onclick="showTeamDetail(\'' + away.id + '\')">' + away.name + '</span>'
               + '<img class="match-team-logo" src="' + getTeamLogo(away) + '" onerror="this.style.display=\'none\'">'
@@ -2122,7 +2122,7 @@ function renderSchedule() {
       
       html += '<div class="match-card">'
         + '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--apple-separator,#e5e5ea)">'
-          + '<div style="flex:1;min-width:0;text-align:center">
+          + '<div style="flex:1;min-width:0;text-align:center">'
             + '<div style="display:flex;align-items:center;justify-content:center;gap:8px">'
               + '<img class="match-team-logo" src="' + getTeamLogo(home) + '" onerror="this.style.display=\'none\'">'
               + '<span class="match-team-name" onclick="showTeamDetail(\'' + home.id + '\')">' + home.name + '</span>'
@@ -2137,7 +2137,7 @@ function renderSchedule() {
               : '<div class="match-score" style="color:#aeaeb2"><span class="dash">&ndash;</span><span class="dash">&ndash;</span></div>')
             + (statusText ? '<div style="font-size:10px;color:#86868b;letter-spacing:0.5px">' + statusText + '</div>' : '')
           + '</div>'
-          + '<div style="flex:1;min-width:0;text-align:center">
+          + '<div style="flex:1;min-width:0;text-align:center">'
             + '<div style="display:flex;align-items:center;justify-content:center;gap:8px">'
               + '<span class="match-team-name" onclick="showTeamDetail(\'' + away.id + '\')">' + away.name + '</span>'
               + '<img class="match-team-logo" src="' + getTeamLogo(away) + '" onerror="this.style.display=\'none\'">'
