@@ -2832,11 +2832,11 @@ function showTeamDetail(teamId) {
           <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.display='none'">
           <span>${isHome ? team.name : (opponent ? opponent.name : '未知')}</span>
         </div>
-        <div class="tm-score-area">
-          ${isCompleted
-            ? `<span class="tm-score" style="${teamScore > oppScore ? 'font-weight:700;color:#4caf50' : teamScore < oppScore ? '' : ''}">${isHome ? teamScore : oppScore}</span><span class="tm-dash">-</span><span class="tm-score">${isHome ? oppScore : teamScore}</span>`
-            : '<span style="font-size:16px">⚔️</span>'}
-        </div>
+          <div class="tm-score-area"${isCompleted ? ` style="background:${teamScore > oppScore ? '#4caf50' : teamScore < oppScore ? '#f44336' : '#9e9e9e'};border-radius:8px;padding:4px 10px"` : ''}>
+            ${isCompleted
+              ? `<span class="tm-score" style="color:#fff;font-weight:700">${isHome ? teamScore : oppScore}</span><span class="tm-dash" style="color:#fff">-</span><span class="tm-score" style="color:#fff;font-weight:700">${isHome ? oppScore : teamScore}</span>`
+              : '<span style="font-size:16px">⚔️</span>'}
+          </div>
         <div class="tm-team ${!isHome ? 'highlight' : ''}">
           <span>${isHome ? (opponent ? opponent.name : '未知') : team.name}</span>
           <img src="${isHome ? (opponent ? getTeamLogo(opponent) : '') : getTeamLogo(team)}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.display='none'">
@@ -2955,11 +2955,11 @@ function showTeamDetail(teamId) {
               <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.display='none'">
               <span style="cursor:pointer" onclick="event.stopPropagation();closeModal();setTimeout(()=>showTeamDetail('${homeTeamId}'),100)">${isHome ? team.name : (opponent ? opponent.name : '未知')}</span>
             </div>
-            <div class="tm-score-area">
-              ${isCompleted
-                ? `<span class="tm-score" style="${homeScore > awayScore === isHome ? 'font-weight:700;color:#4caf50' : ''}">${homeScore}</span><span class="tm-dash">-</span><span class="tm-score" style="${awayScore > homeScore === !isHome ? 'font-weight:700;color:#4caf50' : ''}">${awayScore}</span>`
-                : '<span style="font-size:16px">⚔️</span>'}
-            </div>
+              <div class="tm-score-area"${isCompleted ? ` style="background:${(isHome&&homeScore>awayScore)||(!isHome&&awayScore>homeScore)?'#4caf50':(isHome&&homeScore<awayScore)||(!isHome&&awayScore<homeScore)?'#f44336':'#9e9e9e'};border-radius:8px;padding:4px 10px"` : ''}>
+                ${isCompleted
+                  ? `<span class="tm-score" style="color:#fff;font-weight:700">${homeScore}</span><span class="tm-dash" style="color:#fff">-</span><span class="tm-score" style="color:#fff;font-weight:700">${awayScore}</span>`
+                  : '<span style="font-size:16px">⚔️</span>'}
+              </div>
             <div class="tm-team ${!isHome ? 'highlight' : ''}">
               <span style="cursor:pointer" onclick="event.stopPropagation();closeModal();setTimeout(()=>showTeamDetail('${awayTeamId}'),100)">${isHome ? (opponent ? opponent.name : '未知') : team.name}</span>
               <img src="${isHome ? (opponent ? getTeamLogo(opponent) : '') : getTeamLogo(team)}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.display='none'">
