@@ -398,13 +398,16 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 90 };
+const APP_VERSION = { major: 1, minor: 0, patch: 93 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-19';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.93', date: '2026-04-19', items: ['📐 弹窗高度撑满全屏（100vh）'] },
+  { v: '1.0.92', date: '2026-04-19', items: ['📐 弹窗改为顶部对齐，内容区最大高度滚动展示'] },
+  { v: '1.0.91', date: '2026-04-19', items: ['ℹ️ 底部访问量行增加版本号显示'] },
   { v: '1.0.90', date: '2026-04-19', items: ['👥 球队详情-球员Tab：联赛球员/杯赛球员/转出球员改为子Tab内切换，不再弹新窗口'] },
   { v: '1.0.89', date: '2026-04-19', items: ['🔧 修复：APP_VERSION 版本号同步'] },
   { v: '1.0.88', date: '2026-04-19', items: ['📋 球队详情页改为Tab切换布局（联赛战绩/杯赛/球员），更简洁'] },
@@ -3451,7 +3454,7 @@ function showChangelogModal() {
     html += `
       <div style="margin-bottom:${isFirst ? '16' : '14'}px;padding-bottom:${isFirst ? '16' : '14'}px;${i < CHANGELOG.length - 1 ? 'border-bottom:1px solid #f0f0f0;' : ''}">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-          <span style="font-size:14px;font-weight:700;color:#1a7a2e;font-family:'SF Mono',Consolas,monospace">v${log.v}</span>
+          <span style="font-size:14px;font-weight:700;color:#1a7a2e;font-family:'SF Mono',Consolas,monospace">v${log.v} by J.K</span>
           <span style="font-size:11px;color:#aaa">${log.date}</span>
           ${isFirst ? '<span style="font-size:10px;background:#1a7a2e;color:#fff;padding:1px 6px;border-radius:8px;font-weight:600">NEW</span>' : ''}
         </div>
@@ -5167,7 +5170,7 @@ function showForceUpdateModal(minVer) {
       <div style="font-size:64px;margin-bottom:16px;">🚨</div>
       <div style="font-size:22px;font-weight:bold;color:#e91e63;margin-bottom:8px;">版本过低</div>
       <div style="font-size:14px;color:#666;margin-bottom:24px;line-height:1.8;">
-        当前版本：<b>v${getAppVersion()}</b><br>
+        当前版本：<b>v${getAppVersion()} by J.K</b><br>
         最低要求：<b>v${minVer}</b><br>
         <span style="color:#f44336;font-weight:bold;">请刷新页面以更新到最新版本</span>
       </div>
