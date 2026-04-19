@@ -398,14 +398,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 101 };
+const APP_VERSION = { major: 1, minor: 0, patch: 102 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-19';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.101', date: '2026-04-19', items: ['📺 球队详情页：modal改为flex容器，Tab内容区域去除max-height限制，整页显示完整内容'] },
+  { v: '1.0.102', date: '2026-04-19', items: ['🐛 球队详情页-球员：移除leaguePlayersInner和cupPlayersInner的max-height:300px限制，全高显示球员列表'] },
   { v: '1.0.99', date: '2026-04-19', items: ['📺 球队详情页窗口：高度撑满整屏，内容超出一屏才滚动'] },
   { v: '1.0.98', date: '2026-04-19', items: ['📺 球队详情页窗口美化：四周16px边距+居中显示，圆角16px，弹出动画居中'] },
   { v: '1.0.97', date: '2026-04-19', items: ['📺 球队详情页全屏显示：无最大宽度限制，撑满整个页面'] },
@@ -3020,7 +3020,7 @@ function showTeamDetail(teamId) {
           <button class="sort-btn" onclick="sortLeaguePlayers('assists')">助攻</button>
           <button class="sort-btn" onclick="sortLeaguePlayers('motm')">MVP</button>
         </div>
-        <div id="leaguePlayersInner" style="max-height:300px;overflow-y:auto"></div>`;
+        <div id="leaguePlayersInner" style="overflow-y:auto"></div>`;
       window._curTeamPlayers = players;
       window._curTeamSortBy = 'number';
       sortLeaguePlayers('number', players);
@@ -3048,7 +3048,7 @@ function showTeamDetail(teamId) {
           <button class="sort-btn" onclick="sortCupPlayers('assists')">助攻</button>
           <button class="sort-btn" onclick="sortCupPlayers('motm')">MVP</button>
         </div>
-        <div id="cupPlayersInner" style="max-height:300px;overflow-y:auto"></div>`;
+        <div id="cupPlayersInner" style="overflow-y:auto"></div>`;
       window._cupTeamPlayers = players;
       window._curCupTeamSortBy = 'number';
       sortCupPlayers('number');
