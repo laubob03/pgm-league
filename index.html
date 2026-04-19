@@ -2832,7 +2832,7 @@ function showTeamDetail(teamId) {
           <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.display='none'">
           <span>${isHome ? team.name : (opponent ? opponent.name : '未知')}</span>
         </div>
-          <div class="tm-score-area"${isCompleted ? ` style="background:${teamScore > oppScore ? '#4caf50' : teamScore < oppScore ? '#f44336' : '#9e9e9e'};border-radius:8px;padding:4px 10px"` : ''}>
+          <div class="tm-score-area"${isCompleted ? ` style="background:${teamScore > oppScore ? '#f44336' : teamScore < oppScore ? '#4caf50' : '#9e9e9e'};border-radius:8px;padding:4px 10px"` : ''}>
             ${isCompleted
               ? `<span class="tm-score" style="color:#fff;font-weight:700">${isHome ? teamScore : oppScore}</span><span class="tm-dash" style="color:#fff">-</span><span class="tm-score" style="color:#fff;font-weight:700">${isHome ? oppScore : teamScore}</span>`
               : '<span style="font-size:16px">⚔️</span>'}
@@ -2955,7 +2955,7 @@ function showTeamDetail(teamId) {
               <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.display='none'">
               <span style="cursor:pointer" onclick="event.stopPropagation();closeModal();setTimeout(()=>showTeamDetail('${homeTeamId}'),100)">${isHome ? team.name : (opponent ? opponent.name : '未知')}</span>
             </div>
-              <div class="tm-score-area"${isCompleted ? ` style="background:${(isHome&&homeScore>awayScore)||(!isHome&&awayScore>homeScore)?'#4caf50':(isHome&&homeScore<awayScore)||(!isHome&&awayScore<homeScore)?'#f44336':'#9e9e9e'};border-radius:8px;padding:4px 10px"` : ''}>
+              <div class="tm-score-area"${isCompleted ? ` style="background:${(isHome&&homeScore>awayScore)||(!isHome&&awayScore>homeScore)?'#f44336':(isHome&&homeScore<awayScore)||(!isHome&&awayScore<homeScore)?'#4caf50':'#9e9e9e'};border-radius:8px;padding:4px 10px"` : ''}>
                 ${isCompleted
                   ? `<span class="tm-score" style="color:#fff;font-weight:700">${homeScore}</span><span class="tm-dash" style="color:#fff">-</span><span class="tm-score" style="color:#fff;font-weight:700">${awayScore}</span>`
                   : '<span style="font-size:16px">⚔️</span>'}
