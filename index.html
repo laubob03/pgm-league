@@ -398,13 +398,15 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 93 };
+const APP_VERSION = { major: 1, minor: 0, patch: 95 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-19';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.95', date: '2026-04-19', items: ['⭐ 修复"球队详情-联赛球员"MVP显示：改为从联赛比赛记录实时计算，与杯赛逻辑一致'] },
+  { v: '1.0.94', date: '2026-04-19', items: ['📐 弹窗内容区高度改为200vh'] },
   { v: '1.0.93', date: '2026-04-19', items: ['📐 弹窗高度撑满全屏（100vh）'] },
   { v: '1.0.92', date: '2026-04-19', items: ['📐 弹窗改为顶部对齐，内容区最大高度滚动展示'] },
   { v: '1.0.91', date: '2026-04-19', items: ['ℹ️ 底部访问量行增加版本号显示'] },
@@ -2994,7 +2996,17 @@ function showTeamDetail(teamId) {
     const list = document.getElementById('teamPlayersList');
 
     if (subTab === 'league') {
-      // 联赛球员（含排序）
+      // 联赛球员（含进球/助攻/MVP实时计算）
+      const playerStats = {};
+      t.players.forEach(p => { playerStats[p.id] = { ...p }; });
+      if (sd.league && sd.league.matches) {
+        sd.league.matches.filter(m => m.status === 'completed' && (m.homeTeam === teamId || m.awayTeam === teamId)).forEach(m => {
+          if (m.scorers) m.scorers.filter(s => s.teamId === teamId && playerStats[s.playerId]).forEach(s => playerStats[s.playerId].goals = (playerStats[s.playerId].goals || 0) + 1);
+          if (m.assists) m.assists.filter(a => a.teamId === teamId && playerStats[a.playerId]).forEach(a => playerStats[a.playerId].assists = (playerStats[a.playerId].assists || 0) + 1);
+          if (m.motm && playerStats[m.motm]) playerStats[m.motm].motmCount = (playerStats[m.motm].motmCount || 0) + 1;
+        });
+      }
+      const players = Object.values(playerStats);
       list.innerHTML = `
         <div class="sort-btns">
           <button class="sort-btn active" onclick="sortLeaguePlayers('number')">号码</button>
@@ -3003,8 +3015,9 @@ function showTeamDetail(teamId) {
           <button class="sort-btn" onclick="sortLeaguePlayers('motm')">MVP</button>
         </div>
         <div id="leaguePlayersInner" style="max-height:300px;overflow-y:auto"></div>`;
+      window._curTeamPlayers = players;
       window._curTeamSortBy = 'number';
-      sortLeaguePlayers('number', t.players);
+      sortLeaguePlayers('number', players);
 
     } else if (subTab === 'cup') {
       // 杯赛球员
