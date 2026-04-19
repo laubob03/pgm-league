@@ -398,7 +398,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 110 };
+const APP_VERSION = { major: 1, minor: 0, patch: 111 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-19';
@@ -2327,67 +2327,69 @@ function getPlayerCrossSeasonStats(playerUid, playerName) {
 
   seasonList.forEach(season => {
     const sd = season.data;
-    let leagueGoals = 0, leagueAssists = 0, leagueMotm = 0;
-    let cupGoals = 0, cupAssists = 0, cupMotm = 0;
-    let teamName = '';
-    let transferFee = 0;
-    let transferFrom = '';
-    let transferDate = '';
 
-    // 联赛统计：从比赛记录实时计算（与杯赛一致）
+    // 找出该赛季球员在的所有球队（跨转会）
+    const playerTeams = [];
     if (sd.teams) {
-      for (const team of sd.teams) {
-        if (!team.players) continue;
+      sd.teams.forEach(team => {
+        if (!team.players) return;
         const p = team.players.find(x => x.uid == playerUid || (x.id && x.id.includes('_' + playerUid)));
-        if (p) {
-          teamName = team.name;
-          transferFee = p.transferFee || 0;
-          transferFrom = p.transferFrom || '';
-          transferDate = p.transferDate || '';
-          break;
-        }
+        if (p) playerTeams.push({ id: team.id, name: team.name, transferFee: p.transferFee || 0, transferFrom: p.transferFrom || '', transferDate: p.transferDate || '' });
+      });
+    }
+    if (!playerTeams.length) return;
+
+    // 按球队分别计算数据
+    playerTeams.forEach(pt => {
+      let leagueGoals = 0, leagueAssists = 0, leagueMotm = 0;
+      let cupGoals = 0, cupAssists = 0, cupMotm = 0;
+
+      // 联赛进球/助攻/MVP：只看该球队参与的比赛
+      if (sd.matches) {
+        sd.matches.filter(m => m.status === 'completed' && (m.homeTeam === pt.id || m.awayTeam === pt.id)).forEach(m => {
+          if (m.scorers) m.scorers.filter(s => s.teamId === pt.id && String(s.playerId).includes('_' + playerUid)).forEach(() => leagueGoals++);
+          if (m.assists) m.assists.filter(a => a.teamId === pt.id && String(a.playerId).includes('_' + playerUid)).forEach(() => leagueAssists++);
+          if (m.motm) {
+            const motmRaw = String(m.motm);
+            if (motmRaw.includes('_' + playerUid)) {
+              const motmTeamId = motmRaw.split('_')[0];
+              if (motmTeamId === pt.id) leagueMotm++;
+            }
+          }
+        });
       }
-    }
-    // 联赛进球/助攻/MVP：从比赛记录实时计算
-    if (sd.matches && teamName) {
-      sd.matches.filter(m => m.status === 'completed').forEach(m => {
-        if (m.scorers) m.scorers.forEach(s => {
-          if (String(s.playerId).includes('_' + playerUid)) leagueGoals++;
-        });
-        if (m.assists) m.assists.forEach(a => {
-          if (String(a.playerId).includes('_' + playerUid)) leagueAssists++;
-        });
-        if (m.motm && String(m.motm).includes('_' + playerUid)) leagueMotm++;
-      });
-    }
 
-    // 杯赛统计：从比赛记录实时计算
-    if (sd.cups) {
-      Object.keys(CUP_NAMES || {}).forEach(cupId => {
-        const cup = sd.cups[cupId];
-        if (!cup || !cup.matches) return;
-        cup.matches.filter(m => m.status === 'completed').forEach(m => {
-          if (m.scorers) m.scorers.forEach(s => {
-            if (String(s.playerId).includes('_' + playerUid)) cupGoals++;
+      // 杯赛进球/助攻/MVP
+      if (sd.cups) {
+        Object.keys(CUP_NAMES || {}).forEach(cupId => {
+          const cup = sd.cups[cupId];
+          if (!cup || !cup.matches) return;
+          cup.matches.filter(m => m.status === 'completed' && (m.homeTeam === pt.id || m.awayTeam === pt.id)).forEach(m => {
+            if (m.scorers) m.scorers.filter(s => s.teamId === pt.id && String(s.playerId).includes('_' + playerUid)).forEach(() => cupGoals++);
+            if (m.assists) m.assists.filter(a => a.teamId === pt.id && String(a.playerId).includes('_' + playerUid)).forEach(() => cupAssists++);
+            if (m.motm) {
+              const motmRaw = String(m.motm);
+              if (motmRaw.includes('_' + playerUid)) {
+                const motmTeamId = motmRaw.split('_')[0];
+                if (motmTeamId === pt.id) cupMotm++;
+              }
+            }
           });
-          if (m.assists) m.assists.forEach(a => {
-            if (String(a.playerId).includes('_' + playerUid)) cupAssists++;
-          });
-          if (m.motm && String(m.motm).includes('_' + playerUid)) cupMotm++;
         });
-      });
-    }
+      }
 
-    // 只要球员在该赛季球队名单中就记录
-    if (teamName) {
+      // 只要该赛季在这支球队有数据就记录（含0场）
       results.push({
         seasonId: season.id,
-        teamName: teamName,
+        teamName: pt.name,
+        teamId: pt.id,
         leagueGoals, leagueAssists, leagueMotm,
         cupGoals, cupAssists, cupMotm,
-        transferFee, transferFrom, transferDate
+        transferFee: pt.transferFee,
+        transferFrom: pt.transferFrom,
+        transferDate: pt.transferDate
       });
-    }
+    });
   });
 
   return results;
@@ -2454,9 +2456,19 @@ function togglePlayerSeasonDetail(el, uid) {
 
   // 所有赛季按赛季号排列（当前赛季排在第一个）
   const currentSeasonId = state.currentSeasonId || 62;
+  // 按赛季+球队排序：本赛季优先，同赛季内当前球队优先，其余按时间倒序
   const allStats = [...stats].sort((a, b) => {
-    if (a.seasonId === currentSeasonId) return -1;
-    if (b.seasonId === currentSeasonId) return 1;
+    if (a.seasonId === currentSeasonId && b.seasonId !== currentSeasonId) return -1;
+    if (b.seasonId === currentSeasonId && a.seasonId !== currentSeasonId) return 1;
+    if (a.seasonId === b.seasonId) {
+      // 同赛季：当前球队优先
+      if (a.teamId && b.teamId) {
+        const curTid = window._curTeamId || '';
+        if (a.teamId === curTid && b.teamId !== curTid) return -1;
+        if (b.teamId === curTid && a.teamId !== curTid) return 1;
+      }
+      return 0;
+    }
     return b.seasonId - a.seasonId;
   });
 
@@ -2472,18 +2484,27 @@ function togglePlayerSeasonDetail(el, uid) {
   html += `${ageStr}<span style="margin-left:auto">${clauseStr}</span>`;
   html += '</div>';
 
-  // 每赛季一行：赛季、进球、助攻、MVP（简约风格）
+  // 每赛季一行：赛季、球队、进球、助攻、MVP
   allStats.forEach((s, i) => {
     const tg = s.leagueGoals + s.cupGoals;
     const ta = s.leagueAssists + s.cupAssists;
     const tm = s.leagueMotm + s.cupMotm;
     const isCurrent = s.seasonId === currentSeasonId;
     const seasonLabel = isCurrent ? `第${s.seasonId}届（本季）` : `第${s.seasonId}届`;
-    const teamLabel = s.teamName ? ` ${s.teamName}` : '';
+    const teamLabel = s.teamName ? `【${s.teamName}】` : '';
+    const lg = s.leagueGoals || 0; const la = s.leagueAssists || 0; const lm = s.leagueMotm || 0;
+    const cg = s.cupGoals || 0; const ca = s.cupAssists || 0; const cm = s.cupMotm || 0;
 
-    html += `<div style="display:flex;font-size:12px;padding:2px 0;line-height:1.6;white-space:nowrap">`;
-    html += `<span style="color:${isCurrent ? '#2e7d32' : '#555'};font-weight:${isCurrent ? '600' : '400'}">${seasonLabel}<span style="color:#aaa">${teamLabel}</span></span>`;
-    html += `<span style="margin-left:auto;white-space:nowrap;color:#555">⚽${tg}　👟${ta}　⭐${tm}</span>`;
+    html += `<div style="display:flex;align-items:center;font-size:12px;padding:2px 0;line-height:1.5">`;
+    html += `<div style="flex:1;min-width:0">`;
+    html += `<div style="color:${isCurrent ? '#2e7d32' : '#555'};font-weight:${isCurrent ? '600' : '400'};white-space:nowrap">${seasonLabel}</div>`;
+    html += `<div style="font-size:11px;color:#888;white-space:nowrap">${teamLabel}</div>`;
+    html += `</div>`;
+    html += `<div style="display:flex;gap:10px;white-space:nowrap;margin-left:8px">`;
+    if (lg > 0 || la > 0 || lm > 0) html += `<span style="color:#555">🏆${lg}/${la}/${lm}</span>`;
+    if (cg > 0 || ca > 0 || cm > 0) html += `<span style="color:#888">🥌${cg}/${ca}/${cm}</span>`;
+    if (tg > 0) html += `<span style="color:#2e7d32;font-weight:600">⚽${tg}  👟${ta}  ⭐${tm}</span>`;
+    html += `</div>`;
     html += '</div>';
   });
 
@@ -2730,6 +2751,7 @@ function closeModal() {
 }
 
 function showTeamDetail(teamId) {
+  window._curTeamId = teamId;
   const sd = getCurrentSeasonData();
   const team = sd.teams.find(t => t.id === teamId);
   if (!team) return;
