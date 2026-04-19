@@ -310,6 +310,7 @@
     <button class="sidebar-item" id="btnCupManage" style="display:none"><span class="sidebar-item-icon">🏆</span>杯赛管理</button>
     <button class="sidebar-item" id="btnArchiveSeason" style="display:none"><span class="sidebar-item-icon">📦</span>归档赛季</button>
     <button class="sidebar-item" id="btnSyncCloud"><span class="sidebar-item-icon">☁️</span>数据同步</button>
+    <button class="sidebar-item" id="btnChangelog"><span class="sidebar-item-icon">📋</span>更新日志</button>
     <button class="sidebar-item" id="sidebarLoginBtn"><span class="sidebar-item-icon">🔑</span>登录</button>
     <button class="sidebar-item danger" id="btnLogout" style="display:none"><span class="sidebar-item-icon">🚪</span>退出登录</button>
   </div>
@@ -338,6 +339,7 @@
         <div style="font-size:14px;color:#666;cursor:pointer;font-weight:500;transition:color .2s" id="aboutBtn" onmouseover="this.style.color='#333'" onmouseout="this.style.color='#666'">ℹ️ 关于 PGM联赛</div>
         <div style="font-size:10px;color:#bbb;margin-top:3px" id="aboutVersion"></div>
         <div style="font-size:10px;color:#bbb;margin-top:2px" id="aboutDate"></div>
+        <div style="margin-top:4px" id="changelogHint"></div>
       </div>
     </div>
   </div>
@@ -358,10 +360,20 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 82 };
+const APP_VERSION = { major: 1, minor: 0, patch: 83 };
 
 const APP_AUTHOR = 'J.K';
-const APP_BUILD_DATE = '2026-04-14';
+const APP_BUILD_DATE = '2026-04-19';
+
+// ============ CHANGELOG ============
+const CHANGELOG = [
+  { v: '1.0.83', date: '2026-04-19', items: ['📝 侧边栏新增更新日志，随时查看版本变更', '📋 关于弹窗新增完整更新记录查看'] },
+  { v: '1.0.82', date: '2026-04-14', items: ['🐛 修复杯赛录入gamesPlayed按进球数重复累加', '📊 球员统计从比赛记录实时计算，不再累积出错', '👤 新增教练登录功能（球队ID+密码）', '🔄 所有导入/同步/加载后统一触发数据重算'] },
+  { v: '1.0.81', date: '2026-04-13', items: ['🎨 右侧恢复赛季信息、时钟、云上传信息', '☰ ☰按钮优化布局'] },
+  { v: '1.0.80', date: '2026-04-13', items: ['☰ ☰移到顶部导航栏右侧', '🐛 修复赛程/榜单点击无反应bug'] },
+  { v: '1.0.79', date: '2026-04-12', items: ['🎨 底部只保留☰按钮，居中悬浮圆形设计'] },
+  { v: '1.0.78', date: '2026-04-12', items: ['🎨 底部去掉设置和登录按钮，只保留侧边栏按钮'] },
+];
 function getAppVersion() { return `v${APP_VERSION.major}.${APP_VERSION.minor}.${APP_VERSION.patch}`; }
 
 // ============ DATA ============
@@ -3059,6 +3071,34 @@ function submitMatchResult(matchId) {
 }
 
 
+function showChangelogModal() {
+  let html = `
+    <div style="padding:20px 20px 12px">
+      <h2 style="font-size:18px;font-weight:700;color:#1a1a1a;margin:0 0 16px;display:flex;align-items:center;gap:8px">📋 更新日志</h2>
+      <div style="max-height:60vh;overflow-y:auto;padding-right:6px">
+  `;
+  CHANGELOG.forEach((log, i) => {
+    const isFirst = i === 0;
+    html += `
+      <div style="margin-bottom:${isFirst ? '16' : '14'}px;padding-bottom:${isFirst ? '16' : '14'}px;${i < CHANGELOG.length - 1 ? 'border-bottom:1px solid #f0f0f0;' : ''}">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-size:14px;font-weight:700;color:#1a7a2e;font-family:'SF Mono',Consolas,monospace">v${log.v}</span>
+          <span style="font-size:11px;color:#aaa">${log.date}</span>
+          ${isFirst ? '<span style="font-size:10px;background:#1a7a2e;color:#fff;padding:1px 6px;border-radius:8px;font-weight:600">NEW</span>' : ''}
+        </div>
+        <div style="padding-left:12px;border-left:2px solid #e8f5e9">
+          ${log.items.map(item => `<div style="font-size:12px;color:#555;line-height:1.8">${item}</div>`).join('')}
+        </div>
+      </div>
+    `;
+  });
+  html += `
+      </div>
+    </div>
+  `;
+  showModal(html);
+}
+
 function showAboutModal() {
   const v = getAppVersion();
   const buildDays = Math.floor((new Date() - new Date(APP_BUILD_DATE)) / 86400000);
@@ -4774,6 +4814,9 @@ document.getElementById('btnLogout').onclick = () => logout();
 document.getElementById('aboutBtn').onclick = () => showAboutModal();
 document.getElementById('aboutVersion').textContent = 'v' + APP_VERSION.major + '.' + APP_VERSION.minor + '.' + APP_VERSION.patch + ' by J.K';
 document.getElementById('aboutDate').textContent = APP_BUILD_DATE;
+document.getElementById('btnChangelog').onclick = () => { closeSidebar(); showChangelogModal(); };
+// 侧边栏底部显示最新版本更新提示
+document.getElementById('changelogHint').innerHTML = '<span style="font-size:10px;color:#1a7a2e;cursor:pointer" onclick="showChangelogModal()">📋 v' + CHANGELOG[0].v + ' 更新 →</span>';
 document.getElementById('btnEnterMatch').onclick = () => {
   if (state.currentUser) {
     state.currentPage = 'schedule';
