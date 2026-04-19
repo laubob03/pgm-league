@@ -2829,7 +2829,7 @@ function showTeamDetail(teamId) {
       <div class="${roundClass}">${isCompleted ? '✓ ' : '○ '}${isCompleted ? '' : '待定　'}第${m.round}轮</div>
       <div class="tm-teams">
         <div class="tm-team ${isHome ? 'highlight' : ''}">
-          <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
+          <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.display='none'">
           <span>${isHome ? team.name : (opponent ? opponent.name : '未知')}</span>
         </div>
         <div class="tm-score-area">
@@ -2839,7 +2839,7 @@ function showTeamDetail(teamId) {
         </div>
         <div class="tm-team ${!isHome ? 'highlight' : ''}">
           <span>${isHome ? (opponent ? opponent.name : '未知') : team.name}</span>
-          <img src="${isHome ? (opponent ? getTeamLogo(opponent) : '') : getTeamLogo(team)}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
+          <img src="${isHome ? (opponent ? getTeamLogo(opponent) : '') : getTeamLogo(team)}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.display='none'">
         </div>
       </div>
       <div class="tm-detail">${teamDetail}</div>
@@ -2952,7 +2952,7 @@ function showTeamDetail(teamId) {
           <div class="${cupRoundClass}">${isCompleted ? '✓ ' : '○ '}${isCompleted ? '' : '待定　'}${m.cupName} 第${m.round}轮</div>
           <div class="tm-teams">
             <div class="tm-team ${isHome ? 'highlight' : ''}">
-              <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
+              <img src="${isHome ? getTeamLogo(team) : (opponent ? getTeamLogo(opponent) : '')}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.display='none'">
               <span style="cursor:pointer" onclick="event.stopPropagation();closeModal();setTimeout(()=>showTeamDetail('${homeTeamId}'),100)">${isHome ? team.name : (opponent ? opponent.name : '未知')}</span>
             </div>
             <div class="tm-score-area">
@@ -2962,7 +2962,7 @@ function showTeamDetail(teamId) {
             </div>
             <div class="tm-team ${!isHome ? 'highlight' : ''}">
               <span style="cursor:pointer" onclick="event.stopPropagation();closeModal();setTimeout(()=>showTeamDetail('${awayTeamId}'),100)">${isHome ? (opponent ? opponent.name : '未知') : team.name}</span>
-              <img src="${isHome ? (opponent ? getTeamLogo(opponent) : '') : getTeamLogo(team)}" style="width:16px;height:16px;object-fit:contain" onerror="this.style.display='none'">
+              <img src="${isHome ? (opponent ? getTeamLogo(opponent) : '') : getTeamLogo(team)}" style="width:20px;height:20px;object-fit:contain" onerror="this.style.display='none'">
             </div>
           </div>
           <div class="tm-detail">${cupTeamDetail}</div>
@@ -2981,7 +2981,7 @@ function showTeamDetail(teamId) {
       .tm-round.pending{background:#fff3e0;color:#e65100}
       .tm-round.mixed{background:#f5f5f5;color:#555}
       .tm-teams{display:flex;align-items:center;gap:4px}
-      .tm-team{display:flex;align-items:center;gap:3px;flex:1;font-size:12px}
+      .tm-team{display:flex;align-items:center;gap:3px;flex:1;font-size:14px;font-weight:500}
       .tm-team.highlight{font-weight:600;color:#228B22}
       .tm-team:first-child{justify-content:flex-end}
       .tm-team:last-child{justify-content:flex-start}
