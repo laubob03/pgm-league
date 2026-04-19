@@ -398,13 +398,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 85 };
+const APP_VERSION = { major: 1, minor: 0, patch: 86 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-19';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.86', date: '2026-04-19', items: ['🔄 赛程页改为单轮显示+左右翻页，录入比分后自动停留在当前轮次', '🏆 杯赛赛程同样支持单轮翻页'] },
   { v: '1.0.85', date: '2026-04-19', items: ['☁️ 主界面新增"上传云端"按钮（管理员/数据员可见）', '🚀 上传成功爆炸式粒子特效+火箭动画', '💀 上传失败全屏红色警告+屏幕震动'] },
   { v: '1.0.84', date: '2026-04-19', items: ['🐛 修复录入比分后页面跳回第1轮的问题，现在会停留在当前轮次'] },
   { v: '1.0.83', date: '2026-04-19', items: ['📝 侧边栏新增更新日志，随时查看版本变更', '📋 关于弹窗新增完整更新记录查看'] },
@@ -1372,10 +1373,18 @@ function renderCupSchedule(cupId) {
     if (!rounds[m.round]) rounds[m.round] = [];
     rounds[m.round].push(m);
   });
-  let html = '';
-  Object.keys(rounds).sort((a, b) => a - b).forEach(round => {
-    html += '<div class="match-round-title" id="cup-round-' + round + '">第' + round + '轮</div>';
-    rounds[round].forEach(m => {
+  const roundKeys = Object.keys(rounds).sort((a, b) => a - b);
+  const cupKey = '_cupSchedRound_' + cupId;
+  if (!window[cupKey] || !rounds[window[cupKey]]) window[cupKey] = roundKeys[0] || 1;
+  const curRound = window[cupKey];
+  const curIdx = roundKeys.indexOf(String(curRound));
+  // 轮次切换栏
+  let html = '<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 0 12px;position:sticky;top:0;z-index:10;background:var(--card);">';
+  html += '<button onclick="window[\'_cupSchedRound_' + cupId + '\']=\'' + (roundKeys[curIdx-1]||roundKeys[0]) + '\';renderCupSchedule(\'' + cupId + '\')" style="width:32px;height:32px;border-radius:50%;border:1px solid #ddd;background:var(--card);font-size:16px;cursor:pointer;' + (curIdx<=0?'opacity:0.3;pointer-events:none;':'') + '">◀</button>';
+  html += '<span style="font-size:15px;font-weight:700;min-width:80px;text-align:center;">第' + curRound + '轮</span>';
+  html += '<button onclick="window[\'_cupSchedRound_' + cupId + '\']=\'' + (roundKeys[curIdx+1]||roundKeys[roundKeys.length-1]) + '\';renderCupSchedule(\'' + cupId + '\')" style="width:32px;height:32px;border-radius:50%;border:1px solid #ddd;background:var(--card);font-size:16px;cursor:pointer;' + (curIdx>=roundKeys.length-1?'opacity:0.3;pointer-events:none;':'') + '">▶</button>';
+  html += '</div>';
+  (rounds[curRound]||[]).forEach(m => {
       const home = sd.teams.find(t => t.id === m.homeTeam);
       const away = sd.teams.find(t => t.id === m.awayTeam);
       if (!home || !away) return;
@@ -1454,7 +1463,6 @@ function renderCupSchedule(cupId) {
         + enterBtn
       + '</div>';
     });
-  });
   container.innerHTML = '<div class="schedule-scroll-area">' + html + '</div>';
 }
 
@@ -1536,6 +1544,8 @@ function submitCupMatchResult(matchId, cupId) {
     if (p) p.gamesPlayed = (p.gamesPlayed || 0) + 1;
   });
   if (motmId) { const motmP = [...homeTeam.players, ...awayTeam.players].find(x => x.id === motmId); if (motmP) motmP.motmCount = (motmP.motmCount || 0) + 1; }
+  // 记住当前轮次，渲染后停留
+  window['_cupSchedRound_' + cupId] = match.round;
   saveState(); closeModal(); render(); showToast(isEdit ? '比赛结果已更新！' : '比赛结果已保存！');
 }
 
@@ -1969,11 +1979,28 @@ function renderSchedule() {
     if (!rounds[m.round]) rounds[m.round] = [];
     rounds[m.round].push(m);
   });
+  const roundKeys = Object.keys(rounds).sort((a, b) => a - b);
+  // 当前显示轮次
+  if (!window._schedRound || !rounds[window._schedRound]) {
+    window._schedRound = roundKeys[0] || 1;
+  }
+  // 如果有 pending 轮次（录入比分后），跳转到那个轮次
+  if (window._pendingScrollRound && rounds[window._pendingScrollRound]) {
+    window._schedRound = window._pendingScrollRound;
+    window._pendingScrollRound = null;
+  }
+  const curRound = window._schedRound;
+  const curIdx = roundKeys.indexOf(String(curRound));
   
-  let html = '';
-  Object.keys(rounds).sort((a, b) => a - b).forEach(round => {
-    html += '<div class="match-round-title" id="round-' + round + '">\u7B2C' + round + '\u8F6E</div>';
-    rounds[round].forEach(m => {
+  // 轮次切换栏
+  let html = '<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 0 12px;position:sticky;top:0;z-index:10;background:var(--card);">';
+  html += '<button onclick="window._schedRound=\'' + (roundKeys[curIdx-1]||roundKeys[0]) + '\';renderSchedule()" style="width:32px;height:32px;border-radius:50%;border:1px solid #ddd;background:var(--card);font-size:16px;cursor:pointer;' + (curIdx<=0?'opacity:0.3;pointer-events:none;':'') + '">◀</button>';
+  html += '<span style="font-size:15px;font-weight:700;min-width:80px;text-align:center;">第' + curRound + '轮</span>';
+  html += '<button onclick="window._schedRound=\'' + (roundKeys[curIdx+1]||roundKeys[roundKeys.length-1]) + '\';renderSchedule()" style="width:32px;height:32px;border-radius:50%;border:1px solid #ddd;background:var(--card);font-size:16px;cursor:pointer;' + (curIdx>=roundKeys.length-1?'opacity:0.3;pointer-events:none;':'') + '">▶</button>';
+  html += '</div>';
+  
+  // 只渲染当前轮次的比赛
+  (rounds[curRound]||[]).forEach(m => {
       const home = sd.teams.find(t => t.id === m.homeTeam);
       const away = sd.teams.find(t => t.id === m.awayTeam);
       const isCompleted = m.status === 'completed';
@@ -2053,18 +2080,11 @@ function renderSchedule() {
         + enterBtn
       + '</div>';
     });
-  });
   
-  if (!html) {
-    html = '<div class="empty-state"><div class="empty-state-emoji">\uD83D\uDCC5</div><div class="empty-state-text">\u6682\u65E0\u8D5B\u7A0B\u6570\u636E</div></div>';
+  if (!html || html.startsWith('<div style="display:flex') && html.indexOf('match-card') === -1) {
+    html = '<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 0 12px;">' + html.split('</div>')[0] + '</div><div class="empty-state"><div class="empty-state-emoji">📅</div><div class="empty-state-text">暂无赛程数据</div></div>';
   }
   container.innerHTML = '<div class="schedule-scroll-area">' + html + '</div>';
-  // 恢复滚动位置：录入比赛后停留在当前轮次
-  if (window._pendingScrollRound) {
-    const target = document.getElementById('round-' + window._pendingScrollRound);
-    if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-    window._pendingScrollRound = null;
-  }
 }
 
 function renderMatchScorers(m) {
