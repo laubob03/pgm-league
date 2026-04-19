@@ -3750,11 +3750,10 @@ function saveToUrlHash() {
   const round = page === 'schedule' ? (isCupLeague(league) ? window['_cupSchedRound_' + league] : window._schedRound) : null;
   
   let hash = page;
-  if (page === 'schedule' && league) {
+  // 所有页面都保存联赛状态
+  if (league) {
     hash += '/' + league;
-    if (round) hash += '/' + round;
-  } else if (page === 'standings' && league) {
-    hash += '/' + league;
+    if (page === 'schedule' && round) hash += '/' + round;
   }
   
   // 只在hash变化时更新，避免循环
