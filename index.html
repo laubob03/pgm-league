@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -1454,7 +1454,7 @@ function renderCupSchedule(cupId) {
       const awayScorerStr = countNames(awayGoals);
       const awayAssistStr = countNames(awayAssists);
       const motmPlayer = isCompleted && m.motm ? findPlayerById(m.motm) : null;
-      const motmIsHome = !!m.motm && m.motm.startsWith('p' + m.homeTeam + '_');
+      const motmIsHome = !!m.motm && isPlayerOfTeam(m.motm, m.homeTeam);
       const motmUid = m.motm && m.motm.includes('_') ? m.motm.split('_').pop() : '';
       const homeMotmName = motmIsHome && motmPlayer ? motmPlayer.name : (motmIsHome && motmUid ? motmUid : '');
       const homeMotmStr = motmIsHome && homeMotmName ? (motmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${motmUid}')">${homeMotmName}</span>` : homeMotmName) : '';
@@ -2137,7 +2137,7 @@ function renderSchedule() {
       const awayScorerStr = countNames(awayGoals);
       const awayAssistStr = countNames(awayAssists);
       const motmPlayer = isCompleted && m.motm ? findPlayerById(m.motm) : null;
-      const motmIsHome = !!m.motm && m.motm.startsWith('p' + m.homeTeam + '_');
+      const motmIsHome = !!m.motm && isPlayerOfTeam(m.motm, m.homeTeam);
       const motmUid = m.motm && m.motm.includes('_') ? m.motm.split('_').pop() : '';
       const homeMotmName = motmIsHome && motmPlayer ? motmPlayer.name : (motmIsHome && motmUid ? motmUid : '');
       const homeMotmStr = motmIsHome && homeMotmName ? (motmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${motmUid}')">${homeMotmName}</span>` : homeMotmName) : '';
@@ -2619,6 +2619,14 @@ function togglePlayerSeasonDetail(el, uid) {
   }
 }
 
+// 判断球员ID是否属于指定球队（兼容各种ID格式：p12_xxx, t0_p0, pt0_xxx 等）
+function isPlayerOfTeam(playerId, teamId) {
+  if (!playerId || !teamId) return false;
+  // 格式1: p{num}_{uid} 如 p12_49038952，teamId 为 t12 时需提取数字部分
+  const teamNum = teamId.replace(/^t/, '');
+  return playerId.startsWith(teamId + '_p') || playerId.startsWith('p' + teamId + '_') || playerId.startsWith('p' + teamNum + '_');
+}
+
 // 全局查找球员（支持转会后跨球队查找）
 function findPlayerById(playerId) {
   const sd = getCurrentSeasonData();
@@ -2799,7 +2807,7 @@ function getLeaguePlayerStats(league, type, limit) {
     if (m.assists) m.assists.forEach(a => { if (stats[a.teamId] && stats[a.teamId].players[a.playerId]) stats[a.teamId].players[a.playerId].assists++; });
     if (m.motm) {
       [m.homeTeam, m.awayTeam].forEach(tid => {
-        if (stats[tid] && m.motm.startsWith('p' + tid + '_')) {
+        if (stats[tid] && isPlayerOfTeam(m.motm, tid)) {
           if (stats[tid].players[m.motm]) stats[tid].players[m.motm].motm++;
           else {
             const uid = m.motm.substring(('p' + tid + '_').length);
@@ -2848,7 +2856,7 @@ function getCupPlayerStats(cupId, type, limit) {
     if (m.assists) m.assists.forEach(a => { if (stats[a.teamId] && stats[a.teamId].players[a.playerId]) stats[a.teamId].players[a.playerId].assists++; });
     if (m.motm) {
       [m.homeTeam, m.awayTeam].forEach(tid => {
-        if (stats[tid] && m.motm.startsWith('p' + tid + '_')) {
+        if (stats[tid] && isPlayerOfTeam(m.motm, tid)) {
           if (stats[tid].players[m.motm]) stats[tid].players[m.motm].motm++;
           else {
             const uid = m.motm.substring(('p' + tid + '_').length);
@@ -2934,7 +2942,7 @@ function showTeamDetail(teamId) {
 
 
 
-    const isTeamMotm = isCompleted && m.motm && m.motm.startsWith('p' + teamId + '_');
+    const isTeamMotm = isCompleted && m.motm && isPlayerOfTeam(m.motm, teamId);
     const teamMotm = isTeamMotm ? findPlayerById(m.motm) : null;
     const teamMotmUid = isTeamMotm && m.motm.includes('_') ? m.motm.split('_').pop() : '';
     const teamMotmName = teamMotm ? teamMotm.name : (isTeamMotm && teamMotmUid ? teamMotmUid : '');
@@ -3091,7 +3099,7 @@ function showTeamDetail(teamId) {
         };
         const cupTeamGoals = isCompleted && m.scorers ? countCupPlayerEvents(m.scorers.filter(s => s.teamId === teamId)) : '';
         const cupTeamAssists = isCompleted && m.assists ? countCupPlayerEvents(m.assists.filter(a => a.teamId === teamId)) : '';
-        const isCupTeamMotm = isCompleted && m.motm && m.motm.startsWith('p' + teamId + '_');
+        const isCupTeamMotm = isCompleted && m.motm && isPlayerOfTeam(m.motm, teamId);
         const cupTeamMotm = isCupTeamMotm ? findPlayerById(m.motm) : null;
         const cupTeamMotmUid = isCupTeamMotm && m.motm.includes('_') ? m.motm.split('_').pop() : '';
         const cupTeamMotmName = cupTeamMotm ? cupTeamMotm.name : (isCupTeamMotm && cupTeamMotmUid ? cupTeamMotmUid : '');
@@ -3230,7 +3238,7 @@ function showTeamDetail(teamId) {
         if (m.motm) {
           const motmKey = playerStats[m.motm];
           if (motmKey) motmKey.motmCount++;
-          else if (m.motm.startsWith('p' + teamId + '_')) {
+          else if (isPlayerOfTeam(m.motm, teamId)) {
             const uid = m.motm.substring(('p' + teamId + '_').length);
             const fallback = Object.keys(playerStats).find(k => k.endsWith('_' + uid));
             if (fallback) playerStats[fallback].motmCount++;
@@ -3264,7 +3272,7 @@ function showTeamDetail(teamId) {
             if (m.motm) {
               const motmKey = playerStats[m.motm];
               if (motmKey) motmKey.motmCount++;
-              else if (m.motm.startsWith('p' + teamId + '_')) {
+              else if (isPlayerOfTeam(m.motm, teamId)) {
                 const uid = m.motm.substring(('p' + teamId + '_').length);
                 const fallback = Object.keys(playerStats).find(k => k.endsWith('_' + uid));
                 if (fallback) playerStats[fallback].motmCount++;
@@ -3471,7 +3479,7 @@ function showCupPlayerData(teamId) {
         if (m.motm) {
           const motmKey = playerStats[m.motm];
           if (motmKey) motmKey.motmCount++;
-          else if (m.motm.startsWith('p' + teamId + '_')) {
+          else if (isPlayerOfTeam(m.motm, teamId)) {
             const uid = m.motm.substring(('p' + teamId + '_').length);
             const fallback = Object.keys(playerStats).find(k => k.endsWith('_' + uid));
             if (fallback) playerStats[fallback].motmCount++;
