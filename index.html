@@ -399,7 +399,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 130 };
+const APP_VERSION = { major: 1, minor: 0, patch: 131 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-20';
@@ -2539,8 +2539,8 @@ function togglePlayerSeasonDetail(el, uid) {
     ? `<span style="font-size:11px;color:#d32f2f;margin-left:8px;white-space:nowrap;background:#ffebee;padding:1px 6px;border-radius:4px">违约金 ${currentReleaseClause}M</span>` : '';
   const ageStr = currentPlayerAge > 0
     ? `<span style="font-size:11px;color:#777;margin-left:8px;white-space:nowrap;background:#f5f5f5;padding:1px 6px;border-radius:4px">${currentPlayerAge % 1 === 0 ? currentPlayerAge.toFixed(0) : currentPlayerAge}岁</span>` : '';
-  const hasPending = (state.pendingTransfers || []).find(pt => pt.status === 'pending' && pt.playerUid == uid);
-  const transferBtnHtml = (state.currentUser && state.currentUser.isSuperAdmin && currentPlayerTeam && !hasPending)
+  const pendingTransfer = (state.pendingTransfers || []).find(pt => pt.status === 'pending' && pt.playerUid == uid);
+  const transferBtnHtml = (state.currentUser && state.currentUser.isSuperAdmin && currentPlayerTeam && !pendingTransfer)
     ? `<button onclick="event.stopPropagation();showPlayerTransferModal('${uid}')" style="margin-left:auto;font-size:10px;padding:2px 8px;border-radius:10px;border:1px solid #228B22;background:#e8f5e9;color:#228B22;cursor:pointer;white-space:nowrap">🔄 转会</button>`
     : '';
 
@@ -2618,6 +2618,18 @@ function togglePlayerSeasonDetail(el, uid) {
 // 全局查找球员（支持转会后跨球队查找）
 function findPlayerById(playerId) {
   const sd = getCurrentSeasonData();
+  for (const team of sd.teams) {
+    const p = team.players ? team.players.find(x => x.id === playerId) : null;
+    if (p) return p;
+  }
+  // 精确匹配失败：用 uid 部分（playerId 最后一段）回退查找
+  const uid = playerId.includes('_') ? playerId.split('_').pop() : playerId;
+  for (const team of sd.teams) {
+    const p = team.players ? team.players.find(x => x.uid == uid || (x.id && x.id.endsWith('_' + uid))) : null;
+    if (p) return p;
+  }
+  return null;
+}
 
 // 从球员详情面板发起转会（预填球员和球队）
 function showPlayerTransferModal(playerUid) {
@@ -2639,18 +2651,6 @@ function showPlayerTransferModal(playerUid) {
       if (playerSel) playerSel.value = playerUid;
     }
   }, 60);
-}
-  for (const team of sd.teams) {
-    const p = team.players ? team.players.find(x => x.id === playerId) : null;
-    if (p) return p;
-  }
-  // 精确匹配失败：用 uid 部分（playerId 最后一段）回退查找
-  const uid = playerId.includes('_') ? playerId.split('_').pop() : playerId;
-  for (const team of sd.teams) {
-    const p = team.players ? team.players.find(x => x.uid == uid || (x.id && x.id.endsWith('_' + uid))) : null;
-    if (p) return p;
-  }
-  return null;
 }
 
 // ============ CALCULATIONS ============
