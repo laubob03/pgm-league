@@ -2522,16 +2522,32 @@ function togglePlayerSeasonDetail(el, uid) {
     return b.seasonId - a.seasonId;
   });
 
-  let html = '<div class="player-season-detail">';
+  let html = '<div class="player-season-detail" style="border:1px solid #e57373;border-radius:8px;padding:8px 10px;background:#fffbeb;margin:4px 0">';
 
-  // 标题行：球员姓名 + 年龄 + 违约金
+  // 查找球员当前所在球队（用于转会按钮）
+  let currentPlayerTeam = null;
+  if (state.teams) {
+    for (const team of state.teams) {
+      if (!team.players) continue;
+      const p = team.players.find(x => x.uid == uid && !x.transferredOut);
+      if (p) { currentPlayerTeam = team; break; }
+    }
+  }
+
+  // 标题行：球员姓名 + 年龄 + 违约金 + 转会按钮
   const clauseStr = currentReleaseClause > 0
-    ? `<span style="font-size:12px;color:#f44336;margin-left:8px;white-space:nowrap">💰${currentReleaseClause}M</span>` : '';
+    ? `<span style="font-size:11px;color:#d32f2f;margin-left:8px;white-space:nowrap;background:#ffebee;padding:1px 6px;border-radius:4px">违约金 ${currentReleaseClause}M</span>` : '';
   const ageStr = currentPlayerAge > 0
-    ? `<span style="font-size:12px;color:#888;margin-left:8px;white-space:nowrap">${currentPlayerAge % 1 === 0 ? currentPlayerAge.toFixed(0) : currentPlayerAge}岁</span>` : '';
-  html += `<div style="display:flex;align-items:center;margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid #c8e6c9">`;
-  html += `<span style="font-size:14px;font-weight:700;color:#2e7d32;white-space:nowrap">${name}</span>`;
-  html += `${ageStr}<span style="margin-left:auto">${clauseStr}</span>`;
+    ? `<span style="font-size:11px;color:#777;margin-left:8px;white-space:nowrap;background:#f5f5f5;padding:1px 6px;border-radius:4px">${currentPlayerAge % 1 === 0 ? currentPlayerAge.toFixed(0) : currentPlayerAge}岁</span>` : '';
+  const hasPending = (state.pendingTransfers || []).find(pt => pt.status === 'pending' && pt.playerUid == uid);
+  const transferBtnHtml = (state.currentUser && state.currentUser.isSuperAdmin && currentPlayerTeam && !hasPending)
+    ? `<button onclick="event.stopPropagation();showPlayerTransferModal('${uid}')" style="margin-left:auto;font-size:10px;padding:2px 8px;border-radius:10px;border:1px solid #228B22;background:#e8f5e9;color:#228B22;cursor:pointer;white-space:nowrap">🔄 转会</button>`
+    : '';
+
+  html += `<div style="display:flex;align-items:center;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #e0e0e0">`;
+  html += `<span style="font-size:14px;font-weight:700;color:#222;white-space:nowrap">${name}</span>`;
+  html += `${ageStr}${clauseStr}`;
+  html += `${transferBtnHtml}`;
   html += '</div>';
 
   // 每赛季一行：赛季、球队、进球、助攻、MVP
@@ -2547,13 +2563,13 @@ function togglePlayerSeasonDetail(el, uid) {
 
     html += `<div style="display:flex;align-items:center;font-size:12px;padding:2px 0;line-height:1.5">`;
     html += `<div style="flex:1;min-width:0">`;
-    html += `<div style="color:${isCurrent ? '#2e7d32' : '#555'};font-weight:${isCurrent ? '600' : '400'};white-space:nowrap">${seasonLabel}</div>`;
+    html += `<div style="color:${isCurrent ? '#1b5e20' : '#555'};font-weight:${isCurrent ? '600' : '400'};white-space:nowrap">${seasonLabel}</div>`;
     html += `<div style="font-size:11px;color:#888;white-space:nowrap">${teamLabel}</div>`;
     html += `</div>`;
-    html += `<div style="display:flex;gap:10px;white-space:nowrap;margin-left:8px">`;
-    if (lg > 0 || la > 0 || lm > 0) html += `<span style="color:#555">🏆${lg}/${la}/${lm}</span>`;
-    if (cg > 0 || ca > 0 || cm > 0) html += `<span style="color:#888">🥌${cg}/${ca}/${cm}</span>`;
-    if (tg > 0) html += `<span style="color:#2e7d32;font-weight:600">⚽${tg}  👟${ta}  ⭐${tm}</span>`;
+    html += `<div style="display:flex;gap:8px;white-space:nowrap;margin-left:8px;font-size:11px">`;
+    if (lg > 0 || la > 0 || lm > 0) html += `<span style="color:#555;background:#f1f8e9;padding:0 4px;border-radius:3px">联赛 ${lg}/${la}/${lm}</span>`;
+    if (cg > 0 || ca > 0 || cm > 0) html += `<span style="color:#666;background:#e3f2fd;padding:0 4px;border-radius:3px">杯赛 ${cg}/${ca}/${cm}</span>`;
+    if (tg > 0) html += `<span style="color:#2e7d32;font-weight:600">总 ⚽${tg} 👟${ta} ⭐${tm}</span>`;
     html += `</div>`;
     html += '</div>';
   });
@@ -2561,29 +2577,28 @@ function togglePlayerSeasonDetail(el, uid) {
   // 转会生涯记录
   const transfers = stats.filter(s => s.transferFee > 0);
   if (transfers.length > 0) {
-    html += '<div style="margin-top:4px;padding-top:4px;border-top:1px solid #c8e6c9">';
-    html += '<div style="font-size:10px;color:#e65100;font-weight:600;margin-bottom:2px">🔄 转会生涯</div>';
+    html += '<div style="margin-top:6px;padding-top:6px;border-top:1px solid #e0e0e0">';
+    html += '<div style="font-size:10px;color:#bf360c;font-weight:700;margin-bottom:3px;letter-spacing:0.5px">🔄 转会生涯</div>';
     transfers.forEach(s => {
-      html += `<div style="display:flex;font-size:11px;padding:1px 0;line-height:1.6;color:#555">`;
-      html += `<span>${s.transferDate || '第' + s.seasonId + '届'}</span>`;
-      html += `<span style="margin-left:8px"><b style="color:#FF9800">${s.transferFee}M</b></span>`;
-      html += `<span style="margin-left:auto">${s.transferFrom || '-'} → <b>${s.teamName}</b></span>`;
+      html += `<div style="display:flex;font-size:11px;padding:1px 0;line-height:1.7;color:#555">`;
+      html += `<span style="color:#888">${s.transferDate || '第' + s.seasonId + '届'}</span>`;
+      html += `<span style="margin-left:8px;color:#e65100;font-weight:600">${s.transferFee}M</span>`;
+      html += `<span style="margin-left:auto">${s.transferFrom || '-'} → <b style="color:#333">${s.teamName}</b></span>`;
       html += '</div>';
     });
     html += '</div>';
   }
 
   // 即将转会信息
-  const pendingTransfer = (state.pendingTransfers || []).find(pt => pt.status === 'pending' && pt.playerUid == uid);
   if (pendingTransfer) {
-    html += '<div style="margin-top:4px;padding-top:4px;border-top:1px dashed #FFCC80">';
-    html += '<div style="font-size:10px;color:#FF9800;font-weight:600;margin-bottom:2px">⏳ 即将转会</div>';
-    html += '<div style="display:flex;font-size:11px;padding:2px 0;line-height:1.6;color:#555">';
-    html += `<span>${pendingTransfer.fromTeamName} → <b style="color:#228B22">${pendingTransfer.toTeamName}</b></span>`;
-    html += '<span style="margin-left:auto">' + (pendingTransfer.effectiveRound === 0 ? '<span style="color:#228B22">⚡立即生效</span>' : '第' + pendingTransfer.effectiveRound + '轮生效') + '</span>';
+    html += '<div style="margin-top:6px;padding:6px 8px;background:linear-gradient(135deg,#fff3e0,#ffe0b2);border-radius:6px;border:1px solid #ffb74d">';
+    html += '<div style="font-size:11px;color:#e65100;font-weight:700;margin-bottom:3px">⏳ 即将转会</div>';
+    html += '<div style="display:flex;font-size:12px;padding:2px 0;line-height:1.7;color:#333">';
+    html += `<span>${pendingTransfer.fromTeamName} → <b style="color:#1b5e20;font-size:13px">${pendingTransfer.toTeamName}</b></span>`;
+    html += '<span style="margin-left:auto">' + (pendingTransfer.effectiveRound === 0 ? '<span style="color:#1b5e20;font-weight:600">⚡立即</span>' : '<span style="color:#666">第' + pendingTransfer.effectiveRound + '轮</span>') + '</span>';
     html += '</div>';
     if (pendingTransfer.transferFee > 0) {
-      html += '<div style="font-size:11px;color:#555">转会费：<b style="color:#FF9800">' + pendingTransfer.transferFee + 'M</b></div>';
+      html += '<div style="font-size:12px;color:#e65100;font-weight:700;margin-top:2px">转会费：' + pendingTransfer.transferFee + 'M</div>';
     }
     html += '</div>';
   }
@@ -2603,6 +2618,28 @@ function togglePlayerSeasonDetail(el, uid) {
 // 全局查找球员（支持转会后跨球队查找）
 function findPlayerById(playerId) {
   const sd = getCurrentSeasonData();
+
+// 从球员详情面板发起转会（预填球员和球队）
+function showPlayerTransferModal(playerUid) {
+  let fromTeam = null;
+  let player = null;
+  for (const team of (state.teams || [])) {
+    if (!team.players) continue;
+    const p = team.players.find(x => x.uid == playerUid && !x.transferredOut);
+    if (p) { fromTeam = team; player = p; break; }
+  }
+  if (!fromTeam || !player) { showToast('无法找到该球员'); return; }
+  showAddTransferModal();
+  setTimeout(() => {
+    const fromSel = document.getElementById('transferFrom');
+    if (fromSel) {
+      fromSel.value = fromTeam.id;
+      updateTransferPlayerList();
+      const playerSel = document.getElementById('transferPlayer');
+      if (playerSel) playerSel.value = playerUid;
+    }
+  }, 60);
+}
   for (const team of sd.teams) {
     const p = team.players ? team.players.find(x => x.id === playerId) : null;
     if (p) return p;
