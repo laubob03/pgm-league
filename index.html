@@ -3220,8 +3220,8 @@ function showTeamDetail(teamId) {
     } else if (subTab === 'transfer') {
       // 转出球员表单（与侧边栏转会逻辑一致）
       const activePlayers = t.players.filter(p => !p.transferredOut);
-      const playersOptions = activePlayers.sort((a, b) => (a.number || 0) - (b.number || 0)).map(p =>
-        `<option value="${p.uid}" data-name="${p.name}">#${p.number} ${p.name}</option>`
+      const playersOptions = activePlayers.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN')).map(p =>
+        `<option value="${p.uid}" data-name="${p.name}">${p.name} #${p.number}</option>`
       ).join('');
       const teamOptions = sd.teams.filter(x => x.id !== teamId).sort((a, b) => (a.name||'').localeCompare(b.name||'')).map(x =>
         `<option value="${x.id}">${x.name}（${LEAGUE_NAMES[x.league]}）</option>`
@@ -4998,7 +4998,7 @@ function updateTransferPlayerList() {
   // 排除已标记转出的球员
   const activePlayers = team.players.filter(p => !p.transferredOut);
   playerSelect.innerHTML = '<option value="">请选择球员</option>' +
-    activePlayers.map(p => `<option value="${p.uid}" data-name="${p.name}">${p.name}（${p.position || '?'} #${p.number || '?'}）</option>`).join('');
+    activePlayers.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN')).map(p => `<option value="${p.uid}" data-name="${p.name}">${p.name}（${p.position || '?'} #${p.number || '?'}）</option>`).join('');
 }
 
 // 确认添加转会
