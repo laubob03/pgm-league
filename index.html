@@ -399,7 +399,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 140 };
+const APP_VERSION = { major: 1, minor: 0, patch: 141 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-20';
@@ -2798,8 +2798,16 @@ function getLeaguePlayerStats(league, type, limit) {
     if (m.scorers) m.scorers.forEach(s => { if (stats[s.teamId] && stats[s.teamId].players[s.playerId]) stats[s.teamId].players[s.playerId].goals++; });
     if (m.assists) m.assists.forEach(a => { if (stats[a.teamId] && stats[a.teamId].players[a.playerId]) stats[a.teamId].players[a.playerId].assists++; });
     if (m.motm) {
-      const motmTeamId = m.motm.split('_')[0];
-      if (stats[motmTeamId] && stats[motmTeamId].players[m.motm]) stats[motmTeamId].players[m.motm].motm++;
+      [m.homeTeam, m.awayTeam].forEach(tid => {
+        if (stats[tid] && m.motm.startsWith('p' + tid + '_')) {
+          if (stats[tid].players[m.motm]) stats[tid].players[m.motm].motm++;
+          else {
+            const uid = m.motm.substring(('p' + tid + '_').length);
+            const fb = Object.keys(stats[tid].players).find(k => k.endsWith('_' + uid));
+            if (fb) stats[tid].players[fb].motm++;
+          }
+        }
+      });
     }
   });
   const all = [];
@@ -2839,8 +2847,16 @@ function getCupPlayerStats(cupId, type, limit) {
     if (m.scorers) m.scorers.forEach(s => { if (stats[s.teamId] && stats[s.teamId].players[s.playerId]) stats[s.teamId].players[s.playerId].goals++; });
     if (m.assists) m.assists.forEach(a => { if (stats[a.teamId] && stats[a.teamId].players[a.playerId]) stats[a.teamId].players[a.playerId].assists++; });
     if (m.motm) {
-      const motmTeamId = m.motm.split('_')[0];
-      if (stats[motmTeamId] && stats[motmTeamId].players[m.motm]) stats[motmTeamId].players[m.motm].motm++;
+      [m.homeTeam, m.awayTeam].forEach(tid => {
+        if (stats[tid] && m.motm.startsWith('p' + tid + '_')) {
+          if (stats[tid].players[m.motm]) stats[tid].players[m.motm].motm++;
+          else {
+            const uid = m.motm.substring(('p' + tid + '_').length);
+            const fb = Object.keys(stats[tid].players).find(k => k.endsWith('_' + uid));
+            if (fb) stats[tid].players[fb].motm++;
+          }
+        }
+      });
     }
   });
   const all = [];
@@ -3214,9 +3230,9 @@ function showTeamDetail(teamId) {
         if (m.motm) {
           const motmKey = playerStats[m.motm];
           if (motmKey) motmKey.motmCount++;
-          else {
-            const pid = m.motm.includes('_') ? m.motm.split('_')[1] : m.motm;
-            const fallback = Object.keys(playerStats).find(k => k.includes('_' + pid));
+          else if (m.motm.startsWith('p' + teamId + '_')) {
+            const uid = m.motm.substring(('p' + teamId + '_').length);
+            const fallback = Object.keys(playerStats).find(k => k.endsWith('_' + uid));
             if (fallback) playerStats[fallback].motmCount++;
           }
         }
@@ -3248,9 +3264,9 @@ function showTeamDetail(teamId) {
             if (m.motm) {
               const motmKey = playerStats[m.motm];
               if (motmKey) motmKey.motmCount++;
-              else {
-                const pid = m.motm.includes('_') ? m.motm.split('_')[1] : m.motm;
-                const fallback = Object.keys(playerStats).find(k => k.includes('_' + pid));
+              else if (m.motm.startsWith('p' + teamId + '_')) {
+                const uid = m.motm.substring(('p' + teamId + '_').length);
+                const fallback = Object.keys(playerStats).find(k => k.endsWith('_' + uid));
                 if (fallback) playerStats[fallback].motmCount++;
               }
             }
@@ -3455,9 +3471,9 @@ function showCupPlayerData(teamId) {
         if (m.motm) {
           const motmKey = playerStats[m.motm];
           if (motmKey) motmKey.motmCount++;
-          else {
-            const pid = m.motm.includes('_') ? m.motm.split('_')[1] : m.motm;
-            const fallback = Object.keys(playerStats).find(k => k.includes('_' + pid));
+          else if (m.motm.startsWith('p' + teamId + '_')) {
+            const uid = m.motm.substring(('p' + teamId + '_').length);
+            const fallback = Object.keys(playerStats).find(k => k.endsWith('_' + uid));
             if (fallback) playerStats[fallback].motmCount++;
           }
         }
