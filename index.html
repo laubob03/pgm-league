@@ -399,7 +399,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 139 };
+const APP_VERSION = { major: 1, minor: 0, patch: 140 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-20';
@@ -1455,15 +1455,16 @@ function renderCupSchedule(cupId) {
       const awayAssistStr = countNames(awayAssists);
       const motmPlayer = isCompleted && m.motm ? findPlayerById(m.motm) : null;
       const motmIsHome = !!m.motm && m.motm.startsWith('p' + m.homeTeam + '_');
-      const homeMotmUid = motmIsHome && motmPlayer ? (motmPlayer.uid || motmPlayer.id.split('_')[1]) : '';
-      const homeMotmStr = motmIsHome && motmPlayer ? (homeMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${homeMotmUid}')">${motmPlayer.name}</span>` : motmPlayer.name) : '';
+      const motmUid = m.motm && m.motm.includes('_') ? m.motm.split('_').pop() : '';
+      const homeMotmName = motmIsHome && motmPlayer ? motmPlayer.name : (motmIsHome && motmUid ? motmUid : '');
+      const homeMotmStr = motmIsHome && homeMotmName ? (motmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${motmUid}')">${homeMotmName}</span>` : homeMotmName) : '';
       const homeDetail = isCompleted && (homeScorerStr || homeAssistStr || homeMotmStr) ? '<div style="font-size:10px;color:#999;line-height:1.3;text-align:right">'
           + (homeScorerStr ? '<div>\u26BD ' + homeScorerStr + '</div>' : '')
           + (homeAssistStr ? '<div>\uD83D\uDC5F ' + homeAssistStr + '</div>' : '')
           + (homeMotmStr ? '<div style="color:#f5a623;font-weight:500">\u2B50 ' + homeMotmStr + '</div>' : '')
           + '</div>' : '';
-      const awayMotmUid = !motmIsHome && motmPlayer ? (motmPlayer.uid || motmPlayer.id.split('_')[1]) : '';
-      const awayMotmStr = !motmIsHome && motmPlayer ? (awayMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${awayMotmUid}')">${motmPlayer.name}</span>` : motmPlayer.name) : '';
+      const awayMotmName = !motmIsHome && motmPlayer ? motmPlayer.name : (!motmIsHome && motmUid ? motmUid : '');
+      const awayMotmStr = !motmIsHome && awayMotmName ? (motmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${motmUid}')">${awayMotmName}</span>` : awayMotmName) : '';
       const awayDetail = isCompleted && (awayScorerStr || awayAssistStr || awayMotmStr) ? '<div style="font-size:10px;color:#999;line-height:1.3;padding-left:0">'
           + (awayScorerStr ? '<div>\u26BD ' + awayScorerStr + '</div>' : '')
           + (awayAssistStr ? '<div>\uD83D\uDC5F ' + awayAssistStr + '</div>' : '')
@@ -2137,15 +2138,16 @@ function renderSchedule() {
       const awayAssistStr = countNames(awayAssists);
       const motmPlayer = isCompleted && m.motm ? findPlayerById(m.motm) : null;
       const motmIsHome = !!m.motm && m.motm.startsWith('p' + m.homeTeam + '_');
-      const homeMotmUid = motmIsHome && motmPlayer ? (motmPlayer.uid || motmPlayer.id.split('_')[1]) : '';
-      const homeMotmStr = motmIsHome && motmPlayer ? (homeMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${homeMotmUid}')">${motmPlayer.name}</span>` : motmPlayer.name) : '';
+      const motmUid = m.motm && m.motm.includes('_') ? m.motm.split('_').pop() : '';
+      const homeMotmName = motmIsHome && motmPlayer ? motmPlayer.name : (motmIsHome && motmUid ? motmUid : '');
+      const homeMotmStr = motmIsHome && homeMotmName ? (motmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${motmUid}')">${homeMotmName}</span>` : homeMotmName) : '';
       const homeDetail = isCompleted && (homeScorerStr || homeAssistStr || homeMotmStr) ? '<div style="font-size:10px;color:#999;line-height:1.3;text-align:right">'
           + (homeScorerStr ? '<div>\u26BD ' + homeScorerStr + '</div>' : '')
           + (homeAssistStr ? '<div>\uD83D\uDC5F ' + homeAssistStr + '</div>' : '')
           + (homeMotmStr ? '<div style="color:#f5a623;font-weight:500">\u2B50 ' + homeMotmStr + '</div>' : '')
           + '</div>' : '';
-      const awayMotmUid = !motmIsHome && motmPlayer ? (motmPlayer.uid || motmPlayer.id.split('_')[1]) : '';
-      const awayMotmStr = !motmIsHome && motmPlayer ? (awayMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${awayMotmUid}')">${motmPlayer.name}</span>` : motmPlayer.name) : '';
+      const awayMotmName = !motmIsHome && motmPlayer ? motmPlayer.name : (!motmIsHome && motmUid ? motmUid : '');
+      const awayMotmStr = !motmIsHome && awayMotmName ? (motmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${motmUid}')">${awayMotmName}</span>` : awayMotmName) : '';
       const awayDetail = isCompleted && (awayScorerStr || awayAssistStr || awayMotmStr) ? '<div style="font-size:10px;color:#999;line-height:1.3;padding-left:0">'
           + (awayScorerStr ? '<div>\u26BD ' + awayScorerStr + '</div>' : '')
           + (awayAssistStr ? '<div>\uD83D\uDC5F ' + awayAssistStr + '</div>' : '')
@@ -2916,9 +2918,11 @@ function showTeamDetail(teamId) {
 
 
 
-    const teamMotm = isCompleted && m.motm && m.motm.startsWith('p' + teamId + '_') ? findPlayerById(m.motm) : null;
-    const teamMotmUid = teamMotm ? (teamMotm.uid || teamMotm.id.split('_')[1]) : '';
-    const teamMotmStr = teamMotm ? (teamMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${teamMotmUid}')">${teamMotm.name}</span>` : teamMotm.name) : '';
+    const isTeamMotm = isCompleted && m.motm && m.motm.startsWith('p' + teamId + '_');
+    const teamMotm = isTeamMotm ? findPlayerById(m.motm) : null;
+    const teamMotmUid = isTeamMotm && m.motm.includes('_') ? m.motm.split('_').pop() : '';
+    const teamMotmName = teamMotm ? teamMotm.name : (isTeamMotm && teamMotmUid ? teamMotmUid : '');
+    const teamMotmStr = teamMotmName ? (teamMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${teamMotmUid}')">${teamMotmName}</span>` : teamMotmName) : '';
     const teamDetail = isCompleted && (teamGoals || teamAssists || teamMotmStr)
       ? `<div style="font-size:9px;color:#666;line-height:1.2">${teamGoals ? '⚽' + teamGoals : ''}${teamGoals && teamAssists ? ' ' : ''}${teamAssists ? '👟' + teamAssists : ''}${teamMotmStr ? (teamGoals || teamAssists ? ' ' : '') + '<span style="color:#f5a623">⭐' + teamMotmStr + '</span>' : ''}</div>` : '';
 
@@ -3071,9 +3075,11 @@ function showTeamDetail(teamId) {
         };
         const cupTeamGoals = isCompleted && m.scorers ? countCupPlayerEvents(m.scorers.filter(s => s.teamId === teamId)) : '';
         const cupTeamAssists = isCompleted && m.assists ? countCupPlayerEvents(m.assists.filter(a => a.teamId === teamId)) : '';
-        const cupTeamMotm = isCompleted && m.motm && m.motm.startsWith('p' + teamId + '_') ? findPlayerById(m.motm) : null;
-        const cupTeamMotmUid = cupTeamMotm ? (cupTeamMotm.uid || cupTeamMotm.id.split('_')[1]) : '';
-        const cupTeamMotmStr = cupTeamMotm ? (cupTeamMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${cupTeamMotmUid}')">${cupTeamMotm.name}</span>` : cupTeamMotm.name) : '';
+        const isCupTeamMotm = isCompleted && m.motm && m.motm.startsWith('p' + teamId + '_');
+        const cupTeamMotm = isCupTeamMotm ? findPlayerById(m.motm) : null;
+        const cupTeamMotmUid = isCupTeamMotm && m.motm.includes('_') ? m.motm.split('_').pop() : '';
+        const cupTeamMotmName = cupTeamMotm ? cupTeamMotm.name : (isCupTeamMotm && cupTeamMotmUid ? cupTeamMotmUid : '');
+        const cupTeamMotmStr = cupTeamMotmName ? (cupTeamMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${cupTeamMotmUid}')">${cupTeamMotmName}</span>` : cupTeamMotmName) : '';
         const cupTeamDetail = isCompleted && (cupTeamGoals || cupTeamAssists || cupTeamMotmStr)
           ? `<div style="font-size:9px;color:#666;line-height:1.2">${cupTeamGoals ? '⚽' + cupTeamGoals : ''}${cupTeamGoals && cupTeamAssists ? ' ' : ''}${cupTeamAssists ? '👟' + cupTeamAssists : ''}${cupTeamMotmStr ? (cupTeamGoals || cupTeamAssists ? ' ' : '') + '<span style="color:#f5a623">⭐' + cupTeamMotmStr + '</span>' : ''}</div>` : '';
         const canEnterMatch = !viewingSeasonId && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === m.cupId) || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'league' && (sd.teams.find(t => t.id === m.homeTeam) || {}).league === state.currentUser.league)) && !isCompleted;
