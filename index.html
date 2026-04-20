@@ -142,6 +142,7 @@
     .bracket-section.q2::before{background:linear-gradient(90deg,#F59E0B,#FBBF24)}
     .bracket-section.q3::before{background:linear-gradient(90deg,#10B981,#34D399)}
     .bracket-section.q4::before{background:linear-gradient(90deg,#EF4444,#F87171)}
+    .bracket-section.bracket-final::before{background:linear-gradient(90deg,#a855f7,#c084fc)}
     .bracket-q-title{font-size:13px;font-weight:700;color:#1d1d1f;text-align:center;padding:6px 0 2px;letter-spacing:0.5px}
     .bracket-round-title{font-size:11px;font-weight:700;color:#86868b;text-align:center;padding:4px 0 2px;text-transform:uppercase;letter-spacing:1px}
     .bracket-row{display:flex;align-items:center;position:relative;padding:1px 0;min-height:36px}
@@ -1645,8 +1646,7 @@ function renderFaCupBracket(cupId) {
   // 渲染半决赛/决赛
   var finalKeys = Object.keys(finalRounds).sort(function(a, b) { return a - b; });
   if (finalKeys.length > 0) {
-    html += '<div class="bracket-section" style="border-color:#a855f7">'
-      + '<div class="bracket-section::before{background:linear-gradient(90deg,#a855f7,#c084fc)}"></div>'
+    html += '<div class="bracket-section bracket-final" style="border-color:#a855f7">'
       + '<div class="bracket-q-title" style="color:#7c3aed">🏆 淘汰赛决赛阶段</div>';
     finalKeys.forEach(function(rk) {
       var matches = finalRounds[rk];
