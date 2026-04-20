@@ -398,7 +398,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 127 };
+const APP_VERSION = { major: 1, minor: 0, patch: 128 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-20';
@@ -498,7 +498,7 @@ const DATA_RECORDERS = {
 };
 const LEAGUE_TEAM_COUNTS = { super: 12, jiaEast: 12, jiaWest: 12, yiEast: 12, yiWest: 12 };
 const POSITION_NAMES = { GK: '门将', DF: '后卫', MF: '中场', FW: '前锋' };
-const EMOJIS = ['⚽','🔵','🔴','🟡','🟠','🟢','⭐','🌟','💎','🏅','🎖️','🎯','🚀','🔥','💥'];
+
 
 const TEAM_NAMES = {
   super: ['A. Bilbao','Arsenal','Aston Villa','Barcelona','Benfica','FC Bayern','Juventus','Man City','Palmeiras','Paris SG','River','Wrexham'],
@@ -1113,7 +1113,7 @@ function initData() {
 
   // Initialize standings for each league
   state.standings = {};
-  ['super', 'a', 'b'].forEach(league => {
+  ['super', 'jiaEast', 'jiaWest', 'yiEast', 'yiWest'].forEach(league => {
     state.standings[league] = state.teams
       .filter(t => t.league === league)
       .map(t => ({
@@ -1565,12 +1565,15 @@ function submitCupMatchResult(matchId, cupId) {
   if (!homeTeam || !awayTeam) { showToast('球队未找到'); return; }
   const isEdit = window.isCupEditing;
   // 还原旧数据
+  const cupOldPlayers = new Set();
   if (isEdit && match.scorers) {
-    match.scorers.forEach(s => { const team = s.teamId === match.homeTeam ? homeTeam : awayTeam; const p = team.players.find(x => x.id === s.playerId); if (p) { p.goals = (p.goals || 0) - 1; p.gamesPlayed = (p.gamesPlayed || 0) - 1; } });
+    match.scorers.forEach(s => { const team = s.teamId === match.homeTeam ? homeTeam : awayTeam; const p = team.players.find(x => x.id === s.playerId); if (p) { p.goals = (p.goals || 0) - 1; cupOldPlayers.add(p); } });
   }
   if (isEdit && match.assists) {
-    match.assists.forEach(a => { const team = a.teamId === match.homeTeam ? homeTeam : awayTeam; const p = team.players.find(x => x.id === a.playerId); if (p) { p.assists = (p.assists || 0) - 1; p.gamesPlayed = (p.gamesPlayed || 0) - 1; } });
+    match.assists.forEach(a => { const team = a.teamId === match.homeTeam ? homeTeam : awayTeam; const p = team.players.find(x => x.id === a.playerId); if (p) { p.assists = (p.assists || 0) - 1; cupOldPlayers.add(p); } });
   }
+  // 每个参与球员 gamesPlayed 只减1
+  cupOldPlayers.forEach(p => { p.gamesPlayed = (p.gamesPlayed || 0) - 1; });
   if (isEdit && match.motm) {
     const motmP = [...homeTeam.players, ...awayTeam.players].find(x => x.id === match.motm);
     if (motmP) motmP.motmCount = (motmP.motmCount || 0) - 1;
@@ -1674,11 +1677,9 @@ function handleMainCloudUpload() {
 }
 
 // 包装上传函数，拦截成功/失败结果
-let _cloudUploadDone = false;
 function doCloudUpload(uploadFn) {
   const btn = document.getElementById('navCloudBtn');
   if (btn) btn.classList.add('uploading');
-  _cloudUploadDone = false;
   // 监听 toast 来判断结果——通过 hook showToast
   const origToast = window.showToast;
   let uploadResult = null;
@@ -3507,26 +3508,23 @@ function submitMatchResult(matchId) {
 
   // 还原旧球员数据
   if (isEdit) {
+    const oldPlayers = new Set();
     if (match.scorers) {
       match.scorers.forEach(s => {
         const team = s.teamId === match.homeTeam ? homeTeam : awayTeam;
         const p = team.players.find(x => x.id === s.playerId);
-        if (p) {
-          p.goals = (p.goals || 0) - 1;
-          p.gamesPlayed = (p.gamesPlayed || 0) - 1;
-        }
+        if (p) { p.goals = (p.goals || 0) - 1; oldPlayers.add(p); }
       });
     }
     if (match.assists) {
       match.assists.forEach(a => {
         const team = a.teamId === match.homeTeam ? homeTeam : awayTeam;
         const p = team.players.find(x => x.id === a.playerId);
-        if (p) {
-          p.assists = (p.assists || 0) - 1;
-          p.gamesPlayed = (p.gamesPlayed || 0) - 1;
-        }
+        if (p) { p.assists = (p.assists || 0) - 1; oldPlayers.add(p); }
       });
     }
+    // 每个参与球员 gamesPlayed 只减1（与新增时 Set 逻辑一致）
+    oldPlayers.forEach(p => { p.gamesPlayed = (p.gamesPlayed || 0) - 1; });
     if (match.motm) {
       const motmP = [...homeTeam.players, ...awayTeam.players].find(x => x.id === match.motm);
       if (motmP) motmP.motmCount = (motmP.motmCount || 0) - 1;
@@ -4535,11 +4533,11 @@ function showSyncModal() {
           <button class="btn btn-primary" style="flex:1;background:#9C27B0;" onclick="exportDataToFile()">
             📤 导出为文件
           </button>
-          <button class="btn btn-primary" style="flex:1;background:#9C27B0;" onclick="document.getElementById('importFileInput2').click()">
+          <button class="btn btn-primary" style="flex:1;background:#9C27B0;" onclick="document.getElementById('importFileInput5').click()">
             📥 从文件导入
           </button>
         </div>
-        <input type="file" id="importFileInput2" accept=".json" style="display:none" onchange="importDataFromFile(event)">
+        <input type="file" id="importFileInput5" accept=".json" style="display:none" onchange="importDataFromFile(event)">
         
         <div style="font-size:11px;color:#888;margin-top:8px;line-height:1.6;">
           导出后把 JSON 文件发给教练，他们导入即可同步。
@@ -4889,158 +4887,10 @@ async function recorderUpload() {
   }
 }
 
-// 数据员从云端下载数据（优先独立Gist，回退主Gist）
-async function recorderDownload() {
-  const league = state.currentUser ? state.currentUser.league : '';
-  const recorderType = state.currentUser ? (state.currentUser.recorderType || 'league') : 'league';
-  const cupId = state.currentUser ? (state.currentUser.cupId || null) : null;
-  const leagueName = getRecorderDisplayName(league);
-  const recorderGistId = getRecorderGistId();
-
-  // 确定下载来源：优先独立Gist，回退主Gist
-  let dataSource = recorderGistId || GIST_ID;
-  let fromMain = false;
-  if (!dataSource) { showToast('没有可用的云端数据'); return; }
-  if (!recorderGistId && GIST_ID) {
-    fromMain = true;
-    if (!confirm('未找到独立云端记录，将从主云端下载' + leagueName + '数据。继续吗？')) return;
-  } else {
-    if (!confirm('确定要从云端下载' + leagueName + '数据吗？这将覆盖本地' + leagueName + '数据！')) return;
-  }
-
-  showToast('正在下载...');
-
-  showSyncProgress('download', 0);
-  try {
-    showSyncProgress('download', 1);
-    const resp = await fetch(GIST_API + '/' + dataSource);
-    if (!resp.ok) throw new Error('下载失败 ' + resp.status);
-    const gist = await resp.json();
-    const files = Object.values(gist.files);
-    if (!files.length) throw new Error('云端没有数据文件');
-    // 大文件Gist会截断content，必须用raw_url
-    let dataContent;
-    const mf = files[0];
-    if (mf.truncated || !mf.content) {
-      if (!mf.raw_url) throw new Error('数据文件过大且无raw_url');
-      const rawR = await fetch(mf.raw_url);
-      if (!rawR.ok) throw new Error('获取完整数据失败');
-      dataContent = await rawR.text();
-    } else {
-      dataContent = mf.content;
-    }
-    let data;
-    try { data = JSON.parse(dataContent); } catch(e) {
-      throw new Error('云端数据已损坏，请联系管理员重新上传');
-    }
-    showSyncProgress('download', 2);
-
-    if (fromMain) {
-      // 从主Gist下载：提取对应联赛或杯赛数据
-      if (recorderType === 'cup') {
-        if (data.cups && data.cups[cupId]) {
-          if (!state.cups) state.cups = {};
-          state.cups[cupId] = data.cups[cupId];
-          // 更新杯赛球队数据
-          if (data.cups[cupId].teams && data.teams) {
-            const cupTeamIds = new Set(data.cups[cupId].teams);
-            const cupTeamData = data.teams.filter(t => cupTeamIds.has(t.id));
-            cupTeamData.forEach(ct => {
-              const idx = state.teams.findIndex(t => t.id === ct.id);
-              if (idx >= 0) state.teams[idx] = ct; else state.teams.push(ct);
-            });
-          }
-          saveState();
-        } else {
-          showToast('主云端没有' + leagueName + '的数据');
-          return;
-        }
-      } else {
-        // 联赛数据：从主Gist中提取该联赛
-        const leagueTeams = (data.teams || []).filter(t => t.league === league);
-        if (leagueTeams.length === 0) {
-          showToast('主云端没有' + leagueName + '的数据');
-          return;
-        }
-        const leagueTeamIds = new Set(leagueTeams.map(t => t.id));
-        const leagueMatches = (data.matches || []).filter(m => leagueTeamIds.has(m.homeTeam) || leagueTeamIds.has(m.awayTeam));
-        mergeLeagueData({ teams: leagueTeams, matches: leagueMatches, league });
-        // 杯赛数据也合并
-        if (data.cups) {
-          if (!state.cups) state.cups = {};
-          Object.keys(data.cups).forEach(cid => { state.cups[cid] = data.cups[cid]; });
-        }
-        // 合并后重新计算所有球员统计，确保一致性
-        recalculateAllPlayerStats(state);
-        saveState();
-      }
-    } else {
-      // 从独立Gist下载（原有逻辑）
-      if (recorderType === 'cup' && data.cupMatches) {
-        if (!state.cups) state.cups = {};
-        if (data.cups && data.cups[cupId]) {
-          state.cups[cupId] = data.cups[cupId];
-        } else if (data.cupMatches) {
-          if (!state.cups[cupId]) state.cups[cupId] = { teams: [], matches: [] };
-          state.cups[cupId].matches = data.cupMatches;
-          state.cups[cupId].teams = data.cupTeams ? data.cupTeams.map(t => t.id) : [];
-        }
-        saveState();
-      } else if (data.teams && data.league) {
-        mergeLeagueData(data);
-      }
-    }
-
-    recordSyncTime();
-    showToast(leagueName + '数据下载成功！' + (fromMain ? '（从主云端）' : ''));
-    showSyncProgress('download', -1);
-    setTimeout(() => { hideSyncProgress(); showSyncModal(); render(); }, 1200);
-  } catch(e) {
-    hideSyncProgress();
-    showToast(e.message);
-    console.error('Recorder download error:', e);
-  }
-}
-
-// 保存 GitHub Token
-async function saveGithubToken() {
-  const token = document.getElementById('syncTokenInput').value.trim();
-  if (!token) {
-    showToast('请输入 Token');
-    return;
-  }
-  
-  // 验证 Token 是否有效
-  try {
-    const resp = await fetch('https://api.github.com/user', {
-      headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' }
-    });
-    if (!resp.ok) throw new Error('Token 无效');
-    const user = await resp.json();
-    
-    GITHUB_TOKEN = token;
-    localStorage.setItem('pgm_github_token', token);
-    showToast('Token 验证成功！用户：' + user.login);
-    
-    // 刷新界面
-    setTimeout(() => showSyncModal(), 500);
-  } catch(e) {
-    showToast('Token 验证失败：' + e.message);
-  }
-}
-
-// 清除 GitHub Token
-function removeGithubToken() {
-  if (!confirm('确定要清除已保存的 GitHub Token 吗？')) return;
-  GITHUB_TOKEN = '';
-  GIST_ID = '';
-  localStorage.removeItem('pgm_github_token');
-  localStorage.removeItem('pgm_gist_id');
-  showToast('Token 已清除');
-  setTimeout(() => showSyncModal(), 500);
-}
 
 // 上传数据到云端
+
+
 async function syncUpload() {
   const token = GITHUB_TOKEN || ADMIN_BUILTIN_TOKEN;
   if (!token) { showToast('云端同步不可用'); return; }
