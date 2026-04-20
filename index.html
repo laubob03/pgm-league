@@ -348,6 +348,7 @@
     <button class="sidebar-item" id="btnAdminImport" style="display:none"><span class="sidebar-item-icon">⚙️</span>管理员导入</button>
     <button class="sidebar-item" id="btnCupManage" style="display:none"><span class="sidebar-item-icon">🏆</span>杯赛管理</button>
     <button class="sidebar-item" id="btnArchiveSeason" style="display:none"><span class="sidebar-item-icon">📦</span>归档赛季</button>
+    <button class="sidebar-item" id="btnTransfer" style="display:none"><span class="sidebar-item-icon">🔄</span>转会管理</button>
     <button class="sidebar-item" id="btnSyncCloud"><span class="sidebar-item-icon">☁️</span>数据同步</button>
     <button class="sidebar-item" id="sidebarLoginBtn"><span class="sidebar-item-icon">🔑</span>登录</button>
     <button class="sidebar-item danger" id="btnLogout" style="display:none"><span class="sidebar-item-icon">🚪</span>退出登录</button>
@@ -398,7 +399,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 128 };
+const APP_VERSION = { major: 1, minor: 0, patch: 129 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-20';
@@ -965,6 +966,8 @@ function loadState() {
           if (TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
         });
       }
+      // 兼容旧版本没有 pendingTransfers 字段
+      if (!state.pendingTransfers) state.pendingTransfers = [];
       // 从比赛记录重新计算所有球员统计，修复历史数据不一致问题
       recalculateAllPlayerStats(state);
       // 同时修复归档赛季数据
@@ -1125,6 +1128,7 @@ function initData() {
 
   // Generate matches
   state.matches = generateAllMatches();
+  state.pendingTransfers = [];
   saveState();
 }
 
@@ -1511,6 +1515,8 @@ function showEnterCupMatchModal(matchId, cupId) {
   if (!cup) return;
   const match = cup.matches.find(m => m.id === matchId);
   if (!match) return;
+  // 杯赛第2轮起自动处理待生效转会（对应联赛第13轮）
+  if ((match.round || 0) >= 2) processPendingTransfers();
   const homeTeam = state.teams.find(t => t.id === match.homeTeam);
   const awayTeam = state.teams.find(t => t.id === match.awayTeam);
   if (!homeTeam || !awayTeam) return;
@@ -2929,15 +2935,31 @@ function showTeamDetail(teamId) {
       default:
         sorted = [...team.players].sort((a, b) => (a.number || 0) - (b.number || 0));
     }
-    return sorted.map(p => {
+    // 分离：活跃球员 / 已转出 / 新加盟
+    const active = sorted.filter(p => !p.transferredOut && !p.isTransferIn);
+    const transferredOut = sorted.filter(p => p.transferredOut);
+    const transferIn = sorted.filter(p => p.isTransferIn);
+
+    const renderRow = (p) => {
       const feeTag = p.transferFee > 0 ? `<span style="font-size:9px;color:#FF9800;margin-left:3px" title="转会费${p.transferFee}M">${p.transferFee}M</span>` : '';
-      return `
-      <div class="player-row">
+      const transferOutTag = p.transferredOut ? `<span style="font-size:9px;color:#f44336;background:#fce4ec;padding:0 4px;border-radius:3px;margin-left:3px">已转出→${p.transferredOutTo || '?'}</span>` : '';
+      const transferInTag = p.isTransferIn ? `<span style="font-size:9px;color:#2196F3;background:#e3f2fd;padding:0 4px;border-radius:3px;margin-left:3px">新加盟←${p.transferredInFrom || '?'}</span>` : '';
+      const nameExtra = feeTag + transferOutTag + transferInTag;
+      return `<div class="player-row"${p.transferredOut ? ' style="opacity:0.5"' : ''}>
         <span class="player-num">${p.number}</span>
-        <span class="player-nm"><span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${p.uid}')">${p.name}</span>${feeTag}</span>
+        <span class="player-nm"><span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${p.uid}')">${p.name}</span>${nameExtra}</span>
         <span class="player-st">⚽${p.goals || 0} 👟${p.assists || 0} ⭐${p.motmCount || 0}</span>
       </div>`;
-    }).join('');
+    };
+
+    let html = active.map(renderRow).join('');
+    if (transferIn.length > 0) {
+      html += `<div style="font-size:10px;color:#2196F3;padding:4px 8px;background:#e3f2fd;border-radius:4px;margin-top:4px;font-weight:600">📥 新加盟球员（${transferIn.length}）</div>` + transferIn.map(renderRow).join('');
+    }
+    if (transferredOut.length > 0) {
+      html += `<div style="font-size:10px;color:#f44336;padding:4px 8px;background:#fce4ec;border-radius:4px;margin-top:4px;font-weight:600">📤 已转出球员（${transferredOut.length}）</div>` + transferredOut.map(renderRow).join('');
+    }
+    return html;
   };
 
   const assistantDisplay = team.assistantCoaches && team.assistantCoaches.length > 0 ? '<span class="coach-assistant">助理教练：' + team.assistantCoaches.join('、') + '</span>' : '';
@@ -3397,6 +3419,8 @@ function showCupPlayerData(teamId) {
 function showEnterMatchModal(matchId) {
   const match = state.matches.find(m => m.id === matchId);
   if (!match) return;
+  // 联赛第13轮起自动处理待生效转会
+  if ((match.round || 0) >= 13) processPendingTransfers();
 
   const homeTeam = state.teams.find(t => t.id === match.homeTeam);
   const awayTeam = state.teams.find(t => t.id === match.awayTeam);
@@ -3877,6 +3901,10 @@ function updateSidebar() {
     const archiveSeasonBtn = document.getElementById('btnArchiveSeason');
     if (archiveSeasonBtn) {
       archiveSeasonBtn.style.display = state.currentUser.isSuperAdmin ? 'flex' : 'none';
+    }
+    const transferBtn = document.getElementById('btnTransfer');
+    if (transferBtn) {
+      transferBtn.style.display = state.currentUser.isSuperAdmin ? 'flex' : 'none';
     }
     const userIdEl = document.getElementById('sidebarUserId');
     if (userIdEl) {
@@ -4667,6 +4695,256 @@ function extractLeagueData(league) {
 
 // ============ 球员转会 ============
 
+// 获取联赛当前已完成的最大轮次
+function getLeagueCurrentRound(league) {
+  const leagueTeamIds = new Set(state.teams.filter(t => t.league === league).map(t => t.id));
+  let maxRound = 0;
+  state.matches.forEach(m => {
+    if (leagueTeamIds.has(m.homeTeam) && m.status === 'completed') {
+      maxRound = Math.max(maxRound, m.round || 0);
+    }
+  });
+  return maxRound;
+}
+
+// 处理待生效转会（联赛第13轮起自动执行）
+function processPendingTransfers() {
+  const pending = (state.pendingTransfers || []).filter(t => t.status === 'pending');
+  if (!pending.length) return false;
+  let processed = false;
+  pending.forEach(transfer => {
+    const currentRound = getLeagueCurrentRound(transfer.fromLeague);
+    if (currentRound >= transfer.effectiveRound) {
+      executeTransfer(transfer);
+      transfer.status = 'processed';
+      transfer.processedAt = new Date().toISOString();
+      processed = true;
+    }
+  });
+  if (processed) saveState();
+  return processed;
+}
+
+// 执行转会：同一联赛直接移动球员（数据累加），不同联赛保留旧球员+创建新球员
+function executeTransfer(transfer) {
+  const fromTeam = state.teams.find(t => t.id === transfer.fromTeamId);
+  const toTeam = state.teams.find(t => t.id === transfer.toTeamId);
+  if (!fromTeam || !toTeam) return;
+  const playerIdx = fromTeam.players.findIndex(p => p.uid == transfer.playerUid);
+  if (playerIdx < 0) return;
+  const player = fromTeam.players[playerIdx];
+  const sameLeague = fromTeam.league === toTeam.league;
+
+  if (sameLeague) {
+    // 同联赛：直接移动，数据跟着走，积分榜自动累加
+    fromTeam.players.splice(playerIdx, 1);
+    player.id = 'p' + toTeam.id + '_' + player.uid;
+    toTeam.players.push(player);
+  } else {
+    // 跨联赛：旧球员标记已转出（数据保留在原联赛榜），新球队创建新球员（数据从零开始）
+    player.transferredOut = true;
+    player.transferredOutTo = transfer.toTeamName;
+    player.transferredOutAtRound = transfer.effectiveRound;
+    const newPlayer = {
+      id: 'p' + toTeam.id + '_' + player.uid,
+      uid: player.uid,
+      name: player.name,
+      position: player.position,
+      age: player.age,
+      number: player.number,
+      goals: 0, assists: 0, gamesPlayed: 0, motmCount: 0,
+      isTransferIn: true,
+      transferredInFrom: transfer.fromTeamName,
+      transferredInAtRound: transfer.effectiveRound
+    };
+    toTeam.players.push(newPlayer);
+  }
+}
+
+// 转会管理弹窗（超管专用）
+function showTransferModal() {
+  processPendingTransfers();
+  const pending = (state.pendingTransfers || []).filter(t => t.status === 'pending');
+  const processed = (state.pendingTransfers || []).filter(t => t.status === 'processed');
+
+  let pendingHtml = '';
+  if (pending.length === 0) {
+    pendingHtml = '<div style="text-align:center;padding:20px;color:#999;font-size:13px">暂无待生效转会</div>';
+  } else {
+    pendingHtml = pending.map(t => {
+      const sameLeague = t.fromLeague === t.toLeague;
+      const leagueTag = sameLeague
+        ? '<span style="font-size:11px;color:#2196F3;background:#E3F2FD;padding:1px 6px;border-radius:4px">同联赛</span>'
+        : '<span style="font-size:11px;color:#FF9800;background:#FFF3E0;padding:1px 6px;border-radius:4px">跨联赛</span>';
+      return `<div style="display:flex;align-items:center;padding:10px;background:#fff;border:1px solid #eee;border-radius:8px;margin-bottom:6px;gap:8px">
+        <img src="${getTeamLogo({name: t.fromTeamName})}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.playerName} ${leagueTag}</div>
+          <div style="font-size:11px;color:#888">${t.fromTeamName} → ${t.toTeamName}</div>
+        </div>
+        <div style="font-size:11px;color:#999;flex-shrink:0">第${t.effectiveRound}轮生效</div>
+        <button onclick="cancelTransfer('${t.id}')" style="background:#f44336;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;flex-shrink:0">取消</button>
+      </div>`;
+    }).join('');
+  }
+
+  let processedHtml = '';
+  if (processed.length > 0) {
+    processedHtml = `<div style="margin-top:12px;padding-top:12px;border-top:1px solid #eee">
+      <div style="font-size:12px;color:#999;font-weight:600;margin-bottom:6px">✅ 已完成转会（${processed.length}）</div>
+      ${processed.map(t => `<div style="font-size:12px;color:#666;padding:3px 0">${t.playerName}：${t.fromTeamName} → ${t.toTeamName}</div>`).join('')}
+    </div>`;
+  }
+
+  // 各联赛当前轮次
+  const leagueRounds = ['super','jiaEast','jiaWest','yiEast','yiWest'].map(l => {
+    const r = getLeagueCurrentRound(l);
+    return `<span style="font-size:11px;color:#666;background:#f5f5f5;padding:2px 6px;border-radius:4px">${LEAGUE_NAMES[l]}：第${r}轮</span>`;
+  }).join(' ');
+
+  const content = `
+    <div class="modal-header">
+      <div class="modal-title">🔄 转会管理</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div style="max-height:70vh;overflow-y:auto;padding:4px 0">
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${leagueRounds}</div>
+      <div style="font-size:12px;color:#888;margin-bottom:8px;line-height:1.6">
+        转会将在联赛第13轮（对应足总杯第2轮）自动生效。<br>
+        <span style="color:#2196F3">同联赛</span>转会数据继续累加，<span style="color:#FF9800">跨联赛</span>转会原数据保留、新数据从零开始。
+      </div>
+      <div style="font-size:13px;font-weight:600;color:#333;margin-bottom:6px">📋 待生效转会（${pending.length}）</div>
+      ${pendingHtml}
+      ${processedHtml}
+      <button class="btn btn-primary btn-full" style="margin-top:12px;background:#228B22" onclick="showAddTransferModal()">➕ 发起转会</button>
+    </div>
+  `;
+  showModal(content);
+}
+
+// 发起转会弹窗
+function showAddTransferModal() {
+  const teamsByLeague = {};
+  state.teams.forEach(t => {
+    if (!teamsByLeague[t.league]) teamsByLeague[t.league] = [];
+    teamsByLeague[t.league].push(t);
+  });
+
+  const teamOptions = state.teams.map(t => `<option value="${t.id}">${t.name}（${LEAGUE_NAMES[t.league]}）</option>`).join('');
+
+  const content = `
+    <div class="modal-header">
+      <div class="modal-title">➕ 发起转会</div>
+      <button class="modal-close" onclick="showTransferModal()">← 返回</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">原球队</label>
+      <select id="transferFrom" class="form-input" onchange="updateTransferPlayerList()">
+        <option value="">请选择球队</option>
+        ${teamOptions}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">转出球员</label>
+      <select id="transferPlayer" class="form-input">
+        <option value="">请先选择原球队</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">新球队</label>
+      <select id="transferTo" class="form-input">
+        <option value="">请选择球队</option>
+        ${teamOptions}
+      </select>
+    </div>
+    <div style="background:#fff3e0;border-radius:8px;padding:10px;font-size:12px;color:#e65100;line-height:1.6;margin:8px 0">
+      <b>📋 说明：</b><br>
+      • 转会将在联赛第13轮自动生效<br>
+      • 同联赛转会：球员数据（进球/助攻等）继续在新球队累加<br>
+      • 跨联赛转会：原联赛数据保留，新联赛数据从零开始<br>
+      • 同一球员可多次转会
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-primary" style="flex:1;background:#228B22" onclick="confirmAddTransfer()">确认转会</button>
+      <button class="btn btn-secondary" style="flex:1" onclick="showTransferModal()">取消</button>
+    </div>
+  `;
+  showModal(content);
+}
+
+// 更新球员下拉列表
+function updateTransferPlayerList() {
+  const teamId = document.getElementById('transferFrom').value;
+  const playerSelect = document.getElementById('transferPlayer');
+  if (!teamId) {
+    playerSelect.innerHTML = '<option value="">请先选择原球队</option>';
+    return;
+  }
+  const team = state.teams.find(t => t.id == teamId);
+  if (!team) return;
+  // 排除已标记转出的球员
+  const activePlayers = team.players.filter(p => !p.transferredOut);
+  playerSelect.innerHTML = '<option value="">请选择球员</option>' +
+    activePlayers.map(p => `<option value="${p.uid}" data-name="${p.name}">${p.name}（${p.position || '?'} #${p.number || '?'}）</option>`).join('');
+}
+
+// 确认添加转会
+function confirmAddTransfer() {
+  const fromTeamId = document.getElementById('transferFrom').value;
+  const playerUid = document.getElementById('transferPlayer').value;
+  const toTeamId = document.getElementById('transferTo').value;
+
+  if (!fromTeamId) { showToast('请选择原球队'); return; }
+  if (!playerUid) { showToast('请选择转出球员'); return; }
+  if (!toTeamId) { showToast('请选择新球队'); return; }
+  if (fromTeamId === toTeamId) { showToast('不能转会到同一球队'); return; }
+
+  const fromTeam = state.teams.find(t => t.id == fromTeamId);
+  const toTeam = state.teams.find(t => t.id == toTeamId);
+  const player = fromTeam.players.find(p => p.uid == playerUid);
+  if (!fromTeam || !toTeam || !player) { showToast('数据异常'); return; }
+
+  // 检查该球员是否已有待生效转会
+  const existing = (state.pendingTransfers || []).find(t => t.status === 'pending' && t.playerUid == playerUid);
+  if (existing) { showToast('该球员已有待生效转会，请先取消后再操作'); return; }
+
+  if (!confirm(`确认转会：${player.name} 从 ${fromTeam.name} → ${toTeam.name}？\n将在联赛第13轮自动生效。`)) return;
+
+  const transfer = {
+    id: 'tr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+    playerId: player.id,
+    playerName: player.name,
+    playerUid: player.uid,
+    fromTeamId: fromTeam.id,
+    fromTeamName: fromTeam.name,
+    fromLeague: fromTeam.league,
+    toTeamId: toTeam.id,
+    toTeamName: toTeam.name,
+    toLeague: toTeam.league,
+    effectiveRound: 13,
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  };
+
+  if (!state.pendingTransfers) state.pendingTransfers = [];
+  state.pendingTransfers.push(transfer);
+  saveState();
+  showToast('转会已添加：' + player.name + ' → ' + toTeam.name);
+  showTransferModal();
+}
+
+// 取消待生效转会
+function cancelTransfer(transferId) {
+  if (!confirm('确定要取消该转会吗？')) return;
+  const idx = (state.pendingTransfers || []).findIndex(t => t.id === transferId);
+  if (idx >= 0) {
+    state.pendingTransfers.splice(idx, 1);
+    saveState();
+    showToast('转会已取消');
+    showTransferModal();
+  }
+}
+
 
 // 编辑球队教练（超管专用）
 function showEditCoachModal(teamId) {
@@ -5221,6 +5499,7 @@ document.getElementById('btnEnterMatch').onclick = () => {
 document.getElementById('btnAdminImport').onclick = () => showAdminImportModal();
 document.getElementById('btnCupManage').onclick = () => showCupManageModal();
 document.getElementById('btnArchiveSeason').onclick = () => showArchiveSeasonModal();
+document.getElementById('btnTransfer').onclick = () => showTransferModal();
 document.getElementById('btnSyncCloud').onclick = () => showSyncModal();
 
 document.getElementById('modalOverlay').onclick = (e) => {
