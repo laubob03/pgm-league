@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -398,7 +398,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 126 };
+const APP_VERSION = { major: 1, minor: 0, patch: 127 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-20';
@@ -441,7 +441,7 @@ const CHANGELOG = [
   { v: '1.0.92', date: '2026-04-19', items: ['📐 弹窗改为顶部对齐，内容区最大高度滚动展示'] },
   { v: '1.0.91', date: '2026-04-19', items: ['ℹ️ 底部访问量行增加版本号显示'] },
   { v: '1.0.90', date: '2026-04-19', items: ['👥 球队详情-球员Tab：联赛球员/杯赛球员/转出球员改为子Tab内切换，不再弹新窗口'] },
-  { v: '1.0.126', date: '2026-04-20', items: ['🐛 修复球员详情MVP统计不计数（motm ID匹配逻辑错误）', '🐛 修复赛程页MVP星标从未显示（联赛+杯赛）'] },
+  { v: '1.0.127', date: '2026-04-20', items: ['🐛 修复球队详情页同一球员单场多次进球/助攻重复显示名字，改为合并为"名字(次数)"'] },
   { v: '1.0.88', date: '2026-04-19', items: ['📋 球队详情页改为Tab切换布局（联赛战绩/杯赛/球员），更简洁'] },
   { v: '1.0.86', date: '2026-04-19', items: ['🔄 赛程页改为单轮显示+左右翻页，录入比分后自动停留在当前轮次', '🏆 杯赛赛程同样支持单轮翻页'] },
   { v: '1.0.85', date: '2026-04-19', items: ['☁️ 主界面新增"上传云端"按钮（管理员/数据员可见）', '🚀 上传成功爆炸式粒子特效+火箭动画', '💀 上传失败全屏红色警告+屏幕震动'] },
@@ -2726,7 +2726,10 @@ function getLeaguePlayerStats(league, type, limit) {
     });
     if (m.scorers) m.scorers.forEach(s => { if (stats[s.teamId] && stats[s.teamId].players[s.playerId]) stats[s.teamId].players[s.playerId].goals++; });
     if (m.assists) m.assists.forEach(a => { if (stats[a.teamId] && stats[a.teamId].players[a.playerId]) stats[a.teamId].players[a.playerId].assists++; });
-    if (m.motm) { [m.homeTeam, m.awayTeam].forEach(tid => { if (stats[tid] && stats[tid].players[m.motm]) stats[tid].players[m.motm].motm++; }); }
+    if (m.motm) {
+      const motmTeamId = m.motm.split('_')[0];
+      if (stats[motmTeamId] && stats[motmTeamId].players[m.motm]) stats[motmTeamId].players[m.motm].motm++;
+    }
   });
   const all = [];
   Object.values(stats).forEach(s => {
@@ -2764,7 +2767,10 @@ function getCupPlayerStats(cupId, type, limit) {
     });
     if (m.scorers) m.scorers.forEach(s => { if (stats[s.teamId] && stats[s.teamId].players[s.playerId]) stats[s.teamId].players[s.playerId].goals++; });
     if (m.assists) m.assists.forEach(a => { if (stats[a.teamId] && stats[a.teamId].players[a.playerId]) stats[a.teamId].players[a.playerId].assists++; });
-    if (m.motm) { [m.homeTeam, m.awayTeam].forEach(tid => { if (stats[tid] && stats[tid].players[m.motm]) stats[tid].players[m.motm].motm++; }); }
+    if (m.motm) {
+      const motmTeamId = m.motm.split('_')[0];
+      if (stats[motmTeamId] && stats[motmTeamId].players[m.motm]) stats[motmTeamId].players[m.motm].motm++;
+    }
   });
   const all = [];
   Object.values(stats).forEach(s => {
@@ -2820,15 +2826,24 @@ function showTeamDetail(teamId) {
       else resultColor = '#ff9800';
     }
 
-    // 获取进球助攻（带点击链接）
-    const linkPlayer = (s) => {
-      const p = findPlayerById(s.playerId);
-      if (!p) return '';
-      const uid = p.uid || p.id.split('_')[1];
-      return `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${uid}')">${p.name}</span>`;
+    // 获取进球助攻（带点击链接，同一场比赛同一球员多个进球/助攻合并显示）
+    const countPlayerEvents = (events) => {
+      const counts = {};
+      events.forEach(s => {
+        const p = findPlayerById(s.playerId);
+        if (!p) return;
+        const uid = p.uid || p.id.split('_')[1];
+        const key = uid + '|' + p.name;
+        if (!counts[key]) counts[key] = { name: p.name, uid, count: 0 };
+        counts[key].count++;
+      });
+      return Object.values(counts).map(c => {
+        const display = c.count > 1 ? c.name + '(' + c.count + ')' : c.name;
+        return `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${c.uid}')">${display}</span>`;
+      }).join(', ');
     };
-    const teamGoals = isCompleted && m.scorers ? m.scorers.filter(s => s.teamId === teamId).map(s => linkPlayer(s)).filter(Boolean).join(', ') : '';
-    const teamAssists = isCompleted && m.assists ? m.assists.filter(a => a.teamId === teamId).map(a => linkPlayer(a)).filter(Boolean).join(', ') : '';
+    const teamGoals = isCompleted && m.scorers ? countPlayerEvents(m.scorers.filter(s => s.teamId === teamId)) : '';
+    const teamAssists = isCompleted && m.assists ? countPlayerEvents(m.assists.filter(a => a.teamId === teamId)) : '';
 
 
 
@@ -2951,15 +2966,24 @@ function showTeamDetail(teamId) {
         const isCompleted = m.status === 'completed';
         const homeScore = m.homeScore || 0;
         const awayScore = m.awayScore || 0;
-        // 获取进球助攻MVP（带点击链接）
-        const cupLinkPlayer = (s) => {
-          const p = findPlayerById(s.playerId);
-          if (!p) return '';
-          const uid = p.uid || p.id.split('_')[1];
-          return `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${uid}')">${p.name}</span>`;
+        // 获取进球助攻MVP（带点击链接，同一场比赛同一球员多个进球/助攻合并显示）
+        const countCupPlayerEvents = (events) => {
+          const counts = {};
+          events.forEach(s => {
+            const p = findPlayerById(s.playerId);
+            if (!p) return;
+            const uid = p.uid || p.id.split('_')[1];
+            const key = uid + '|' + p.name;
+            if (!counts[key]) counts[key] = { name: p.name, uid, count: 0 };
+            counts[key].count++;
+          });
+          return Object.values(counts).map(c => {
+            const display = c.count > 1 ? c.name + '(' + c.count + ')' : c.name;
+            return `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${c.uid}')">${display}</span>`;
+          }).join(', ');
         };
-        const cupTeamGoals = isCompleted && m.scorers ? m.scorers.filter(s => s.teamId === teamId).map(s => cupLinkPlayer(s)).filter(Boolean).join(', ') : '';
-        const cupTeamAssists = isCompleted && m.assists ? m.assists.filter(a => a.teamId === teamId).map(a => cupLinkPlayer(a)).filter(Boolean).join(', ') : '';
+        const cupTeamGoals = isCompleted && m.scorers ? countCupPlayerEvents(m.scorers.filter(s => s.teamId === teamId)) : '';
+        const cupTeamAssists = isCompleted && m.assists ? countCupPlayerEvents(m.assists.filter(a => a.teamId === teamId)) : '';
         const cupTeamMotm = isCompleted && m.motm ? findPlayerById(m.motm) : null;
         const cupTeamMotmUid = cupTeamMotm ? (cupTeamMotm.uid || cupTeamMotm.id.split('_')[1]) : '';
         const cupTeamMotmStr = cupTeamMotm ? (cupTeamMotmUid ? `<span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${cupTeamMotmUid}')">${cupTeamMotm.name}</span>` : cupTeamMotm.name) : '';
