@@ -398,7 +398,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 124 };
+const APP_VERSION = { major: 1, minor: 0, patch: 125 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-20';
@@ -441,7 +441,7 @@ const CHANGELOG = [
   { v: '1.0.92', date: '2026-04-19', items: ['📐 弹窗改为顶部对齐，内容区最大高度滚动展示'] },
   { v: '1.0.91', date: '2026-04-19', items: ['ℹ️ 底部访问量行增加版本号显示'] },
   { v: '1.0.90', date: '2026-04-19', items: ['👥 球队详情-球员Tab：联赛球员/杯赛球员/转出球员改为子Tab内切换，不再弹新窗口'] },
-  { v: '1.0.124', date: '2026-04-20', items: ['🐛 修复杯赛榜单MVP不显示（motm ID匹配逻辑错误）', '🐛 修复球员统计重算时MVP计数遗漏'] },
+  { v: '1.0.125', date: '2026-04-20', items: ['🐛 修复榜单页刷新后tab重置为射手榜（现在保留当前选中tab）', '🐛 修复杯赛榜单排序取错数据'] },
   { v: '1.0.88', date: '2026-04-19', items: ['📋 球队详情页改为Tab切换布局（联赛战绩/杯赛/球员），更简洁'] },
   { v: '1.0.86', date: '2026-04-19', items: ['🔄 赛程页改为单轮显示+左右翻页，录入比分后自动停留在当前轮次', '🏆 杯赛赛程同样支持单轮翻页'] },
   { v: '1.0.85', date: '2026-04-19', items: ['☁️ 主界面新增"上传云端"按钮（管理员/数据员可见）', '🚀 上传成功爆炸式粒子特效+火箭动画', '💀 上传失败全屏红色警告+屏幕震动'] },
@@ -2249,7 +2249,12 @@ function renderStats() {
   const league = state.currentLeague;
   const sd = getCurrentSeasonData();
   
-  let currentTab = 'goals';
+  let currentTab = window.currentStatsTab || 'goals';
+
+  // 恢复 tab active 状态
+  document.querySelectorAll('.stats-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.tab === currentTab);
+  });
 
   // Initial render
   renderStatsTab(currentTab);
@@ -2326,12 +2331,14 @@ function sortStats(col) {
   const currentTab = window.currentStatsTab || 'goals';
   const container = document.getElementById('statsContent');
   let players = [];
-  if (currentTab === 'goals') {
-    players = getTopScorers(20, state.currentLeague);
-  } else if (currentTab === 'assists') {
-    players = getTopAssists(20, state.currentLeague);
-  } else if (currentTab === 'motm') {
-    players = getTopMotm(20, state.currentLeague);
+  if (isCupLeague(state.currentLeague)) {
+    if (currentTab === 'goals') players = getCupTopScorers(20, state.currentLeague);
+    else if (currentTab === 'assists') players = getCupTopAssists(20, state.currentLeague);
+    else if (currentTab === 'motm') players = getCupTopMotm(20, state.currentLeague);
+  } else {
+    if (currentTab === 'goals') players = getTopScorers(20, state.currentLeague);
+    else if (currentTab === 'assists') players = getTopAssists(20, state.currentLeague);
+    else if (currentTab === 'motm') players = getTopMotm(20, state.currentLeague);
   }
 
   // 根据排序列排序
