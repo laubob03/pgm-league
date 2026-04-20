@@ -1662,6 +1662,8 @@ function renderFaCupBracket(cupId) {
   container.innerHTML = html;
   saveToUrlHash();
 }
+
+function showEnterCupMatchModal(matchId, cupId) {
   const cup = state.cups[cupId];
   if (!cup) return;
   const match = cup.matches.find(m => m.id === matchId);
