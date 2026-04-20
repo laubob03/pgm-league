@@ -399,7 +399,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 132 };
+const APP_VERSION = { major: 1, minor: 0, patch: 133 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-20';
@@ -2522,7 +2522,7 @@ function togglePlayerSeasonDetail(el, uid) {
     return b.seasonId - a.seasonId;
   });
 
-  let html = '<div class="player-season-detail" style="border:1px solid #e57373;border-radius:8px;padding:8px 10px;background:#fffbeb;margin:4px 0">';
+  let html = '<div class="player-season-detail" style="border:1px solid #90caf9;border-radius:8px;padding:8px 10px;background:#e3f2fd;margin:4px 0">';
 
   // 查找球员当前所在球队（用于转会按钮）
   let currentPlayerTeam = null;
@@ -2566,10 +2566,10 @@ function togglePlayerSeasonDetail(el, uid) {
     html += `<div style="color:${isCurrent ? '#1b5e20' : '#555'};font-weight:${isCurrent ? '600' : '400'};white-space:nowrap">${seasonLabel}</div>`;
     html += `<div style="font-size:11px;color:#888;white-space:nowrap">${teamLabel}</div>`;
     html += `</div>`;
-    html += `<div style="display:flex;gap:8px;white-space:nowrap;margin-left:8px;font-size:11px">`;
+    html += `<div style="display:flex;gap:8px;white-space:nowrap;margin-left:8px;font-size:11px;justify-content:center">`;
     if (lg > 0 || la > 0 || lm > 0) html += `<span style="color:#555;background:#f1f8e9;padding:0 4px;border-radius:3px">联赛 ${lg}/${la}/${lm}</span>`;
     if (cg > 0 || ca > 0 || cm > 0) html += `<span style="color:#666;background:#e3f2fd;padding:0 4px;border-radius:3px">杯赛 ${cg}/${ca}/${cm}</span>`;
-    if (tg > 0) html += `<span style="color:#2e7d32;font-weight:600">总 ⚽${tg} 👟${ta} ⭐${tm}</span>`;
+    if (tg > 0) html += `<span style="color:#000;font-weight:600">总数据：⚽${tg} 👟${ta} ⭐${tm}</span>`;
     html += `</div>`;
     html += '</div>';
   });
@@ -2591,7 +2591,7 @@ function togglePlayerSeasonDetail(el, uid) {
 
   // 即将转会信息
   if (pendingTransfer) {
-    html += '<div style="margin-top:6px;padding:6px 8px;background:linear-gradient(135deg,#fff3e0,#ffe0b2);border-radius:6px;border:1px solid #ffb74d">';
+    html += '<div style="margin-top:6px;padding:6px 8px;background:#fff8e1;border-radius:6px;border:1px solid #ffe082">';
     html += '<div style="font-size:11px;color:#e65100;font-weight:700;margin-bottom:3px">⏳ 即将转会</div>';
     html += '<div style="display:flex;font-size:12px;padding:2px 0;line-height:1.7;color:#333">';
     html += `<span>${pendingTransfer.fromTeamName} → <b style="color:#1b5e20;font-size:13px">${pendingTransfer.toTeamName}</b></span>`;
