@@ -399,7 +399,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 134 };
+const APP_VERSION = { major: 1, minor: 0, patch: 136 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-20';
@@ -2594,7 +2594,7 @@ function togglePlayerSeasonDetail(el, uid) {
     html += '<div style="margin-top:6px;padding:6px 8px;background:#e8edf2;border-radius:6px;border:1px solid #c5cdd5">';
     html += '<div style="font-size:11px;color:#37474f;font-weight:600;margin-bottom:3px">⏳ 即将转会</div>';
     html += `<div style="display:flex;font-size:12px;padding:2px 0;line-height:1.7;color:#1a1a1a">`;
-    html += `<span>${pendingTransfer.fromTeamName} → <b style="color:#1565c0;font-size:13px">${pendingTransfer.toTeamName}</b></span>`;
+    html += `<span>${pendingTransfer.fromTeamName} → <b style="color:#d32f2f;font-size:13px">${pendingTransfer.toTeamName}</b></span>`;
     html += '<span style="margin-left:auto">' + (pendingTransfer.effectiveRound === 0 ? '<span style="color:#1565c0;font-weight:600">⚡立即</span>' : '<span style="color:#78909c">第' + pendingTransfer.effectiveRound + '轮</span>') + '</span>';
     html += '</div>';
     if (pendingTransfer.transferFee > 0) {
