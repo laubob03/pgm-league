@@ -435,7 +435,7 @@ const APP_BUILD_DATE = '2026-04-21';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.202', date: '2026-04-21', items: ['📋 球员详情杯赛数据按杯赛名分别显示（足总杯/冠军杯/联盟杯/协会杯），替代笼统"杯赛"标签'] },  { v: '1.0.201', date: '2026-04-21', items: ['🎨 底部版本号与侧边栏统一（共用CHANGELOG），版本号后加 By Pgm联赛—J.K'] },  { v: '1.0.200', date: '2026-04-21', items: ['🎨 足总杯赛程图增加球队队徽：已完赛/未完赛/管理员选择均显示队徽'] },  { v: '1.0.199', date: '2026-04-21', items: ['🎨 删除足总杯赛程图顶部标题行和缩放按钮'] },  { v: '1.0.198', date: '2026-04-21', items: ['📱 足总杯赛程图增加移动端触摸手势：双指捏合缩放、单指拖拽平移、双击重置'] },  { v: '1.0.197', date: '2026-04-21', items: ['🐛 删除 rTeamSelect 函数末尾重复代码（多余return+花括号），修复 renderFaCupBracket 被提前关闭导致全页面点击无响应'] },  { v: '1.0.196', date: '2026-04-21', items: ['🐛 回滚zoom缩放为scale+font-smoothing抗锯齿，修复点击无响应'] },  { v: '1.0.194', date: '2026-04-21', items: ['🐛 修复普通用户足总杯赛程图点击无响应'] },  { v: '1.0.193', date: '2026-04-21', items: ['🎨 足总杯赛程图：普通用户也用 select 样式显示球队，与管理员视觉一致'] },  { v: '1.0.192', date: '2026-04-21', items: ['🎨 足总杯赛程图：未完赛球队显示效果管理员与普通用户统一'] },  { v: '1.0.191', date: '2026-04-21', items: ['🎨 修复足总杯赛程图缩放时文字模糊：scale 改为 zoom'] },  { v: '1.0.190', date: '2026-04-21', items: ['🎨 足总杯赛程图未比赛卡片视觉增强：去掉模糊/虚淡效果'] },  { v: '1.0.189', date: '2026-04-21', items: ['🎨 足总杯赛程图联赛底色加深：超级深红、甲级深绿、乙级深灰（白色文字）'] },  { v: '1.0.130', date: '2026-04-20', items: ['🔄 转会系统统一：侧边栏和球队详情页转会共用 pending 系统，逻辑完全一致', '🔄 转会增加生效方式选择：指定轮次生效 / 立即转会', '🔄 转会增加转会费输入（侧边栏和球队详情页均支持）', '👤 球员详情页增加即将转会信息：新球队、到队时间、转会费', '🎨 球员列表增加即将转会标签（橙色标签显示目标球队）'] },  { v: '1.0.173', date: '2026-04-20', items: ['🎨 球队详情页轮次标题单独一行显示，对阵信息更完整'] },  { v: '1.0.172', date: '2026-04-20', items: ['🎨 加大球队详情页队徽：16px → 18px'] },  { v: '1.0.171', date: '2026-04-20', items: ['📱 优化球队详情页手机端显示：缩小队徽、紧凑间距、队名截断、比分区域优化'] },  { v: '1.0.170', date: '2026-04-20', items: ['🐛 修复球队详情页队徽位置：主队队徽在右，客队队徽在左（对称布局）'] },  { v: '1.0.169', date: '2026-04-20', items: ['🐛 修复球队详情页主队队名对齐问题（轮次标题移到内部后CSS选择器失效）'] },  { v: '1.0.168', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛芯片选中状态不更新的问题', '📋 新增杯赛与联赛同步规则文档'] },
+  { v: '1.0.203', date: '2026-04-21', items: ['📋 球队详情页"杯赛球员"改为按杯赛名独立显示（足总杯球员/冠军杯球员等），逻辑与联赛球员一致'] },  { v: '1.0.202', date: '2026-04-21', items: ['📋 球员详情杯赛数据按杯赛名分别显示（足总杯/冠军杯/联盟杯/协会杯），替代笼统"杯赛"标签'] },  { v: '1.0.201', date: '2026-04-21', items: ['🎨 底部版本号与侧边栏统一（共用CHANGELOG），版本号后加 By Pgm联赛—J.K'] },  { v: '1.0.200', date: '2026-04-21', items: ['🎨 足总杯赛程图增加球队队徽：已完赛/未完赛/管理员选择均显示队徽'] },  { v: '1.0.199', date: '2026-04-21', items: ['🎨 删除足总杯赛程图顶部标题行和缩放按钮'] },  { v: '1.0.198', date: '2026-04-21', items: ['📱 足总杯赛程图增加移动端触摸手势：双指捏合缩放、单指拖拽平移、双击重置'] },  { v: '1.0.197', date: '2026-04-21', items: ['🐛 删除 rTeamSelect 函数末尾重复代码（多余return+花括号），修复 renderFaCupBracket 被提前关闭导致全页面点击无响应'] },  { v: '1.0.196', date: '2026-04-21', items: ['🐛 回滚zoom缩放为scale+font-smoothing抗锯齿，修复点击无响应'] },  { v: '1.0.194', date: '2026-04-21', items: ['🐛 修复普通用户足总杯赛程图点击无响应'] },  { v: '1.0.193', date: '2026-04-21', items: ['🎨 足总杯赛程图：普通用户也用 select 样式显示球队，与管理员视觉一致'] },  { v: '1.0.192', date: '2026-04-21', items: ['🎨 足总杯赛程图：未完赛球队显示效果管理员与普通用户统一'] },  { v: '1.0.191', date: '2026-04-21', items: ['🎨 修复足总杯赛程图缩放时文字模糊：scale 改为 zoom'] },  { v: '1.0.190', date: '2026-04-21', items: ['🎨 足总杯赛程图未比赛卡片视觉增强：去掉模糊/虚淡效果'] },  { v: '1.0.189', date: '2026-04-21', items: ['🎨 足总杯赛程图联赛底色加深：超级深红、甲级深绿、乙级深灰（白色文字）'] },  { v: '1.0.130', date: '2026-04-20', items: ['🔄 转会系统统一：侧边栏和球队详情页转会共用 pending 系统，逻辑完全一致', '🔄 转会增加生效方式选择：指定轮次生效 / 立即转会', '🔄 转会增加转会费输入（侧边栏和球队详情页均支持）', '👤 球员详情页增加即将转会信息：新球队、到队时间、转会费', '🎨 球员列表增加即将转会标签（橙色标签显示目标球队）'] },  { v: '1.0.173', date: '2026-04-20', items: ['🎨 球队详情页轮次标题单独一行显示，对阵信息更完整'] },  { v: '1.0.172', date: '2026-04-20', items: ['🎨 加大球队详情页队徽：16px → 18px'] },  { v: '1.0.171', date: '2026-04-20', items: ['📱 优化球队详情页手机端显示：缩小队徽、紧凑间距、队名截断、比分区域优化'] },  { v: '1.0.170', date: '2026-04-20', items: ['🐛 修复球队详情页队徽位置：主队队徽在右，客队队徽在左（对称布局）'] },  { v: '1.0.169', date: '2026-04-20', items: ['🐛 修复球队详情页主队队名对齐问题（轮次标题移到内部后CSS选择器失效）'] },  { v: '1.0.168', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛芯片选中状态不更新的问题', '📋 新增杯赛与联赛同步规则文档'] },
   { v: '1.0.167', date: '2026-04-20', items: ['🎨 更新日志页面尺寸缩小、比例优化', '🎨 返回按钮重新设计（绿色渐变+阴影+hover放大）'] },
   { v: '1.0.166', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛状态丢失的问题', '🔗 所有页面URL hash保存联赛状态'] },
   { v: '1.0.165', date: '2026-04-20', items: ['🎨 更新日志页面紧凑化', '⬅️ 添加圆形灰色返回按钮'] },
@@ -4244,7 +4244,7 @@ function showTeamDetail(teamId) {
       <div id="teamTabContent_player" style="display:none;overflow:hidden;display:flex;flex-direction:column">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;flex-shrink:0">
           <button class="data-tab active" id="dataTab_league" onclick="switchPlayerSubTab('league','${teamId}')">👥 联赛球员（${team.players.length}人）</button>
-          <button class="data-tab" id="dataTab_cup" onclick="switchPlayerSubTab('cup','${teamId}')">🏆 杯赛球员</button>
+          ${(() => { let _c = ''; const _cupOrder = ['faCup','championsCup','leagueCup','associationCup']; _cupOrder.forEach(_cid => { const _cup = sd.cups && sd.cups[_cid]; const _inCup = _cup && ((_cup.teams && _cup.teams.includes(teamId)) || (_cup.matches && _cup.matches.some(m => m.homeTeam === teamId || m.awayTeam === teamId))); if (_inCup) { _c += "<button class='data-tab' id='dataTab_cup_" + _cid + "' onclick='switchPlayerSubTab(&#39;cup_" + _cid + "&#39;,&#39;" + teamId + "&#39;)'>🏆 " + (CUP_NAMES[_cid]||_cid).replace('🏆 ','') + '球员</button>'; } }); return _c; })()}
           ${state.currentUser && state.currentUser.isSuperAdmin ? '<button class="data-tab" id="dataTab_transfer" onclick="switchPlayerSubTab(\'transfer\',\'' + teamId + '\')">🔄 转出球员</button>' : ''}
         </div>
         <div id="teamPlayersList" style="overflow:hidden"></div>
@@ -4270,7 +4270,12 @@ function showTeamDetail(teamId) {
 
   // 球员子Tab切换
   window.switchPlayerSubTab = (subTab, teamId) => {
-    ['league','cup','transfer'].forEach(t => {
+    // 收集所有子Tab ID：league + 各杯赛 + transfer
+    const allSubTabs = ['league'];
+    const _cupOrder = ['faCup','championsCup','leagueCup','associationCup'];
+    _cupOrder.forEach(_cid => { const _b = document.getElementById('dataTab_cup_' + _cid); if (_b) allSubTabs.push('cup_' + _cid); });
+    if (document.getElementById('dataTab_transfer')) allSubTabs.push('transfer');
+    allSubTabs.forEach(t => {
       const btn = document.getElementById('dataTab_' + t);
       if (btn) btn.classList.toggle('active', t === subTab);
     });
@@ -4310,14 +4315,15 @@ function showTeamDetail(teamId) {
       window._curTeamSortBy = 'number';
       sortLeaguePlayers('number', players);
 
-    } else if (subTab === 'cup') {
-      // 杯赛球员
+    } else if (subTab.startsWith('cup_')) {
+      // 各杯赛独立球员
+      const cupId = subTab.replace('cup_', '');
+      const cupShortName = (CUP_NAMES[cupId] || '杯赛').replace('🏆 ', '');
       const playerStats = {};
       t.players.forEach(p => { playerStats[p.id] = { ...p, goals: 0, assists: 0, motmCount: 0 }; });
-      if (sd.cups) {
-        Object.keys(CUP_NAMES).forEach(cupId => {
-          const cup = sd.cups[cupId];
-          if (!cup || !cup.matches) return;
+      if (sd.cups && sd.cups[cupId]) {
+        const cup = sd.cups[cupId];
+        if (cup.matches) {
           cup.matches.filter(m => m.status === 'completed' && (m.homeTeam === teamId || m.awayTeam === teamId)).forEach(m => {
             if (m.scorers) m.scorers.filter(s => s.teamId === teamId && playerStats[s.playerId]).forEach(s => playerStats[s.playerId].goals++);
             if (m.assists) m.assists.filter(a => a.teamId === teamId && playerStats[a.playerId]).forEach(a => playerStats[a.playerId].assists++);
@@ -4331,20 +4337,20 @@ function showTeamDetail(teamId) {
               }
             }
           });
-        });
+        }
       }
       const players = Object.values(playerStats);
       list.innerHTML = `
         <div class="sort-btns">
-          <button class="sort-btn active" onclick="sortCupPlayers('number')">号码</button>
-          <button class="sort-btn" onclick="sortCupPlayers('goals')">进球</button>
-          <button class="sort-btn" onclick="sortCupPlayers('assists')">助攻</button>
-          <button class="sort-btn" onclick="sortCupPlayers('motm')">MVP</button>
+          <button class="sort-btn active" onclick="sortCupPlayers('number','${cupId}')">号码</button>
+          <button class="sort-btn" onclick="sortCupPlayers('goals','${cupId}')">进球</button>
+          <button class="sort-btn" onclick="sortCupPlayers('assists','${cupId}')">助攻</button>
+          <button class="sort-btn" onclick="sortCupPlayers('motm','${cupId}')">MVP</button>
         </div>
-        <div id="cupPlayersInner" style="overflow-y:auto;max-height:650px"></div>`;
-      window._cupTeamPlayers = players;
-      window._curCupTeamSortBy = 'number';
-      sortCupPlayers('number');
+        <div id="cupPlayersInner_${cupId}" style="overflow-y:auto;max-height:650px"></div>`;
+      window['_cupTeamPlayers_' + cupId] = players;
+      window['_curCupTeamSortBy_' + cupId] = 'number';
+      sortCupPlayers('number', cupId);
 
     } else if (subTab === 'transfer') {
       // 转出球员表单（与侧边栏转会逻辑一致）
@@ -4423,12 +4429,12 @@ function showTeamDetail(teamId) {
     }).join('');
   };
 
-  // 杯赛球员排序
-  window.sortCupPlayers = (sortBy) => {
+  // 杯赛球员排序（按杯赛ID区分）
+  window.sortCupPlayers = (sortBy, cupId) => {
     document.querySelectorAll('#teamPlayersList .sort-btn').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
-    window._curCupTeamSortBy = sortBy;
-    const players = window._cupTeamPlayers || [];
+    window['_curCupTeamSortBy_' + cupId] = sortBy;
+    const players = window['_cupTeamPlayers_' + cupId] || [];
     let sorted;
     switch(sortBy) {
       case 'goals': sorted = [...players].sort((a, b) => (b.goals||0) - (a.goals||0)); break;
@@ -4436,13 +4442,14 @@ function showTeamDetail(teamId) {
       case 'motm': sorted = [...players].sort((a, b) => (b.motmCount||0) - (a.motmCount||0)); break;
       default: sorted = [...players].sort((a, b) => (a.number||0) - (b.number||0));
     }
-    const inner = document.getElementById('cupPlayersInner');
+    const inner = document.getElementById('cupPlayersInner_' + cupId);
     if (!inner) return;
     inner.innerHTML = sorted.map(p => {
+      const feeTag = p.transferFee > 0 ? `<span style="font-size:9px;color:#FF9800;margin-left:3px" title="转会费${p.transferFee}M">${p.transferFee}M</span>` : '';
       const uid = p.uid || (p.id ? p.id.split('_')[1] : '');
       return `<div class="player-row">
         <span class="player-num">${p.number}</span>
-        <span class="player-nm"><span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${uid}')">${p.name}</span></span>
+        <span class="player-nm"><span class="player-expand" onclick="togglePlayerSeasonDetail(this,'${uid}')">${p.name}</span>${feeTag}</span>
         <span class="player-st">⚽${p.goals||0} 👟${p.assists||0} ⭐${p.motmCount||0}</span>
       </div>`;
     }).join('');
