@@ -435,7 +435,7 @@ const APP_BUILD_DATE = '2026-04-21';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.197', date: '2026-04-21', items: ['🐛 删除 rTeamSelect 函数末尾重复代码（多余return+花括号），修复 renderFaCupBracket 被提前关闭导致全页面点击无响应'] },  { v: '1.0.196', date: '2026-04-21', items: ['🐛 回滚zoom缩放为scale+font-smoothing抗锯齿，修复点击无响应'] },  { v: '1.0.194', date: '2026-04-21', items: ['🐛 修复普通用户足总杯赛程图点击无响应'] },  { v: '1.0.193', date: '2026-04-21', items: ['🎨 足总杯赛程图：普通用户也用 select 样式显示球队，与管理员视觉一致'] },  { v: '1.0.192', date: '2026-04-21', items: ['🎨 足总杯赛程图：未完赛球队显示效果管理员与普通用户统一'] },  { v: '1.0.191', date: '2026-04-21', items: ['🎨 修复足总杯赛程图缩放时文字模糊：scale 改为 zoom'] },  { v: '1.0.190', date: '2026-04-21', items: ['🎨 足总杯赛程图未比赛卡片视觉增强：去掉模糊/虚淡效果'] },  { v: '1.0.189', date: '2026-04-21', items: ['🎨 足总杯赛程图联赛底色加深：超级深红、甲级深绿、乙级深灰（白色文字）'] },  { v: '1.0.130', date: '2026-04-20', items: ['🔄 转会系统统一：侧边栏和球队详情页转会共用 pending 系统，逻辑完全一致', '🔄 转会增加生效方式选择：指定轮次生效 / 立即转会', '🔄 转会增加转会费输入（侧边栏和球队详情页均支持）', '👤 球员详情页增加即将转会信息：新球队、到队时间、转会费', '🎨 球员列表增加即将转会标签（橙色标签显示目标球队）'] },  { v: '1.0.173', date: '2026-04-20', items: ['🎨 球队详情页轮次标题单独一行显示，对阵信息更完整'] },  { v: '1.0.172', date: '2026-04-20', items: ['🎨 加大球队详情页队徽：16px → 18px'] },  { v: '1.0.171', date: '2026-04-20', items: ['📱 优化球队详情页手机端显示：缩小队徽、紧凑间距、队名截断、比分区域优化'] },  { v: '1.0.170', date: '2026-04-20', items: ['🐛 修复球队详情页队徽位置：主队队徽在右，客队队徽在左（对称布局）'] },  { v: '1.0.169', date: '2026-04-20', items: ['🐛 修复球队详情页主队队名对齐问题（轮次标题移到内部后CSS选择器失效）'] },  { v: '1.0.168', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛芯片选中状态不更新的问题', '📋 新增杯赛与联赛同步规则文档'] },
+  { v: '1.0.198', date: '2026-04-21', items: ['📱 足总杯赛程图增加移动端触摸手势：双指捏合缩放、单指拖拽平移、双击重置'] },  { v: '1.0.197', date: '2026-04-21', items: ['🐛 删除 rTeamSelect 函数末尾重复代码（多余return+花括号），修复 renderFaCupBracket 被提前关闭导致全页面点击无响应'] },  { v: '1.0.196', date: '2026-04-21', items: ['🐛 回滚zoom缩放为scale+font-smoothing抗锯齿，修复点击无响应'] },  { v: '1.0.194', date: '2026-04-21', items: ['🐛 修复普通用户足总杯赛程图点击无响应'] },  { v: '1.0.193', date: '2026-04-21', items: ['🎨 足总杯赛程图：普通用户也用 select 样式显示球队，与管理员视觉一致'] },  { v: '1.0.192', date: '2026-04-21', items: ['🎨 足总杯赛程图：未完赛球队显示效果管理员与普通用户统一'] },  { v: '1.0.191', date: '2026-04-21', items: ['🎨 修复足总杯赛程图缩放时文字模糊：scale 改为 zoom'] },  { v: '1.0.190', date: '2026-04-21', items: ['🎨 足总杯赛程图未比赛卡片视觉增强：去掉模糊/虚淡效果'] },  { v: '1.0.189', date: '2026-04-21', items: ['🎨 足总杯赛程图联赛底色加深：超级深红、甲级深绿、乙级深灰（白色文字）'] },  { v: '1.0.130', date: '2026-04-20', items: ['🔄 转会系统统一：侧边栏和球队详情页转会共用 pending 系统，逻辑完全一致', '🔄 转会增加生效方式选择：指定轮次生效 / 立即转会', '🔄 转会增加转会费输入（侧边栏和球队详情页均支持）', '👤 球员详情页增加即将转会信息：新球队、到队时间、转会费', '🎨 球员列表增加即将转会标签（橙色标签显示目标球队）'] },  { v: '1.0.173', date: '2026-04-20', items: ['🎨 球队详情页轮次标题单独一行显示，对阵信息更完整'] },  { v: '1.0.172', date: '2026-04-20', items: ['🎨 加大球队详情页队徽：16px → 18px'] },  { v: '1.0.171', date: '2026-04-20', items: ['📱 优化球队详情页手机端显示：缩小队徽、紧凑间距、队名截断、比分区域优化'] },  { v: '1.0.170', date: '2026-04-20', items: ['🐛 修复球队详情页队徽位置：主队队徽在右，客队队徽在左（对称布局）'] },  { v: '1.0.169', date: '2026-04-20', items: ['🐛 修复球队详情页主队队名对齐问题（轮次标题移到内部后CSS选择器失效）'] },  { v: '1.0.168', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛芯片选中状态不更新的问题', '📋 新增杯赛与联赛同步规则文档'] },
   { v: '1.0.167', date: '2026-04-20', items: ['🎨 更新日志页面尺寸缩小、比例优化', '🎨 返回按钮重新设计（绿色渐变+阴影+hover放大）'] },
   { v: '1.0.166', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛状态丢失的问题', '🔗 所有页面URL hash保存联赛状态'] },
   { v: '1.0.165', date: '2026-04-20', items: ['🎨 更新日志页面紧凑化', '⬅️ 添加圆形灰色返回按钮'] },
@@ -1983,6 +1983,90 @@ function renderFaCupBracket(cupId) {
 
     // 双击重置
     viewport.addEventListener('dblclick', fcZoomReset);
+
+    // ── 触摸手势支持（移动端）──
+    var touchStartDist = 0;   // 双指捏合初始距离
+    var touchStartScale = 1;  // 双指捏合初始缩放
+    var touchStartMid = null; // 双指捏合中心点
+    var singleTouch = null;   // 单指拖拽起始
+    var touchMoved = false;   // 是否发生移动（区分点击和拖拽）
+    var lastTapTime = 0;      // 上次点击时间（双击检测）
+
+    // 禁止浏览器默认捏合缩放（避免页面整体缩放干扰赛程图）
+    viewport.addEventListener('touchstart', function(e) {
+      if (e.touches.length > 1) e.preventDefault();
+    }, { passive: false });
+    viewport.addEventListener('touchmove', function(e) {
+      if (e.touches.length > 1) e.preventDefault();
+    }, { passive: false });
+
+    viewport.addEventListener('touchstart', function(e) {
+      touchMoved = false;
+      if (e.touches.length === 2) {
+        // 双指开始 → 记录初始距离和缩放
+        var dx = e.touches[0].clientX - e.touches[1].clientX;
+        var dy = e.touches[0].clientY - e.touches[1].clientY;
+        touchStartDist = Math.sqrt(dx * dx + dy * dy);
+        touchStartScale = scale;
+        touchStartMid = {
+          x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+          y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+        };
+        singleTouch = null;
+      } else if (e.touches.length === 1) {
+        // 单指开始 → 记录起始位置
+        if (e.target.closest('.fc-match') || e.target.closest('select') || e.target.closest('button')) return;
+        singleTouch = {
+          startX: e.touches[0].clientX - tx,
+          startY: e.touches[0].clientY - ty
+        };
+      }
+    }, { passive: true });
+
+    viewport.addEventListener('touchmove', function(e) {
+      touchMoved = true;
+      if (e.touches.length === 2 && touchStartDist > 0) {
+        // 双指捏合缩放
+        var dx = e.touches[0].clientX - e.touches[1].clientX;
+        var dy = e.touches[0].clientY - e.touches[1].clientY;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        var newScale = Math.min(2.5, Math.max(0.3, touchStartScale * (dist / touchStartDist)));
+
+        // 以双指中心点为锚点缩放
+        var rect = viewport.getBoundingClientRect();
+        var mx = touchStartMid.x - rect.left;
+        var my = touchStartMid.y - rect.top;
+        tx = mx - (mx - tx) * (newScale / scale);
+        ty = my - (my - ty) * (newScale / scale);
+        scale = newScale;
+        applyTransform();
+      } else if (e.touches.length === 1 && singleTouch) {
+        // 单指拖拽平移
+        tx = e.touches[0].clientX - singleTouch.startX;
+        ty = e.touches[0].clientY - singleTouch.startY;
+        applyTransform();
+      }
+    }, { passive: true });
+
+    viewport.addEventListener('touchend', function(e) {
+      if (e.touches.length < 2) {
+        touchStartDist = 0;
+        touchStartMid = null;
+      }
+      if (e.touches.length === 0) {
+        // 单指抬起 → 检测双击重置
+        if (!touchMoved && singleTouch) {
+          var now = Date.now();
+          if (now - lastTapTime < 350) {
+            fcZoomReset();
+            lastTapTime = 0;
+          } else {
+            lastTapTime = now;
+          }
+        }
+        singleTouch = null;
+      }
+    }, { passive: true });
 
     // 恢复之前的缩放/偏移状态，或首次居中
     requestAnimationFrame(function() {
