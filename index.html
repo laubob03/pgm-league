@@ -1877,14 +1877,6 @@ function renderFaCupBracket(cupId) {
 
   // ── build HTML ──
   var html = '<div class="fc">';
-  // 顶部标题栏 + 缩放控制
-  html += '<div class="fc-header">';
-  html += '<div class="fc-zoom">';
-  html += '<button class="fc-zoom-btn" onclick="fcZoomOut()" title="缩小">\u2212</button>';
-  html += '<span class="fc-zoom-label" id="fcZoomLabel">100%</span>';
-  html += '<button class="fc-zoom-btn" onclick="fcZoomIn()" title="放大">+</button>';
-  html += '<button class="fc-zoom-btn" onclick="fcZoomReset()" title="重置" style="font-size:11px">\u21BA</button>';
-  html += '</div></div>';
   // 可缩放视口
   html += '<div class="fc-viewport" id="fcViewport">';
   html += '<div class="fc-canvas" id="fcCanvas">';
