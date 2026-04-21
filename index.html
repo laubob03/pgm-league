@@ -435,7 +435,7 @@ const APP_BUILD_DATE = '2026-04-21';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.201', date: '2026-04-21', items: ['🎨 底部版本号与侧边栏统一（共用CHANGELOG），版本号后加 By Pgm联赛—J.K'] },  { v: '1.0.200', date: '2026-04-21', items: ['🎨 足总杯赛程图增加球队队徽：已完赛/未完赛/管理员选择均显示队徽'] },  { v: '1.0.199', date: '2026-04-21', items: ['🎨 删除足总杯赛程图顶部标题行和缩放按钮'] },  { v: '1.0.198', date: '2026-04-21', items: ['📱 足总杯赛程图增加移动端触摸手势：双指捏合缩放、单指拖拽平移、双击重置'] },  { v: '1.0.197', date: '2026-04-21', items: ['🐛 删除 rTeamSelect 函数末尾重复代码（多余return+花括号），修复 renderFaCupBracket 被提前关闭导致全页面点击无响应'] },  { v: '1.0.196', date: '2026-04-21', items: ['🐛 回滚zoom缩放为scale+font-smoothing抗锯齿，修复点击无响应'] },  { v: '1.0.194', date: '2026-04-21', items: ['🐛 修复普通用户足总杯赛程图点击无响应'] },  { v: '1.0.193', date: '2026-04-21', items: ['🎨 足总杯赛程图：普通用户也用 select 样式显示球队，与管理员视觉一致'] },  { v: '1.0.192', date: '2026-04-21', items: ['🎨 足总杯赛程图：未完赛球队显示效果管理员与普通用户统一'] },  { v: '1.0.191', date: '2026-04-21', items: ['🎨 修复足总杯赛程图缩放时文字模糊：scale 改为 zoom'] },  { v: '1.0.190', date: '2026-04-21', items: ['🎨 足总杯赛程图未比赛卡片视觉增强：去掉模糊/虚淡效果'] },  { v: '1.0.189', date: '2026-04-21', items: ['🎨 足总杯赛程图联赛底色加深：超级深红、甲级深绿、乙级深灰（白色文字）'] },  { v: '1.0.130', date: '2026-04-20', items: ['🔄 转会系统统一：侧边栏和球队详情页转会共用 pending 系统，逻辑完全一致', '🔄 转会增加生效方式选择：指定轮次生效 / 立即转会', '🔄 转会增加转会费输入（侧边栏和球队详情页均支持）', '👤 球员详情页增加即将转会信息：新球队、到队时间、转会费', '🎨 球员列表增加即将转会标签（橙色标签显示目标球队）'] },  { v: '1.0.173', date: '2026-04-20', items: ['🎨 球队详情页轮次标题单独一行显示，对阵信息更完整'] },  { v: '1.0.172', date: '2026-04-20', items: ['🎨 加大球队详情页队徽：16px → 18px'] },  { v: '1.0.171', date: '2026-04-20', items: ['📱 优化球队详情页手机端显示：缩小队徽、紧凑间距、队名截断、比分区域优化'] },  { v: '1.0.170', date: '2026-04-20', items: ['🐛 修复球队详情页队徽位置：主队队徽在右，客队队徽在左（对称布局）'] },  { v: '1.0.169', date: '2026-04-20', items: ['🐛 修复球队详情页主队队名对齐问题（轮次标题移到内部后CSS选择器失效）'] },  { v: '1.0.168', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛芯片选中状态不更新的问题', '📋 新增杯赛与联赛同步规则文档'] },
+  { v: '1.0.202', date: '2026-04-21', items: ['📋 球员详情杯赛数据按杯赛名分别显示（足总杯/冠军杯/联盟杯/协会杯），替代笼统"杯赛"标签'] },  { v: '1.0.201', date: '2026-04-21', items: ['🎨 底部版本号与侧边栏统一（共用CHANGELOG），版本号后加 By Pgm联赛—J.K'] },  { v: '1.0.200', date: '2026-04-21', items: ['🎨 足总杯赛程图增加球队队徽：已完赛/未完赛/管理员选择均显示队徽'] },  { v: '1.0.199', date: '2026-04-21', items: ['🎨 删除足总杯赛程图顶部标题行和缩放按钮'] },  { v: '1.0.198', date: '2026-04-21', items: ['📱 足总杯赛程图增加移动端触摸手势：双指捏合缩放、单指拖拽平移、双击重置'] },  { v: '1.0.197', date: '2026-04-21', items: ['🐛 删除 rTeamSelect 函数末尾重复代码（多余return+花括号），修复 renderFaCupBracket 被提前关闭导致全页面点击无响应'] },  { v: '1.0.196', date: '2026-04-21', items: ['🐛 回滚zoom缩放为scale+font-smoothing抗锯齿，修复点击无响应'] },  { v: '1.0.194', date: '2026-04-21', items: ['🐛 修复普通用户足总杯赛程图点击无响应'] },  { v: '1.0.193', date: '2026-04-21', items: ['🎨 足总杯赛程图：普通用户也用 select 样式显示球队，与管理员视觉一致'] },  { v: '1.0.192', date: '2026-04-21', items: ['🎨 足总杯赛程图：未完赛球队显示效果管理员与普通用户统一'] },  { v: '1.0.191', date: '2026-04-21', items: ['🎨 修复足总杯赛程图缩放时文字模糊：scale 改为 zoom'] },  { v: '1.0.190', date: '2026-04-21', items: ['🎨 足总杯赛程图未比赛卡片视觉增强：去掉模糊/虚淡效果'] },  { v: '1.0.189', date: '2026-04-21', items: ['🎨 足总杯赛程图联赛底色加深：超级深红、甲级深绿、乙级深灰（白色文字）'] },  { v: '1.0.130', date: '2026-04-20', items: ['🔄 转会系统统一：侧边栏和球队详情页转会共用 pending 系统，逻辑完全一致', '🔄 转会增加生效方式选择：指定轮次生效 / 立即转会', '🔄 转会增加转会费输入（侧边栏和球队详情页均支持）', '👤 球员详情页增加即将转会信息：新球队、到队时间、转会费', '🎨 球员列表增加即将转会标签（橙色标签显示目标球队）'] },  { v: '1.0.173', date: '2026-04-20', items: ['🎨 球队详情页轮次标题单独一行显示，对阵信息更完整'] },  { v: '1.0.172', date: '2026-04-20', items: ['🎨 加大球队详情页队徽：16px → 18px'] },  { v: '1.0.171', date: '2026-04-20', items: ['📱 优化球队详情页手机端显示：缩小队徽、紧凑间距、队名截断、比分区域优化'] },  { v: '1.0.170', date: '2026-04-20', items: ['🐛 修复球队详情页队徽位置：主队队徽在右，客队队徽在左（对称布局）'] },  { v: '1.0.169', date: '2026-04-20', items: ['🐛 修复球队详情页主队队名对齐问题（轮次标题移到内部后CSS选择器失效）'] },  { v: '1.0.168', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛芯片选中状态不更新的问题', '📋 新增杯赛与联赛同步规则文档'] },
   { v: '1.0.167', date: '2026-04-20', items: ['🎨 更新日志页面尺寸缩小、比例优化', '🎨 返回按钮重新设计（绿色渐变+阴影+hover放大）'] },
   { v: '1.0.166', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛状态丢失的问题', '🔗 所有页面URL hash保存联赛状态'] },
   { v: '1.0.165', date: '2026-04-20', items: ['🎨 更新日志页面紧凑化', '⬅️ 添加圆形灰色返回按钮'] },
@@ -3450,16 +3450,21 @@ function getPlayerCrossSeasonStats(playerUid, playerName) {
         });
       }
 
-      // 杯赛进球/助攻/MVP
+      // 杯赛进球/助攻/MVP（按杯赛分别统计）
+      const cupStatsByCup = {};
       if (sd.cups) {
         Object.keys(CUP_NAMES || {}).forEach(cupId => {
           const cup = sd.cups[cupId];
           if (!cup || !cup.matches) return;
+          let cg = 0, ca2 = 0, cm = 0;
           cup.matches.filter(m => m.status === 'completed' && (m.homeTeam === pt.id || m.awayTeam === pt.id)).forEach(m => {
-            if (m.scorers) m.scorers.filter(s => s.teamId === pt.id && String(s.playerId).includes('_' + playerUid)).forEach(() => cupGoals++);
-            if (m.assists) m.assists.filter(a => a.teamId === pt.id && String(a.playerId).includes('_' + playerUid)).forEach(() => cupAssists++);
-            if (m.motm && String(m.motm).includes('_' + playerUid)) cupMotm++;
+            if (m.scorers) m.scorers.filter(s => s.teamId === pt.id && String(s.playerId).includes('_' + playerUid)).forEach(() => { cg++; cupGoals++; });
+            if (m.assists) m.assists.filter(a => a.teamId === pt.id && String(a.playerId).includes('_' + playerUid)).forEach(() => { ca2++; cupAssists++; });
+            if (m.motm && String(m.motm).includes('_' + playerUid)) { cm++; cupMotm++; }
           });
+          if (cg > 0 || ca2 > 0 || cm > 0) {
+            cupStatsByCup[cupId] = { goals: cg, assists: ca2, motm: cm };
+          }
         });
       }
 
@@ -3470,6 +3475,7 @@ function getPlayerCrossSeasonStats(playerUid, playerName) {
         teamId: pt.id,
         leagueGoals, leagueAssists, leagueMotm,
         cupGoals, cupAssists, cupMotm,
+        cupStatsByCup,
         transferFee: pt.transferFee,
         transferFrom: pt.transferFrom,
         transferDate: pt.transferDate
@@ -3603,10 +3609,23 @@ function togglePlayerSeasonDetail(el, uid) {
     html += `<div style="color:${isCurrent ? '#1565c0' : '#455a64'};font-weight:${isCurrent ? '600' : '400'};white-space:nowrap">${seasonLabel}</div>`;
     html += `<div style="font-size:11px;color:#78909c;white-space:nowrap">${teamLabel}</div>`;
     html += `</div>`;
-    html += `<div style="display:flex;gap:6px;white-space:nowrap;margin-left:8px;font-size:11px;justify-content:center">`;
+    html += `<div style="display:flex;flex-wrap:wrap;gap:4px;white-space:nowrap;margin-left:8px;font-size:11px;justify-content:flex-end">`;
     if (lg > 0 || la > 0 || lm > 0) html += `<span style="color:#1a1a1a;background:#eceff1;padding:1px 5px;border-radius:3px">联赛 ${lg}/${la}/${lm}</span>`;
-    if (cg > 0 || ca > 0 || cm > 0) html += `<span style="color:#1a1a1a;background:#e0e7ee;padding:1px 5px;border-radius:3px">杯赛 ${cg}/${ca}/${cm}</span>`;
-    if (tg > 0) html += `<span style="color:#1a1a1a;font-weight:600">总数据：⚽${tg} 👟${ta} ⭐${tm}</span>`;
+    // 按杯赛分别显示（替代原来的笼统"杯赛"）
+    if (s.cupStatsByCup && Object.keys(s.cupStatsByCup).length > 0) {
+      // 优先显示足总杯
+      const cupOrder = ['faCup', 'championsCup', 'leagueCup', 'associationCup'];
+      cupOrder.forEach(cupId => {
+        const cs = s.cupStatsByCup[cupId];
+        if (!cs) return;
+        const cupShortName = (CUP_NAMES[cupId] || '杯赛').replace('🏆 ', '');
+        html += `<span style="color:#1a1a1a;background:#e0e7ee;padding:1px 5px;border-radius:3px">${cupShortName} ${cs.goals}/${cs.assists}/${cs.motm}</span>`;
+      });
+    } else if (cg > 0 || ca > 0 || cm > 0) {
+      // 兼容旧数据：没有按杯赛分类时仍显示"杯赛"
+      html += `<span style="color:#1a1a1a;background:#e0e7ee;padding:1px 5px;border-radius:3px">杯赛 ${cg}/${ca}/${cm}</span>`;
+    }
+    if (tg > 0) html += `<span style="color:#1a1a1a;font-weight:600">⚽${tg} 👟${ta} ⭐${tm}</span>`;
     html += `</div>`;
     html += '</div>';
   });
