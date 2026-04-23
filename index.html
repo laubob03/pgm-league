@@ -124,6 +124,7 @@
     @keyframes cloudSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
     .cloud-upload-badge{position:absolute;top:2px;right:6px;width:6px;height:6px;background:#FFD700;border-radius:50%;animation:badgePulse 1.5s ease-in-out infinite}
     @keyframes badgePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.5)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
     .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:center;justify-content:center}
     .modal-overlay.active{display:flex}
     .modal{background:white;border-radius:16px;width:calc(100vw - 32px);max-width:calc(100vw - 32px);height:100vh;max-height:100vh;overflow:hidden;padding:20px;animation:slideDown 0.3s ease;display:flex;flex-direction:column}
@@ -444,13 +445,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 215 };
+const APP_VERSION = { major: 1, minor: 0, patch: 216 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-24';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.216', date: '2026-04-24', items: ['🎨 转会页面：移除"当前最高价"标签，出价记录最高价改暗红色', '🎨 "预计成交"改为成交倒计时（时/分/秒实时更新），<1h红色/<6h橙色/>6h紫色', '🎨 CA/PA、底价、违约金统一浅灰底色', '🎨 最高出价金额暗红色+14px，其他出价与时间戳同色', '🗑️ 移除主教练"上传云端"按钮（出价/挂牌已自动上传）'] },
   { v: '1.0.215', date: '2026-04-24', items: ['🐛 修复出价后其他用户看不到：TRANSFER_GIST_ID 改为硬编码固定值，防止每个浏览器创建各自的 Gist 导致数据分散', '🐛 修复 updated_at 精确匹配误判：改为时间戳比较（<=），避免毫秒差异导致跳过下载', '🐛 autoCloudUpload 上传后更新 pgm_transfer_gist_updated_at 缓存', '🗑️ 清理旧的动态 TRANSFER_GIST_ID 缓存'] },
   { v: '1.0.214', date: '2026-04-24', items: ['🐛 修复刷新页面不自动下载云端数据：移除 ETag/If-None-Match 缓存（代理/CDN 环境下 304 误判导致跳过下载）', '🐛 修复时间戳比较：字符串拼接改为 Date 时间戳比较，避免时区/格式问题', '⚡ 使用内置 Token 请求 GitHub API（限流从60→5000次/小时），防止频繁刷新被限流', '⚡ fetch 添加 cache:no-store 防止浏览器缓存返回过期数据', '🔔 同步失败不再静默，首次使用时弹 Toast 提醒用户'] },
   { v: '1.0.213', date: '2026-04-24', items: ['🐛 修复其他用户看不到出价记录（TRANSFER_GIST_ID未写入state，主数据同步丢失）'] },
@@ -3584,18 +3586,51 @@ function renderTransferMarket() {
     // 中部：CA/PA + 价格信息
     html += `<div style="padding:10px 14px">`;
     html += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">`;
-    html += `<span style="font-size:12px;background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:4px;font-weight:600">CA/PA：${listing.ca}/${listing.pa}</span>`;
-    html += `<span style="font-size:12px;background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:4px;font-weight:600">底价 ${listing.basePrice}M</span>`;
+    // ★ v1.0.215: CA/PA、底价、违约金 统一浅灰底色
+    html += `<span style="font-size:12px;background:#f0f0f0;color:#555;padding:2px 8px;border-radius:4px;font-weight:600">CA/PA：${listing.ca}/${listing.pa}</span>`;
+    html += `<span style="font-size:12px;background:#f0f0f0;color:#555;padding:2px 8px;border-radius:4px;font-weight:600">底价 ${listing.basePrice}M</span>`;
     if (listing.releaseClause > 0) {
-      html += `<span style="font-size:12px;background:#fce4ec;color:#c62828;padding:2px 8px;border-radius:4px;font-weight:600">违约金 ${listing.releaseClause}M</span>`;
+      html += `<span style="font-size:12px;background:#f0f0f0;color:#555;padding:2px 8px;border-radius:4px;font-weight:600">违约金 ${listing.releaseClause}M</span>`;
     }
-    if (highestBid) {
-      html += `<span style="font-size:12px;background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:4px;font-weight:600">🔥 当前最高 ${highestBid.amount}M</span>`;
-    }
-    // 预计成交时间
+    // ★ v1.0.215: 移除"当前最高价"标签（出价记录里已有最高价暗红色标识）
+    // 成交倒计时（醒目夸张设计）
     const deadline = getTransferDeadline(listing);
     if (deadline) {
-      html += `<span style="font-size:11px;background:#f3e5f5;color:#7b1fa2;padding:2px 8px;border-radius:4px;font-weight:500">⏰ 预计成交 ${formatTransferTime(deadline)}</span>`;
+      const nowTs = Date.now();
+      const dlTs = deadline.getTime();
+      if (dlTs > nowTs) {
+        const remainMs = dlTs - nowTs;
+        const remainH = Math.floor(remainMs / 3600000);
+        const remainM = Math.floor((remainMs % 3600000) / 60000);
+        const remainS = Math.floor((remainMs % 60000) / 1000);
+        // 根据剩余时间选择紧迫感配色
+        let timerBg, timerColor, timerBorder;
+        if (remainH < 1) {
+          // <1h：红色警告
+          timerBg = 'linear-gradient(135deg,#fff5f5,#ffebee)';
+          timerColor = '#c62828';
+          timerBorder = '#ef9a9a';
+        } else if (remainH < 6) {
+          // <6h：橙色紧迫
+          timerBg = 'linear-gradient(135deg,#fff8e1,#fff3e0)';
+          timerColor = '#e65100';
+          timerBorder = '#ffcc80';
+        } else {
+          // >6h：紫色常规
+          timerBg = 'linear-gradient(135deg,#f3e5f5,#ede7f6)';
+          timerColor = '#6a1b9a';
+          timerBorder = '#ce93d8';
+        }
+        html += `<span data-countdown-deadline="${dlTs}" style="font-size:11px;background:${timerBg};color:${timerColor};padding:3px 10px;border-radius:6px;font-weight:700;border:1px solid ${timerBorder};display:inline-flex;align-items:center;gap:3px">`;
+        html += `⏰ 成交倒计时 `;
+        if (remainH > 0) html += `<span class="cd-h" style="font-size:16px;font-weight:900;letter-spacing:-0.5px">${remainH}</span><span style="font-size:10px">时</span>`;
+        html += `<span class="cd-m" style="font-size:16px;font-weight:900;letter-spacing:-0.5px">${String(remainM).padStart(2,'0')}</span><span style="font-size:10px">分</span>`;
+        html += `<span class="cd-s" style="font-size:16px;font-weight:900;letter-spacing:-0.5px">${String(remainS).padStart(2,'0')}</span><span style="font-size:10px">秒</span>`;
+        html += `</span>`;
+      } else {
+        // 已过期，即将成交
+        html += `<span style="font-size:11px;background:linear-gradient(135deg,#ffebee,#ffcdd2);color:#b71c1c;padding:3px 10px;border-radius:6px;font-weight:700;border:1px solid #ef9a9a;animation:pulse 1s ease-in-out infinite">⏰ 即将成交...</span>`;
+      }
     } else if (!highestBid) {
       html += `<span style="font-size:11px;background:#f5f5f5;color:#999;padding:2px 8px;border-radius:4px">⏳ 等待出价中</span>`;
     }
@@ -3609,12 +3644,13 @@ function renderTransferMarket() {
       const sortedBids = [...listing.bids].sort((a, b) => new Date(b.bidAt) - new Date(a.bidAt));
       sortedBids.forEach(bid => {
         const isHighest = bid === highestBid;
-        html += `<div style="display:flex;align-items:center;padding:6px 10px;border-bottom:1px solid #f5f5f5;${isHighest ? 'background:#e8f5e9;' : ''}font-size:12px">`;
+        // ★ v1.0.215: 最高出价金额用暗红色，其他出价金额和时间戳保持一致
+        html += `<div style="display:flex;align-items:center;padding:6px 10px;border-bottom:1px solid #f5f5f5;${isHighest ? 'background:#fff5f5;' : ''}font-size:12px">`;
         html += `<img src="${getTeamLogo({name: bid.teamName})}" style="width:18px;height:18px;object-fit:contain;border-radius:3px;margin-right:6px;flex-shrink:0" onerror="this.style.display='none'">`;
         html += `<span style="color:#333;font-weight:${isHighest ? '700' : '400'}">${bid.teamName}</span>`;
         html += `<span style="color:#78909c;margin:0 4px">·</span>`;
         html += `<span style="color:#546e7a">${bid.coachName}教练</span>`;
-        html += `<span style="margin-left:auto;color:${isHighest ? '#2e7d32' : '#e65100'};font-weight:700;font-size:13px">${bid.amount}M</span>`;
+        html += `<span style="margin-left:auto;color:${isHighest ? '#8b0000' : '#78909c'};font-weight:700;font-size:${isHighest ? '14px' : '12px'}">${bid.amount}M</span>`;
         html += `<span style="color:#bbb;margin-left:8px;font-size:10px;white-space:nowrap">${formatTransferTime(bid.bidAt)}</span>`;
         html += `</div>`;
       });
@@ -3654,6 +3690,57 @@ function renderTransferMarket() {
   });
 
   container.innerHTML = html;
+
+  // ★ v1.0.215: 倒计时自动刷新（只更新数字，不重新渲染整个页面）
+  if (window._transferCountdownTimer) clearInterval(window._transferCountdownTimer);
+  const countdownEls = container.querySelectorAll('[data-countdown-deadline]');
+  if (countdownEls.length > 0) {
+    window._transferCountdownTimer = setInterval(() => {
+      const nowTs = Date.now();
+      let anyActive = false;
+      countdownEls.forEach(el => {
+        const dlTs = parseInt(el.dataset.countdownDeadline);
+        if (isNaN(dlTs)) return;
+        const remainMs = dlTs - nowTs;
+        if (remainMs <= 0) {
+          // 倒计时结束，重新渲染整个转会市场（可能触发成交）
+          clearInterval(window._transferCountdownTimer);
+          renderTransferMarket();
+          return;
+        }
+        anyActive = true;
+        const remainH = Math.floor(remainMs / 3600000);
+        const remainM = Math.floor((remainMs % 3600000) / 60000);
+        const remainS = Math.floor((remainMs % 60000) / 1000);
+        // 更新数字
+        const hEl = el.querySelector('.cd-h');
+        const mEl = el.querySelector('.cd-m');
+        const sEl = el.querySelector('.cd-s');
+        if (hEl) hEl.textContent = remainH;
+        if (mEl) mEl.textContent = String(remainM).padStart(2, '0');
+        if (sEl) sEl.textContent = String(remainS).padStart(2, '0');
+        // 动态变色
+        let timerBg, timerColor, timerBorder;
+        if (remainH < 1) {
+          timerBg = 'linear-gradient(135deg,#fff5f5,#ffebee)';
+          timerColor = '#c62828';
+          timerBorder = '#ef9a9a';
+        } else if (remainH < 6) {
+          timerBg = 'linear-gradient(135deg,#fff8e1,#fff3e0)';
+          timerColor = '#e65100';
+          timerBorder = '#ffcc80';
+        } else {
+          timerBg = 'linear-gradient(135deg,#f3e5f5,#ede7f6)';
+          timerColor = '#6a1b9a';
+          timerBorder = '#ce93d8';
+        }
+        el.style.background = timerBg;
+        el.style.color = timerColor;
+        el.style.borderColor = timerBorder;
+      });
+      if (!anyActive) clearInterval(window._transferCountdownTimer);
+    }, 1000);
+  }
 }
 
 // 格式化转会时间
