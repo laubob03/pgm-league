@@ -511,21 +511,27 @@ const TEAM_UID_MAP = {
   'West Ham': 735, 'Wolfsburg': 961, '青岛海神': 23125629, '上海申花': 414
 };
 
+// SHA-256 哈希工具（密码验证用，代码中不存储明文密码）
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // 数据员配置表
 const DATA_RECORDERS = {
-  jiadong:    { id: 'jiadong',    name: '甲东数据员', league: 'jiaEast',       type: 'league', cupId: null },
-  jiaxi:      { id: 'jiaxi',      name: '甲西数据员', league: 'jiaWest',       type: 'league', cupId: null },
-  yidong:     { id: 'yidong',     name: '乙东数据员', league: 'yiEast',        type: 'league', cupId: null, password: '123321' },
-  yixi:       { id: 'yixi',       name: '乙西数据员', league: 'yiWest',        type: 'league', cupId: null },
-  guanjunbei: { id: 'guanjunbei', name: '冠军杯数据员', league: 'championsCup', type: 'cup', cupId: 'championsCup' },
-  lianmengbei:{ id: 'lianmengbei',name: '联盟杯数据员', league: 'leagueCup',    type: 'cup', cupId: 'leagueCup' },
-  xiehuibei:  { id: 'xiehuibei', name: '协会杯数据员', league: 'associationCup',type: 'cup', cupId: 'associationCup' },
+  jiadong:    { id: 'jiadong',    name: '甲东数据员', league: 'jiaEast',       type: 'league', cupId: null, pwHash: 'd9904bb24f7accd93ca29687e9a638ea0cda8fef934aaf394a5a6937069d3d04' },
+  jiaxi:      { id: 'jiaxi',      name: '甲西数据员', league: 'jiaWest',       type: 'league', cupId: null, pwHash: 'eb1a40949afab0392ce3128cdea77ea5bd1e80af603b6f542110459d1c9a935b' },
+  yidong:     { id: 'yidong',     name: '乙东数据员', league: 'yiEast',        type: 'league', cupId: null, pwHash: 'a320480f534776bddb5cdb54b1e93d210a3c7d199e80a23c1b2178497b184c76' },
+  yixi:       { id: 'yixi',       name: '乙西数据员', league: 'yiWest',        type: 'league', cupId: null, pwHash: '88842acb29036501fcc098a888551f155754a33354359fccc338b1dadd4935c2' },
+  guanjunbei: { id: 'guanjunbei', name: '冠军杯数据员', league: 'championsCup', type: 'cup', cupId: 'championsCup', pwHash: '5583c4f288568d923af6fb0495512755b01da7542c22df11eada4f58039b58fc' },
+  lianmengbei:{ id: 'lianmengbei',name: '联盟杯数据员', league: 'leagueCup',    type: 'cup', cupId: 'leagueCup', pwHash: 'a698b6d845d59570cdcd01ab82affd47ecc81024c64d67c25ed2a1e059dcab04' },
+  xiehuibei:  { id: 'xiehuibei', name: '协会杯数据员', league: 'associationCup',type: 'cup', cupId: 'associationCup', pwHash: '39177a353066fd6fad3022967f0112a7ea1c09bab1b99ba3e10a998d7a15ac22' },
   // 积分榜统计员 - 只能录入比分、下载云端、本地导出导入，不能上传云端
-  jfchaoji:  { id: 'jfchaoji',  name: '超级积分',     league: 'super',       type: 'league', cupId: null, role: 'stats', password: 'chaoji' },
-  jfjiadong: { id: 'jfjiadong', name: '甲东积分',     league: 'jiaEast',     type: 'league', cupId: null, role: 'stats', password: 'jiadong' },
-  jfjiaxi:   { id: 'jfjiaxi',   name: '甲西积分',     league: 'jiaWest',     type: 'league', cupId: null, role: 'stats', password: 'jiaxi' },
-  jfyidong:  { id: 'jfyidong',  name: '乙东积分',     league: 'yiEast',      type: 'league', cupId: null, role: 'stats', password: 'yidong' },
-  jfyixi:    { id: 'jfyixi',    name: '乙西积分',     league: 'yiWest',      type: 'league', cupId: null, role: 'stats', password: 'yixi' }
+  jfchaoji:  { id: 'jfchaoji',  name: '超级积分',     league: 'super',       type: 'league', cupId: null, role: 'stats', pwHash: '31077cdd17cef44f3253343c69533a239146694e1fee5b676505a4120be95fd2' },
+  jfjiadong: { id: 'jfjiadong', name: '甲东积分',     league: 'jiaEast',     type: 'league', cupId: null, role: 'stats', pwHash: 'd9904bb24f7accd93ca29687e9a638ea0cda8fef934aaf394a5a6937069d3d04' },
+  jfjiaxi:   { id: 'jfjiaxi',   name: '甲西积分',     league: 'jiaWest',     type: 'league', cupId: null, role: 'stats', pwHash: 'eb1a40949afab0392ce3128cdea77ea5bd1e80af603b6f542110459d1c9a935b' },
+  jfyidong:  { id: 'jfyidong',  name: '乙东积分',     league: 'yiEast',      type: 'league', cupId: null, role: 'stats', pwHash: '41010aee7434ee5bacb62ac70879f0d8a1c858a4a5f33016581b5c1df686f006' },
+  jfyixi:    { id: 'jfyixi',    name: '乙西积分',     league: 'yiWest',      type: 'league', cupId: null, role: 'stats', pwHash: '88842acb29036501fcc098a888551f155754a33354359fccc338b1dadd4935c2' }
 };
 const LEAGUE_TEAM_COUNTS = { super: 12, jiaEast: 12, jiaWest: 12, yiEast: 12, yiWest: 12 };
 const POSITION_NAMES = { GK: '门将', DF: '后卫', MF: '中场', FW: '前锋' };
@@ -541,67 +547,67 @@ const TEAM_NAMES = {
 
 // Team logos from Transfermarkt CDN
 const TEAM_LOGOS = {
-  'A. Bilbao': 'logos/1664.png',
-  'Arsenal': 'logos/602.png',
-  'Aston Villa': 'logos/603.png',
-  'Barcelona': 'logos/1708.png',
-  'Benfica': 'logos/1487.png',
-  'FC Bayern': 'logos/915.png',
-  'Juventus': 'logos/1139.png',
-  'Man City': 'logos/679.png',
-  'Palmeiras': 'logos/329.png',
-  'Paris SG': 'logos/868.png',
-  'River': 'logos/94.png',
-  'Wrexham': 'logos/741.png',
-  '1860 Munchen': 'logos/955.png',
-  'Aberdeen': 'logos/1536.png',
-  'AS Roma': 'logos/1100.png',
-  'Atl. Tucuman': 'logos/102474.png',
-  'Dortmund': 'logos/907.png',
-  'Fulham': 'logos/654.png',
-  'Hertha BSC': 'logos/2247.png',
-  'Liverpool': 'logos/676.png',
-  'Marseille': 'logos/866.png',
-  'Monaco': 'logos/826.png',
-  'Newcastle': 'logos/688.png',
-  'Nottingham Forest': 'logos/692.png',
-  'Nottm Forest': 'logos/692.png',
-  'Ajax': 'logos/992.png',
-  'Brighton': 'logos/618.png',
-  'Chelsea': 'logos/630.png',
-  'Everton': 'logos/650.png',
-  'Fiorentina': 'logos/1129.png',
-  'Frankfurt': 'logos/912.png',
-  'Genk': 'logos/258.png',
-  'Hamburger SV': 'logos/947.png',
-  'Lazio': 'logos/1140.png',
-  'Leicester': 'logos/673.png',
-  'RC Lens': 'logos/871.png',
-  'Schalke': 'logos/920.png',
-  'A. Madrid': 'logos/1687.png',
-  'Asante Kotoko': 'logos/801910.png',
-  'Como': 'logos/1123.png',
-  'FC Porto': 'logos/1478.png',
-  'Leverkusen': 'logos/901.png',
-  'Oriental Dragon': 'logos/83111757.png',
-  'R. Madrid': 'logos/1736.png',
-  'Stuttgart': 'logos/960.png',
-  'Sunderland': 'logos/722.png',
-  'Tottenham': 'logos/728.png',
-  '青岛海神': 'logos/23125629.png',
-  '上海申花': 'logos/414.png',
-  'AC Milan': 'logos/1099.png',
-  'Atalanta': 'logos/1106.png',
-  'Celtic': 'logos/1569.png',
-  'FC Koln': 'logos/916.png',
-  'Flamengo': 'logos/322.png',
-  'Inter': 'logos/1135.png',
-  'Man Utd': 'logos/680.png',
-  'Napoli': 'logos/1150.png',
-  'PSV': 'logos/1028.png',
-  'Sporting': 'logos/1489.png',
-  'West Ham': 'logos/735.png',
-  'Wolfsburg': 'logos/961.png'
+  'A. Bilbao': 'logos/1664.webp',
+  'Arsenal': 'logos/602.webp',
+  'Aston Villa': 'logos/603.webp',
+  'Barcelona': 'logos/1708.webp',
+  'Benfica': 'logos/1487.webp',
+  'FC Bayern': 'logos/915.webp',
+  'Juventus': 'logos/1139.webp',
+  'Man City': 'logos/679.webp',
+  'Palmeiras': 'logos/329.webp',
+  'Paris SG': 'logos/868.webp',
+  'River': 'logos/94.webp',
+  'Wrexham': 'logos/741.webp',
+  '1860 Munchen': 'logos/955.webp',
+  'Aberdeen': 'logos/1536.webp',
+  'AS Roma': 'logos/1100.webp',
+  'Atl. Tucuman': 'logos/102474.webp',
+  'Dortmund': 'logos/907.webp',
+  'Fulham': 'logos/654.webp',
+  'Hertha BSC': 'logos/2247.webp',
+  'Liverpool': 'logos/676.webp',
+  'Marseille': 'logos/866.webp',
+  'Monaco': 'logos/826.webp',
+  'Newcastle': 'logos/688.webp',
+  'Nottingham Forest': 'logos/692.webp',
+  'Nottm Forest': 'logos/692.webp',
+  'Ajax': 'logos/992.webp',
+  'Brighton': 'logos/618.webp',
+  'Chelsea': 'logos/630.webp',
+  'Everton': 'logos/650.webp',
+  'Fiorentina': 'logos/1129.webp',
+  'Frankfurt': 'logos/912.webp',
+  'Genk': 'logos/258.webp',
+  'Hamburger SV': 'logos/947.webp',
+  'Lazio': 'logos/1140.webp',
+  'Leicester': 'logos/673.webp',
+  'RC Lens': 'logos/871.webp',
+  'Schalke': 'logos/920.webp',
+  'A. Madrid': 'logos/1687.webp',
+  'Asante Kotoko': 'logos/801910.webp',
+  'Como': 'logos/1123.webp',
+  'FC Porto': 'logos/1478.webp',
+  'Leverkusen': 'logos/901.webp',
+  'Oriental Dragon': 'logos/83111757.webp',
+  'R. Madrid': 'logos/1736.webp',
+  'Stuttgart': 'logos/960.webp',
+  'Sunderland': 'logos/722.webp',
+  'Tottenham': 'logos/728.webp',
+  '青岛海神': 'logos/23125629.webp',
+  '上海申花': 'logos/414.webp',
+  'AC Milan': 'logos/1099.webp',
+  'Atalanta': 'logos/1106.webp',
+  'Celtic': 'logos/1569.webp',
+  'FC Koln': 'logos/916.webp',
+  'Flamengo': 'logos/322.webp',
+  'Inter': 'logos/1135.webp',
+  'Man Utd': 'logos/680.webp',
+  'Napoli': 'logos/1150.webp',
+  'PSV': 'logos/1028.webp',
+  'Sporting': 'logos/1489.webp',
+  'West Ham': 'logos/735.webp',
+  'Wolfsburg': 'logos/961.webp'
 };
 
 // 通用获取队徽函数 - 优先用 team.logo，兜底用 TEAM_LOGOS[name]
@@ -4924,19 +4930,20 @@ function showLoginModal() {
       </div>
       <button type="submit" class="btn btn-primary btn-full">登录</button>
       <div style="margin-top:12px;font-size:12px;color:var(--text-secondary);text-align:center">
-        教练默认密码: 123456
+        忘记密码请联系管理员
       </div>
     </form>
   `;
   showModal(content);
   
-  document.getElementById('loginForm').onsubmit = (e) => {
+  document.getElementById('loginForm').onsubmit = async (e) => {
     e.preventDefault();
     const teamId = document.getElementById('loginTeamId').value.trim();
     const password = document.getElementById('loginPassword').value;
+    const pwHash = await sha256(password);
 
     // 超级管理员登录
-    if (teamId === 'pgmjk' && password === 'jkpgm123') {
+    if (teamId === 'pgmjk' && pwHash === '6d24ecc949d05c61ef0ece81e3d8be9118900e170980544fe468a6529025a2de') {
       state.currentUser = { teamId: 'pgmjk', teamName: '超级管理员', coachName: 'pgmjk', isSuperAdmin: true };
       saveState();
       closeModal();
@@ -4944,7 +4951,7 @@ function showLoginModal() {
       updateNavCloudBtn();
       render();
       showToast('欢迎，超级管理员！');
-    } else if (DATA_RECORDERS[teamId] && password === (DATA_RECORDERS[teamId].password || teamId)) {
+    } else if (DATA_RECORDERS[teamId] && DATA_RECORDERS[teamId].pwHash && pwHash === DATA_RECORDERS[teamId].pwHash) {
       // 数据员/统计员登录
       const rec = DATA_RECORDERS[teamId];
       const isStats = rec.role === 'stats';
@@ -4956,8 +4963,8 @@ function showLoginModal() {
       render();
       showToast('欢迎，' + rec.name + '！');
     } else if (state.teams && state.teams.find(t => t.id === teamId)) {
-      // 教练登录（球队ID: t1-t60，默认密码: 123456）
-      if (password !== '123456') { showToast('密码错误！'); return; }
+      // 教练登录（球队ID: t1-t60）
+      if (pwHash !== '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92') { showToast('密码错误！'); return; }
       const team = state.teams.find(t => t.id === teamId);
       state.currentUser = { teamId: team.id, teamName: team.name, coachName: team.coach || team.name };
       saveState();
