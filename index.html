@@ -6,9 +6,31 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <link rel="icon" type="image/png" sizes="192x192" href="unpackage/res/icons/192x192.png">
-  <!-- 顶部版本检查：即使旧版本被缓存也能触发 -->
+  <!-- 顶部版本检查：即使旧版本被缓存也能触发强制更新 -->
   <script>
-  !function(){fetch('version.json?t='+Date.now()).then(function(r){return r.json()}).then(function(d){if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';b.innerHTML='<div style="max-width:600px;margin:0 auto;">📢 '+d.notice+'</div>';document.body.prepend(b)}}).catch(function(){})}();
+  !function(){
+    // ★ v1.0.220: 更激进的强制更新机制
+    // 即使旧版 SW 缓存了旧 index.html，这段代码仍能在旧版中执行
+    // 前提：旧版也有这段代码（v1.0.216 已有部分，此处增强）
+    fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
+      // 公告条
+      if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';b.innerHTML='<div style="max-width:600px;margin:0 auto;">📢 '+d.notice+'</div>';document.body.prepend(b)}
+      // ★ 强制版本检查：如果本地版本低于 minVersion，注销 SW + 清缓存 + 刷新
+      if(d.minVersion){
+        var myV=0;try{myV=APP_VERSION.major*10000+APP_VERSION.minor*100+APP_VERSION.patch}catch(e){}
+        var parts=d.minVersion.split('.').map(Number);
+        var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
+        if(myV<minV){
+          // 注销 Service Worker
+          if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister()})})}
+          // 清除所有缓存
+          if('caches' in window){caches.keys().then(function(ns){ns.forEach(function(n){caches.delete(n)})})}
+          // 延迟刷新，等注销完成
+          setTimeout(function(){location.reload(true)},500);
+        }
+      }
+    }).catch(function(){})
+  }();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#1B5E20">
