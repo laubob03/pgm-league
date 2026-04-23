@@ -473,13 +473,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 222 };
+const APP_VERSION = { major: 1, minor: 0, patch: 223 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-25';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.223', date: '2026-04-25', items: ['🐛 修复出价其他用户看不到（根因）：autoSyncFromCloud 中 304 和主Gist未更新的 early return 跳过了 autoSyncTransferGist，导致转会数据从不同步'] },
   { v: '1.0.222', date: '2026-04-25', items: ['🐛 修复出价其他用户看不到：移除 autoSyncTransferGist 时间跳过逻辑，每次刷新都强制下载转会数据', '🐛 autoCloudUpload 增加诊断输出和 PATCH 响应验证，便于排查同步问题', '🐛 sw.js 对 version.json 强制 no-store'] },
   { v: '1.0.216', date: '2026-04-24', items: ['🎨 转会页面：移除"当前最高价"标签，出价记录最高价改暗红色', '🎨 "预计成交"改为成交倒计时（时/分/秒实时更新），<1h红色/<6h橙色/>6h紫色', '🎨 CA/PA、底价、违约金统一浅灰底色', '🎨 最高出价金额暗红色+14px，其他出价与时间戳同色', '🗑️ 移除主教练"上传云端"按钮（出价/挂牌已自动上传）'] },
   { v: '1.0.215', date: '2026-04-24', items: ['🐛 修复出价后其他用户看不到：TRANSFER_GIST_ID 改为硬编码固定值，防止每个浏览器创建各自的 Gist 导致数据分散', '🐛 修复 updated_at 精确匹配误判：改为时间戳比较（<=），避免毫秒差异导致跳过下载', '🐛 autoCloudUpload 上传后更新 pgm_transfer_gist_updated_at 缓存', '🗑️ 清理旧的动态 TRANSFER_GIST_ID 缓存'] },
@@ -7816,6 +7817,10 @@ async function autoSyncFromCloud() {
       cache: 'no-store'  // ★ 防止浏览器 HTTP 缓存返回过期数据
     });
 
+    // ★ v1.0.223: 引入 skipMainSync flag，确保 304/主Gist无更新时不再 return 退出函数
+    // 之前 304 和主Gist无更新时直接 return，跳过了 autoSyncTransferGist，导致出价数据永远不同步
+    let skipMainSync = false;
+
     if (resp.status === 304) {
       // 304 只在带 If-None-Match 时才可能出现，这里理论上不应该出现
       // 但作为安全网，仍然处理
@@ -7831,16 +7836,16 @@ async function autoSyncFromCloud() {
         bar.style.transition = 'opacity 0.5s';
         setTimeout(() => bar.remove(), 500);
       }, 400);
-      return;
-    }
-
-    if (!resp.ok) {
+      skipMainSync = true;
+    } else if (!resp.ok) {
       // ★ 增强：403 通常是 API 限流，给出明确提示
       if (resp.status === 403) {
         console.warn('autoSyncFromCloud: GitHub API 限流(403)，请稍后再试');
       }
       throw new Error('HTTP ' + resp.status);
     }
+
+    if (!skipMainSync) {
     const gist = await resp.json();
 
     inner.style.width = '50%';
@@ -7867,10 +7872,12 @@ async function autoSyncFromCloud() {
           bar.style.transition = 'opacity 0.5s';
           setTimeout(() => bar.remove(), 500);
         }, 800);
-        return;
+        skipMainSync = true;
       }
     }
+    }
 
+    if (!skipMainSync) {
     // ★ 智能下载：优先读取拆分文件（teams/matches/other），回退全量文件
     const gistFiles = gist.files;
     const teamsFile = Object.keys(gistFiles).find(f => f.startsWith('teams_'));
@@ -8022,6 +8029,7 @@ async function autoSyncFromCloud() {
       bar.style.transition = 'opacity 0.5s';
       setTimeout(() => bar.remove(), 500);
     }, 1500);
+    } // end if (!skipMainSync)
 
   } catch(e) {
     // ★ 修复：不再静默失败，给用户可见反馈

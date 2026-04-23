@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pgm-league-v223';
+const CACHE_NAME = 'pgm-league-v224';
 const urlsToCache = [
   './index.html',
   './manifest.json'
@@ -40,12 +40,14 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        if (response.status === 200 && event.request.method === 'GET' && event.request.url.startsWith('http')) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseClone);
-          });
+        if (!response || response.status !== 200) {
+          return caches.match(event.request).then(cached => cached || response);
         }
+        const responseToCache = response.clone();
+        caches.open(CACHE_NAME)
+          .then(cache => {
+            cache.put(event.request, responseToCache);
+          });
         return response;
       })
       .catch(() => {
