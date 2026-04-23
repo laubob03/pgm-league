@@ -1,4 +1,4 @@
 {
   "minVersion": "1.0.220",
-  "notice": "🔄 请刷新页面更新到最新版本"
+  "notice": "更新卡住？<button onclick=\"if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister()})})};if('caches' in window){caches.keys().then(function(ns){ns.forEach(function(n){caches.delete(n)})})};var o=document.getElementById('forceUpdateOverlay');if(o)o.remove();setTimeout(function(){location.reload()},800)\" style=\"position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99999999;background:#e91e63;color:#fff;border:none;padding:16px 32px;border-radius:16px;font-size:16px;font-weight:bold;cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,0.5)\">🔧 点此强制更新</button>"
 }
