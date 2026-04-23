@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pgm-league-v221';
+const CACHE_NAME = 'pgm-league-v222';
 const urlsToCache = [
   './index.html',
   './manifest.json'
@@ -28,6 +28,15 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // ★ v1.0.221: version.json 永远不缓存，确保版本检查始终拿到最新数据
+  if (event.request.url.includes('version.json')) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then(response => response)
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
   event.respondWith(
     fetch(event.request)
       .then(response => {
