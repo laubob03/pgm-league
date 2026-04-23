@@ -443,14 +443,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 206 };
+const APP_VERSION = { major: 1, minor: 0, patch: 207 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-23';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.206', date: '2026-04-23', items: ['🐛 修复主教练登录后点击球员名字无法进入详情页（canTransfer 用 const 声明但教练分支重新赋值导致 TypeError 崩溃）'] },  { v: '1.0.205', date: '2026-04-23', items: ['⏰ 转会成交规则：24h冷却期+晚间竞价窗口（19:01-21:00/21:01-23:00循环）', '💰 出价金额不再受违约金上限限制，达违约金可自动触发成交', '🕐 挂牌时间和出价时间显示精确时间戳（如2026-4-23 20:34）', '📋 到队规则：第13轮前成交→第13轮到队，第13轮后成交→全部录完立刻到队'] },  { v: '1.0.202', date: '2026-04-21', items: ['📋 球员详情杯赛数据按杯赛名分别显示（足总杯/冠军杯/联盟杯/协会杯），替代笼统"杯赛"标签'] },  { v: '1.0.201', date: '2026-04-21', items: ['🎨 底部版本号与侧边栏统一（共用CHANGELOG），版本号后加 By Pgm联赛—J.K'] },  { v: '1.0.200', date: '2026-04-21', items: ['🎨 足总杯赛程图增加球队队徽：已完赛/未完赛/管理员选择均显示队徽'] },  { v: '1.0.199', date: '2026-04-21', items: ['🎨 删除足总杯赛程图顶部标题行和缩放按钮'] },  { v: '1.0.198', date: '2026-04-21', items: ['📱 足总杯赛程图增加移动端触摸手势：双指捏合缩放、单指拖拽平移、双击重置'] },  { v: '1.0.197', date: '2026-04-21', items: ['🐛 删除 rTeamSelect 函数末尾重复代码（多余return+花括号），修复 renderFaCupBracket 被提前关闭导致全页面点击无响应'] },  { v: '1.0.196', date: '2026-04-21', items: ['🐛 回滚zoom缩放为scale+font-smoothing抗锯齿，修复点击无响应'] },  { v: '1.0.194', date: '2026-04-21', items: ['🐛 修复普通用户足总杯赛程图点击无响应'] },  { v: '1.0.193', date: '2026-04-21', items: ['🎨 足总杯赛程图：普通用户也用 select 样式显示球队，与管理员视觉一致'] },  { v: '1.0.192', date: '2026-04-21', items: ['🎨 足总杯赛程图：未完赛球队显示效果管理员与普通用户统一'] },  { v: '1.0.191', date: '2026-04-21', items: ['🎨 修复足总杯赛程图缩放时文字模糊：scale 改为 zoom'] },  { v: '1.0.190', date: '2026-04-21', items: ['🎨 足总杯赛程图未比赛卡片视觉增强：去掉模糊/虚淡效果'] },  { v: '1.0.189', date: '2026-04-21', items: ['🎨 足总杯赛程图联赛底色加深：超级深红、甲级深绿、乙级深灰（白色文字）'] },  { v: '1.0.130', date: '2026-04-20', items: ['🔄 转会系统统一：侧边栏和球队详情页转会共用 pending 系统，逻辑完全一致', '🔄 转会增加生效方式选择：指定轮次生效 / 立即转会', '🔄 转会增加转会费输入（侧边栏和球队详情页均支持）', '👤 球员详情页增加即将转会信息：新球队、到队时间、转会费', '🎨 球员列表增加即将转会标签（橙色标签显示目标球队）'] },  { v: '1.0.173', date: '2026-04-20', items: ['🎨 球队详情页轮次标题单独一行显示，对阵信息更完整'] },  { v: '1.0.172', date: '2026-04-20', items: ['🎨 加大球队详情页队徽：16px → 18px'] },  { v: '1.0.171', date: '2026-04-20', items: ['📱 优化球队详情页手机端显示：缩小队徽、紧凑间距、队名截断、比分区域优化'] },  { v: '1.0.170', date: '2026-04-20', items: ['🐛 修复球队详情页队徽位置：主队队徽在右，客队队徽在左（对称布局）'] },  { v: '1.0.169', date: '2026-04-20', items: ['🐛 修复球队详情页主队队名对齐问题（轮次标题移到内部后CSS选择器失效）'] },  { v: '1.0.168', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛芯片选中状态不更新的问题', '📋 新增杯赛与联赛同步规则文档'] },
+  { v: '1.0.207', date: '2026-04-23', items: ['🔐 主教练权限调整：移除录入比赛、转会球员、摘牌权限，仅保留挂牌/出价', '☁️ 出价和挂牌后自动同步云端（静默上传，无需手动操作）'] },  { v: '1.0.206', date: '2026-04-23', items: ['🐛 修复主教练登录后点击球员名字无法进入详情页（canTransfer 用 const 声明但教练分支重新赋值导致 TypeError 崩溃）'] },  { v: '1.0.205', date: '2026-04-23', items: ['⏰ 转会成交规则：24h冷却期+晚间竞价窗口（19:01-21:00/21:01-23:00循环）', '💰 出价金额不再受违约金上限限制，达违约金可自动触发成交', '🕐 挂牌时间和出价时间显示精确时间戳（如2026-4-23 20:34）', '📋 到队规则：第13轮前成交→第13轮到队，第13轮后成交→全部录完立刻到队'] },  { v: '1.0.202', date: '2026-04-21', items: ['📋 球员详情杯赛数据按杯赛名分别显示（足总杯/冠军杯/联盟杯/协会杯），替代笼统"杯赛"标签'] },  { v: '1.0.201', date: '2026-04-21', items: ['🎨 底部版本号与侧边栏统一（共用CHANGELOG），版本号后加 By Pgm联赛—J.K'] },  { v: '1.0.200', date: '2026-04-21', items: ['🎨 足总杯赛程图增加球队队徽：已完赛/未完赛/管理员选择均显示队徽'] },  { v: '1.0.199', date: '2026-04-21', items: ['🎨 删除足总杯赛程图顶部标题行和缩放按钮'] },  { v: '1.0.198', date: '2026-04-21', items: ['📱 足总杯赛程图增加移动端触摸手势：双指捏合缩放、单指拖拽平移、双击重置'] },  { v: '1.0.197', date: '2026-04-21', items: ['🐛 删除 rTeamSelect 函数末尾重复代码（多余return+花括号），修复 renderFaCupBracket 被提前关闭导致全页面点击无响应'] },  { v: '1.0.196', date: '2026-04-21', items: ['🐛 回滚zoom缩放为scale+font-smoothing抗锯齿，修复点击无响应'] },  { v: '1.0.194', date: '2026-04-21', items: ['🐛 修复普通用户足总杯赛程图点击无响应'] },  { v: '1.0.193', date: '2026-04-21', items: ['🎨 足总杯赛程图：普通用户也用 select 样式显示球队，与管理员视觉一致'] },  { v: '1.0.192', date: '2026-04-21', items: ['🎨 足总杯赛程图：未完赛球队显示效果管理员与普通用户统一'] },  { v: '1.0.191', date: '2026-04-21', items: ['🎨 修复足总杯赛程图缩放时文字模糊：scale 改为 zoom'] },  { v: '1.0.190', date: '2026-04-21', items: ['🎨 足总杯赛程图未比赛卡片视觉增强：去掉模糊/虚淡效果'] },  { v: '1.0.189', date: '2026-04-21', items: ['🎨 足总杯赛程图联赛底色加深：超级深红、甲级深绿、乙级深灰（白色文字）'] },  { v: '1.0.130', date: '2026-04-20', items: ['🔄 转会系统统一：侧边栏和球队详情页转会共用 pending 系统，逻辑完全一致', '🔄 转会增加生效方式选择：指定轮次生效 / 立即转会', '🔄 转会增加转会费输入（侧边栏和球队详情页均支持）', '👤 球员详情页增加即将转会信息：新球队、到队时间、转会费', '🎨 球员列表增加即将转会标签（橙色标签显示目标球队）'] },  { v: '1.0.173', date: '2026-04-20', items: ['🎨 球队详情页轮次标题单独一行显示，对阵信息更完整'] },  { v: '1.0.172', date: '2026-04-20', items: ['🎨 加大球队详情页队徽：16px → 18px'] },  { v: '1.0.171', date: '2026-04-20', items: ['📱 优化球队详情页手机端显示：缩小队徽、紧凑间距、队名截断、比分区域优化'] },  { v: '1.0.170', date: '2026-04-20', items: ['🐛 修复球队详情页队徽位置：主队队徽在右，客队队徽在左（对称布局）'] },  { v: '1.0.169', date: '2026-04-20', items: ['🐛 修复球队详情页主队队名对齐问题（轮次标题移到内部后CSS选择器失效）'] },  { v: '1.0.168', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛芯片选中状态不更新的问题', '📋 新增杯赛与联赛同步规则文档'] },
   { v: '1.0.167', date: '2026-04-20', items: ['🎨 更新日志页面尺寸缩小、比例优化', '🎨 返回按钮重新设计（绿色渐变+阴影+hover放大）'] },
   { v: '1.0.166', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛状态丢失的问题', '🔗 所有页面URL hash保存联赛状态'] },
   { v: '1.0.165', date: '2026-04-20', items: ['🎨 更新日志页面紧凑化', '⬅️ 添加圆形灰色返回按钮'] },
@@ -3214,7 +3214,7 @@ function renderSchedule() {
           + '</div>' : '';
       const motmLine = '';
       const isArchivedSeason = viewingSeasonId !== null;
-      const canEnter = !isArchivedSeason && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && home.league === state.currentUser.league) || state.currentUser.teamId === m.homeTeam || state.currentUser.teamId === m.awayTeam) && !isCompleted;
+      const canEnter = !isArchivedSeason && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && home.league === state.currentUser.league)) && !isCompleted;
       const canEdit = !isArchivedSeason && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && home.league === state.currentUser.league)) && isCompleted;
 
             // Apple minimal style card
@@ -3617,8 +3617,8 @@ function renderTransferMarket() {
 
     html += `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">`;
 
-    // 挂牌人/超管可操作：摘牌（取消挂牌）
-    if (isOwner || isAdmin) {
+    // 超管可操作：摘牌（取消挂牌）
+    if (isAdmin) {
       html += `<button onclick="delistPlayer('${listing.id}')" style="font-size:11px;padding:5px 12px;border-radius:8px;border:1px solid #e0e0e0;background:#fff;color:#666;cursor:pointer">❌ 摘牌</button>`;
     }
 
@@ -3703,6 +3703,7 @@ function submitBid(listingId) {
   listing.bids.push(bid);
   saveState();
   showToast('出价成功！' + amount + 'M');
+  autoCloudUpload(); // 出价后自动同步云端
   renderTransferMarket();
 }
 
@@ -3790,9 +3791,8 @@ function delistPlayer(listingId) {
   const listing = (state.transferMarket || []).find(l => l.id === listingId);
   if (!listing) return;
 
-  const isOwner = state.currentUser && state.currentUser.teamId === listing.teamId;
   const isAdmin = state.currentUser && state.currentUser.isSuperAdmin;
-  if (!isOwner && !isAdmin) { showToast('无权操作'); return; }
+  if (!isAdmin) { showToast('无权操作'); return; }
 
   if (!confirm('确认摘牌 ' + listing.playerName + '？')) return;
 
@@ -4007,8 +4007,7 @@ function togglePlayerSeasonDetail(el, uid) {
   const ageStr = currentPlayerAge > 0
     ? `<span style="font-size:11px;color:#546e7a;margin-left:8px;white-space:nowrap;background:#eceff1;padding:1px 6px;border-radius:4px">${currentPlayerAge % 1 === 0 ? currentPlayerAge.toFixed(0) : currentPlayerAge}岁</span>` : '';
   const pendingTransfer = (state.pendingTransfers || []).find(pt => pt.status === 'pending' && pt.playerUid == uid);
-  let canTransfer = state.currentUser && state.currentUser.isSuperAdmin && !pendingTransfer;
-  if (!canTransfer && state.currentUser && state.currentUser.isCoach && currentPlayerTeam && !pendingTransfer) canTransfer = true;
+  const canTransfer = state.currentUser && state.currentUser.isSuperAdmin && !pendingTransfer;
   const transferBtnHtml = canTransfer
     ? `<span style="flex:1"></span><button onclick="event.stopPropagation();showPlayerTransferModal('${uid}')" style="font-size:10px;padding:3px 12px;border-radius:12px;border:none;background:linear-gradient(135deg,#455a64,#37474f);color:#fff;cursor:pointer;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.15);letter-spacing:0.5px">🔄 转会</button>`
     : '';
@@ -4250,6 +4249,7 @@ function submitListOnMarket(playerUid) {
   saveState();
   closeModal();
   showToast('挂牌成功！' + player.name + '已进入转会市场');
+  autoCloudUpload(); // 挂牌后自动同步云端
   // 如果当前在转会页面，刷新
   if (state.currentPage === 'transfer') renderTransferMarket();
 }
@@ -4553,9 +4553,9 @@ function showTeamDetail(teamId) {
     const teamDetail = isCompleted && (teamGoals || teamAssists || teamMotmStr)
       ? `<div style="font-size:9px;color:#666;line-height:1.2">${teamGoals ? '⚽' + teamGoals : ''}${teamGoals && teamAssists ? ' ' : ''}${teamAssists ? '👟' + teamAssists : ''}${teamMotmStr ? (teamGoals || teamAssists ? ' ' : '') + '<span style="color:#f5a623">⭐' + teamMotmStr + '</span>' : ''}</div>` : '';
 
-    // 判断是否可以录入（管理员、数据员或相关球队）
+    // 判断是否可以录入（管理员或数据员）
     const matchHome = sd.teams.find(t => t.id === m.homeTeam);
-    const canEnter = !viewingSeasonId && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && matchHome && matchHome.league === state.currentUser.league) || state.currentUser.teamId === m.homeTeam || state.currentUser.teamId === m.awayTeam);
+    const canEnter = !viewingSeasonId && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && matchHome && matchHome.league === state.currentUser.league));
     const enterAttr = canEnter ? `onclick="if(event.target.closest('.player-expand'))return;closeModal();setTimeout(()=>showEnterMatchModal('${m.id}'),100)" style="cursor:pointer"` : '';
 
     const matchRowBg = isCompleted ? 'background:#f0fff0' : 'background:#fffbf0';
@@ -7127,6 +7127,65 @@ async function syncUpload() {
     hideSyncProgress();
     showToast(e.message);
     console.error('Sync upload error:', e);
+  }
+}
+
+// 静默上传云端（出价/挂牌后自动触发，无需confirm）
+async function autoCloudUpload() {
+  const token = GITHUB_TOKEN || ADMIN_BUILTIN_TOKEN;
+  if (!token) { console.warn('autoCloudUpload: 无可用Token，跳过自动上传'); return; }
+  try {
+    const uploadData = JSON.parse(safeStringify(state) || '{}');
+    uploadData._lastUpload = {
+      by: state.currentUser ? state.currentUser.coachName : '未知',
+      role: state.currentUser ? (state.currentUser.isSuperAdmin ? '超级管理员' : (state.currentUser.isCoach ? '主教练' : (state.currentUser.isStatsRecorder ? '统计员' : '数据员'))) : '未知',
+      at: new Date().toISOString(),
+      trigger: 'auto' // 标记为自动触发
+    };
+    const dataStr = safeStringify(uploadData, 2);
+    if (!dataStr) { console.error('autoCloudUpload: 数据序列化失败'); return; }
+
+    const filename = 'pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json';
+    const headers = {
+      'Authorization': 'Bearer ' + token,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    };
+
+    if (GIST_ID) {
+      const getResp = await fetch(GIST_API + '/' + GIST_ID, { headers: { 'Authorization': 'Bearer ' + token } });
+      if (getResp.ok) {
+        const gist = await getResp.json();
+        const body = { description: 'PGM足球经理联赛数据 - 自动同步', files: {} };
+        for (const fname of Object.keys(gist.files)) { body.files[fname] = null; }
+        body.files[filename] = { content: dataStr };
+        const resp = await fetch(GIST_API + '/' + GIST_ID, { method: 'PATCH', headers, body: JSON.stringify(body) });
+        if (!resp.ok) { console.error('autoCloudUpload: 上传失败', resp.status); return; }
+        const result = await resp.json();
+        GIST_ID = result.id;
+        localStorage.setItem('pgm_gist_id', GIST_ID);
+      } else {
+        localStorage.removeItem('pgm_gist_id');
+        GIST_ID = '';
+      }
+    }
+    if (!GIST_ID) {
+      const body = { description: 'PGM足球经理联赛数据 - 自动同步', public: true, files: { [filename]: { content: dataStr } } };
+      const resp = await fetch(GIST_API, { method: 'POST', headers, body: JSON.stringify(body) });
+      if (!resp.ok) { console.error('autoCloudUpload: 创建Gist失败', resp.status); return; }
+      const result = await resp.json();
+      GIST_ID = result.id;
+      localStorage.setItem('pgm_gist_id', GIST_ID);
+    }
+
+    const now = new Date();
+    const timeStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    localStorage.setItem('pgm_last_sync_time', timeStr);
+    console.log('autoCloudUpload: 上传成功', timeStr);
+    showToast('☁️ 已自动同步到云端');
+  } catch(e) {
+    console.error('autoCloudUpload error:', e);
+    showToast('⚠️ 自动同步失败：' + e.message);
   }
 }
 
