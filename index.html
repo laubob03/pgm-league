@@ -2776,7 +2776,10 @@ function showCloudFailEffect(reason) {
 function updateNavCloudBtn() {
   const btn = document.getElementById('navCloudBtn');
   if (!btn) return;
-  if (state.currentUser && !state.currentUser.isStatsRecorder) {
+  // ★ v1.0.215: 主教练不再显示"上传云端"按钮（出价/挂牌已自动上传，无需手动操作）
+  // 超级管理员和数据员保留手动上传功能
+  const u = state.currentUser;
+  if (u && (u.isSuperAdmin || u.isDataRecorder)) {
     btn.style.display = 'flex';
   } else {
     btn.style.display = 'none';
