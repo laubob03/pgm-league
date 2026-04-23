@@ -5461,7 +5461,7 @@ function showLoginModal() {
     <form id="loginForm">
       <div class="form-group">
         <div class="form-label">ID</div>
-        <input type="text" class="form-input" id="loginTeamId" placeholder="输入球队ID或账号" required autocomplete="username">
+        <input type="text" class="form-input" id="loginTeamId" placeholder="输入队名（如Arsenal）或球队ID" required autocomplete="username">
       </div>
       <div class="form-group">
         <div class="form-label">密码</div>
@@ -5501,13 +5501,13 @@ function showLoginModal() {
       updateNavCloudBtn();
       render();
       showToast('欢迎，' + rec.name + '！');
-    } else if (state.teams && state.teams.find(t => t.id === teamId)) {
-      // 教练登录（球队ID: t1-t60）密码规则：队名首字母+尾字母+123
-      const team = state.teams.find(t => t.id === teamId);
+    } else if (state.teams && (state.teams.find(t => t.id === teamId) || state.teams.find(t => t.name === teamId))) {
+      // 教练登录（支持球队ID如t1或队名如Arsenal）密码规则：队名首字母+尾字母+123
+      const team = state.teams.find(t => t.id === teamId) || state.teams.find(t => t.name === teamId);
       const teamName = team.name;
       const coachPassword = teamName.charAt(0) + teamName.charAt(teamName.length - 1) + '123';
       const coachPwHash = await sha256(coachPassword);
-      if (pwHash !== coachPwHash) { showToast('密码错误！'); return; }
+      if (pwHash !== coachPwHash) { showToast('密码错误！密码规则：队名首字母+尾字母+123'); return; }
       state.currentUser = { teamId: team.id, teamName: team.name, coachName: team.coach || team.name, isCoach: true };
       saveState();
       closeModal();
