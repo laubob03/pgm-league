@@ -445,7 +445,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 216 };
+const APP_VERSION = { major: 1, minor: 0, patch: 217 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-24';
@@ -3589,9 +3589,7 @@ function renderTransferMarket() {
     // ★ v1.0.215: CA/PA、底价、违约金 统一浅灰底色
     html += `<span style="font-size:12px;background:#f0f0f0;color:#555;padding:2px 8px;border-radius:4px;font-weight:600">CA/PA：${listing.ca}/${listing.pa}</span>`;
     html += `<span style="font-size:12px;background:#f0f0f0;color:#555;padding:2px 8px;border-radius:4px;font-weight:600">底价 ${listing.basePrice}M</span>`;
-    if (listing.releaseClause > 0) {
-      html += `<span style="font-size:12px;background:#f0f0f0;color:#555;padding:2px 8px;border-radius:4px;font-weight:600">违约金 ${listing.releaseClause}M</span>`;
-    }
+    html += `<span style="font-size:12px;background:#f0f0f0;color:#555;padding:2px 8px;border-radius:4px;font-weight:600">违约金 ${listing.releaseClause > 0 ? listing.releaseClause + 'M' : '—'}</span>`;
     // ★ v1.0.215: 移除"当前最高价"标签（出价记录里已有最高价暗红色标识）
     // 成交倒计时（醒目夸张设计）
     const deadline = getTransferDeadline(listing);
