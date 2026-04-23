@@ -5469,7 +5469,7 @@ function showLoginModal() {
       </div>
       <button type="submit" class="btn btn-primary btn-full">登录</button>
       <div style="margin-top:12px;font-size:12px;color:var(--text-secondary);text-align:center">
-        忘记密码请联系管理员
+        忘记密码请联系热刺J.K
       </div>
     </form>
   `;
@@ -5507,7 +5507,7 @@ function showLoginModal() {
       const teamName = team.name;
       const coachPassword = teamName.charAt(0) + teamName.charAt(teamName.length - 1) + '123';
       const coachPwHash = await sha256(coachPassword);
-      if (pwHash !== coachPwHash) { showToast('密码错误！密码规则：队名首字母+尾字母+123'); return; }
+      if (pwHash !== coachPwHash) { showToast('密码错误！咨询热刺J.K'); return; }
       state.currentUser = { teamId: team.id, teamName: team.name, coachName: team.coach || team.name, isCoach: true };
       saveState();
       closeModal();
