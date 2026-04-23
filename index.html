@@ -450,6 +450,7 @@ const APP_BUILD_DATE = '2026-04-24';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.212', date: '2026-04-24', items: ['🐛 修复其他用户看不到出价记录（TRANSFER_GIST_ID未写入state，主数据同步丢失）'] },
   { v: '1.0.211', date: '2026-04-24', items: ['🐛 修复教练出价/挂牌后未自动上传云端（Token链缺少RECORDER_BUILTIN_TOKEN）'] },
   { v: '1.0.210', date: '2026-04-24', items: ['💰 主教练出价不限次数，可连续加价直到成交'] },
   { v: '1.0.209', date: '2026-04-24', items: ['⚡ ETag条件请求：日常打开零流量（99KB→0KB）', '📦 Gist拆多文件上传：teams/matches/other分片+全量兼容', '🗜️ JSON minify：上传体积缩减74KB'] },
