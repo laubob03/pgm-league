@@ -473,13 +473,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 226 };
+const APP_VERSION = { major: 1, minor: 0, patch: 227 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-25';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.227', date: '2026-04-25', items: ['🎨 转会市场球员详情面板紧贴球员名下方（而非整个卡片之后）'] },
   { v: '1.0.226', date: '2026-04-25', items: ['📱 足总杯赛程图触摸操作丝滑升级：捏合灵敏度×1.5加速、惯性滑动、RAF节流、GPU加速'] },
   { v: '1.0.225', date: '2026-04-25', items: ['⚽ 转会市场球员名可点击查看详情（共用 togglePlayerSeasonDetail 系统）'] },
   { v: '1.0.224', date: '2026-04-25', items: ['📱 修复手机登录弹窗按钮被虚拟键盘遮挡：modal 改为 overflow-y:auto 支持滚动，使用 dvh 动态视口高度'] },
@@ -3648,9 +3649,15 @@ function getDetailInsertTarget(el) {
   // 在球员行内 → 插入到 .player-row 之后
   const playerRow = el.closest('.player-row');
   if (playerRow) return playerRow;
-  // 在转会卡片内 → 插入到 .transfer-card 之后
+  // 在转会卡片内 → 插入到包含球员名的顶部行之后（紧贴球员名，仍在卡片内）
   const transferCard = el.closest('.transfer-card');
-  if (transferCard) return transferCard;
+  if (transferCard) {
+    let current = el;
+    while (current.parentElement && current.parentElement !== transferCard) {
+      current = current.parentElement;
+    }
+    return current;
+  }
   // 在比赛卡片内 → 插入到包含球员名的那个 div 行之后
   const matchCard = el.closest('.match-card');
   if (matchCard) {
