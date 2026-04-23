@@ -9,11 +9,12 @@
   <!-- 顶部版本检查：即使旧版本被缓存也能触发强制更新 -->
   <script>
   !function(){
-    // ★ v1.0.220: 更激进的强制更新机制
-    // 即使旧版 SW 缓存了旧 index.html，这段代码仍能在旧版中执行
-    // 前提：旧版也有这段代码（v1.0.216 已有部分，此处增强）
+    // ★ v1.0.221: 彻底修复 SW 缓存死锁
+    // 此脚本在 v1.0.216+ 已有（只显示 notice），v1.0.220+ 增加了自动刷新
+    // notice 中注入的 <img onerror> 脚本会在 innerHTML 赋值时自动执行
+    // 无论哪个版本的代码，都能通过 notice 注入完成 SW 注销 + 缓存清理
     fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
-      // 公告条
+      // 公告条（含可能的注入脚本）
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';b.innerHTML='<div style="max-width:600px;margin:0 auto;">📢 '+d.notice+'</div>';document.body.prepend(b)}
       // ★ 强制版本检查：如果本地版本低于 minVersion，注销 SW + 清缓存 + 刷新
       if(d.minVersion){
@@ -21,12 +22,17 @@
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
-          // 注销 Service Worker
-          if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister()})})}
-          // 清除所有缓存
-          if('caches' in window){caches.keys().then(function(ns){ns.forEach(function(n){caches.delete(n)})})}
-          // 延迟刷新，等注销完成
-          setTimeout(function(){location.reload(true)},500);
+          // 注销 Service Worker（等待完成）
+          Promise.resolve().then(function(){
+            var tasks=[];
+            if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+            if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
+            return Promise.all(tasks);
+          }).then(function(){
+            setTimeout(function(){location.reload()},500);
+          }).catch(function(){
+            location.reload();
+          });
         }
       }
     }).catch(function(){})
@@ -467,13 +473,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 220 };
+const APP_VERSION = { major: 1, minor: 0, patch: 221 };
 
 const APP_AUTHOR = 'J.K';
-const APP_BUILD_DATE = '2026-04-24';
+const APP_BUILD_DATE = '2026-04-25';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.221', date: '2026-04-25', items: ['🐛 彻底修复版本更新死锁：强制更新按钮改为 await 注销 SW + 清缓存后再刷新', '🐛 version.json notice 注入自动更新脚本，卡在旧版的用户无需手动操作', '🐛 SW 对 version.json 请求强制 no-store，防止缓存返回旧版本信息'] },
   { v: '1.0.216', date: '2026-04-24', items: ['🎨 转会页面：移除"当前最高价"标签，出价记录最高价改暗红色', '🎨 "预计成交"改为成交倒计时（时/分/秒实时更新），<1h红色/<6h橙色/>6h紫色', '🎨 CA/PA、底价、违约金统一浅灰底色', '🎨 最高出价金额暗红色+14px，其他出价与时间戳同色', '🗑️ 移除主教练"上传云端"按钮（出价/挂牌已自动上传）'] },
   { v: '1.0.215', date: '2026-04-24', items: ['🐛 修复出价后其他用户看不到：TRANSFER_GIST_ID 改为硬编码固定值，防止每个浏览器创建各自的 Gist 导致数据分散', '🐛 修复 updated_at 精确匹配误判：改为时间戳比较（<=），避免毫秒差异导致跳过下载', '🐛 autoCloudUpload 上传后更新 pgm_transfer_gist_updated_at 缓存', '🗑️ 清理旧的动态 TRANSFER_GIST_ID 缓存'] },
   { v: '1.0.214', date: '2026-04-24', items: ['🐛 修复刷新页面不自动下载云端数据：移除 ETag/If-None-Match 缓存（代理/CDN 环境下 304 误判导致跳过下载）', '🐛 修复时间戳比较：字符串拼接改为 Date 时间戳比较，避免时区/格式问题', '⚡ 使用内置 Token 请求 GitHub API（限流从60→5000次/小时），防止频繁刷新被限流', '⚡ fetch 添加 cache:no-store 防止浏览器缓存返回过期数据', '🔔 同步失败不再静默，首次使用时弹 Toast 提醒用户'] },
@@ -7706,18 +7713,6 @@ document.getElementById('modalOverlay').onclick = (e) => {
 
 // 强制升级弹窗
 function showForceUpdateModal(minVer) {
-  // ★ v1.0.219: 注销旧 Service Worker，确保刷新后加载新版本
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function(regs) {
-      regs.forEach(function(reg) { reg.unregister(); });
-    });
-  }
-  // 清除所有缓存
-  if ('caches' in window) {
-    caches.keys().then(function(names) {
-      names.forEach(function(name) { caches.delete(name); });
-    });
-  }
   const overlay = document.createElement('div');
   overlay.id = 'forceUpdateOverlay';
   overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:9999999;display:flex;align-items:center;justify-content:center;';
@@ -7728,18 +7723,42 @@ function showForceUpdateModal(minVer) {
       <div style="font-size:14px;color:#666;margin-bottom:24px;line-height:1.8;">
         当前版本：<b>v${getAppVersion()} By Pgm联赛—J.K</b><br>
         最低要求：<b>v${minVer}</b><br>
-        <span style="color:#f44336;font-weight:bold;">请刷新页面以更新到最新版本</span>
+        <span style="color:#f44336;font-weight:bold;">点击下方按钮强制更新</span>
       </div>
-      <button onclick="location.reload()" style="
+      <button id="forceUpdateBtn" style="
         background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;border:none;padding:14px 48px;
         border-radius:50px;font-size:16px;font-weight:bold;cursor:pointer;
         box-shadow:0 4px 15px rgba(233,30,99,0.4);transition:transform 0.2s;
       " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-        🔄 立即刷新
+        🔄 强制更新
       </button>
     </div>
   `;
   document.body.prepend(overlay);
+  // ★ v1.0.221: 点击按钮后先注销 SW + 清缓存，等待完成后再刷新
+  document.getElementById('forceUpdateBtn').onclick = async function() {
+    this.disabled = true;
+    this.textContent = '⏳ 正在清理缓存...';
+    try {
+      // 1. 注销所有 Service Worker
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.unregister()));
+      }
+      // 2. 清除所有缓存
+      if ('caches' in window) {
+        const names = await caches.keys();
+        await Promise.all(names.map(n => caches.delete(n)));
+      }
+      // 3. 移除遮罩
+      overlay.remove();
+      // 4. 刷新（此时 SW 已注销，浏览器会从网络加载新版本）
+      setTimeout(() => location.reload(), 300);
+    } catch(e) {
+      // 即使出错也尝试刷新
+      location.reload();
+    }
+  };
 }
 
 // 自动同步云端数据（静默，不弹确认框）
