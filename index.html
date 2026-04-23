@@ -445,7 +445,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 219 };
+const APP_VERSION = { major: 1, minor: 0, patch: 220 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-24';
@@ -7684,6 +7684,18 @@ document.getElementById('modalOverlay').onclick = (e) => {
 
 // 强制升级弹窗
 function showForceUpdateModal(minVer) {
+  // ★ v1.0.219: 注销旧 Service Worker，确保刷新后加载新版本
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(regs) {
+      regs.forEach(function(reg) { reg.unregister(); });
+    });
+  }
+  // 清除所有缓存
+  if ('caches' in window) {
+    caches.keys().then(function(names) {
+      names.forEach(function(name) { caches.delete(name); });
+    });
+  }
   const overlay = document.createElement('div');
   overlay.id = 'forceUpdateOverlay';
   overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:9999999;display:flex;align-items:center;justify-content:center;';
