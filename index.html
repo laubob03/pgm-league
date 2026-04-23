@@ -444,13 +444,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 214 };
+const APP_VERSION = { major: 1, minor: 0, patch: 215 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-24';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.215', date: '2026-04-24', items: ['🐛 修复出价后其他用户看不到：TRANSFER_GIST_ID 改为硬编码固定值，防止每个浏览器创建各自的 Gist 导致数据分散', '🐛 修复 updated_at 精确匹配误判：改为时间戳比较（<=），避免毫秒差异导致跳过下载', '🐛 autoCloudUpload 上传后更新 pgm_transfer_gist_updated_at 缓存', '🗑️ 清理旧的动态 TRANSFER_GIST_ID 缓存'] },
   { v: '1.0.214', date: '2026-04-24', items: ['🐛 修复刷新页面不自动下载云端数据：移除 ETag/If-None-Match 缓存（代理/CDN 环境下 304 误判导致跳过下载）', '🐛 修复时间戳比较：字符串拼接改为 Date 时间戳比较，避免时区/格式问题', '⚡ 使用内置 Token 请求 GitHub API（限流从60→5000次/小时），防止频繁刷新被限流', '⚡ fetch 添加 cache:no-store 防止浏览器缓存返回过期数据', '🔔 同步失败不再静默，首次使用时弹 Toast 提醒用户'] },
   { v: '1.0.213', date: '2026-04-24', items: ['🐛 修复其他用户看不到出价记录（TRANSFER_GIST_ID未写入state，主数据同步丢失）'] },
   { v: '1.0.211', date: '2026-04-24', items: ['🐛 修复教练出价/挂牌后未自动上传云端（Token链缺少RECORDER_BUILTIN_TOKEN）'] },
@@ -1028,11 +1029,8 @@ function loadState() {
       if (!state.pendingTransfers) state.pendingTransfers = [];
       // 兼容旧版本没有 transferMarket 字段
       if (!state.transferMarket) state.transferMarket = [];
-      // ★ 从 state 恢复 TRANSFER_GIST_ID 到 localStorage 和全局变量
-      if (state._transferGistId) {
-        TRANSFER_GIST_ID = state._transferGistId;
-        localStorage.setItem('pgm_transfer_gist_id', TRANSFER_GIST_ID);
-      }
+      // ★ v1.0.215: TRANSFER_GIST_ID 改为硬编码常量，不再从 state 恢复
+      // 旧版 state._transferGistId 可能指向错误的 Gist（每个教练各自创建的）
       // 从比赛记录重新计算所有球员统计，修复历史数据不一致问题
       recalculateAllPlayerStats(state);
       // 同时修复归档赛季数据
@@ -6036,12 +6034,17 @@ function resetAllData() {
 // 支持多设备数据同步，无需后端服务器
 
 let GIST_ID = localStorage.getItem('pgm_gist_id') || '4a08491692074f35f0f2320434826e41';
-let TRANSFER_GIST_ID = localStorage.getItem('pgm_transfer_gist_id') || '';
+// ★ v1.0.215 修复：硬编码固定 TRANSFER_GIST_ID，确保所有用户读写同一个 Gist
+// 之前每个浏览器动态创建各自的 Gist，导致数据分散、互不可见
+const BUILTIN_TRANSFER_GIST_ID = '23f2ae315efea15025414f7a155dc352';
+let TRANSFER_GIST_ID = BUILTIN_TRANSFER_GIST_ID;
 let GITHUB_TOKEN = localStorage.getItem('pgm_github_token') || '';
 
-// ★ 清理已废弃的 ETag 缓存（v1.0.214 移除了 ETag 机制，旧缓存可能导致误判）
+// ★ 清理已废弃的缓存（v1.0.214 移除 ETag，v1.0.215 统一 TRANSFER_GIST_ID）
 localStorage.removeItem('pgm_gist_etag');
 localStorage.removeItem('pgm_transfer_gist_etag');
+// 清理旧的动态 TRANSFER_GIST_ID（不再从 localStorage 读取）
+localStorage.removeItem('pgm_transfer_gist_id');
 
 const _rt = ['REDACTED_1','REDACTED_2','REDACTED_3'];
 const RECORDER_BUILTIN_TOKEN = _rt.join('');
@@ -7229,37 +7232,37 @@ async function autoCloudUpload() {
       'Content-Type': 'application/json'
     };
 
+    // ★ v1.0.215 修复：始终 PATCH 更新固定的 TRANSFER_GIST_ID，不再动态创建新 Gist
     if (TRANSFER_GIST_ID) {
+      // 先 GET 获取已有文件列表，清理旧文件
       const getResp = await fetch(GIST_API + '/' + TRANSFER_GIST_ID, { headers: { 'Authorization': 'Bearer ' + token } });
+      const body = { description: 'PGM转会市场数据 - 自动同步', files: {} };
       if (getResp.ok) {
         const gist = await getResp.json();
-        const body = { description: 'PGM转会市场数据 - 自动同步', files: {} };
         for (const fname of Object.keys(gist.files)) { body.files[fname] = null; }
-        body.files[filename] = { content: dataStr };
-        const resp = await fetch(GIST_API + '/' + TRANSFER_GIST_ID, { method: 'PATCH', headers, body: JSON.stringify(body) });
-        if (!resp.ok) { console.error('autoCloudUpload: 上传失败', resp.status); return; }
-        const result = await resp.json();
-        TRANSFER_GIST_ID = result.id;
-        localStorage.setItem('pgm_transfer_gist_id', TRANSFER_GIST_ID);
-      } else {
-        localStorage.removeItem('pgm_transfer_gist_id');
-        TRANSFER_GIST_ID = '';
       }
-    }
-    if (!TRANSFER_GIST_ID) {
+      body.files[filename] = { content: dataStr };
+      const resp = await fetch(GIST_API + '/' + TRANSFER_GIST_ID, { method: 'PATCH', headers, body: JSON.stringify(body) });
+      if (!resp.ok) {
+        const errText = await resp.text().catch(() => '');
+        console.error('autoCloudUpload: 上传失败', resp.status, errText);
+        showToast('⚠️ 云端同步失败 (HTTP ' + resp.status + ')');
+        return;
+      }
+    } else {
+      // 理论上不会走到这里（TRANSFER_GIST_ID 已硬编码），但保留创建逻辑作为安全网
       const body = { description: 'PGM转会市场数据 - 自动同步', public: true, files: { [filename]: { content: dataStr } } };
       const resp = await fetch(GIST_API, { method: 'POST', headers, body: JSON.stringify(body) });
       if (!resp.ok) { console.error('autoCloudUpload: 创建转会Gist失败', resp.status); return; }
       const result = await resp.json();
-      TRANSFER_GIST_ID = result.id;
-      localStorage.setItem('pgm_transfer_gist_id', TRANSFER_GIST_ID);
+      console.warn('autoCloudUpload: 意外创建了新 Gist，请更新 BUILTIN_TRANSFER_GIST_ID:', result.id);
     }
 
     const now = new Date();
     const timeStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
     localStorage.setItem('pgm_transfer_last_sync_time', timeStr);
-    // ★ 关键修复：把 TRANSFER_GIST_ID 写入 state，这样主数据上传/下载时也能同步
-    state._transferGistId = TRANSFER_GIST_ID;
+    // ★ v1.0.215: 更新 pgm_transfer_gist_updated_at 缓存，防止 autoSyncTransferGist 误判"无变化"
+    localStorage.setItem('pgm_transfer_gist_updated_at', new Date().toISOString());
     saveState();
     console.log('autoCloudUpload: 转会数据上传成功', timeStr);
     showToast('☁️ 已自动同步到云端');
@@ -7661,26 +7664,30 @@ async function autoSyncFromCloud() {
 
     inner.style.width = '50%';
 
-    // 用 Gist 的 updated_at 快速判断是否有更新（无需下载完整数据）
+    // ★ v1.0.215 修复：用时间戳比较代替精确字符串匹配
     const gistUpdatedAt = gist.updated_at; // ISO 8601
     const lastKnownUpdate = localStorage.getItem('pgm_gist_updated_at') || '';
-    if (gistUpdatedAt && lastKnownUpdate && gistUpdatedAt === lastKnownUpdate) {
-      // 云端没有变化，跳过下载，直接显示信息
-      inner.style.width = '100%';
-      inner.style.background = 'linear-gradient(90deg,#66bb6a,#43a047)';
-      const cachedHint = localStorage.getItem('pgm_last_upload_hint');
-      let lastUploadInfo = null;
-      if (cachedHint) {
-        try { lastUploadInfo = JSON.parse(cachedHint); } catch(e) {}
+    if (gistUpdatedAt && lastKnownUpdate) {
+      const gistTime = new Date(gistUpdatedAt).getTime();
+      const cachedTime = new Date(lastKnownUpdate).getTime();
+      if (!isNaN(gistTime) && !isNaN(cachedTime) && gistTime <= cachedTime) {
+        // 云端没有变化，跳过下载，直接显示信息
+        inner.style.width = '100%';
+        inner.style.background = 'linear-gradient(90deg,#66bb6a,#43a047)';
+        const cachedHint = localStorage.getItem('pgm_last_upload_hint');
+        let lastUploadInfo = null;
+        if (cachedHint) {
+          try { lastUploadInfo = JSON.parse(cachedHint); } catch(e) {}
+        }
+        updateSidebarCloudInfo(lastUploadInfo);
+        removeSyncTip();
+        setTimeout(() => {
+          bar.style.opacity = '0';
+          bar.style.transition = 'opacity 0.5s';
+          setTimeout(() => bar.remove(), 500);
+        }, 800);
+        return;
       }
-      updateSidebarCloudInfo(lastUploadInfo);
-      removeSyncTip();
-      setTimeout(() => {
-        bar.style.opacity = '0';
-        bar.style.transition = 'opacity 0.5s';
-        setTimeout(() => bar.remove(), 500);
-      }, 800);
-      return;
     }
 
     // ★ 智能下载：优先读取拆分文件（teams/matches/other），回退全量文件
@@ -7876,11 +7883,17 @@ async function autoSyncTransferGist() {
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const gist = await resp.json();
 
-    // 用 updated_at 快速判断是否有更新
+    // ★ v1.0.215 修复：用时间戳比较代替精确字符串匹配
+    // 之前用 gistUpdatedAt === lastKnownUpdate 精确匹配，容易因毫秒差异误判
     const gistUpdatedAt = gist.updated_at;
     const lastKnownUpdate = localStorage.getItem('pgm_transfer_gist_updated_at') || '';
-    if (gistUpdatedAt && lastKnownUpdate && gistUpdatedAt === lastKnownUpdate) {
-      return; // 转会数据没变化，跳过
+    if (gistUpdatedAt && lastKnownUpdate) {
+      const gistTime = new Date(gistUpdatedAt).getTime();
+      const cachedTime = new Date(lastKnownUpdate).getTime();
+      // 如果云端更新时间 <= 缓存时间，说明没有新数据
+      if (!isNaN(gistTime) && !isNaN(cachedTime) && gistTime <= cachedTime) {
+        return; // 转会数据没变化，跳过
+      }
     }
 
     // 下载转会数据
