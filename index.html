@@ -155,7 +155,7 @@
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
     .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:center;justify-content:center}
     .modal-overlay.active{display:flex}
-    .modal{background:white;border-radius:16px;width:calc(100vw - 32px);max-width:calc(100vw - 32px);height:100vh;max-height:100vh;overflow:hidden;padding:20px;animation:slideDown 0.3s ease;display:flex;flex-direction:column}
+    .modal{background:white;border-radius:16px;width:calc(100vw - 32px);max-width:calc(100vw - 32px);height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;overflow-y:auto;overflow-x:hidden;padding:20px;animation:slideDown 0.3s ease;display:flex;flex-direction:column}
     @keyframes slideDown{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
     .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
     .modal-title{font-size:18px;font-weight:700}
@@ -473,13 +473,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 223 };
+const APP_VERSION = { major: 1, minor: 0, patch: 224 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-25';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.224', date: '2026-04-25', items: ['📱 修复手机登录弹窗按钮被虚拟键盘遮挡：modal 改为 overflow-y:auto 支持滚动，使用 dvh 动态视口高度'] },
   { v: '1.0.223', date: '2026-04-25', items: ['🐛 修复出价其他用户看不到（根因）：autoSyncFromCloud 中 304 和主Gist未更新的 early return 跳过了 autoSyncTransferGist，导致转会数据从不同步'] },
   { v: '1.0.222', date: '2026-04-25', items: ['🐛 修复出价其他用户看不到：移除 autoSyncTransferGist 时间跳过逻辑，每次刷新都强制下载转会数据', '🐛 autoCloudUpload 增加诊断输出和 PATCH 响应验证，便于排查同步问题', '🐛 sw.js 对 version.json 强制 no-store'] },
   { v: '1.0.216', date: '2026-04-24', items: ['🎨 转会页面：移除"当前最高价"标签，出价记录最高价改暗红色', '🎨 "预计成交"改为成交倒计时（时/分/秒实时更新），<1h红色/<6h橙色/>6h紫色', '🎨 CA/PA、底价、违约金统一浅灰底色', '🎨 最高出价金额暗红色+14px，其他出价与时间戳同色', '🗑️ 移除主教练"上传云端"按钮（出价/挂牌已自动上传）'] },
