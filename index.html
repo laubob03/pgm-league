@@ -443,10 +443,10 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 208 };
+const APP_VERSION = { major: 1, minor: 0, patch: 209 };
 
 const APP_AUTHOR = 'J.K';
-const APP_BUILD_DATE = '2026-04-23';
+const APP_BUILD_DATE = '2026-04-24';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
@@ -6389,23 +6389,38 @@ async function fetchCloudUploadInfo() {
     const resp = await fetch(GIST_API + '/' + GIST_ID);
     if (!resp.ok) { infoEl.innerHTML = '❌ 无法查询云端信息'; return; }
     const gist = await resp.json();
-    const files = Object.values(gist.files);
-    if (!files.length) { infoEl.innerHTML = '云端暂无数据'; return; }
+    const gistFiles = gist.files;
+    // ★ 优先读取 other_*.json（含 _lastUpload），回退全量文件
+    const otherKey = Object.keys(gistFiles).find(f => f.startsWith('other_'));
     let data;
-    let dataContent;
-    const mf = files[0];
-    // 大文件Gist会截断content，必须用raw_url
-    if (mf.truncated || !mf.content) {
-      if (!mf.raw_url) { infoEl.innerHTML = '⚠️ 云端数据过大且无法获取'; return; }
-      const rawR = await fetch(mf.raw_url);
-      if (!rawR.ok) { infoEl.innerHTML = '⚠️ 获取完整数据失败'; return; }
-      dataContent = await rawR.text();
+    if (otherKey) {
+      const mf = gistFiles[otherKey];
+      if (mf.truncated || !mf.content) {
+        if (!mf.raw_url) { infoEl.innerHTML = '⚠️ 云端数据过大且无法获取'; return; }
+        const rawR = await fetch(mf.raw_url);
+        if (!rawR.ok) { infoEl.innerHTML = '⚠️ 获取完整数据失败'; return; }
+        data = JSON.parse(await rawR.text());
+      } else {
+        data = JSON.parse(mf.content);
+      }
     } else {
-      dataContent = mf.content;
-    }
-    try { data = JSON.parse(dataContent); } catch(e) {
-      infoEl.innerHTML = '⚠️ 云端数据已损坏，请联系管理员重新上传';
-      return;
+      // 旧格式：全量文件
+      const files = Object.values(gistFiles);
+      if (!files.length) { infoEl.innerHTML = '云端暂无数据'; return; }
+      const mf = files[0];
+      let dataContent;
+      if (mf.truncated || !mf.content) {
+        if (!mf.raw_url) { infoEl.innerHTML = '⚠️ 云端数据过大且无法获取'; return; }
+        const rawR = await fetch(mf.raw_url);
+        if (!rawR.ok) { infoEl.innerHTML = '⚠️ 获取完整数据失败'; return; }
+        dataContent = await rawR.text();
+      } else {
+        dataContent = mf.content;
+      }
+      try { data = JSON.parse(dataContent); } catch(e) {
+        infoEl.innerHTML = '⚠️ 云端数据已损坏，请联系管理员重新上传';
+        return;
+      }
     }
     if (data._lastUpload) {
       const lu = data._lastUpload;
@@ -6885,7 +6900,7 @@ async function recorderUpload() {
     };
 
     // 步骤1：上传到独立 Gist
-    const dataStr = safeStringify(leagueData, 2);
+    const dataStr = safeStringify(leagueData); // ★ minify
     if (!dataStr) { hideSyncProgress(); showToast('数据序列化失败，请检查数据'); return; }
     showSyncProgress('upload', 2);
     let recorderGistId = getRecorderGistId();
@@ -6932,21 +6947,48 @@ async function recorderUpload() {
         const mainResp = await fetch(GIST_API + '/' + GIST_ID);
         if (mainResp.ok) {
           const mainGist = await mainResp.json();
-          const mainFiles = Object.values(mainGist.files);
           let mainState = null;
-          if (mainFiles.length > 0) {
-            const mf = mainFiles[0];
+          const mainGistFiles = mainGist.files;
+          // ★ 智能读取：优先拆分文件，回退全量文件
+          const teamsKey = Object.keys(mainGistFiles).find(f => f.startsWith('teams_'));
+          const matchesKey = Object.keys(mainGistFiles).find(f => f.startsWith('matches_'));
+          const otherKey = Object.keys(mainGistFiles).find(f => f.startsWith('other_'));
+
+          if (teamsKey && matchesKey && otherKey) {
             try {
-              // 大文件Gist会截断content，必须用raw_url
-              if (mf.truncated || !mf.content) {
-                if (mf.raw_url) {
-                  const rawR = await fetch(mf.raw_url);
-                  if (rawR.ok) mainState = JSON.parse(await rawR.text());
+              const fetchRaw = async (fileObj) => {
+                if (!fileObj) return null;
+                if (fileObj.truncated || !fileObj.content) {
+                  if (fileObj.raw_url) { const r = await fetch(fileObj.raw_url); return r.ok ? JSON.parse(await r.text()) : null; }
+                  return null;
                 }
-              } else {
-                mainState = JSON.parse(mf.content);
-              }
-            } catch(e) { console.warn('主Gist数据解析失败，使用本地数据'); }
+                return JSON.parse(fileObj.content);
+              };
+              const [tArr, mArr, oObj] = await Promise.all([
+                fetchRaw(mainGistFiles[teamsKey]),
+                fetchRaw(mainGistFiles[matchesKey]),
+                fetchRaw(mainGistFiles[otherKey])
+              ]);
+              mainState = oObj || {};
+              if (tArr) mainState.teams = tArr;
+              if (mArr) mainState.matches = mArr;
+            } catch(e) { console.warn('主Gist拆分数据解析失败，使用本地数据'); }
+          } else {
+            // 旧格式：全量单文件
+            const mainFiles = Object.values(mainGistFiles);
+            if (mainFiles.length > 0) {
+              const mf = mainFiles[0];
+              try {
+                if (mf.truncated || !mf.content) {
+                  if (mf.raw_url) {
+                    const rawR = await fetch(mf.raw_url);
+                    if (rawR.ok) mainState = JSON.parse(await rawR.text());
+                  }
+                } else {
+                  mainState = JSON.parse(mf.content);
+                }
+              } catch(e) { console.warn('主Gist数据解析失败，使用本地数据'); }
+            }
           }
           if (!mainState) {
             // 主Gist解析失败，用本地state深拷贝
@@ -6981,12 +7023,18 @@ async function recorderUpload() {
             role: state.currentUser ? (state.currentUser.isStatsRecorder ? '统计员' : '数据员') : '未知',
             at: new Date().toISOString()
           };
-          // 安全序列化
-          const mainDataStr = safeStringify(mainState, 2);
+          // 安全序列化（★ minify：无缩进）
+          const mainDataStr = safeStringify(mainState);
           if (!mainDataStr) { showToast('合并数据序列化失败'); } else {
             const mainFilename = 'pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json';
             const mainBody = { description: 'PGM足球经理联赛数据 - 自动同步', files: {} };
             for (const fname of Object.keys(mainGist.files)) { mainBody.files[fname] = null; }
+            // ★ 拆分文件 + 保留全量兼容文件
+            const dStr = new Date().toISOString().slice(0, 10);
+            mainBody.files['teams_' + dStr + '.json'] = { content: safeStringify(mainState.teams || []) || '[]' };
+            mainBody.files['matches_' + dStr + '.json'] = { content: safeStringify(mainState.matches || []) || '[]' };
+            const mainOther = Object.assign({}, mainState); delete mainOther.teams; delete mainOther.matches;
+            mainBody.files['other_' + dStr + '.json'] = { content: safeStringify(mainOther) || '{}' };
             mainBody.files[mainFilename] = { content: mainDataStr };
             const patchResp = await fetch(GIST_API + '/' + GIST_ID, { method: 'PATCH', headers, body: JSON.stringify(mainBody) });
             if (patchResp.ok) {
@@ -7035,10 +7083,22 @@ async function syncUpload() {
       role: state.currentUser ? (state.currentUser.isSuperAdmin ? '超级管理员' : (state.currentUser.isStatsRecorder ? '统计员' : '数据员')) : '未知',
       at: new Date().toISOString()
     };
-    const dataStr = safeStringify(uploadData, 2);
+    const dataStr = safeStringify(uploadData); // ★ minify: 无缩进，省 ~74KB
     if (!dataStr) { showToast('数据序列化失败，请检查数据'); return; }
     showSyncProgress('upload', 2);
-    const filename = 'pgm_league_data_' + new Date().toISOString().slice(0, 10) + '.json';
+    const dateStr = new Date().toISOString().slice(0, 10);
+    // ★ 拆分多文件上传：teams / matches / cups+other，下载时按需取
+    const splitFiles = {};
+    const teamsStr = safeStringify(uploadData.teams || []);
+    const matchesStr = safeStringify(uploadData.matches || []);
+    const otherData = Object.assign({}, uploadData);
+    delete otherData.teams; delete otherData.matches;
+    const otherStr = safeStringify(otherData);
+    splitFiles['teams_' + dateStr + '.json'] = { content: teamsStr || '[]' };
+    splitFiles['matches_' + dateStr + '.json'] = { content: matchesStr || '[]' };
+    splitFiles['other_' + dateStr + '.json'] = { content: otherStr || '{}' };
+    // ★ 同时保留全量文件用于兼容旧版客户端
+    splitFiles['pgm_league_data_' + dateStr + '.json'] = { content: dataStr };
     const headers = {
       'Authorization': 'Bearer ' + token,
       'Accept': 'application/vnd.github.v3+json',
@@ -7055,9 +7115,10 @@ async function syncUpload() {
         const gist = await getResp.json();
         const body = { description: 'PGM足球经理联赛数据 - 自动同步', files: {} };
         for (const fname of Object.keys(gist.files)) {
-          body.files[fname] = null;
+          body.files[fname] = null; // 删除旧文件
         }
-        body.files[filename] = { content: dataStr };
+        // ★ 写入拆分后的多文件
+        Object.assign(body.files, splitFiles);
 
         const resp = await fetch(GIST_API + '/' + GIST_ID, {
           method: 'PATCH',
@@ -7088,7 +7149,7 @@ async function syncUpload() {
       const body = {
         description: 'PGM足球经理联赛数据 - 自动同步',
         public: true,
-        files: { [filename]: { content: dataStr } }
+        files: splitFiles
       };
 
       const resp = await fetch(GIST_API, {
@@ -7150,7 +7211,7 @@ async function autoCloudUpload() {
         trigger: 'auto'
       }
     };
-    const dataStr = safeStringify(uploadData, 2);
+    const dataStr = safeStringify(uploadData); // ★ minify
     if (!dataStr) { console.error('autoCloudUpload: 数据序列化失败'); return; }
 
     const filename = 'pgm_transfer_data_' + new Date().toISOString().slice(0, 10) + '.json';
@@ -7214,28 +7275,53 @@ async function syncDownload() {
     }
     const gist = await resp.json();
     
-    // 找到数据文件
-    const files = gist.files;
-    const dataFile = Object.values(files)[0];
-    if (!dataFile) throw new Error('云端数据为空');
+    // ★ 智能下载：优先读取拆分文件，回退全量文件
+    const gistFiles = gist.files;
+    const teamsFile = Object.keys(gistFiles).find(f => f.startsWith('teams_'));
+    const matchesFile = Object.keys(gistFiles).find(f => f.startsWith('matches_'));
+    const otherFile = Object.keys(gistFiles).find(f => f.startsWith('other_'));
     
-    // 关键：Gist API对大文件会截断content，必须用raw_url获取完整内容
-    let content;
-    if (dataFile.truncated || !dataFile.content) {
-      if (!dataFile.raw_url) throw new Error('云端数据文件过大且无raw_url，请联系管理员');
-      showToast('数据较大，正在获取完整内容...');
-      const rawResp = await fetch(dataFile.raw_url);
-      if (!rawResp.ok) throw new Error('获取完整数据失败 ' + rawResp.status);
-      content = await rawResp.text();
+    let cloudData;
+    if (teamsFile && matchesFile && otherFile) {
+      const fetchRaw = async (fileObj) => {
+        if (!fileObj) return null;
+        if (fileObj.truncated || !fileObj.content) {
+          if (!fileObj.raw_url) throw new Error('no raw_url');
+          const r = await fetch(fileObj.raw_url);
+          if (!r.ok) throw new Error('获取数据失败 ' + r.status);
+          return JSON.parse(await r.text());
+        }
+        return JSON.parse(fileObj.content);
+      };
+      const [teamsArr, matchesArr, otherObj] = await Promise.all([
+        fetchRaw(gistFiles[teamsFile]),
+        fetchRaw(gistFiles[matchesFile]),
+        fetchRaw(gistFiles[otherFile])
+      ]);
+      cloudData = otherObj || {};
+      if (teamsArr) cloudData.teams = teamsArr;
+      if (matchesArr) cloudData.matches = matchesArr;
     } else {
-      content = dataFile.content;
+      // 旧格式：全量单文件
+      const dataFile = Object.values(gistFiles)[0];
+      if (!dataFile) throw new Error('云端数据为空');
+      let content;
+      if (dataFile.truncated || !dataFile.content) {
+        if (!dataFile.raw_url) throw new Error('云端数据文件过大且无raw_url，请联系管理员');
+        showToast('数据较大，正在获取完整内容...');
+        const rawResp = await fetch(dataFile.raw_url);
+        if (!rawResp.ok) throw new Error('获取完整数据失败 ' + rawResp.status);
+        content = await rawResp.text();
+      } else {
+        content = dataFile.content;
+      }
+      if (!content || !content.trim()) throw new Error('云端数据为空');
+      cloudData = JSON.parse(content);
     }
-    if (!content || !content.trim()) throw new Error('云端数据为空');
     
     // 解析JSON
-    let cloudData;
     try {
-      cloudData = JSON.parse(content);
+      if (!cloudData) throw new Error('empty');
     } catch(parseErr) {
       throw new Error('云端数据已损坏，请联系管理员重新上传（' + parseErr.message + '）');
     }
@@ -7517,11 +7603,39 @@ async function autoSyncFromCloud() {
   try {
     inner.style.width = '30%';
 
-    const resp = await fetch(GIST_API + '/' + GIST_ID);
+    // ★ 优化：使用 ETag/If-None-Match 条件请求，无变化时零流量
+    const cachedEtag = localStorage.getItem('pgm_gist_etag') || '';
+    const headers = {};
+    if (cachedEtag) headers['If-None-Match'] = cachedEtag;
+
+    const resp = await fetch(GIST_API + '/' + GIST_ID, { headers });
+
+    // ★ 304 = 云端无变化，零字节 body，直接返回
+    if (resp.status === 304) {
+      inner.style.width = '100%';
+      inner.style.background = 'linear-gradient(90deg,#66bb6a,#43a047)';
+      const cachedHint = localStorage.getItem('pgm_last_upload_hint');
+      let lastUploadInfo = null;
+      if (cachedHint) { try { lastUploadInfo = JSON.parse(cachedHint); } catch(e) {} }
+      updateSidebarCloudInfo(lastUploadInfo);
+      removeSyncTip();
+      setTimeout(() => {
+        bar.style.opacity = '0';
+        bar.style.transition = 'opacity 0.5s';
+        setTimeout(() => bar.remove(), 500);
+      }, 400);
+      console.log('autoSyncFromCloud: 304 Not Modified (ETag hit, 0 bytes)');
+      return;
+    }
+
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const gist = await resp.json();
 
     inner.style.width = '50%';
+
+    // ★ 保存 ETag 供下次条件请求
+    const newEtag = resp.headers.get('ETag');
+    if (newEtag) localStorage.setItem('pgm_gist_etag', newEtag);
 
     // 用 Gist 的 updated_at 快速判断是否有更新（无需下载完整数据）
     const gistUpdatedAt = gist.updated_at; // ISO 8601
@@ -7547,29 +7661,60 @@ async function autoSyncFromCloud() {
       return;
     }
 
-    const dataFile = Object.values(gist.files)[0];
-    if (!dataFile) throw new Error('no data');
-
-    inner.style.width = '70%';
-
-    // 用 raw_url 获取完整数据
-    let content;
-    if (dataFile.truncated || !dataFile.content) {
-      if (!dataFile.raw_url) throw new Error('no raw_url');
-      const rawResp = await fetch(dataFile.raw_url);
-      if (!rawResp.ok) throw new Error('raw fail');
-      content = await rawResp.text();
-    } else {
-      content = dataFile.content;
-    }
-
-    inner.style.width = '85%';
+    // ★ 智能下载：优先读取拆分文件（teams/matches/other），回退全量文件
+    const gistFiles = gist.files;
+    const teamsFile = Object.keys(gistFiles).find(f => f.startsWith('teams_'));
+    const matchesFile = Object.keys(gistFiles).find(f => f.startsWith('matches_'));
+    const otherFile = Object.keys(gistFiles).find(f => f.startsWith('other_'));
 
     let cloudData;
-    try {
+    if (teamsFile && matchesFile && otherFile) {
+      // ★ 新格式：拆分文件，按需下载
+      inner.style.width = '60%';
+
+      // 用 raw_url 下载各分片
+      const fetchRaw = async (fileObj) => {
+        if (!fileObj) return null;
+        if (fileObj.truncated || !fileObj.content) {
+          if (!fileObj.raw_url) throw new Error('no raw_url');
+          const r = await fetch(fileObj.raw_url);
+          if (!r.ok) throw new Error('raw fail');
+          return JSON.parse(await r.text());
+        }
+        return JSON.parse(fileObj.content);
+      };
+
+      const [teamsArr, matchesArr, otherObj] = await Promise.all([
+        fetchRaw(gistFiles[teamsFile]),
+        fetchRaw(gistFiles[matchesFile]),
+        fetchRaw(gistFiles[otherFile])
+      ]);
+
+      inner.style.width = '85%';
+
+      // 组装完整 state
+      cloudData = otherObj || {};
+      if (teamsArr) cloudData.teams = teamsArr;
+      if (matchesArr) cloudData.matches = matchesArr;
+    } else {
+      // 旧格式：全量单文件（向后兼容）
+      const dataFile = Object.values(gistFiles)[0];
+      if (!dataFile) throw new Error('no data');
+
+      inner.style.width = '70%';
+
+      let content;
+      if (dataFile.truncated || !dataFile.content) {
+        if (!dataFile.raw_url) throw new Error('no raw_url');
+        const rawResp = await fetch(dataFile.raw_url);
+        if (!rawResp.ok) throw new Error('raw fail');
+        content = await rawResp.text();
+      } else {
+        content = dataFile.content;
+      }
+
+      inner.style.width = '85%';
       cloudData = JSON.parse(content);
-    } catch(e) {
-      throw new Error('json broken');
     }
 
     if (!cloudData.teams || !cloudData.matches) throw new Error('bad format');
@@ -7667,9 +7812,25 @@ async function autoSyncTransferGist() {
   if (!TRANSFER_GIST_ID) return; // 无转会 Gist 则跳过
 
   try {
-    const resp = await fetch(GIST_API + '/' + TRANSFER_GIST_ID);
+    // ★ 优化：使用 ETag/If-None-Match 条件请求，无变化时零流量
+    const cachedEtag = localStorage.getItem('pgm_transfer_gist_etag') || '';
+    const headers = {};
+    if (cachedEtag) headers['If-None-Match'] = cachedEtag;
+
+    const resp = await fetch(GIST_API + '/' + TRANSFER_GIST_ID, { headers });
+
+    // ★ 304 = 云端无变化，零字节 body
+    if (resp.status === 304) {
+      console.log('autoSyncTransferGist: 304 Not Modified (ETag hit, 0 bytes)');
+      return;
+    }
+
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const gist = await resp.json();
+
+    // ★ 保存 ETag
+    const newEtag = resp.headers.get('ETag');
+    if (newEtag) localStorage.setItem('pgm_transfer_gist_etag', newEtag);
 
     // 用 updated_at 快速判断是否有更新
     const gistUpdatedAt = gist.updated_at;
