@@ -445,7 +445,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 217 };
+const APP_VERSION = { major: 1, minor: 0, patch: 218 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-24';
@@ -3573,6 +3573,24 @@ function renderTransferMarket() {
     const listTeam = state.teams.find(t => t.id === listing.teamId);
     const listCoachName = listTeam ? listTeam.coach : listing.coachName;
 
+    // ★ 回查违约金：listing可能缺少releaseClause字段（旧数据），从state.teams或PLAYERS_DB补查
+    let rcValue = listing.releaseClause;
+    if (!rcValue || rcValue <= 0) {
+      // 先从state.teams中查找
+      for (const t of (state.teams || [])) {
+        if (!t.players) continue;
+        const p = t.players.find(x => x.uid == listing.playerUid);
+        if (p && p.releaseClause > 0) { rcValue = p.releaseClause; break; }
+      }
+      // 如果还没找到，从PLAYERS_DB查找
+      if (!rcValue || rcValue <= 0) {
+        for (const teamName of Object.keys(PLAYERS_DB || {})) {
+          const p = PLAYERS_DB[teamName].find(x => x.uid == listing.playerUid);
+          if (p && p.releaseClause > 0) { rcValue = p.releaseClause; break; }
+        }
+      }
+    }
+
     html += `<div style="background:#fff;border:1px solid #e0e0e0;border-radius:12px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06)">`;
     // 顶部：球队 + 球员信息
     html += `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:linear-gradient(135deg,#fafafa,#f5f5f5);border-bottom:1px solid #eee">`;
@@ -3589,7 +3607,7 @@ function renderTransferMarket() {
     // ★ v1.0.215: CA/PA、底价、违约金 统一浅灰底色
     html += `<span style="font-size:12px;background:#f0f0f0;color:#555;padding:2px 8px;border-radius:4px;font-weight:600">CA/PA：${listing.ca}/${listing.pa}</span>`;
     html += `<span style="font-size:12px;background:#f0f0f0;color:#555;padding:2px 8px;border-radius:4px;font-weight:600">底价 ${listing.basePrice}M</span>`;
-    html += `<span style="font-size:12px;background:#f0f0f0;color:#555;padding:2px 8px;border-radius:4px;font-weight:600">违约金 ${listing.releaseClause > 0 ? listing.releaseClause + 'M' : '—'}</span>`;
+    html += `<span style="font-size:12px;background:#f0f0f0;color:#555;padding:2px 8px;border-radius:4px;font-weight:600">违约金 ${rcValue > 0 ? rcValue + 'M' : '—'}</span>`;
     // ★ v1.0.215: 移除"当前最高价"标签（出价记录里已有最高价暗红色标识）
     // 成交倒计时（醒目夸张设计）
     const deadline = getTransferDeadline(listing);
