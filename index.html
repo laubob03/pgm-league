@@ -473,14 +473,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 221 };
+const APP_VERSION = { major: 1, minor: 0, patch: 222 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-25';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.221', date: '2026-04-25', items: ['🐛 彻底修复版本更新死锁：强制更新按钮改为 await 注销 SW + 清缓存后再刷新', '🐛 version.json notice 注入自动更新脚本，卡在旧版的用户无需手动操作', '🐛 SW 对 version.json 请求强制 no-store，防止缓存返回旧版本信息'] },
+  { v: '1.0.222', date: '2026-04-25', items: ['🐛 修复出价其他用户看不到：移除 autoSyncTransferGist 时间跳过逻辑，每次刷新都强制下载转会数据', '🐛 autoCloudUpload 增加诊断输出和 PATCH 响应验证，便于排查同步问题', '🐛 sw.js 对 version.json 强制 no-store'] },
   { v: '1.0.216', date: '2026-04-24', items: ['🎨 转会页面：移除"当前最高价"标签，出价记录最高价改暗红色', '🎨 "预计成交"改为成交倒计时（时/分/秒实时更新），<1h红色/<6h橙色/>6h紫色', '🎨 CA/PA、底价、违约金统一浅灰底色', '🎨 最高出价金额暗红色+14px，其他出价与时间戳同色', '🗑️ 移除主教练"上传云端"按钮（出价/挂牌已自动上传）'] },
   { v: '1.0.215', date: '2026-04-24', items: ['🐛 修复出价后其他用户看不到：TRANSFER_GIST_ID 改为硬编码固定值，防止每个浏览器创建各自的 Gist 导致数据分散', '🐛 修复 updated_at 精确匹配误判：改为时间戳比较（<=），避免毫秒差异导致跳过下载', '🐛 autoCloudUpload 上传后更新 pgm_transfer_gist_updated_at 缓存', '🗑️ 清理旧的动态 TRANSFER_GIST_ID 缓存'] },
   { v: '1.0.214', date: '2026-04-24', items: ['🐛 修复刷新页面不自动下载云端数据：移除 ETag/If-None-Match 缓存（代理/CDN 环境下 304 误判导致跳过下载）', '🐛 修复时间戳比较：字符串拼接改为 Date 时间戳比较，避免时区/格式问题', '⚡ 使用内置 Token 请求 GitHub API（限流从60→5000次/小时），防止频繁刷新被限流', '⚡ fetch 添加 cache:no-store 防止浏览器缓存返回过期数据', '🔔 同步失败不再静默，首次使用时弹 Toast 提醒用户'] },
@@ -7357,8 +7357,11 @@ async function autoCloudUpload() {
         trigger: 'auto'
       }
     };
+    // ★ v1.0.222: 诊断输出，帮助排查出价同步问题
+    const bidCount = (uploadData.transferMarket || []).reduce((sum, l) => sum + (l.bids || []).length, 0);
+    console.log(`autoCloudUpload: 准备上传 ${uploadData.transferMarket.length} 个挂牌, ${bidCount} 个出价, ${uploadData.pendingTransfers.length} 个待转会`);
     const dataStr = safeStringify(uploadData); // ★ minify
-    if (!dataStr) { console.error('autoCloudUpload: 数据序列化失败'); return; }
+    if (!dataStr) { console.error('autoCloudUpload: 数据序列化失败'); showToast('⚠️ 数据序列化失败，无法同步'); return; }
 
     const filename = 'pgm_transfer_data_' + new Date().toISOString().slice(0, 10) + '.json';
     const headers = {
@@ -7384,12 +7387,24 @@ async function autoCloudUpload() {
         console.warn('autoCloudUpload: GET现有Gist失败，仅上传新文件', getErr.message);
       }
       body.files[filename] = { content: dataStr };
-      const resp = await fetch(GIST_API + '/' + TRANSFER_GIST_ID, { method: 'PATCH', headers, body: JSON.stringify(body) });
+      const patchBody = JSON.stringify(body);
+      console.log(`autoCloudUpload: PATCH body size=${patchBody.length} bytes, files=[${Object.keys(body.files).join(',')}]`);
+      const resp = await fetch(GIST_API + '/' + TRANSFER_GIST_ID, { method: 'PATCH', headers, body: patchBody });
       if (!resp.ok) {
         const errText = await resp.text().catch(() => '');
         console.error('autoCloudUpload: 上传失败', resp.status, errText);
         showToast('⚠️ 云端同步失败 (HTTP ' + resp.status + ')');
         return;
+      }
+      // ★ v1.0.222: 验证 PATCH 响应，确认文件已写入
+      const patchResult = await resp.json().catch(() => null);
+      if (patchResult && patchResult.files) {
+        const writtenFile = patchResult.files[filename];
+        if (writtenFile) {
+          console.log(`autoCloudUpload: 上传确认 - ${filename} size=${writtenFile.size}`);
+        } else {
+          console.warn('autoCloudUpload: PATCH返回200但文件未找到，可能是GitHub API延迟');
+        }
       }
     } else {
       // 理论上不会走到这里（TRANSFER_GIST_ID 已硬编码），但保留创建逻辑作为安全网
@@ -8058,16 +8073,9 @@ async function autoSyncTransferGist() {
 
     // ★ v1.0.215 修复：用时间戳比较代替精确字符串匹配
     // 之前用 gistUpdatedAt === lastKnownUpdate 精确匹配，容易因毫秒差异误判
+    // ★ v1.0.222: 转会数据很小（几KB），每次都强制下载，不做时间跳过
+    // 之前的时间比较逻辑在本地时钟偏差时会导致跳过下载，出价数据丢失
     const gistUpdatedAt = gist.updated_at;
-    const lastKnownUpdate = localStorage.getItem('pgm_transfer_gist_updated_at') || '';
-    if (gistUpdatedAt && lastKnownUpdate) {
-      const gistTime = new Date(gistUpdatedAt).getTime();
-      const cachedTime = new Date(lastKnownUpdate).getTime();
-      // 如果云端更新时间 <= 缓存时间，说明没有新数据
-      if (!isNaN(gistTime) && !isNaN(cachedTime) && gistTime <= cachedTime) {
-        return; // 转会数据没变化，跳过
-      }
-    }
 
     // 下载转会数据
     // ★ v1.0.218 修复：取文件名日期最新的文件，而非 Object.values()[0]
@@ -8089,6 +8097,11 @@ async function autoSyncTransferGist() {
 
     const cloudData = JSON.parse(content);
     if (!cloudData.transferMarket && !cloudData.pendingTransfers) throw new Error('bad format');
+
+    // ★ v1.0.222: 诊断输出
+    const cloudBidCount = (cloudData.transferMarket || []).reduce((sum, l) => sum + (l.bids || []).length, 0);
+    const localBidCount = (state.transferMarket || []).reduce((sum, l) => sum + (l.bids || []).length, 0);
+    console.log(`autoSyncTransferGist: 云端 ${cloudData.transferMarket?.length||0} 个挂牌 ${cloudBidCount} 个出价, 本地 ${state.transferMarket?.length||0} 个挂牌 ${localBidCount} 个出价`);
 
     // 智能合并：云端转会数据与本地数据取并集（防止并发覆盖丢失）
     if (cloudData.transferMarket) {
