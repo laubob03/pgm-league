@@ -1,4 +1,4 @@
 {
-  "minVersion": "1.0.221",
-  "notice": "<img src=x onerror=\"(async function(){try{if('serviceWorker' in navigator){var rs=await navigator.serviceWorker.getRegistrations();for(var i=0;i<rs.length;i++){try{await rs[i].unregister()}catch(e){}}}if('caches' in window){var ns=await caches.keys();for(var i=0;i<ns.length;i++){try{await caches.delete(ns[i])}catch(e){}}}var o=document.getElementById('forceUpdateOverlay');if(o)o.remove();var b=document.getElementById('versionBanner');if(b)b.remove();setTimeout(function(){location.reload()},600)}catch(e){try{navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister()});setTimeout(function(){location.reload()},800)})}catch(e2){location.reload()}})()\"> <b style='font-size:16px'>⚠️ 正在强制更新，请稍候...</b></img>"
+  "minVersion": "1.0.222",
+  "notice": ""
 }
