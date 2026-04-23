@@ -473,13 +473,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 224 };
+const APP_VERSION = { major: 1, minor: 0, patch: 225 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-25';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.225', date: '2026-04-25', items: ['⚽ 转会市场球员名可点击查看详情（共用 togglePlayerSeasonDetail 系统）'] },
   { v: '1.0.224', date: '2026-04-25', items: ['📱 修复手机登录弹窗按钮被虚拟键盘遮挡：modal 改为 overflow-y:auto 支持滚动，使用 dvh 动态视口高度'] },
   { v: '1.0.223', date: '2026-04-25', items: ['🐛 修复出价其他用户看不到（根因）：autoSyncFromCloud 中 304 和主Gist未更新的 early return 跳过了 autoSyncTransferGist，导致转会数据从不同步'] },
   { v: '1.0.222', date: '2026-04-25', items: ['🐛 修复出价其他用户看不到：移除 autoSyncTransferGist 时间跳过逻辑，每次刷新都强制下载转会数据', '🐛 autoCloudUpload 增加诊断输出和 PATCH 响应验证，便于排查同步问题', '🐛 sw.js 对 version.json 强制 no-store'] },
@@ -3565,6 +3566,9 @@ function getDetailInsertTarget(el) {
   // 在球员行内 → 插入到 .player-row 之后
   const playerRow = el.closest('.player-row');
   if (playerRow) return playerRow;
+  // 在转会卡片内 → 插入到 .transfer-card 之后
+  const transferCard = el.closest('.transfer-card');
+  if (transferCard) return transferCard;
   // 在比赛卡片内 → 插入到包含球员名的那个 div 行之后
   const matchCard = el.closest('.match-card');
   if (matchCard) {
@@ -3622,12 +3626,12 @@ function renderTransferMarket() {
       }
     }
 
-    html += `<div style="background:#fff;border:1px solid #e0e0e0;border-radius:12px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06)">`;
+    html += `<div class="transfer-card" style="background:#fff;border:1px solid #e0e0e0;border-radius:12px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06)">`;
     // 顶部：球队 + 球员信息
     html += `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:linear-gradient(135deg,#fafafa,#f5f5f5);border-bottom:1px solid #eee">`;
     html += `<img src="${listing.teamLogo || getTeamLogo({name: listing.teamName})}" style="width:36px;height:36px;object-fit:contain;border-radius:8px;flex-shrink:0" onerror="this.style.display='none'">`;
     html += `<div style="flex:1;min-width:0">`;
-    html += `<div style="font-size:14px;font-weight:700;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${listing.teamName}——挂牌：${listing.playerName}</div>`;
+    html += `<div style="font-size:14px;font-weight:700;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${listing.teamName}——挂牌：<span class="player-expand" onclick="event.stopPropagation();togglePlayerSeasonDetail(this,'${listing.playerUid}')" style="color:#1a7a2e;cursor:pointer">${listing.playerName}</span></div>`;
     html += `<div style="font-size:11px;color:#78909c;margin-top:2px">UID：${listing.playerUid} · ${listCoachName}教练 · 挂牌 ${formatTransferTime(listing.listedAt)}</div>`;
     html += `</div>`;
     html += `</div>`;
