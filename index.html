@@ -1025,6 +1025,11 @@ function loadState() {
       if (!state.pendingTransfers) state.pendingTransfers = [];
       // 兼容旧版本没有 transferMarket 字段
       if (!state.transferMarket) state.transferMarket = [];
+      // ★ 从 state 恢复 TRANSFER_GIST_ID 到 localStorage 和全局变量
+      if (state._transferGistId) {
+        TRANSFER_GIST_ID = state._transferGistId;
+        localStorage.setItem('pgm_transfer_gist_id', TRANSFER_GIST_ID);
+      }
       // 从比赛记录重新计算所有球员统计，修复历史数据不一致问题
       recalculateAllPlayerStats(state);
       // 同时修复归档赛季数据
@@ -7246,6 +7251,9 @@ async function autoCloudUpload() {
     const now = new Date();
     const timeStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
     localStorage.setItem('pgm_transfer_last_sync_time', timeStr);
+    // ★ 关键修复：把 TRANSFER_GIST_ID 写入 state，这样主数据上传/下载时也能同步
+    state._transferGistId = TRANSFER_GIST_ID;
+    saveState();
     console.log('autoCloudUpload: 转会数据上传成功', timeStr);
     showToast('☁️ 已自动同步到云端');
   } catch(e) {
@@ -7331,6 +7339,11 @@ async function syncDownload() {
     state = cloudData;
     delete state._lastUpload; // 清理云端元数据，不保存到本地
     state.currentUser = loginUser;
+    // ★ 从云端数据恢复 TRANSFER_GIST_ID
+    if (state._transferGistId) {
+      TRANSFER_GIST_ID = state._transferGistId;
+      localStorage.setItem('pgm_transfer_gist_id', TRANSFER_GIST_ID);
+    }
     // 兼容旧数据没有 logo/teamUid - 自动补充
     state.teams.forEach(t => {
       if (TEAM_LOGOS && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
