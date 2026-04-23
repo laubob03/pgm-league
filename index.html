@@ -444,14 +444,15 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 213 };
+const APP_VERSION = { major: 1, minor: 0, patch: 214 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-24';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.212', date: '2026-04-24', items: ['🐛 修复其他用户看不到出价记录（TRANSFER_GIST_ID未写入state，主数据同步丢失）'] },
+  { v: '1.0.214', date: '2026-04-24', items: ['🐛 修复刷新页面不自动下载云端数据：移除 ETag/If-None-Match 缓存（代理/CDN 环境下 304 误判导致跳过下载）', '🐛 修复时间戳比较：字符串拼接改为 Date 时间戳比较，避免时区/格式问题', '⚡ 使用内置 Token 请求 GitHub API（限流从60→5000次/小时），防止频繁刷新被限流', '⚡ fetch 添加 cache:no-store 防止浏览器缓存返回过期数据', '🔔 同步失败不再静默，首次使用时弹 Toast 提醒用户'] },
+  { v: '1.0.213', date: '2026-04-24', items: ['🐛 修复其他用户看不到出价记录（TRANSFER_GIST_ID未写入state，主数据同步丢失）'] },
   { v: '1.0.211', date: '2026-04-24', items: ['🐛 修复教练出价/挂牌后未自动上传云端（Token链缺少RECORDER_BUILTIN_TOKEN）'] },
   { v: '1.0.210', date: '2026-04-24', items: ['💰 主教练出价不限次数，可连续加价直到成交'] },
   { v: '1.0.209', date: '2026-04-24', items: ['⚡ ETag条件请求：日常打开零流量（99KB→0KB）', '📦 Gist拆多文件上传：teams/matches/other分片+全量兼容', '🗜️ JSON minify：上传体积缩减74KB'] },
@@ -6038,6 +6039,10 @@ let GIST_ID = localStorage.getItem('pgm_gist_id') || '4a08491692074f35f0f2320434
 let TRANSFER_GIST_ID = localStorage.getItem('pgm_transfer_gist_id') || '';
 let GITHUB_TOKEN = localStorage.getItem('pgm_github_token') || '';
 
+// ★ 清理已废弃的 ETag 缓存（v1.0.214 移除了 ETag 机制，旧缓存可能导致误判）
+localStorage.removeItem('pgm_gist_etag');
+localStorage.removeItem('pgm_transfer_gist_etag');
+
 const _rt = ['REDACTED_1','REDACTED_2','REDACTED_3'];
 const RECORDER_BUILTIN_TOKEN = _rt.join('');
 
@@ -7614,15 +7619,22 @@ async function autoSyncFromCloud() {
   try {
     inner.style.width = '30%';
 
-    // ★ 优化：使用 ETag/If-None-Match 条件请求，无变化时零流量
-    const cachedEtag = localStorage.getItem('pgm_gist_etag') || '';
-    const headers = {};
-    if (cachedEtag) headers['If-None-Match'] = cachedEtag;
+    // ★ 修复：移除 ETag/If-None-Match 机制，直接请求 Gist 元数据
+    // ETag 在代理/CDN 环境下容易误判 304 导致跳过下载
+    // 改为始终获取 Gist 元数据（几KB），再通过 updated_at 判断是否需要下载完整数据
+    const fetchHeaders = { 'Accept': 'application/vnd.github.v3+json' };
+    // ★ 使用内置 Token 提升 API 限流（60→5000次/小时），防止频繁刷新被限流
+    const token = GITHUB_TOKEN || RECORDER_BUILTIN_TOKEN;
+    if (token) fetchHeaders['Authorization'] = 'Bearer ' + token;
 
-    const resp = await fetch(GIST_API + '/' + GIST_ID, { headers });
+    const resp = await fetch(GIST_API + '/' + GIST_ID, {
+      headers: fetchHeaders,
+      cache: 'no-store'  // ★ 防止浏览器 HTTP 缓存返回过期数据
+    });
 
-    // ★ 304 = 云端无变化，零字节 body，直接返回
     if (resp.status === 304) {
+      // 304 只在带 If-None-Match 时才可能出现，这里理论上不应该出现
+      // 但作为安全网，仍然处理
       inner.style.width = '100%';
       inner.style.background = 'linear-gradient(90deg,#66bb6a,#43a047)';
       const cachedHint = localStorage.getItem('pgm_last_upload_hint');
@@ -7635,18 +7647,19 @@ async function autoSyncFromCloud() {
         bar.style.transition = 'opacity 0.5s';
         setTimeout(() => bar.remove(), 500);
       }, 400);
-      console.log('autoSyncFromCloud: 304 Not Modified (ETag hit, 0 bytes)');
       return;
     }
 
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    if (!resp.ok) {
+      // ★ 增强：403 通常是 API 限流，给出明确提示
+      if (resp.status === 403) {
+        console.warn('autoSyncFromCloud: GitHub API 限流(403)，请稍后再试');
+      }
+      throw new Error('HTTP ' + resp.status);
+    }
     const gist = await resp.json();
 
     inner.style.width = '50%';
-
-    // ★ 保存 ETag 供下次条件请求
-    const newEtag = resp.headers.get('ETag');
-    if (newEtag) localStorage.setItem('pgm_gist_etag', newEtag);
 
     // 用 Gist 的 updated_at 快速判断是否有更新（无需下载完整数据）
     const gistUpdatedAt = gist.updated_at; // ISO 8601
@@ -7655,8 +7668,6 @@ async function autoSyncFromCloud() {
       // 云端没有变化，跳过下载，直接显示信息
       inner.style.width = '100%';
       inner.style.background = 'linear-gradient(90deg,#66bb6a,#43a047)';
-      // 从 Gist description 中提取上传信息（如果有）
-      // 从 localStorage 读取上次缓存的上传信息
       const cachedHint = localStorage.getItem('pgm_last_upload_hint');
       let lastUploadInfo = null;
       if (cachedHint) {
@@ -7744,19 +7755,33 @@ async function autoSyncFromCloud() {
     }
 
     // 判断是否需要覆盖本地数据
-    // 智能比较：用 _lastUpload.at 精确到分钟
+    // ★ 修复：统一转换为时间戳（毫秒）比较，避免字符串拼接导致的时区/格式问题
     const localSync = localStorage.getItem('pgm_last_sync_time') || '';
     const cloudUpload = lastUploadInfo ? lastUploadInfo.at : '';
     let needUpdate = true;
     if (localSync && cloudUpload) {
-      const localDate = localSync.replace(/[-: ]/g, '').slice(0, 12); // YYYYMMDDHHmm
-      const cloudDate = new Date(cloudUpload);
-      const cloudStr = cloudDate.getFullYear() +
-        String(cloudDate.getMonth()+1).padStart(2,'0') +
-        String(cloudDate.getDate()).padStart(2,'0') +
-        String(cloudDate.getHours()).padStart(2,'0') +
-        String(cloudDate.getMinutes()).padStart(2,'0');
-      if (localDate >= cloudStr) needUpdate = false;
+      try {
+        // 本地同步时间格式："2026-04-24 15:30"（本地时间，无时区后缀）
+        // ★ 用空格替换解析，手动构造本地时间戳避免浏览器时区解析差异
+        const parts = localSync.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/);
+        let localTs = NaN;
+        if (parts) {
+          const [, y, mo, d, h, mi] = parts.map(Number);
+          localTs = new Date(y, mo - 1, d, h, mi).getTime();
+        } else {
+          // 回退：直接用 Date 解析
+          localTs = new Date(localSync.replace(' ', 'T')).getTime();
+        }
+        // 云端上传时间格式：ISO 8601 UTC "2026-04-24T07:30:00.000Z"
+        const cloudTs = new Date(cloudUpload).getTime();
+        // 比较时间戳（毫秒），云端更新时间 > 本地同步时间则需要更新
+        if (!isNaN(localTs) && !isNaN(cloudTs)) {
+          if (localTs >= cloudTs) needUpdate = false;
+        }
+      } catch(e) {
+        // 解析失败则强制更新
+        console.warn('autoSyncFromCloud: 时间比较解析失败，强制更新', e);
+      }
     }
 
     if (needUpdate) {
@@ -7804,9 +7829,18 @@ async function autoSyncFromCloud() {
     }, 1500);
 
   } catch(e) {
-    // 静默失败，不影响正常使用
-    console.warn('自动同步失败（不影响正常使用）:', e.message);
+    // ★ 修复：不再静默失败，给用户可见反馈
+    console.warn('自动同步失败:', e.message);
+    // 进度条变红色表示失败
+    if (inner) {
+      inner.style.width = '100%';
+      inner.style.background = 'linear-gradient(90deg,#ef5350,#e53935)';
+    }
     removeSyncTip();
+    // 首次使用失败时，特别提示（因为本地没有数据，页面会是空的）
+    if (isFirstTime) {
+      showToast('⚠️ 云端同步失败: ' + e.message + '，请检查网络后刷新重试');
+    }
     setTimeout(() => {
       bar.style.opacity = '0';
       bar.style.transition = 'opacity 0.3s';
@@ -7823,25 +7857,24 @@ async function autoSyncTransferGist() {
   if (!TRANSFER_GIST_ID) return; // 无转会 Gist 则跳过
 
   try {
-    // ★ 优化：使用 ETag/If-None-Match 条件请求，无变化时零流量
-    const cachedEtag = localStorage.getItem('pgm_transfer_gist_etag') || '';
-    const headers = {};
-    if (cachedEtag) headers['If-None-Match'] = cachedEtag;
+    // ★ 修复：移除 ETag/If-None-Match，与主同步函数保持一致
+    const fetchHeaders = { 'Accept': 'application/vnd.github.v3+json' };
+    const token = GITHUB_TOKEN || RECORDER_BUILTIN_TOKEN;
+    if (token) fetchHeaders['Authorization'] = 'Bearer ' + token;
 
-    const resp = await fetch(GIST_API + '/' + TRANSFER_GIST_ID, { headers });
+    const resp = await fetch(GIST_API + '/' + TRANSFER_GIST_ID, {
+      headers: fetchHeaders,
+      cache: 'no-store'
+    });
 
-    // ★ 304 = 云端无变化，零字节 body
+    // 304 只在带 If-None-Match 时才可能出现，这里作为安全网处理
     if (resp.status === 304) {
-      console.log('autoSyncTransferGist: 304 Not Modified (ETag hit, 0 bytes)');
+      console.log('autoSyncTransferGist: 304 Not Modified');
       return;
     }
 
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const gist = await resp.json();
-
-    // ★ 保存 ETag
-    const newEtag = resp.headers.get('ETag');
-    if (newEtag) localStorage.setItem('pgm_transfer_gist_etag', newEtag);
 
     // 用 updated_at 快速判断是否有更新
     const gistUpdatedAt = gist.updated_at;
