@@ -445,7 +445,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 218 };
+const APP_VERSION = { major: 1, minor: 0, patch: 219 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-24';
@@ -7341,11 +7341,18 @@ async function autoCloudUpload() {
     // ★ v1.0.215 修复：始终 PATCH 更新固定的 TRANSFER_GIST_ID，不再动态创建新 Gist
     if (TRANSFER_GIST_ID) {
       // 先 GET 获取已有文件列表，清理旧文件
-      const getResp = await fetch(GIST_API + '/' + TRANSFER_GIST_ID, { headers: { 'Authorization': 'Bearer ' + token } });
       const body = { description: 'PGM转会市场数据 - 自动同步', files: {} };
-      if (getResp.ok) {
-        const gist = await getResp.json();
-        for (const fname of Object.keys(gist.files)) { body.files[fname] = null; }
+      try {
+        const getResp = await fetch(GIST_API + '/' + TRANSFER_GIST_ID, {
+          headers: { 'Authorization': 'Bearer ' + token },
+          cache: 'no-store'
+        });
+        if (getResp.ok) {
+          const gist = await getResp.json();
+          for (const fname of Object.keys(gist.files)) { body.files[fname] = null; }
+        }
+      } catch(getErr) {
+        console.warn('autoCloudUpload: GET现有Gist失败，仅上传新文件', getErr.message);
       }
       body.files[filename] = { content: dataStr };
       const resp = await fetch(GIST_API + '/' + TRANSFER_GIST_ID, { method: 'PATCH', headers, body: JSON.stringify(body) });
@@ -7900,9 +7907,16 @@ async function autoSyncFromCloud() {
     if (needUpdate) {
       // 保留当前登录用户
       const loginUser = state.currentUser;
+      // ★ v1.0.218 修复：转会数据由独立的转会 Gist 管理，不使用主 Gist 中的旧数据
+      // 否则主 Gist 覆盖后，本地新出价丢失，后续 autoSyncTransferGist 合并也不完整
+      const localTransferMarket = state.transferMarket || [];
+      const localPendingTransfers = state.pendingTransfers || [];
       state = cloudData;
       delete state._lastUpload;
       state.currentUser = loginUser;
+      // ★ 转会数据始终以本地 + 转会Gist为准，主Gist中的转会数据已过时
+      state.transferMarket = localTransferMarket;
+      state.pendingTransfers = localPendingTransfers;
       // 兼容旧数据没有 logo/teamUid - 自动补充
       state.teams.forEach(t => {
         if (TEAM_LOGOS && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
@@ -8003,7 +8017,11 @@ async function autoSyncTransferGist() {
     }
 
     // 下载转会数据
-    const dataFile = Object.values(gist.files)[0];
+    // ★ v1.0.218 修复：取文件名日期最新的文件，而非 Object.values()[0]
+    // 之前如果上传时 GET 失败没有清理旧文件，Gist 中会有多个文件，[0] 可能取到旧数据
+    const fileEntries = Object.entries(gist.files);
+    const dataFileEntry = fileEntries.sort((a, b) => b[0].localeCompare(a[0]))[0];
+    const dataFile = dataFileEntry ? dataFileEntry[1] : null;
     if (!dataFile) throw new Error('no data');
 
     let content;
