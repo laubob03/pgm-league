@@ -109,6 +109,9 @@
     .nav-tabs{display:flex;gap:6px}
     .nav-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
     .nav-right-info{display:flex;flex-direction:column;align-items:flex-end;gap:0;line-height:1.3}
+    .nav-center{display:flex;align-items:center;justify-content:center;flex:1;min-width:0}
+    .nav-team-logo{width:30px;height:30px;object-fit:contain;border-radius:6px;transition:transform .15s;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.2))}
+    .nav-team-logo:hover{transform:scale(1.15)}
     .nav-item{display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:none;color:rgba(255,255,255,0.8);font-size:10px;cursor:pointer;padding:4px 6px;border-radius:8px;transition:all 0.2s;flex-shrink:0}
     .nav-item.active{color:#fff;background:rgba(144,238,144,0.4);backdrop-filter:blur(4px)}
     .nav-item-icon{font-size:20px}
@@ -270,6 +273,9 @@
       <span class="cloud-icon">☁️</span>
       <span>上传云端</span>
     </button>
+  </div>
+  <div class="nav-center">
+    <div id="navTeamLogo" style="display:none;cursor:pointer" onclick="goToMyTeam()"></div>
   </div>
   <div class="nav-right">
     <div class="nav-right-info">
@@ -5557,6 +5563,30 @@ function updateNavAndHeader() {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const pageEl = document.getElementById(state.currentPage + 'Page');
   if (pageEl) pageEl.classList.add('active');
+
+  // 更新顶部居中队徽（教练登录时显示）
+  const navTeamLogo = document.getElementById('navTeamLogo');
+  if (navTeamLogo) {
+    if (state.currentUser && state.currentUser.isCoach && state.currentUser.teamId) {
+      const team = state.teams.find(t => t.id === state.currentUser.teamId);
+      if (team) {
+        const logoSrc = getTeamLogo(team);
+        navTeamLogo.innerHTML = `<img src="${logoSrc}" class="nav-team-logo" onerror="this.style.display='none'" title="${team.name}">`;
+        navTeamLogo.style.display = 'flex';
+      } else {
+        navTeamLogo.style.display = 'none';
+      }
+    } else {
+      navTeamLogo.style.display = 'none';
+    }
+  }
+}
+
+// 点击顶部队徽进入自己球队详情
+function goToMyTeam() {
+  if (!state.currentUser || !state.currentUser.teamId) return;
+  const team = state.teams.find(t => t.id === state.currentUser.teamId);
+  if (team) showTeamDetail(team.id);
 }
 
 // URL Hash路由 - 保存状态到URL
