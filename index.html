@@ -476,7 +476,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 237 };
+const APP_VERSION = { major: 1, minor: 0, patch: 239 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-25';
@@ -3823,8 +3823,8 @@ function renderTransferMarket() {
       html += `<button onclick="deleteTransferListing('${listing.id}')" style="font-size:11px;padding:5px 12px;border-radius:8px;border:1px solid #ffcdd2;background:#fff5f5;color:#c62828;cursor:pointer">🗑️ 删除</button>`;
     }
 
-    // 出价按钮：登录且非挂牌人即可出价
-    if (isLoggedIn && !isOwner) {
+    // 出价按钮：仅主教练且非挂牌人可出价
+    if (isLoggedIn && !isOwner && currentUser.isCoach) {
       // 计算出价范围（成交金额不受违约金限制）
       const isFirstBid = !listing.bids || listing.bids.length === 0;
       const minBid = isFirstBid ? listing.basePrice : (currentHighest + 1);
@@ -3835,6 +3835,8 @@ function renderTransferMarket() {
       html += `</div>`;
     } else if (!isLoggedIn) {
       html += `<span style="font-size:11px;color:#999">请登录后出价</span>`;
+    } else if (isLoggedIn && !currentUser.isCoach) {
+      html += `<span style="font-size:11px;color:#999">仅主教练可出价</span>`;
     }
 
     html += `</div>`; // 操作按钮区结束
@@ -3906,6 +3908,7 @@ function formatTransferTime(isoStr) {
 // 出价提交
 function submitBid(listingId) {
   if (!state.currentUser) { showToast('请先登录'); return; }
+  if (!state.currentUser.isCoach) { showToast('仅主教练可以出价'); return; }
 
   const listing = (state.transferMarket || []).find(l => l.id === listingId);
   if (!listing) { showToast('挂牌信息不存在'); return; }
