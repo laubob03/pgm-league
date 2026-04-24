@@ -1081,6 +1081,27 @@ function loadState() {
       if (!state.pendingTransfers) state.pendingTransfers = [];
       // 兼容旧版本没有 transferMarket 字段
       if (!state.transferMarket) state.transferMarket = [];
+      // ★ v1.0.240: 修复旧版 Nottm Forest → Nottingham Forest 命名不一致
+      state.teams.forEach(t => {
+        if (t.name === 'Nottm Forest') t.name = 'Nottingham Forest';
+      });
+      if (state.matches) state.matches.forEach(m => {
+        if (m.home === 'Nottm Forest') m.home = 'Nottingham Forest';
+        if (m.away === 'Nottm Forest') m.away = 'Nottingham Forest';
+      });
+      if (state.cups) Object.values(state.cups).forEach(c => {
+        if (c.matches) c.matches.forEach(m => {
+          if (m.home === 'Nottm Forest') m.home = 'Nottingham Forest';
+          if (m.away === 'Nottm Forest') m.away = 'Nottingham Forest';
+        });
+      });
+      if (state.transferMarket) state.transferMarket.forEach(t => {
+        if (t.teamName === 'Nottm Forest') t.teamName = 'Nottingham Forest';
+      });
+      if (state.pendingTransfers) state.pendingTransfers.forEach(t => {
+        if (t.fromTeam === 'Nottm Forest') t.fromTeam = 'Nottingham Forest';
+        if (t.toTeam === 'Nottm Forest') t.toTeam = 'Nottingham Forest';
+      });
       // ★ v1.0.215: TRANSFER_GIST_ID 改为硬编码常量，不再从 state 恢复
       // 旧版 state._transferGistId 可能指向错误的 Gist（每个教练各自创建的）
       // 从比赛记录重新计算所有球员统计，修复历史数据不一致问题
