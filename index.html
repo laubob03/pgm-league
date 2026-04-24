@@ -476,7 +476,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 236 };
+const APP_VERSION = { major: 1, minor: 0, patch: 237 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-25';
@@ -492,7 +492,7 @@ const CHANGELOG = [
   { v: '1.0.228', date: '2026-04-25', items: ['📱 登录弹窗紧凑化：标题/输入框/按钮间距最小化，手机键盘弹出时登录按钮完整可见'] },
   { v: '1.0.227', date: '2026-04-25', items: ['🎨 转会市场球员详情面板紧贴球员名下方（而非整个卡片之后）'] },
   { v: '1.0.226', date: '2026-04-25', items: ['📱 足总杯赛程图触摸操作丝滑升级：捏合灵敏度×1.5加速、惯性滑动、RAF节流、GPU加速'] },
-  { v: '1.0.236', date: '2026-04-25', items: ['🔍 搜索支持球队名，搜到球队点击进入球队详情页（共用 showTeamDetail 系统）', '🔍 搜索结果分区显示：球队🏟️/球员⚽，各有限制条数'] },
+  { v: '1.0.237', date: '2026-04-25', items: ['🔍 搜索球员点击直接弹出球员详情面板（提取 buildPlayerSeasonDetailHtml，与球队详情页完全共用同一套渲染逻辑）'] },
   { v: '1.0.235', date: '2026-04-25', items: ['🔍 搜索球员点击后直接展开球员详情面板（与球队详情页共用同一套展开系统）'] },
   { v: '1.0.225', date: '2026-04-25', items: ['⚽ 转会市场球员名可点击查看详情（共用 togglePlayerSeasonDetail 系统）'] },
   { v: '1.0.224', date: '2026-04-25', items: ['📱 修复手机登录弹窗按钮被虚拟键盘遮挡：modal 改为 overflow-y:auto 支持滚动，使用 dvh 动态视口高度'] },
@@ -4306,40 +4306,35 @@ function checkTransferCompletions() {
 
 // 展开/收起球员跨赛季详情
 function togglePlayerSeasonDetail(el, uid) {
-  // 兼容从搜索等处调用时 el 为 null：打开球队详情页并展开球员详情（共用同一套展开系统）
+  // 兼容从搜索等处调用时 el 为 null：直接弹出球员详情面板（共用同一套渲染逻辑）
   if (!el) {
-    const sd = getCurrentSeasonData();
-    let foundTeamId = null;
-    let foundPlayerName = null;
-    for (const team of sd.teams) {
-      if (!team.players) continue;
-      const p = team.players.find(x => x.uid == uid || (x.id && x.id.includes('_' + uid)));
-      if (p) { foundTeamId = team.id; foundPlayerName = p.name; break; }
+    // 查找球员名
+    let playerName = '';
+    if (state.teams) {
+      for (const team of state.teams) {
+        if (!team.players) continue;
+        const p = team.players.find(x => x.uid == uid || (x.id && x.id.includes('_' + uid)));
+        if (p) { playerName = p.name; break; }
+      }
     }
-    if (foundTeamId) {
-      showTeamDetail(foundTeamId);
-      setTimeout(() => {
-        switchTeamTab('player', foundTeamId);
-        setTimeout(() => {
-          const list = document.getElementById('teamPlayersList');
-          if (list) {
-            const rows = list.querySelectorAll('.player-row');
-            for (const row of rows) {
-              const nm = row.querySelector('.player-nm');
-              if (nm && nm.textContent.includes(foundPlayerName)) {
-                // 找到 .player-expand 元素，直接调用展开逻辑（与手动点击完全一致）
-                const expandEl = nm.querySelector('.player-expand');
-                if (expandEl) {
-                  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  togglePlayerSeasonDetail(expandEl, uid);
-                }
-                break;
-              }
-            }
-          }
-        }, 300);
-      }, 400);
+    if (!playerName) {
+      for (const teamName in PLAYERS_DB) {
+        const dbPlayer = PLAYERS_DB[teamName].find(x => x.uid == uid);
+        if (dbPlayer) { playerName = dbPlayer.name; break; }
+      }
     }
+    if (!playerName) return;
+
+    // 复用同一套渲染逻辑，生成详情 HTML 并弹窗显示
+    const html = buildPlayerSeasonDetailHtml(uid, playerName);
+    const content = `
+      <div class="modal-header" style="margin-bottom:8px">
+        <div class="modal-title" style="font-size:16px">👤 ${playerName}</div>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      ${html}
+    `;
+    showModal(content);
     return;
   }
   const name = el.textContent;
@@ -4354,6 +4349,20 @@ function togglePlayerSeasonDetail(el, uid) {
   document.querySelectorAll('.player-expand-active').forEach(e => e.classList.remove('player-expand-active'));
   el.classList.add('player-expand-active');
 
+  const html = buildPlayerSeasonDetailHtml(uid, name);
+  const target = getDetailInsertTarget(el);
+  // 表格行内：用 <tr><td colspan> 包裹，使面板跨列居中
+  if (target.tagName === 'TR') {
+    const table = target.closest('table');
+    const colCount = table ? table.rows[0].cells.length : 4;
+    target.insertAdjacentHTML('afterend', `<tr><td colspan="${colCount}" style="padding:0;border:none;background:none">${html}</td></tr>`);
+  } else {
+    target.insertAdjacentHTML('afterend', html);
+  }
+}
+
+// 构建球员跨赛季详情 HTML（内联展开和搜索弹窗共用同一套渲染逻辑）
+function buildPlayerSeasonDetailHtml(uid, name) {
   const stats = getPlayerCrossSeasonStats(uid, name);
 
   // 获取当前球员的违约金和年龄（先查 state 当前赛季，再回退 PLAYERS_DB）
@@ -4500,15 +4509,7 @@ function togglePlayerSeasonDetail(el, uid) {
   }
 
   html += '</div>';
-  const target = getDetailInsertTarget(el);
-  // 表格行内：用 <tr><td colspan> 包裹，使面板跨列居中
-  if (target.tagName === 'TR') {
-    const table = target.closest('table');
-    const colCount = table ? table.rows[0].cells.length : 4;
-    target.insertAdjacentHTML('afterend', `<tr><td colspan="${colCount}" style="padding:0;border:none;background:none">${html}</td></tr>`);
-  } else {
-    target.insertAdjacentHTML('afterend', html);
-  }
+  return html;
 }
 
 // 判断球员ID是否属于指定球队（兼容各种ID格式：p12_xxx, t0_p0, pt0_xxx 等）
