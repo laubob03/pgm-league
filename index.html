@@ -476,7 +476,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 235 };
+const APP_VERSION = { major: 1, minor: 0, patch: 236 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-25';
@@ -492,6 +492,7 @@ const CHANGELOG = [
   { v: '1.0.228', date: '2026-04-25', items: ['📱 登录弹窗紧凑化：标题/输入框/按钮间距最小化，手机键盘弹出时登录按钮完整可见'] },
   { v: '1.0.227', date: '2026-04-25', items: ['🎨 转会市场球员详情面板紧贴球员名下方（而非整个卡片之后）'] },
   { v: '1.0.226', date: '2026-04-25', items: ['📱 足总杯赛程图触摸操作丝滑升级：捏合灵敏度×1.5加速、惯性滑动、RAF节流、GPU加速'] },
+  { v: '1.0.236', date: '2026-04-25', items: ['🔍 搜索支持球队名，搜到球队点击进入球队详情页（共用 showTeamDetail 系统）', '🔍 搜索结果分区显示：球队🏟️/球员⚽，各有限制条数'] },
   { v: '1.0.235', date: '2026-04-25', items: ['🔍 搜索球员点击后直接展开球员详情面板（与球队详情页共用同一套展开系统）'] },
   { v: '1.0.225', date: '2026-04-25', items: ['⚽ 转会市场球员名可点击查看详情（共用 togglePlayerSeasonDetail 系统）'] },
   { v: '1.0.224', date: '2026-04-25', items: ['📱 修复手机登录弹窗按钮被虚拟键盘遮挡：modal 改为 overflow-y:auto 支持滚动，使用 dvh 动态视口高度'] },
@@ -4070,11 +4071,11 @@ function deleteTransferListing(listingId) {
 function showPlayerSearch() {
   const content = `
     <div class="modal-header" style="margin-bottom:8px">
-      <div class="modal-title" style="font-size:16px">🔍 搜索球员</div>
+      <div class="modal-title" style="font-size:16px">🔍 搜索球员/球队</div>
       <button class="modal-close" onclick="closeModal()">×</button>
     </div>
     <div style="position:relative;margin-bottom:8px">
-      <input type="text" id="playerSearchInput" placeholder="输入球员名或UID..." style="width:100%;padding:10px 12px 10px 36px;font-size:15px;border:2px solid #228B22;border-radius:12px;box-sizing:border-box;outline:none" oninput="doPlayerSearch(this.value)" autofocus>
+      <input type="text" id="playerSearchInput" placeholder="输入球员名、UID或球队名..." style="width:100%;padding:10px 12px 10px 36px;font-size:15px;border:2px solid #228B22;border-radius:12px;box-sizing:border-box;outline:none" oninput="doPlayerSearch(this.value)" autofocus>
       <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:#999">🔍</span>
     </div>
     <div id="playerSearchResults" style="overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch"></div>
@@ -4098,42 +4099,77 @@ function doPlayerSearch(query) {
   }
 
   const sd = getCurrentSeasonData();
-  const results = [];
+  const teamResults = [];
+  const playerResults = [];
 
+  // 搜索球队
+  sd.teams.forEach(team => {
+    const nameMatch = team.name && team.name.toLowerCase().includes(query);
+    if (nameMatch) {
+      teamResults.push(team);
+    }
+  });
+
+  // 搜索球员
   sd.teams.forEach(team => {
     if (!team.players) return;
     team.players.forEach(p => {
       const nameMatch = p.name && p.name.toLowerCase().includes(query);
       const uidMatch = p.uid && String(p.uid).toLowerCase().includes(query);
       if (nameMatch || uidMatch) {
-        results.push({ player: p, team });
+        playerResults.push({ player: p, team });
       }
     });
   });
 
-  if (results.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:13px">未找到匹配球员</div>';
+  if (teamResults.length === 0 && playerResults.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:13px">未找到匹配结果</div>';
     return;
   }
 
-  // 最多显示30条
-  const limited = results.slice(0, 30);
   let html = '';
-  limited.forEach(({ player: p, team }) => {
-    const leagueName = LEAGUE_NAMES[team.league] || '';
-    const logo = getTeamLogo(team);
-    html += `<div onclick="closeModal();setTimeout(()=>{togglePlayerSeasonDetail(null,'${p.uid}')},200)" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .15s" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
-      <img src="${logo}" style="width:28px;height:28px;object-fit:contain;border-radius:6px;flex-shrink:0" onerror="this.style.display='none'">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:14px;font-weight:600;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</div>
-        <div style="font-size:11px;color:#78909c">${team.name} · ${leagueName} · #${p.number || '-'} · CA${p.ca || '?'} · ⚽${p.goals||0} 👟${p.assists||0}</div>
-      </div>
-      <span style="font-size:11px;color:#999;flex-shrink:0">UID:${p.uid}</span>
-    </div>`;
-  });
 
-  if (results.length > 30) {
-    html += `<div style="text-align:center;padding:10px;color:#999;font-size:12px">还有 ${results.length - 30} 条结果未显示</div>`;
+  // 球队结果
+  if (teamResults.length > 0) {
+    html += '<div style="font-size:11px;color:#228B22;font-weight:600;padding:6px 12px 2px;background:#f1f8e9">🏟️ 球队</div>';
+    const limitedTeams = teamResults.slice(0, 10);
+    limitedTeams.forEach(team => {
+      const leagueName = LEAGUE_NAMES[team.league] || '';
+      const logo = getTeamLogo(team);
+      const playerCount = team.players ? team.players.length : 0;
+      html += `<div onclick="closeModal();setTimeout(()=>{showTeamDetail('${team.id}')},200)" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .15s" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
+        <img src="${logo}" style="width:32px;height:32px;object-fit:contain;border-radius:6px;flex-shrink:0" onerror="this.style.display='none'">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${team.name}</div>
+          <div style="font-size:11px;color:#78909c">${leagueName} · ${playerCount}名球员</div>
+        </div>
+        <span style="font-size:11px;color:#999;flex-shrink:0">🏟️</span>
+      </div>`;
+    });
+    if (teamResults.length > 10) {
+      html += `<div style="text-align:center;padding:6px;color:#999;font-size:11px">还有 ${teamResults.length - 10} 支球队未显示</div>`;
+    }
+  }
+
+  // 球员结果
+  if (playerResults.length > 0) {
+    html += '<div style="font-size:11px;color:#1565C0;font-weight:600;padding:6px 12px 2px;background:#e3f2fd">⚽ 球员</div>';
+    const limited = playerResults.slice(0, 30);
+    limited.forEach(({ player: p, team }) => {
+      const leagueName = LEAGUE_NAMES[team.league] || '';
+      const logo = getTeamLogo(team);
+      html += `<div onclick="closeModal();setTimeout(()=>{togglePlayerSeasonDetail(null,'${p.uid}')},200)" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .15s" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
+        <img src="${logo}" style="width:28px;height:28px;object-fit:contain;border-radius:6px;flex-shrink:0" onerror="this.style.display='none'">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600;color:#1a1a1a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</div>
+          <div style="font-size:11px;color:#78909c">${team.name} · ${leagueName} · #${p.number || '-'} · CA${p.ca || '?'} · ⚽${p.goals||0} 👟${p.assists||0}</div>
+        </div>
+        <span style="font-size:11px;color:#999;flex-shrink:0">UID:${p.uid}</span>
+      </div>`;
+    });
+    if (playerResults.length > 30) {
+      html += `<div style="text-align:center;padding:10px;color:#999;font-size:12px">还有 ${playerResults.length - 30} 条结果未显示</div>`;
+    }
   }
 
   container.innerHTML = html;
