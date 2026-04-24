@@ -476,7 +476,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 234 };
+const APP_VERSION = { major: 1, minor: 0, patch: 235 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-25';
@@ -492,6 +492,7 @@ const CHANGELOG = [
   { v: '1.0.228', date: '2026-04-25', items: ['📱 登录弹窗紧凑化：标题/输入框/按钮间距最小化，手机键盘弹出时登录按钮完整可见'] },
   { v: '1.0.227', date: '2026-04-25', items: ['🎨 转会市场球员详情面板紧贴球员名下方（而非整个卡片之后）'] },
   { v: '1.0.226', date: '2026-04-25', items: ['📱 足总杯赛程图触摸操作丝滑升级：捏合灵敏度×1.5加速、惯性滑动、RAF节流、GPU加速'] },
+  { v: '1.0.235', date: '2026-04-25', items: ['🔍 搜索球员点击后直接展开球员详情面板（与球队详情页共用同一套展开系统）'] },
   { v: '1.0.225', date: '2026-04-25', items: ['⚽ 转会市场球员名可点击查看详情（共用 togglePlayerSeasonDetail 系统）'] },
   { v: '1.0.224', date: '2026-04-25', items: ['📱 修复手机登录弹窗按钮被虚拟键盘遮挡：modal 改为 overflow-y:auto 支持滚动，使用 dvh 动态视口高度'] },
   { v: '1.0.223', date: '2026-04-25', items: ['🐛 修复出价其他用户看不到（根因）：autoSyncFromCloud 中 304 和主Gist未更新的 early return 跳过了 autoSyncTransferGist，导致转会数据从不同步'] },
@@ -4269,7 +4270,7 @@ function checkTransferCompletions() {
 
 // 展开/收起球员跨赛季详情
 function togglePlayerSeasonDetail(el, uid) {
-  // 兼容从搜索等处调用时 el 为 null：打开球队详情页并定位到该球员
+  // 兼容从搜索等处调用时 el 为 null：打开球队详情页并展开球员详情（共用同一套展开系统）
   if (!el) {
     const sd = getCurrentSeasonData();
     let foundTeamId = null;
@@ -4290,15 +4291,18 @@ function togglePlayerSeasonDetail(el, uid) {
             for (const row of rows) {
               const nm = row.querySelector('.player-nm');
               if (nm && nm.textContent.includes(foundPlayerName)) {
-                row.style.background = '#fffde7';
-                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                setTimeout(() => { row.style.background = ''; }, 3000);
+                // 找到 .player-expand 元素，直接调用展开逻辑（与手动点击完全一致）
+                const expandEl = nm.querySelector('.player-expand');
+                if (expandEl) {
+                  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  togglePlayerSeasonDetail(expandEl, uid);
+                }
                 break;
               }
             }
           }
-        }, 200);
-      }, 300);
+        }, 300);
+      }, 400);
     }
     return;
   }
