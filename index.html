@@ -473,13 +473,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 229 };
+const APP_VERSION = { major: 1, minor: 0, patch: 230 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-25';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.230', date: '2026-04-25', items: ['🐛 修复刷新页面"云端同步失败: gist is not defined"：gist变量块作用域溢出'] },
   { v: '1.0.229', date: '2026-04-25', items: ['📱 顶部TAB导航栏紧凑化：图标/文字/间距缩小1/3，手机一屏显示完整'] },
   { v: '1.0.228', date: '2026-04-25', items: ['📱 登录弹窗紧凑化：标题/输入框/按钮间距最小化，手机键盘弹出时登录按钮完整可见'] },
   { v: '1.0.227', date: '2026-04-25', items: ['🎨 转会市场球员详情面板紧贴球员名下方（而非整个卡片之后）'] },
@@ -7941,8 +7942,9 @@ async function autoSyncFromCloud() {
       throw new Error('HTTP ' + resp.status);
     }
 
+    let gist = null;
     if (!skipMainSync) {
-    const gist = await resp.json();
+    gist = await resp.json();
 
     inner.style.width = '50%';
 
