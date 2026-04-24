@@ -473,13 +473,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 232 };
+const APP_VERSION = { major: 1, minor: 0, patch: 233 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-25';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.233', date: '2026-04-25', items: ['🗑️ 超管可删除转会市场帖子（直接移除，需手动上传云端生效）'] },
   { v: '1.0.232', date: '2026-04-25', items: ['🐛 修复球队详情页球员列表无法滚动：overflow:hidden→auto，tab切换display修复'] },
   { v: '1.0.231', date: '2026-04-25', items: ['🐛 修复"云端同步失败: gistUpdatedAt is not defined"：同上块作用域问题'] },
   { v: '1.0.230', date: '2026-04-25', items: ['🐛 修复刷新页面"云端同步失败: gist is not defined"：gist变量块作用域溢出'] },
@@ -3810,9 +3811,10 @@ function renderTransferMarket() {
 
     html += `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">`;
 
-    // 超管可操作：摘牌（取消挂牌）
+    // 超管可操作：摘牌（取消挂牌）/ 删除帖子
     if (isAdmin) {
       html += `<button onclick="delistPlayer('${listing.id}')" style="font-size:11px;padding:5px 12px;border-radius:8px;border:1px solid #e0e0e0;background:#fff;color:#666;cursor:pointer">❌ 摘牌</button>`;
+      html += `<button onclick="deleteTransferListing('${listing.id}')" style="font-size:11px;padding:5px 12px;border-radius:8px;border:1px solid #ffcdd2;background:#fff5f5;color:#c62828;cursor:pointer">🗑️ 删除</button>`;
     }
 
     // 出价按钮：登录且非挂牌人即可出价
@@ -4038,6 +4040,25 @@ function delistPlayer(listingId) {
   saveState();
   showToast('已摘牌：' + listing.playerName);
   renderTransferMarket();
+}
+
+// 删除转会帖子（超管专用，直接从数组移除）
+function deleteTransferListing(listingId) {
+  const listing = (state.transferMarket || []).find(l => l.id === listingId);
+  if (!listing) return;
+
+  const isAdmin = state.currentUser && state.currentUser.isSuperAdmin;
+  if (!isAdmin) { showToast('无权操作'); return; }
+
+  if (!confirm('⚠️ 确认删除 ' + listing.playerName + ' 的转会帖子？\n此操作不可恢复，删除后需手动上传云端生效。')) return;
+
+  const idx = state.transferMarket.findIndex(l => l.id === listingId);
+  if (idx >= 0) {
+    state.transferMarket.splice(idx, 1);
+    saveState();
+    showToast('已删除：' + listing.playerName + '，请手动上传云端生效');
+    renderTransferMarket();
+  }
 }
 
 // ============ 转会成交自动判定逻辑 ============
