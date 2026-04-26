@@ -476,14 +476,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 240 };
+const APP_VERSION = { major: 1, minor: 0, patch: 241 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-24';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.239', date: '2026-04-25', items: ['🔐 转会市场出价权限：仅主教练可出价，数据员/统计员/超管均无法出价'] },
+  { v: '1.0.241', date: '2026-04-27', items: ['🐛 修复杯赛数据员点击录入比赛无反应：自动切换到对应杯赛页+放开录入/提交权限'] },
   { v: '1.0.237', date: '2026-04-25', items: ['🔍 搜索球员点击直接弹出详情面板（与球队详情页共用同一套渲染系统）', '🏟️ 搜索支持球队名，点击进入球队详情页'] },
   { v: '1.0.236', date: '2026-04-25', items: ['🏟️ 搜索支持球队名，点击进入球队详情页'] },
   { v: '1.0.235', date: '2026-04-25', items: ['🔍 搜索球员点击直接展开详情面板'] },
@@ -2423,7 +2423,10 @@ function faCupSelectTeam(matchId, field, teamId) {
 }
 
 function showEnterCupMatchModal(matchId, cupId) {
-  if (!state.currentUser || !state.currentUser.isSuperAdmin) return;
+  if (!state.currentUser) return;
+  // 允许超管或对应杯赛数据员
+  const isCupRecorder = state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cupId;
+  if (!state.currentUser.isSuperAdmin && !isCupRecorder) return;
   const cup = state.cups[cupId];
   if (!cup) return;
   const match = cup.matches.find(m => m.id === matchId);
@@ -2472,7 +2475,9 @@ function showEnterCupMatchModal(matchId, cupId) {
 }
 
 function submitCupMatchResult(matchId, cupId) {
-  if (!state.currentUser || !state.currentUser.isSuperAdmin) return;
+  if (!state.currentUser) return;
+  const isCupRecorder = state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cupId;
+  if (!state.currentUser.isSuperAdmin && !isCupRecorder) return;
   const cup = state.cups[cupId];
   if (!cup) { showToast('杯赛数据未找到'); return; }
   const match = cup.matches.find(m => m.id === matchId);
@@ -7976,6 +7981,10 @@ document.getElementById('aboutDate').textContent = APP_BUILD_DATE;
 document.getElementById('changelogHint').innerHTML = '<span style="font-size:10px;color:#1a7a2e;cursor:pointer" onclick="showChangelogModal()">📋 v' + CHANGELOG[0].v + ' 更新 →</span>';
 document.getElementById('btnEnterMatch').onclick = () => {
   if (state.currentUser) {
+    // 杯赛数据员自动切换到对应杯赛赛程页
+    if (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId) {
+      state.currentLeague = state.currentUser.cupId;
+    }
     state.currentPage = 'schedule';
     updateNavAndHeader();
     render();
