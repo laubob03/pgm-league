@@ -494,7 +494,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 259 };
+const APP_VERSION = { major: 1, minor: 0, patch: 260 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -2960,10 +2960,9 @@ function showCloudFailEffect(reason) {
 function updateNavCloudBtn() {
   const btn = document.getElementById('navCloudBtn');
   if (!btn) return;
-  // ★ v1.0.215: 主教练不再显示"上传云端"按钮（出价/挂牌已自动上传，无需手动操作）
-  // 超级管理员和数据员保留手动上传功能
+  // ★ v1.0.259: 只有超管、数据员、统计员显示"云端"按钮，普通教练不显示
   const u = state.currentUser;
-  if (u && (u.isSuperAdmin || u.isDataRecorder)) {
+  if (u && (u.isSuperAdmin || u.isDataRecorder || u.isStats)) {
     btn.style.display = 'flex';
   } else {
     btn.style.display = 'none';
