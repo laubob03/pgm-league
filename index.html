@@ -494,7 +494,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 261 };
+const APP_VERSION = { major: 1, minor: 0, patch: 262 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -2809,8 +2809,16 @@ function showRoundPicker(anchorEl, roundKeys, curRound, cupId) {
   const old = document.getElementById('roundPickerPopup');
   if (old) { old.remove(); return; }
   
-  // 获取比赛数据，判断每个轮次是否完赛
-  const matches = cupId ? (state.cups[cupId]?.matches || []) : getCurrentSeasonData().matches;
+  // 获取比赛数据，按当前联赛筛选，判断每个轮次是否完赛
+  let matches = cupId ? (state.cups[cupId]?.matches || []) : getCurrentSeasonData().matches;
+  if (!cupId) {
+    const league = state.currentLeague;
+    const sd = getCurrentSeasonData();
+    matches = matches.filter(m => {
+      const homeTeam = sd.teams.find(t => t.id === m.homeTeam);
+      return homeTeam && homeTeam.league === league;
+    });
+  }
   const rounds = {};
   matches.forEach(m => {
     const r = m.round;
@@ -2827,10 +2835,10 @@ function showRoundPicker(anchorEl, roundKeys, curRound, cupId) {
     // 判断该轮次是否全部完赛
     const isCompleted = (rounds[r] || []).every(m => m.status === 'completed');
     const btn = document.createElement('button');
-    btn.textContent = '第' + r + '轮' + (isCompleted ? ' ✓' : '');
-    btn.style.cssText = 'padding:6px 12px;border-radius:6px;border:1px solid ' + (isCur ? '#228B22' : (isCompleted ? '#d1d1d6' : '#ddd')) + ';background:' + (isCur ? '#228B22' : '#fff') + ';color:' + (isCur ? '#fff' : (isCompleted ? '#86868b' : '#333')) + ';font-size:13px;font-weight:' + (isCur ? '700' : '400') + ';cursor:pointer;transition:all 0.15s;';
-    btn.onmouseover = function() { if (!isCur) this.style.background = '#f0f0f0'; };
-    btn.onmouseout = function() { if (!isCur) this.style.background = '#fff'; };
+    btn.textContent = '第' + r + '轮' + (isCompleted ? ' ✅' : '');
+    btn.style.cssText = 'padding:6px 12px;border-radius:6px;border:1px solid ' + (isCur ? '#228B22' : (isCompleted ? '#A5D6A7' : '#ddd')) + ';background:' + (isCur ? '#228B22' : (isCompleted ? '#E8F5E9' : '#fff')) + ';color:' + (isCur ? '#fff' : (isCompleted ? '#2E7D32' : '#333')) + ';font-size:13px;font-weight:' + (isCur ? '700' : '400') + ';cursor:pointer;transition:all 0.15s;';
+    btn.onmouseover = function() { if (!isCur && !isCompleted) this.style.background = '#f0f0f0'; };
+    btn.onmouseout = function() { if (!isCur && !isCompleted) this.style.background = '#fff'; else if (isCompleted && !isCur) this.style.background = '#E8F5E9'; };
     btn.onclick = function() {
       if (cupId) {
         window['_cupSchedRound_' + cupId] = String(r);
@@ -3363,12 +3371,13 @@ function renderSchedule() {
   const curIdx = roundKeys.indexOf(String(curRound));
   // 判断当前轮次是否全部完赛
   const curRoundCompleted = (rounds[curRound]||[]).every(m => m.status === 'completed');
-  const roundTitleColor = curRoundCompleted ? '#86868b' : '#1d1d1f';
+  const roundTitleColor = curRoundCompleted ? '#2E7D32' : '#1d1d1f';
+  const roundTitleBg = curRoundCompleted ? '#E8F5E9' : 'transparent';
   
   // 轮次切换栏 (Apple minimal)
   let html = '<div style="display:flex;align-items:center;justify-content:center;gap:20px;padding:8px 0 10px;">';
   html += '<button onclick="window._schedRound=\'' + (roundKeys[curIdx-1]||roundKeys[0]) + '\';renderSchedule()" style="width:36px;height:36px;border:none;background:transparent;color:' + (curIdx<=0?'#d1d1d6':'#1d1d1f') + ';font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;' + (curIdx>0?'transition:background .15s':'pointer-events:none') + '" ' + (curIdx>0?'onmouseover="this.style.background=\'#f2f2f7\'" onmouseout="this.style.background=\'transparent\'"':'') + '>&lsaquo;</button>';
-  html += '<span onclick="showRoundPicker(this,' + JSON.stringify(roundKeys).replace(/"/g,'&quot;') + ',\'' + curRound + '\')" style="font-size:15px;font-weight:600;color:' + roundTitleColor + ';min-width:80px;text-align:center;cursor:pointer;padding:4px 12px;border-radius:10px;user-select:none;transition:background .15s;letter-spacing:0.3px" onmouseover="this.style.background=\'#f2f2f7\'" onmouseout="this.style.background=\'transparent\'">第' + curRound + '轮' + (curRoundCompleted ? ' ✓' : '') + '</span>';
+  html += '<span onclick="showRoundPicker(this,' + JSON.stringify(roundKeys).replace(/"/g,'&quot;') + ',\'' + curRound + '\')" style="font-size:15px;font-weight:600;color:' + roundTitleColor + ';min-width:80px;text-align:center;cursor:pointer;padding:4px 12px;border-radius:10px;user-select:none;transition:background .15s;letter-spacing:0.3px;background:' + roundTitleBg + '" onmouseover="if(!' + curRoundCompleted + ')this.style.background=\'#f2f2f7\'" onmouseout="if(!' + curRoundCompleted + ')this.style.background=\'transparent\'">第' + curRound + '轮' + (curRoundCompleted ? ' ✅' : '') + '</span>';
   html += '<button onclick="window._schedRound=\'' + (roundKeys[curIdx+1]||roundKeys[roundKeys.length-1]) + '\';renderSchedule()" style="width:36px;height:36px;border:none;background:transparent;color:' + (curIdx>=roundKeys.length-1?'#d1d1d6':'#1d1d1f') + ';font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;' + (curIdx<roundKeys.length-1?'transition:background .15s':'pointer-events:none') + '" ' + (curIdx<roundKeys.length-1?'onmouseover="this.style.background=\'#f2f2f7\'" onmouseout="this.style.background=\'transparent\'"':'') + '>&rsaquo;</button>';
   html += '</div>';
   
