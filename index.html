@@ -440,7 +440,6 @@
     <div class="sidebar-user-id" id="sidebarUserId" style="display:none"></div>
   </div>
   <div class="sidebar-menu">
-    <button class="sidebar-item" id="btnEnterMatch"><span class="sidebar-item-icon">✏️</span>录入比赛</button>
     <button class="sidebar-item" id="btnAdminImport" style="display:none"><span class="sidebar-item-icon">⚙️</span>管理员导入</button>
     <button class="sidebar-item" id="btnCupManage" style="display:none"><span class="sidebar-item-icon">🏆</span>杯赛管理</button>
     <button class="sidebar-item" id="btnArchiveSeason" style="display:none"><span class="sidebar-item-icon">📦</span>归档赛季</button>
@@ -495,7 +494,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 258 };
+const APP_VERSION = { major: 1, minor: 0, patch: 259 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -8160,19 +8159,7 @@ document.getElementById('footerVersion').textContent = 'v' + CHANGELOG[0].v + ' 
 document.getElementById('aboutDate').textContent = APP_BUILD_DATE;
 // 侧边栏底部显示最新版本更新提示
 document.getElementById('changelogHint').innerHTML = '<span style="font-size:10px;color:#1a7a2e;cursor:pointer" onclick="showChangelogModal()">📋 v' + CHANGELOG[0].v + ' 更新 →</span>';
-document.getElementById('btnEnterMatch').onclick = () => {
-  if (state.currentUser) {
-    // 杯赛数据员自动切换到对应杯赛赛程页
-    if (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId) {
-      state.currentLeague = state.currentUser.cupId;
-    }
-    state.currentPage = 'schedule';
-    updateNavAndHeader();
-    render();
-  } else {
-    showToast('请先登录');
-  }
-};
+// 录入比赛按钮已移至赛程页面内
 document.getElementById('btnAdminImport').onclick = () => showAdminImportModal();
 document.getElementById('btnCupManage').onclick = () => showCupManageModal();
 document.getElementById('btnArchiveSeason').onclick = () => showArchiveSeasonModal();
