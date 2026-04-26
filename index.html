@@ -264,7 +264,7 @@
     .nav-season-info .season-label{font-weight:700;color:rgba(255,255,255,0.95);font-size:12px}
     .nav-season-info .season-credit{font-size:10px;color:rgba(255,255,255,0.5);font-style:italic}
     .nav-clock{font-size:10px;color:rgba(255,255,255,0.6);font-variant-numeric:tabular-nums;letter-spacing:0.2px}
-    .nav-cloud-info{font-size:9px;color:rgba(255,255,255,0.45);white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis}
+    .nav-cloud-info{font-size:9px;color:rgba(255,255,255,0.45);white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis}
     .player-expand{cursor:pointer;color:#1B5E20;border-bottom:1px dashed #1B5E20;transition:all 0.2s}
     .player-expand:hover{color:#228B22;border-bottom-color:#228B22}
     .player-expand-active{color:#228B22;border-bottom-style:solid}
@@ -500,7 +500,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 264 };
+const APP_VERSION = { major: 1, minor: 0, patch: 265 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -512,6 +512,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.265', date: '2026-04-27', items: ['🐛 修复顶部工具栏数据员上传云端时间显示不全：nav-cloud-info max-width 120px→200px'] },
   { v: '1.0.264', date: '2026-04-27', items: ['🔑 顶部导航栏"登录"中文按钮（金色渐变醒目设计），登录后自动切换为☰菜单', '📐 导航栏间距均匀分配：积分/赛程/榜单/转会居中，队徽+搜索+菜单右侧'] },
   { v: '1.0.244', date: '2026-04-27', items: ['🎨 转会页Tab重设计：分段式切换器，深绿选中态+浅灰未选中态', '🔄 默认显示转会市场，转会管理点击切换'] },
   { v: '1.0.242', date: '2026-04-27', items: ['🔄 转会管理从侧边栏移至顶部"转会"TAB页，所有人可见待生效/已完成转会信息', '🔐 "发起转会"和"取消"按钮仅超级管理员可见'] },
