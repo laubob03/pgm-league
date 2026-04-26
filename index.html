@@ -494,7 +494,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 262 };
+const APP_VERSION = { major: 1, minor: 0, patch: 263 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -2968,9 +2968,9 @@ function showCloudFailEffect(reason) {
 function updateNavCloudBtn() {
   const btn = document.getElementById('navCloudBtn');
   if (!btn) return;
-  // ★ v1.0.260: 只有超管、数据员显示"云端"按钮，普通教练和统计员不显示
+  // ★ v1.0.262: 只有超管、数据员显示"云端"按钮，统计员和普通教练不显示
   const u = state.currentUser;
-  if (u && (u.isSuperAdmin || u.isDataRecorder)) {
+  if (u && (u.isSuperAdmin || (u.isDataRecorder && !u.isStatsRecorder))) {
     btn.style.display = 'flex';
   } else {
     btn.style.display = 'none';
