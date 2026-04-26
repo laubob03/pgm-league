@@ -289,6 +289,10 @@
     .cloud-fail-redline{position:fixed;z-index:10001;pointer-events:none;background:#ff0000;animation:redLine 0.8s ease-out forwards}
     @keyframes redLine{0%{opacity:0.8;transform:scaleX(0)}50%{opacity:1;transform:scaleX(1)}100%{opacity:0;transform:scaleX(1)}}
     @keyframes screenShake{0%,100%{transform:translate(0)}10%{transform:translate(-4px,2px)}20%{transform:translate(4px,-2px)}30%{transform:translate(-3px,3px)}40%{transform:translate(3px,-1px)}50%{transform:translate(-2px,2px)}60%{transform:translate(2px,-1px)}70%{transform:translate(-1px,1px)}80%{transform:translate(1px,-1px)}90%{transform:translate(-1px,0)}}
+    .transfer-tabs-wrap{display:flex;gap:0;padding:0 4px 10px;background:#e8e8e8;border-radius:20px;overflow:hidden;display:inline-flex}
+    .transfer-tab-btn{padding:7px 14px;border:none;background:transparent;color:#222;font-size:13px;cursor:pointer;font-weight:500;transition:all .25s;text-align:center;border-radius:18px}
+    .transfer-tab-btn.active{background:#d0d0d0;color:#222;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+    .transfer-tab-btn:hover:not(.active){background:rgba(0,0,0,.04);color:#555}
   </style>
 </head>
 <body>
@@ -403,10 +407,19 @@
     </div>
   </div>
 
-  <!-- Transfer Market Page -->
+  <!-- Transfer Page -->
   <div class="page" id="transferPage">
-    <div class="card">
-      <div class="card-title">🤝 转会市场</div>
+    <!-- 转会页 Tab 切换 -->
+    <div class="transfer-tabs-wrap">
+      <button class="transfer-tab-btn active" id="transferTabMarket" onclick="switchTransferTab('market')" style="background:#1b5e20;color:#fff;font-weight:600">🤝 转会市场</button>
+      <button class="transfer-tab-btn" id="transferTabManage" onclick="switchTransferTab('manage')">🔄 转会管理</button>
+    </div>
+    <!-- 转会管理区域 -->
+    <div class="card" id="transferManageCard" style="display:none">
+      <div id="transferManageContent"></div>
+    </div>
+    <!-- 转会市场 -->
+    <div class="card" id="transferMarketCard">
       <div id="transferContent"></div>
     </div>
   </div>
@@ -425,7 +438,7 @@
     <button class="sidebar-item" id="btnAdminImport" style="display:none"><span class="sidebar-item-icon">⚙️</span>管理员导入</button>
     <button class="sidebar-item" id="btnCupManage" style="display:none"><span class="sidebar-item-icon">🏆</span>杯赛管理</button>
     <button class="sidebar-item" id="btnArchiveSeason" style="display:none"><span class="sidebar-item-icon">📦</span>归档赛季</button>
-    <button class="sidebar-item" id="btnTransfer" style="display:none"><span class="sidebar-item-icon">🔄</span>转会管理</button>
+    <!-- 转会管理已移至顶部工具栏 -->
     <button class="sidebar-item" id="btnSyncCloud"><span class="sidebar-item-icon">☁️</span>数据同步</button>
     <button class="sidebar-item" id="sidebarLoginBtn"><span class="sidebar-item-icon">🔑</span>登录</button>
     <button class="sidebar-item danger" id="btnLogout" style="display:none"><span class="sidebar-item-icon">🚪</span>退出登录</button>
@@ -476,13 +489,15 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 241 };
+const APP_VERSION = { major: 1, minor: 0, patch: 256 };
 
 const APP_AUTHOR = 'J.K';
 const APP_BUILD_DATE = '2026-04-24';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.244', date: '2026-04-27', items: ['🎨 转会页Tab重设计：分段式切换器，深绿选中态+浅灰未选中态', '🔄 默认显示转会市场，转会管理点击切换'] },
+  { v: '1.0.242', date: '2026-04-27', items: ['🔄 转会管理从侧边栏移至顶部"转会"TAB页，所有人可见待生效/已完成转会信息', '🔐 "发起转会"和"取消"按钮仅超级管理员可见'] },
   { v: '1.0.241', date: '2026-04-27', items: ['🐛 修复杯赛数据员点击录入比赛无反应：自动切换到对应杯赛页+放开录入/提交权限'] },
   { v: '1.0.237', date: '2026-04-25', items: ['🔍 搜索球员点击直接弹出详情面板（与球队详情页共用同一套渲染系统）', '🏟️ 搜索支持球队名，点击进入球队详情页'] },
   { v: '1.0.236', date: '2026-04-25', items: ['🏟️ 搜索支持球队名，点击进入球队详情页'] },
@@ -3170,7 +3185,13 @@ function render() {
   renderTeams();
   renderSchedule();
   renderStats();
-  renderTransferMarket();
+  // 转会页只渲染当前激活的tab
+  const activeTransferTab = document.querySelector('.transfer-tab-btn.active');
+  if (activeTransferTab && activeTransferTab.id === 'transferTabManage') {
+    renderTransferManage();
+  } else {
+    renderTransferMarket();
+  }
   updateNavAndHeader();
 }
 
@@ -3810,8 +3831,13 @@ function renderTransferMarket() {
         html += `<span class="cd-s" style="font-size:16px;font-weight:900;letter-spacing:-0.5px">${String(remainS).padStart(2,'0')}</span><span style="font-size:10px">秒</span>`;
         html += `</span>`;
       } else {
-        // 已过期，即将成交
-        html += `<span style="font-size:11px;background:linear-gradient(135deg,#ffebee,#ffcdd2);color:#b71c1c;padding:3px 10px;border-radius:6px;font-weight:700;border:1px solid #ef9a9a;animation:pulse 1s ease-in-out infinite">⏰ 即将成交...</span>`;
+        // 已过期，立即触发成交检查
+        checkTransferCompletions();
+        // 如果还没成交（可能completeTransferListing失败），显示即将成交
+        const refreshed = (state.transferMarket || []).find(l => l.id === listing.id);
+        if (refreshed && refreshed.status === 'active') {
+          html += `<span style="font-size:11px;background:linear-gradient(135deg,#ffebee,#ffcdd2);color:#b71c1c;padding:3px 10px;border-radius:6px;font-weight:700;border:1px solid #ef9a9a;animation:pulse 1s ease-in-out infinite">⏰ 即将成交...</span>`;
+        }
       }
     } else if (!highestBid) {
       html += `<span style="font-size:11px;background:#f5f5f5;color:#999;padding:2px 8px;border-radius:4px">⏳ 等待出价中</span>`;
@@ -3888,8 +3914,9 @@ function renderTransferMarket() {
         if (isNaN(dlTs)) return;
         const remainMs = dlTs - nowTs;
         if (remainMs <= 0) {
-          // 倒计时结束，重新渲染整个转会市场（可能触发成交）
+          // 倒计时结束，先自动完成到期转会，再重新渲染
           clearInterval(window._transferCountdownTimer);
+          checkTransferCompletions();
           renderTransferMarket();
           return;
         }
@@ -4044,7 +4071,8 @@ function completeTransferListing(listingId) {
     createdAt: new Date().toISOString(),
     processedAt: transferStatus === 'processed' ? new Date().toISOString() : null,
     transferDate: new Date().toLocaleDateString('zh-CN'),
-    isFromMarket: true
+    isFromMarket: true,
+    listingId: listingId
   };
 
   if (transferStatus === 'processed') {
@@ -4081,7 +4109,7 @@ function delistPlayer(listingId) {
   renderTransferMarket();
 }
 
-// 删除转会帖子（超管专用，直接从数组移除）
+// 删除转会帖子（超管专用，球员回原队，不留痕迹，自动上传云端）
 function deleteTransferListing(listingId) {
   const listing = (state.transferMarket || []).find(l => l.id === listingId);
   if (!listing) return;
@@ -4089,14 +4117,77 @@ function deleteTransferListing(listingId) {
   const isAdmin = state.currentUser && state.currentUser.isSuperAdmin;
   if (!isAdmin) { showToast('无权操作'); return; }
 
-  if (!confirm('⚠️ 确认删除 ' + listing.playerName + ' 的转会帖子？\n此操作不可恢复，删除后需手动上传云端生效。')) return;
+  if (!confirm('⚠️ 确认删除 ' + listing.playerName + ' 的转会帖子？\n球员将回到原球队，所有转会痕迹将被清除，自动同步云端。')) return;
 
+  // 如果该挂牌已成交（status=completed），需要回滚转会
+  if (listing.status === 'completed') {
+    rollbackTransferByListing(listing);
+  }
+
+  // 也移除关联的 pendingTransfer（如果还没执行的话）
+  if (state.pendingTransfers) {
+    state.pendingTransfers = state.pendingTransfers.filter(t => t.listingId !== listingId);
+  }
+
+  // 从转会市场移除挂牌
   const idx = state.transferMarket.findIndex(l => l.id === listingId);
   if (idx >= 0) {
     state.transferMarket.splice(idx, 1);
-    saveState();
-    showToast('已删除：' + listing.playerName + '，请手动上传云端生效');
-    renderTransferMarket();
+  }
+
+  saveState();
+  showToast('已删除：' + listing.playerName + '，球员已回原队，自动同步云端');
+  renderTransferMarket();
+  autoCloudUpload(); // 自动上传云端
+}
+
+// 回滚已成交的转会（球员回到原队，清除所有痕迹）
+function rollbackTransferByListing(listing) {
+  const fromTeam = state.teams.find(t => t.id === listing.teamId);
+  if (!fromTeam) return;
+
+  // 查找关联的 pendingTransfer
+  const pendingIdx = (state.pendingTransfers || []).findIndex(t =>
+    t.playerUid == listing.playerUid && t.fromTeamId === listing.teamId && t.isFromMarket
+  );
+
+  if (pendingIdx >= 0) {
+    const transfer = state.pendingTransfers[pendingIdx];
+    const toTeam = state.teams.find(t => t.id === transfer.toTeamId);
+
+    if (toTeam) {
+      // 检查目标球队中是否有该球员
+      const toPlayerIdx = toTeam.players.findIndex(p => p.uid == listing.playerUid);
+      if (toPlayerIdx >= 0) {
+        const toPlayer = toTeam.players[toPlayerIdx];
+        toTeam.players.splice(toPlayerIdx, 1);
+
+        if (fromTeam.league === toTeam.league) {
+          // 同联赛：恢复原球员（清除转会标记）
+          delete toPlayer.transferFee;
+          delete toPlayer.transferFrom;
+          delete toPlayer.transferDate;
+          toPlayer.id = 'p' + fromTeam.id + '_' + toPlayer.uid;
+          fromTeam.players.push(toPlayer);
+        } else {
+          // 跨联赛：恢复原球员的 transferredOut 标记，删除目标队新球员
+          const fromPlayerIdx = fromTeam.players.findIndex(p => p.uid == listing.playerUid && p.transferredOut);
+          if (fromPlayerIdx >= 0) {
+            const fromPlayer = fromTeam.players[fromPlayerIdx];
+            delete fromPlayer.transferredOut;
+            delete fromPlayer.transferredOutTo;
+            delete fromPlayer.transferredOutAtRound;
+            delete fromPlayer.transferFee;
+            delete fromPlayer.transferFrom;
+            delete fromPlayer.transferDate;
+          }
+          // toPlayer已被splice移除，无需额外处理
+        }
+      }
+    }
+
+    // 移除该 pendingTransfer
+    state.pendingTransfers.splice(pendingIdx, 1);
   }
 }
 
@@ -4212,9 +4303,11 @@ function doPlayerSearch(query) {
 
 // 获取挂牌的预计成交时间（deadline）
 // 规则：
-// 1. 挂牌后24h内无出价 → 24h到期时自动成交
-// 2. 挂牌当天21:00后有出价 → 进入晚间竞价窗口循环
-// 3. 晚间窗口循环：Window A(19:01-21:00)无人出价→21:00成交；Window B(21:01-23:00)无人出价→23:00成交；有人出价→次日Window A重新开始
+// 1. 所有成交必须满足挂牌满24h
+// 2. 挂牌当天21:00后无人出价 → 挂牌满24h到期即成交
+// 3. 挂牌当天21:00后有出价 → 进入晚间竞价窗口循环
+// 4. 晚间窗口循环：Window A(19:01-21:00)无人出价→21:00成交；Window B(21:01-23:00)无人出价→23:00成交；有人出价→次日Window A重新开始
+//    （窗口deadline若早于挂牌24h，则延后到24h后）
 function getTransferDeadline(listing) {
   if (!listing || listing.status !== 'active') return null;
   if (!listing.bids || listing.bids.length === 0) return null; // 无出价不设deadline
@@ -4249,10 +4342,12 @@ function getTransferDeadline(listing) {
   const listedDay21 = makeTime(listedDate, 21, 0);
   const hasBidAfter21OnListedDay = listing.bids.some(b => new Date(b.bidAt) > listedDay21);
 
+  // 所有成交必须满足挂牌满24h
+  const minDeadline = new Date(listedDate.getTime() + 24 * 60 * 60 * 1000);
+
   if (!hasBidAfter21OnListedDay) {
-    // 挂牌当天21:00后无人出价 → 24h冷却期到期即成交
-    const deadline24h = new Date(listedDate.getTime() + 24 * 60 * 60 * 1000);
-    return deadline24h;
+    // 挂牌当天21:00后无人出价 → 挂牌满24h到期即成交
+    return minDeadline;
   }
 
   // 第二阶段：进入晚间竞价窗口循环
@@ -4269,36 +4364,28 @@ function getTransferDeadline(listing) {
 
     // 如果当前时间还没到这天的19:01，deadline就是当天的Window A
     if (now < day19_01) {
-      // Window A 尚未开始，deadline取决于Window A是否有人出价
-      // 但我们还不知道，所以先返回Window A的结束时间（21:00）作为最早期deadline
-      // 实际上要检查：从现在到19:01这段时间是否会有人出价
-      // 简化：返回今天Window A的结束时间
-      return day21_00;
+      return day21_00 < minDeadline ? minDeadline : day21_00;
     }
 
     // Window A (19:01-21:00) 是否有人出价？
     const hasBidInA = hasBidInWindow(listing.bids, checkDate, 19, 1, 21, 0);
 
     if (!hasBidInA) {
-      // Window A 无人出价 → 21:00成交
-      if (now >= day21_00) return day21_00; // 已过，返回这个时间
-      return day21_00; // 还没过，返回预计时间
+      // Window A 无人出价 → 21:00成交（但不得早于挂牌24h）
+      return day21_00 < minDeadline ? minDeadline : day21_00;
     }
 
     // Window A 有人出价 → 进入Window B
-    // 如果当前时间在21:01-23:00之间，检查Window B
     if (now < day21_01) {
-      // 还在Window A和Window B之间（21:00-21:01），deadline最早是Window B结束
-      return day23_00;
+      return day23_00 < minDeadline ? minDeadline : day23_00;
     }
 
     // Window B (21:01-23:00) 是否有人出价？
     const hasBidInB = hasBidInWindow(listing.bids, checkDate, 21, 1, 23, 0);
 
     if (!hasBidInB) {
-      // Window B 无人出价 → 23:00成交
-      if (now >= day23_00) return day23_00;
-      return day23_00;
+      // Window B 无人出价 → 23:00成交（但不得早于挂牌24h）
+      return day23_00 < minDeadline ? minDeadline : day23_00;
     }
 
     // Window B 也有人出价 → 次日重新从Window A开始
@@ -4321,20 +4408,16 @@ function checkTransferCompletions() {
     if (!listing.bids || listing.bids.length === 0) return;
 
     const deadline = getTransferDeadline(listing);
-    if (!deadline) return;
 
-    // 如果当前时间已过deadline，自动成交
-    if (now >= deadline) {
-      // 找最高出价者
-      const highestBid = listing.bids.reduce((max, b) => b.amount > max.amount ? b : max, listing.bids[0]);
-      if (highestBid) {
-        completeTransferListing(listing.id);
-        anyCompleted = true;
-      }
+    // 如果deadline存在且已过期，自动成交
+    if (deadline && now >= deadline) {
+      completeTransferListing(listing.id);
+      anyCompleted = true;
+      return; // completeTransferListing已调用saveState
     }
   });
 
-  if (anyCompleted) saveState();
+  if (anyCompleted && !listings.some(l => l.status === 'completed')) saveState();
 }
 
 // 展开/收起球员跨赛季详情
@@ -6128,10 +6211,7 @@ function updateSidebar() {
     if (archiveSeasonBtn) {
       archiveSeasonBtn.style.display = state.currentUser.isSuperAdmin ? 'flex' : 'none';
     }
-    const transferBtn = document.getElementById('btnTransfer');
-    if (transferBtn) {
-      transferBtn.style.display = state.currentUser.isSuperAdmin ? 'flex' : 'none';
-    }
+    // 转会管理已移至顶部工具栏
     const userIdEl = document.getElementById('sidebarUserId');
     if (userIdEl) {
       userIdEl.style.display = 'block';
@@ -7032,11 +7112,40 @@ function executeTransfer(transfer) {
   }
 }
 
-// 转会管理弹窗（超管专用）
-function showTransferModal() {
+// 转会页 Tab 切换
+function switchTransferTab(tab) {
+  const manageCard = document.getElementById('transferManageCard');
+  const marketCard = document.getElementById('transferMarketCard');
+  const tabManage = document.getElementById('transferTabManage');
+  const tabMarket = document.getElementById('transferTabMarket');
+  if (tab === 'manage') {
+    manageCard.style.display = '';
+    marketCard.style.display = 'none';
+    tabManage.classList.add('active');
+    tabManage.style.background = '#d0d0d0'; tabManage.style.color = '#222'; tabManage.style.fontWeight = '600';
+    tabMarket.classList.remove('active');
+    tabMarket.style.background = 'transparent'; tabMarket.style.color = '#222'; tabMarket.style.fontWeight = '500';
+    renderTransferManage();
+  } else {
+    manageCard.style.display = 'none';
+    marketCard.style.display = '';
+    tabManage.classList.remove('active');
+    tabManage.style.background = 'transparent'; tabManage.style.color = '#222'; tabManage.style.fontWeight = '500';
+    tabMarket.classList.add('active');
+    tabMarket.style.background = '#d0d0d0'; tabMarket.style.color = '#222'; tabMarket.style.fontWeight = '600';
+    renderTransferMarket();
+  }
+}
+
+// 转会管理区域（渲染到转会页面卡片，所有人可见信息，超管可见操作按钮）
+function renderTransferManage() {
+  const container = document.getElementById('transferManageContent');
+  if (!container) return;
+
   processPendingTransfers();
   const pending = (state.pendingTransfers || []).filter(t => t.status === 'pending');
   const processed = (state.pendingTransfers || []).filter(t => t.status === 'processed');
+  const isAdmin = state.currentUser && state.currentUser.isSuperAdmin;
 
   let pendingHtml = '';
   if (pending.length === 0) {
@@ -7051,6 +7160,10 @@ function showTransferModal() {
       const roundLabel = t.effectiveRound === 0
         ? '<span style="font-size:11px;color:#228B22">⚡立即</span>'
         : `<span style="font-size:11px;color:#999">第${t.effectiveRound}轮生效</span>`;
+      // ★ 仅超管可见“取消”按钮
+      const cancelBtn = isAdmin
+        ? `<button onclick="cancelTransfer('${t.id}')" style="background:#f44336;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;flex-shrink:0">取消</button>`
+        : '';
       return `<div style="display:flex;align-items:center;padding:10px;background:#fff;border:1px solid #eee;border-radius:8px;margin-bottom:6px;gap:8px">
         <img src="${getTeamLogo({name: t.fromTeamName})}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">
         <div style="flex:1;min-width:0">
@@ -7058,7 +7171,7 @@ function showTransferModal() {
           <div style="font-size:11px;color:#888">${t.fromTeamName} → ${t.toTeamName}</div>
         </div>
         <div style="font-size:11px;color:#999;flex-shrink:0;text-align:right">${roundLabel}${feeTag}</div>
-        <button onclick="cancelTransfer('${t.id}')" style="background:#f44336;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;flex-shrink:0">取消</button>
+        ${cancelBtn}
       </div>`;
     }).join('');
   }
@@ -7081,23 +7194,26 @@ function showTransferModal() {
     return `<span style="font-size:11px;color:#666;background:#f5f5f5;padding:2px 6px;border-radius:4px">${LEAGUE_NAMES[l]}：第${r}轮</span>`;
   }).join(' ');
 
-  const content = `
-    <div class="modal-header">
-      <div class="modal-title">🔄 转会管理</div>
-      <button class="modal-close" onclick="closeModal()">×</button>
+  // ★ 仅超管可见“发起转会”按钮
+  const addTransferBtn = isAdmin
+    ? `<button class="btn btn-primary btn-full" style="margin-top:12px;background:#228B22" onclick="showAddTransferModal()">➕ 发起转会</button>`
+    : '';
+
+  container.innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${leagueRounds}</div>
+    <div style="font-size:12px;color:#888;margin-bottom:8px;line-height:1.6">
+      支持指定轮次生效或立即转会。<span style="color:#2196F3">同联赛</span>转会数据继续累加，<span style="color:#FF9800">跨联赛</span>转会原数据保留、新数据从零开始。
     </div>
-    <div style="max-height:70vh;overflow-y:auto;padding:4px 0">
-      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${leagueRounds}</div>
-      <div style="font-size:12px;color:#888;margin-bottom:8px;line-height:1.6">
-        支持指定轮次生效或立即转会。<span style="color:#2196F3">同联赛</span>转会数据继续累加，<span style="color:#FF9800">跨联赛</span>转会原数据保留、新数据从零开始。
-      </div>
-      <div style="font-size:13px;font-weight:600;color:#333;margin-bottom:6px">📋 待生效转会（${pending.length}）</div>
-      ${pendingHtml}
-      ${processedHtml}
-      <button class="btn btn-primary btn-full" style="margin-top:12px;background:#228B22" onclick="showAddTransferModal()">➕ 发起转会</button>
-    </div>
+    <div style="font-size:13px;font-weight:600;color:#333;margin-bottom:6px">📋 待生效转会（${pending.length}）</div>
+    ${pendingHtml}
+    ${processedHtml}
+    ${addTransferBtn}
   `;
-  showModal(content);
+}
+
+// 兼容旧调用：showTransferModal 仍然弹出弹窗（超管从其他入口使用）
+function showTransferModal() {
+  renderTransferManage();
 }
 
 // 发起转会弹窗
@@ -7113,7 +7229,7 @@ function showAddTransferModal() {
   const content = `
     <div class="modal-header">
       <div class="modal-title">➕ 发起转会</div>
-      <button class="modal-close" onclick="showTransferModal()">← 返回</button>
+      <button class="modal-close" onclick="closeModal()">×</button>
     </div>
     <div class="form-group">
       <label class="form-label">原球队</label>
@@ -7161,7 +7277,7 @@ function showAddTransferModal() {
     </div>
     <div style="display:flex;gap:8px;margin-top:8px">
       <button class="btn btn-primary" style="flex:1;background:#228B22" onclick="confirmAddTransfer()">确认转会</button>
-      <button class="btn btn-secondary" style="flex:1" onclick="showTransferModal()">取消</button>
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal()">取消</button>
     </div>
   `;
   showModal(content);
@@ -7253,19 +7369,73 @@ function confirmAddTransfer() {
   state.pendingTransfers.push(transfer);
   saveState();
   showToast('转会已' + (isImmediate ? '完成' : '添加') + '：' + player.name + ' → ' + toTeam.name);
-  showTransferModal();
+  closeModal();
+  renderTransferManage();
 }
 
 // 取消待生效转会
+// 取消转会（超管专用，球员回原队，不留痕迹，自动上传云端）
 function cancelTransfer(transferId) {
-  if (!confirm('确定要取消该转会吗？')) return;
-  const idx = (state.pendingTransfers || []).findIndex(t => t.id === transferId);
+  const transfer = (state.pendingTransfers || []).find(t => t.id === transferId);
+  if (!transfer) return;
+
+  const isAdmin = state.currentUser && state.currentUser.isSuperAdmin;
+  if (!isAdmin) { showToast('无权操作'); return; }
+
+  if (!confirm('⚠️ 确认取消 ' + transfer.playerName + ' 的转会？\n球员将回到原球队，所有转会痕迹将被清除，自动同步云端。')) return;
+
+  const fromTeam = state.teams.find(t => t.id === transfer.fromTeamId);
+  const toTeam = state.teams.find(t => t.id === transfer.toTeamId);
+
+  if (fromTeam && toTeam) {
+    // 从目标球队移除球员
+    const toPlayerIdx = toTeam.players.findIndex(p => p.uid == transfer.playerUid);
+    if (toPlayerIdx >= 0) {
+      const toPlayer = toTeam.players[toPlayerIdx];
+      toTeam.players.splice(toPlayerIdx, 1);
+
+      if (fromTeam.league === toTeam.league) {
+        // 同联赛：恢复原球员（清除转会标记）
+        delete toPlayer.transferFee;
+        delete toPlayer.transferFrom;
+        delete toPlayer.transferDate;
+        toPlayer.id = 'p' + fromTeam.id + '_' + toPlayer.uid;
+        fromTeam.players.push(toPlayer);
+      } else {
+        // 跨联赛：恢复原球员的 transferredOut 标记，删除目标队新球员
+        const fromPlayerIdx = fromTeam.players.findIndex(p => p.uid == transfer.playerUid && p.transferredOut);
+        if (fromPlayerIdx >= 0) {
+          const fromPlayer = fromTeam.players[fromPlayerIdx];
+          delete fromPlayer.transferredOut;
+          delete fromPlayer.transferredOutTo;
+          delete fromPlayer.transferredOutAtRound;
+          delete fromPlayer.transferFee;
+          delete fromPlayer.transferFrom;
+          delete fromPlayer.transferDate;
+        }
+      }
+    }
+  }
+
+  // 移除关联的转会市场挂牌
+  const listingIdx = (state.transferMarket || []).findIndex(l =>
+    l.playerUid == transfer.playerUid && l.teamId === transfer.fromTeamId && l.isFromMarket !== false
+  );
+  if (listingIdx >= 0) {
+    state.transferMarket.splice(listingIdx, 1);
+  }
+
+  // 移除 pendingTransfer
+  const idx = state.pendingTransfers.findIndex(t => t.id === transferId);
   if (idx >= 0) {
     state.pendingTransfers.splice(idx, 1);
-    saveState();
-    showToast('转会已取消');
-    showTransferModal();
   }
+
+  saveState();
+  showToast('转会已取消：' + transfer.playerName + ' 已回到原队，自动同步云端');
+  renderTransferManage();
+  renderTransferMarket();
+  autoCloudUpload(); // 自动上传云端
 }
 
 
@@ -7995,7 +8165,7 @@ document.getElementById('btnEnterMatch').onclick = () => {
 document.getElementById('btnAdminImport').onclick = () => showAdminImportModal();
 document.getElementById('btnCupManage').onclick = () => showCupManageModal();
 document.getElementById('btnArchiveSeason').onclick = () => showArchiveSeasonModal();
-document.getElementById('btnTransfer').onclick = () => showTransferModal();
+// 转会管理已移至顶部工具栏（按钮已移除）
 document.getElementById('btnSyncCloud').onclick = () => showSyncModal();
 
 document.getElementById('modalOverlay').onclick = (e) => {
@@ -8040,6 +8210,12 @@ document.getElementById('modalOverlay').onclick = (e) => {
   saveToUrlHash();
   // 自动从云端同步最新数据（静默）
   autoSyncFromCloud();
+  // 定时检查转会成交（每30秒）
+  if (!window._transferCompletionChecker) {
+    window._transferCompletionChecker = setInterval(() => {
+      checkTransferCompletions();
+    }, 30000);
+  }
 })();
 
 // 强制升级弹窗
