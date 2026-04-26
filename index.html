@@ -9,29 +9,35 @@
   <!-- 顶部版本检查：即使旧版本被缓存也能触发强制更新 -->
   <script>
   !function(){
-    // ★ v1.0.221: 彻底修复 SW 缓存死锁
-    // 此脚本在 v1.0.216+ 已有（只显示 notice），v1.0.220+ 增加了自动刷新
-    // notice 中注入的 <img onerror> 脚本会在 innerHTML 赋值时自动执行
-    // 无论哪个版本的代码，都能通过 notice 注入完成 SW 注销 + 缓存清理
+    // ★ v1.0.257: 彻底修复 SW 缓存死锁
+    // 版本检查 fetch 带 cache:no-store + 时间戳，绕过 SW 缓存和 HTTP 缓存
+    // 检测到版本落后时：注销 SW → 清缓存 → 带时间戳强制跳转（防旧 SW 拦截）
     fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
-      // 公告条（含可能的注入脚本）
+      // 公告条
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';b.innerHTML='<div style="max-width:600px;margin:0 auto;">📢 '+d.notice+'</div>';document.body.prepend(b)}
-      // ★ 强制版本检查：如果本地版本低于 minVersion，注销 SW + 清缓存 + 刷新
+      // ★ 强制版本检查：如果本地版本低于 minVersion，注销 SW + 清缓存 + 强制跳转
       if(d.minVersion){
         var myV=0;try{myV=APP_VERSION.major*10000+APP_VERSION.minor*100+APP_VERSION.patch}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
-          // 注销 Service Worker（等待完成）
           Promise.resolve().then(function(){
             var tasks=[];
+            // 注销所有 Service Worker
             if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+            // 清除所有 Cache Storage
             if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
             return Promise.all(tasks);
           }).then(function(){
-            setTimeout(function(){location.reload()},500);
+            // ★ 关键修复：不用 location.reload()，改用 location.replace 带时间戳
+            // reload 可能被旧 SW 拦截再次返回缓存，replace+时间戳强制浏览器走网络
+            setTimeout(function(){
+              var url = location.href.split('?')[0].split('#')[0] + '?_v=' + Date.now();
+              location.replace(url);
+            }, 800);
           }).catch(function(){
-            location.reload();
+            var url = location.href.split('?')[0].split('#')[0] + '?_v=' + Date.now();
+            location.replace(url);
           });
         }
       }
@@ -489,9 +495,14 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 257 };
+const APP_VERSION = { major: 1, minor: 0, patch: 258 };
 
 const APP_AUTHOR = 'J.K';
+
+// 清理版本强制跳转带来的 _v 参数，保持 URL 干净
+if (location.search.includes('_v=')) {
+  try { history.replaceState(null, '', location.pathname); } catch(e) {}
+}
 const APP_BUILD_DATE = '2026-04-24';
 
 // ============ CHANGELOG ============
@@ -8725,7 +8736,7 @@ setInterval(updateClock, 1000);
 
 // 注册 Service Worker 实现 PWA 离线功能
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').then(() => {
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(() => {
     console.log('Service Worker 注册成功');
   });
 }
