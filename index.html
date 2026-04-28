@@ -9,18 +9,29 @@
   <!-- 顶部版本检查：即使旧版本被缓存也能触发强制更新 -->
   <script>
   !function(){
-    // ★ v1.0.257: 彻底修复 SW 缓存死锁
+    // v1.0.268: 防止刷新循环——sessionStorage 标记确保每次强制更新只执行一次
+    // 若刷新后 version.json 还未更新（GitHub Pages 延迟），跳过重复清理
+    var _upgrading = sessionStorage.getItem('pgm_upgrading');
+    if (_upgrading && (Date.now() - parseInt(_upgrading, 10)) < 30000) {
+      sessionStorage.removeItem('pgm_upgrading');
+      var baseUrl = location.href.split('?')[0].split('#')[0];
+      if (location.href !== baseUrl) location.replace(baseUrl);
+      return;
+    }
+    // v1.0.257: 彻底修复 SW 缓存死锁
     // 版本检查 fetch 带 cache:no-store + 时间戳，绕过 SW 缓存和 HTTP 缓存
     // 检测到版本落后时：注销 SW → 清缓存 → 带时间戳强制跳转（防旧 SW 拦截）
     fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
       // 公告条
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';b.innerHTML='<div style="max-width:600px;margin:0 auto;">📢 '+d.notice+'</div>';document.body.prepend(b)}
-      // ★ 强制版本检查：如果本地版本低于 minVersion，注销 SW + 清缓存 + 强制跳转
+      // 强制版本检查：如果本地版本低于 minVersion，注销 SW + 清缓存 + 强制跳转
       if(d.minVersion){
         var myV=0;try{myV=APP_VERSION.major*10000+APP_VERSION.minor*100+APP_VERSION.patch}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
+          // v1.0.268: 记录升级时间戳，防止刷新循环
+          try{sessionStorage.setItem('pgm_upgrading', Date.now())}catch(e){}
           Promise.resolve().then(function(){
             var tasks=[];
             // 注销所有 Service Worker
@@ -29,7 +40,7 @@
             if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
             return Promise.all(tasks);
           }).then(function(){
-            // ★ 关键修复：不用 location.reload()，改用 location.replace 带时间戳
+            // 关键修复：不用 location.reload()，改用 location.replace 带时间戳
             // reload 可能被旧 SW 拦截再次返回缓存，replace+时间戳强制浏览器走网络
             setTimeout(function(){
               var url = location.href.split('?')[0].split('#')[0] + '?_v=' + Date.now();
@@ -500,7 +511,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 267 };
+const APP_VERSION = { major: 1, minor: 0, patch: 268 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -512,7 +523,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.267', date: '2026-04-28', items: ['🐛 修复超管删除挂牌/取消转会后球员未回原队：跨联赛回滚时清除 isTransferIn/transferredInFrom 等标记', '🔄 超管删除挂牌和取消转会改为手动上传云端，不再自动同步'] },
+  { v: '1.0.268', date: '2026-04-28', items: ['🐛 防止强制更新刷新循环：sessionStorage 标记确保每次升级只清理一次缓存，等待 GitHub Pages 更新完成'] },
   { v: '1.0.265', date: '2026-04-27', items: ['🐛 修复顶部工具栏数据员上传云端时间显示不全：nav-cloud-info max-width 120px→200px'] },
   { v: '1.0.264', date: '2026-04-27', items: ['🔑 顶部导航栏"登录"中文按钮（金色渐变醒目设计），登录后自动切换为☰菜单', '📐 导航栏间距均匀分配：积分/赛程/榜单/转会居中，队徽+搜索+菜单右侧'] },
   { v: '1.0.244', date: '2026-04-27', items: ['🎨 转会页Tab重设计：分段式切换器，深绿选中态+浅灰未选中态', '🔄 默认显示转会市场，转会管理点击切换'] },
