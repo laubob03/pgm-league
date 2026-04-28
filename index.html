@@ -511,7 +511,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 272 };
+const APP_VERSION = { major: 1, minor: 0, patch: 273 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -523,6 +523,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.273', date: '2026-04-29', items: ['🗑️ 无出价挂牌删除规则：挂牌第三天23:59:59无出价自动删除，球员回归原队'] },
   { v: '1.0.272', date: '2026-04-29', items: ['💰 出价规则调整：底价>15M球员首次出价上限改为底价；后续出价加价1-10M，上不封顶'] },
   { v: '1.0.271', date: '2026-04-29', items: ['⏰ 转会成交规则重构：单窗口19:01-22:00，窗口内有人出价则2小时无人再出价成交；22:01后出价进入次日窗口；挂牌第三日23:59:59强制成交'] },
   { v: '1.0.270', date: '2026-04-28', items: ['⏰ 转会成交规则：满24h后每日检查，Window A(19:01-21:00)无人出价→21:00成交；Window B(21:01-23:00)无人出价→23:00成交；有出价→次日重新开始'] },
@@ -4362,7 +4363,6 @@ function doPlayerSearch(query) {
 // 挂牌第三日 23:59:59 → 强制成交（不考虑2小时规则）
 function getTransferDeadline(listing) {
   if (!listing || listing.status !== 'active') return null;
-  if (!listing.bids || listing.bids.length === 0) return null;
 
   const listedDate = new Date(listing.listedAt);
   const now = new Date();
@@ -4374,11 +4374,21 @@ function getTransferDeadline(listing) {
     return d;
   }
 
+  // 无出价删除时间：挂牌第三天 23:59:59
+  const expireTime = new Date(listedDate.getTime() + 72 * 60 * 60 * 1000 - 1000);
+
+  // ★ v1.0.273: 无出价时也设deadline，第三天23:59:59自动删除
+  if (!listing.bids || listing.bids.length === 0) {
+    if (now < expireTime) return expireTime; // 未过期，返回过期时间
+    return expireTime; // 已过期也返回，让check函数处理删除
+  }
+
+  // 有出价 → 走成交规则
   // 挂牌满24h后才可能成交
   const minDeadline = new Date(listedDate.getTime() + 24 * 60 * 60 * 1000);
 
-  // 强制成交时间：挂牌第三天 23:59:59（最强兜底）
-  const forceDealTime = new Date(listedDate.getTime() + 72 * 60 * 60 * 1000 - 1000);
+  // 强制成交时间：挂牌第三天 23:59:59
+  const forceDealTime = expireTime;
 
   // 从挂牌次日（满足24h后）开始检查
   const listedDay = new Date(listedDate.getFullYear(), listedDate.getMonth(), listedDate.getDate());
@@ -4476,24 +4486,51 @@ function checkTransferCompletions() {
   const listings = (state.transferMarket || []).filter(l => l.status === 'active');
   if (!listings.length) return;
 
-  let anyCompleted = false;
+  let anyChanged = false;
   const now = new Date();
 
   listings.forEach(listing => {
-    // 没有出价就不可能成交
-    if (!listing.bids || listing.bids.length === 0) return;
-
     const deadline = getTransferDeadline(listing);
+    if (!deadline) return;
 
-    // 如果deadline存在且已过期，自动成交
-    if (deadline && now >= deadline) {
-      completeTransferListing(listing.id);
-      anyCompleted = true;
-      return; // completeTransferListing已调用saveState
+    if (now >= deadline) {
+      if (!listing.bids || listing.bids.length === 0) {
+        // ★ v1.0.273: 无出价 → 删除挂牌，球员回归原队
+        cancelTransferListing(listing.id);
+        anyChanged = true;
+      } else {
+        // 有出价 → 正常成交
+        completeTransferListing(listing.id);
+        anyChanged = true;
+      }
     }
   });
 
-  if (anyCompleted && !listings.some(l => l.status === 'completed')) saveState();
+  if (anyChanged) saveState();
+}
+
+// ★ v1.0.273: 取消挂牌，球员回归原队
+function cancelTransferListing(listingId) {
+  const listing = (state.transferMarket || []).find(l => l.id === listingId);
+  if (!listing) return;
+
+  const fromTeam = state.teams.find(t => t.id === listing.teamId);
+  if (!fromTeam) return;
+
+  // 从挂牌记录中移除（status改为cancelled）
+  listing.status = 'cancelled';
+  listing.cancelledAt = new Date().toISOString();
+  listing.cancelledReason = 'expired'; // 无出价过期
+
+  // 球员回归原队：清除transferredOut标记（如果存在）
+  const player = fromTeam.players ? fromTeam.players.find(p => p.uid == listing.playerUid) : null;
+  if (player) {
+    delete player.transferredOut;
+    delete player.transferredOutTo;
+    delete player.transferredOutAtRound;
+  }
+
+  showToast('挂牌已过期删除，球员 ' + listing.playerName + ' 已回归 ' + fromTeam.name);
 }
 
 // 展开/收起球员跨赛季详情
