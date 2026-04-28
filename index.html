@@ -342,7 +342,7 @@
       <span class="nav-clock" id="navClock"></span>
       <span class="nav-cloud-info" id="navCloudInfo" style="display:none"></span>
     </div>
-    <button class="nav-login-btn" id="navLoginBtn" onclick="showLoginModal()">登录</button>
+    <button class="nav-login-btn" id="navLoginBtn" onclick="openSidebar()">登录</button>
     <button class="menu-btn" id="menuBtn" style="display:none">☰</button>
   </div>
 </nav>
@@ -511,7 +511,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 273 };
+const APP_VERSION = { major: 1, minor: 0, patch: 274 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -523,6 +523,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.274', date: '2026-04-29', items: ['🔗 顶部工具栏"登录"按钮点击打开侧边栏，而非直接弹出登录框'] },
   { v: '1.0.273', date: '2026-04-29', items: ['🗑️ 无出价挂牌删除规则：挂牌第三天23:59:59无出价自动删除，球员回归原队'] },
   { v: '1.0.272', date: '2026-04-29', items: ['💰 出价规则调整：底价>15M球员首次出价上限改为底价；后续出价加价1-10M，上不封顶'] },
   { v: '1.0.271', date: '2026-04-29', items: ['⏰ 转会成交规则重构：单窗口19:01-22:00，窗口内有人出价则2小时无人再出价成交；22:01后出价进入次日窗口；挂牌第三日23:59:59强制成交'] },
@@ -8225,15 +8226,24 @@ function importDataFromFile(event) {
 }
 
 // ============ EVENT LISTENERS ============
+// 打开侧边栏
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('active');
+  document.getElementById('sidebarOverlay').classList.add('active');
+}
+
+// 关闭侧边栏
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('active');
+  document.getElementById('sidebarOverlay').classList.remove('active');
+}
+
 document.getElementById('menuBtn').onclick = () => {
   document.getElementById('sidebar').classList.toggle('active');
   document.getElementById('sidebarOverlay').classList.toggle('active');
 };
 
-document.getElementById('sidebarOverlay').onclick = () => {
-  document.getElementById('sidebar').classList.remove('active');
-  document.getElementById('sidebarOverlay').classList.remove('active');
-};
+document.getElementById('sidebarOverlay').onclick = closeSidebar;
 
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.onclick = () => {
