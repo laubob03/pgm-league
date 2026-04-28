@@ -511,7 +511,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 268 };
+const APP_VERSION = { major: 1, minor: 0, patch: 269 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -523,7 +523,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.268', date: '2026-04-28', items: ['🐛 防止强制更新刷新循环：sessionStorage 标记确保每次升级只清理一次缓存，等待 GitHub Pages 更新完成'] },
+  { v: '1.0.269', date: '2026-04-28', items: ['⏰ 转会成交规则重设计：成交必须在19:01-21:00竞价窗口内无人出价，满24h后每日21:00检查，移除原21:01-23:00窗口B'] },
   { v: '1.0.265', date: '2026-04-27', items: ['🐛 修复顶部工具栏数据员上传云端时间显示不全：nav-cloud-info max-width 120px→200px'] },
   { v: '1.0.264', date: '2026-04-27', items: ['🔑 顶部导航栏"登录"中文按钮（金色渐变醒目设计），登录后自动切换为☰菜单', '📐 导航栏间距均匀分配：积分/赛程/榜单/转会居中，队徽+搜索+菜单右侧'] },
   { v: '1.0.244', date: '2026-04-27', items: ['🎨 转会页Tab重设计：分段式切换器，深绿选中态+浅灰未选中态', '🔄 默认显示转会市场，转会管理点击切换'] },
@@ -4344,12 +4344,10 @@ function doPlayerSearch(query) {
 // ============ 转会成交自动判定逻辑 ============
 
 // 获取挂牌的预计成交时间（deadline）
-// 规则：
+// v1.0.269 新规则：
 // 1. 所有成交必须满足挂牌满24h
-// 2. 挂牌当天21:00后无人出价 → 挂牌满24h到期即成交
-// 3. 挂牌当天21:00后有出价 → 进入晚间竞价窗口循环
-// 4. 晚间窗口循环：Window A(19:01-21:00)无人出价→21:00成交；Window B(21:01-23:00)无人出价→23:00成交；有人出价→次日Window A重新开始
-//    （窗口deadline若早于挂牌24h，则延后到24h后）
+// 2. 成交只在21:00发生（19:01-21:00竞价窗口）
+// 3. 挂牌满24h后，进入每日竞价窗口循环：19:01-21:00内有出价→次日21:00；无人出价→当日21:00成交
 function getTransferDeadline(listing) {
   if (!listing || listing.status !== 'active') return null;
   if (!listing.bids || listing.bids.length === 0) return null; // 无出价不设deadline
@@ -4357,80 +4355,49 @@ function getTransferDeadline(listing) {
   const listedDate = new Date(listing.listedAt);
   const now = new Date();
 
-  // 辅助：构造某天的指定时间点
+  // 辅助：构造某天指定时间点
   function makeTime(date, h, m) {
     const d = new Date(date);
     d.setHours(h, m, 0, 0);
     return d;
   }
 
-  // 辅助：某天21:00之前是否有出价
-  function hasBidBeforeTime(bids, date, h, m) {
-    const cutoff = makeTime(date, h, m);
-    return bids.some(b => new Date(b.bidAt) <= cutoff);
-  }
-
-  // 辅助：某天某时段内是否有出价
-  function hasBidInWindow(bids, date, startH, startM, endH, endM) {
-    const start = makeTime(date, startH, startM);
-    const end = makeTime(date, endH, endM);
+  // 辅助：检查某天19:01-21:00窗口内是否有出价
+  function hasBidInWindow(bids, date) {
+    const start = makeTime(date, 19, 1);
+    const end = makeTime(date, 21, 0);
     return bids.some(b => {
       const bt = new Date(b.bidAt);
       return bt >= start && bt <= end;
     });
   }
 
-  // 第一阶段：检查挂牌当天21:00之后是否有出价
-  const listedDay21 = makeTime(listedDate, 21, 0);
-  const hasBidAfter21OnListedDay = listing.bids.some(b => new Date(b.bidAt) > listedDay21);
-
-  // 所有成交必须满足挂牌满24h
+  // 挂牌满24h后才是最早可成交时间
   const minDeadline = new Date(listedDate.getTime() + 24 * 60 * 60 * 1000);
 
-  if (!hasBidAfter21OnListedDay) {
-    // 挂牌当天21:00后无人出价 → 挂牌满24h到期即成交
-    return minDeadline;
-  }
-
-  // 第二阶段：进入晚间竞价窗口循环
-  // 从挂牌次日开始逐日检查
+  // 从挂牌次日（满足24h后）开始检查
   const listedDay = new Date(listedDate.getFullYear(), listedDate.getMonth(), listedDate.getDate());
-  let checkDate = new Date(listedDay.getTime() + 24 * 60 * 60 * 1000); // 次日
+  let checkDate = new Date(listedDay.getTime() + 24 * 60 * 60 * 1000);
 
   // 安全上限：最多检查30天
   for (let i = 0; i < 30; i++) {
     const day19_01 = makeTime(checkDate, 19, 1);
     const day21_00 = makeTime(checkDate, 21, 0);
-    const day21_01 = makeTime(checkDate, 21, 1);
-    const day23_00 = makeTime(checkDate, 23, 0);
 
-    // 如果当前时间还没到这天的19:01，deadline就是当天的Window A
+    // 如果当前时间还没到这天的19:01，deadline就是当天的21:00（但不早于minDeadline）
     if (now < day19_01) {
       return day21_00 < minDeadline ? minDeadline : day21_00;
     }
 
-    // Window A (19:01-21:00) 是否有人出价？
-    const hasBidInA = hasBidInWindow(listing.bids, checkDate, 19, 1, 21, 0);
+    // Window A (19:01-21:00) 内是否有人出价？
+    const hasBidInA = hasBidInWindow(listing.bids, checkDate);
 
     if (!hasBidInA) {
-      // Window A 无人出价 → 21:00成交（但不得早于挂牌24h）
+      // 窗口无人出价 → 当日21:00成交（但不早于挂牌24h）
       return day21_00 < minDeadline ? minDeadline : day21_00;
     }
 
-    // Window A 有人出价 → 进入Window B
-    if (now < day21_01) {
-      return day23_00 < minDeadline ? minDeadline : day23_00;
-    }
-
-    // Window B (21:01-23:00) 是否有人出价？
-    const hasBidInB = hasBidInWindow(listing.bids, checkDate, 21, 1, 23, 0);
-
-    if (!hasBidInB) {
-      // Window B 无人出价 → 23:00成交（但不得早于挂牌24h）
-      return day23_00 < minDeadline ? minDeadline : day23_00;
-    }
-
-    // Window B 也有人出价 → 次日重新从Window A开始
+    // 窗口内有人出价 → 次日重新检查窗口
     checkDate = new Date(checkDate.getTime() + 24 * 60 * 60 * 1000);
   }
 
