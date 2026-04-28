@@ -264,7 +264,7 @@
     .nav-season-info .season-label{font-weight:700;color:rgba(255,255,255,0.95);font-size:12px}
     .nav-season-info .season-credit{font-size:10px;color:rgba(255,255,255,0.5);font-style:italic}
     .nav-clock{font-size:10px;color:rgba(255,255,255,0.6);font-variant-numeric:tabular-nums;letter-spacing:0.2px}
-    .nav-cloud-info{font-size:9px;color:rgba(255,255,255,0.45);white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis}
+    .nav-cloud-info{font-size:9px;color:rgba(255,255,255,0.45);white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis}
     .player-expand{cursor:pointer;color:#1B5E20;border-bottom:1px dashed #1B5E20;transition:all 0.2s}
     .player-expand:hover{color:#228B22;border-bottom-color:#228B22}
     .player-expand-active{color:#228B22;border-bottom-style:solid}
@@ -500,7 +500,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 264 };
+const APP_VERSION = { major: 1, minor: 0, patch: 267 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -512,6 +512,8 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.267', date: '2026-04-28', items: ['🐛 修复超管删除挂牌/取消转会后球员未回原队：跨联赛回滚时清除 isTransferIn/transferredInFrom 等标记', '🔄 超管删除挂牌和取消转会改为手动上传云端，不再自动同步'] },
+  { v: '1.0.265', date: '2026-04-27', items: ['🐛 修复顶部工具栏数据员上传云端时间显示不全：nav-cloud-info max-width 120px→200px'] },
   { v: '1.0.264', date: '2026-04-27', items: ['🔑 顶部导航栏"登录"中文按钮（金色渐变醒目设计），登录后自动切换为☰菜单', '📐 导航栏间距均匀分配：积分/赛程/榜单/转会居中，队徽+搜索+菜单右侧'] },
   { v: '1.0.244', date: '2026-04-27', items: ['🎨 转会页Tab重设计：分段式切换器，深绿选中态+浅灰未选中态', '🔄 默认显示转会市场，转会管理点击切换'] },
   { v: '1.0.242', date: '2026-04-27', items: ['🔄 转会管理从侧边栏移至顶部"转会"TAB页，所有人可见待生效/已完成转会信息', '🔐 "发起转会"和"取消"按钮仅超级管理员可见'] },
@@ -4134,7 +4136,7 @@ function delistPlayer(listingId) {
   renderTransferMarket();
 }
 
-// 删除转会帖子（超管专用，球员回原队，不留痕迹，自动上传云端）
+// 删除转会帖子（超管专用，球员回原队，不留痕迹，需手动上传云端）
 function deleteTransferListing(listingId) {
   const listing = (state.transferMarket || []).find(l => l.id === listingId);
   if (!listing) return;
@@ -4142,7 +4144,7 @@ function deleteTransferListing(listingId) {
   const isAdmin = state.currentUser && state.currentUser.isSuperAdmin;
   if (!isAdmin) { showToast('无权操作'); return; }
 
-  if (!confirm('⚠️ 确认删除 ' + listing.playerName + ' 的转会帖子？\n球员将回到原球队，所有转会痕迹将被清除，自动同步云端。')) return;
+  if (!confirm('⚠️ 确认删除 ' + listing.playerName + ' 的转会帖子？\n球员将回到原球队，所有转会痕迹将被清除，需手动上传云端。')) return;
 
   // 如果该挂牌已成交（status=completed），需要回滚转会
   if (listing.status === 'completed') {
@@ -4161,9 +4163,8 @@ function deleteTransferListing(listingId) {
   }
 
   saveState();
-  showToast('已删除：' + listing.playerName + '，球员已回原队，自动同步云端');
+  showToast('已删除：' + listing.playerName + '，球员已回原队，请手动上传云端');
   renderTransferMarket();
-  autoCloudUpload(); // 自动上传云端
 }
 
 // 回滚已成交的转会（球员回到原队，清除所有痕迹）
@@ -4195,7 +4196,13 @@ function rollbackTransferByListing(listing) {
           toPlayer.id = 'p' + fromTeam.id + '_' + toPlayer.uid;
           fromTeam.players.push(toPlayer);
         } else {
-          // 跨联赛：恢复原球员的 transferredOut 标记，删除目标队新球员
+          // 跨联赛：清除目标队新球员的转会标记，恢复原球员的 transferredOut 标记
+          delete toPlayer.isTransferIn;
+          delete toPlayer.transferredInFrom;
+          delete toPlayer.transferredInAtRound;
+          delete toPlayer.transferFee;
+          delete toPlayer.transferFrom;
+          delete toPlayer.transferDate;
           const fromPlayerIdx = fromTeam.players.findIndex(p => p.uid == listing.playerUid && p.transferredOut);
           if (fromPlayerIdx >= 0) {
             const fromPlayer = fromTeam.players[fromPlayerIdx];
@@ -4206,7 +4213,6 @@ function rollbackTransferByListing(listing) {
             delete fromPlayer.transferFrom;
             delete fromPlayer.transferDate;
           }
-          // toPlayer已被splice移除，无需额外处理
         }
       }
     }
@@ -7409,7 +7415,7 @@ function confirmAddTransfer() {
 }
 
 // 取消待生效转会
-// 取消转会（超管专用，球员回原队，不留痕迹，自动上传云端）
+// 取消转会（超管专用，球员回原队，不留痕迹，需手动上传云端）
 function cancelTransfer(transferId) {
   const transfer = (state.pendingTransfers || []).find(t => t.id === transferId);
   if (!transfer) return;
@@ -7417,7 +7423,7 @@ function cancelTransfer(transferId) {
   const isAdmin = state.currentUser && state.currentUser.isSuperAdmin;
   if (!isAdmin) { showToast('无权操作'); return; }
 
-  if (!confirm('⚠️ 确认取消 ' + transfer.playerName + ' 的转会？\n球员将回到原球队，所有转会痕迹将被清除，自动同步云端。')) return;
+  if (!confirm('⚠️ 确认取消 ' + transfer.playerName + ' 的转会？\n球员将回到原球队，所有转会痕迹将被清除，需手动上传云端。')) return;
 
   const fromTeam = state.teams.find(t => t.id === transfer.fromTeamId);
   const toTeam = state.teams.find(t => t.id === transfer.toTeamId);
@@ -7437,7 +7443,13 @@ function cancelTransfer(transferId) {
         toPlayer.id = 'p' + fromTeam.id + '_' + toPlayer.uid;
         fromTeam.players.push(toPlayer);
       } else {
-        // 跨联赛：恢复原球员的 transferredOut 标记，删除目标队新球员
+        // 跨联赛：清除目标队新球员的转会标记，恢复原球员的 transferredOut 标记
+        delete toPlayer.isTransferIn;
+        delete toPlayer.transferredInFrom;
+        delete toPlayer.transferredInAtRound;
+        delete toPlayer.transferFee;
+        delete toPlayer.transferFrom;
+        delete toPlayer.transferDate;
         const fromPlayerIdx = fromTeam.players.findIndex(p => p.uid == transfer.playerUid && p.transferredOut);
         if (fromPlayerIdx >= 0) {
           const fromPlayer = fromTeam.players[fromPlayerIdx];
@@ -7467,10 +7479,9 @@ function cancelTransfer(transferId) {
   }
 
   saveState();
-  showToast('转会已取消：' + transfer.playerName + ' 已回到原队，自动同步云端');
+  showToast('转会已取消：' + transfer.playerName + ' 已回到原队，请手动上传云端');
   renderTransferManage();
   renderTransferMarket();
-  autoCloudUpload(); // 自动上传云端
 }
 
 
