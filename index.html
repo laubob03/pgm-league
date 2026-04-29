@@ -9,13 +9,29 @@
   <!-- 顶部版本检查：检测到新版本时弹出提示框，用户确认后才升级 -->
   <script>
   !function(){
-    // v1.0.284: 新版本策略——弹出提示框，用户点击"立即更新"后才执行升级
+    // v1.0.286: 升级跳转后用 sessionStorage 标记确保不循环弹框
+    var _upgraded = sessionStorage.getItem('pgm_upgraded');
+    if (_upgraded) {
+      // 上一次是升级跳转来的，清除 SW 缓存并移除标记
+      sessionStorage.removeItem('pgm_upgraded');
+      Promise.resolve().then(function(){
+        var tasks = [];
+        if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+        if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
+        return Promise.all(tasks);
+      }).then(function(){
+        var baseUrl = location.href.split('?')[0].split('#')[0];
+        var newUrl = baseUrl + '?_v=' + Date.now();
+        location.replace(newUrl);
+      });
+      return;
+    }
     fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
       // 公告条
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';b.innerHTML='<div style="max-width:600px;margin:0 auto;">📢 '+d.notice+'</div>';document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.284'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.286'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -41,16 +57,16 @@
             var btn = this;
             btn.disabled = true;
             btn.textContent = '⏳ 正在清理缓存...';
+            // 先标记升级状态
+            try { sessionStorage.setItem('pgm_upgraded', '1'); } catch(e){}
             var tasks = [];
             if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
             if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
             Promise.all(tasks).then(function(){
-              overlay.remove();
               var baseUrl = location.href.split('?')[0].split('#')[0];
               var newUrl = baseUrl + '?_v=' + Date.now();
               location.replace(newUrl);
             }).catch(function(){
-              overlay.remove();
               var baseUrl = location.href.split('?')[0].split('#')[0];
               var newUrl = baseUrl + '?_v=' + Date.now();
               location.replace(newUrl);
@@ -522,7 +538,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 284 };
+const APP_VERSION = { major: 1, minor: 0, patch: 286 };
 
 const APP_AUTHOR = 'J.K';
 
