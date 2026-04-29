@@ -511,7 +511,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 282 };
+const APP_VERSION = { major: 1, minor: 0, patch: 283 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -8510,14 +8510,15 @@ function showForceUpdateModal(minVer) {
         const names = await caches.keys();
         await Promise.all(names.map(n => caches.delete(n)));
       }
-      // 3. 移除遮罩
-      overlay.remove();
-      // 4. 刷新（此时 SW 已注销，浏览器会从网络加载新版本）
-      setTimeout(() => location.reload(), 300);
+      // 3. 清除 sessionStorage 中的升级标记
+      try { sessionStorage.removeItem('pgm_upgrading'); } catch(e) {}
     } catch(e) {
-      // 即使出错也尝试刷新
-      location.reload();
+      // 即使出错也继续
     }
+    // 4. 用 location.replace 带时间戳强制跳转，绕过所有缓存
+    var baseUrl = location.href.split('?')[0].split('#')[0];
+    var newUrl = baseUrl + '?_v=' + Date.now();
+    location.replace(newUrl);
   };
 }
 
