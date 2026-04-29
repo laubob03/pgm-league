@@ -15,7 +15,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';b.innerHTML='<div style="max-width:600px;margin:0 auto;">📢 '+d.notice+'</div>';document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.283'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.284'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -522,7 +522,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 283 };
+const APP_VERSION = { major: 1, minor: 0, patch: 284 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -7410,7 +7410,18 @@ function renderTransferManage() {
   if (pending.length === 0) {
     pendingHtml = '<div style="text-align:center;padding:20px;color:#999;font-size:13px">暂无待生效转会</div>';
   } else {
+    // 获取球队联赛底色（与足总杯赛程图一致）
+    function getTeamLeagueBg(teamName) {
+      const team = state.teams.find(t => t.name === teamName);
+      if (!team || !team.league) return '';
+      if (team.league === 'super') return 'background:#c0392b;color:#fff';
+      if (team.league === 'jiaEast' || team.league === 'jiaWest') return 'background:#1e8449;color:#fff';
+      if (team.league === 'yiEast' || team.league === 'yiWest') return 'background:#5d6d7e;color:#fff';
+      return '';
+    }
     pendingHtml = pending.map(t => {
+      const toTeamBg = getTeamLeagueBg(t.toTeamName);
+      const toTeamStyle = toTeamBg ? `style="${toTeamBg};padding:1px 5px;border-radius:3px"` : 'style="color:#888"';
       const sameLeague = t.fromLeague === t.toLeague;
       const leagueTag = sameLeague
         ? '<span style="font-size:11px;color:#2196F3;background:#E3F2FD;padding:1px 6px;border-radius:4px">同联赛</span>'
@@ -7427,7 +7438,7 @@ function renderTransferManage() {
         <img src="${getTeamLogo({name: t.fromTeamName})}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.playerName} ${leagueTag}</div>
-          <div style="font-size:11px;color:#888">${t.fromTeamName} → ${t.toTeamName}</div>
+          <div style="font-size:11px">${t.fromTeamName} → <span ${toTeamStyle}>${t.toTeamName}</span></div>
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-size:11px;color:#999">${roundLabel}${feeTag}</div>
