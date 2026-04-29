@@ -511,7 +511,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 280 };
+const APP_VERSION = { major: 1, minor: 0, patch: 282 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -523,7 +523,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.280', date: '2026-04-29', items: ['📋 转会管理待生效转会卡片显示操作时间（所有人可见），格式 MM-DD HH:mm:ss'] },
+  { v: '1.0.282', date: '2026-04-29', items: ['📋 球队详情页新增两个TAB：⬇️ 转入球员 / ⬆️ 转出球员，所有人可见，显示待生效/已完成、轮次、费用、时间'] },
   { v: '1.0.276', date: '2026-04-29', items: ['➕ 新增足总杯数据员账号：zuzongbei（足总杯数据员），可管理足总杯对阵和录入比赛'] },
   { v: '1.0.274', date: '2026-04-29', items: ['🔗 顶部工具栏"登录"按钮点击打开侧边栏，而非直接弹出登录框'] },
   { v: '1.0.273', date: '2026-04-29', items: ['🗑️ 无出价挂牌删除规则：挂牌第三天23:59:59无出价自动删除，球员回归原队'] },
@@ -5479,6 +5479,8 @@ function showTeamDetail(teamId) {
         <button class="team-tab-btn active" id="tabBtn_league" onclick="switchTeamTab('league','${teamId}')">📅 联赛战绩</button>
         <button class="team-tab-btn" id="tabBtn_cup" onclick="switchTeamTab('cup','${teamId}')">🏆 杯赛</button>
         <button class="team-tab-btn" id="tabBtn_player" onclick="switchTeamTab('player','${teamId}')">👥 球员</button>
+        <button class="team-tab-btn" id="tabBtn_inTransfer" onclick="switchTeamTab('inTransfer','${teamId}')">⬇️ 转入球员</button>
+        <button class="team-tab-btn" id="tabBtn_outTransfer" onclick="switchTeamTab('outTransfer','${teamId}')">⬆️ 转出球员</button>
       </div>
       <div id="teamTabContent_league" style="overflow-y:auto;flex:1">${matchesHtml || '<div class="empty-state"><div class="empty-state-emoji">📅</div><div class="empty-state-text">暂无联赛赛程</div></div>'}</div>
       <div id="teamTabContent_cup" style="display:none;overflow-y:auto;flex:1">${cupMatchesHtml || '<div class="empty-state"><div class="empty-state-emoji">🏆</div><div class="empty-state-text">暂无杯赛</div></div>'}</div>
@@ -5486,10 +5488,11 @@ function showTeamDetail(teamId) {
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;flex-shrink:0">
           <button class="data-tab active" id="dataTab_league" onclick="switchPlayerSubTab('league','${teamId}')">👥 联赛球员（${team.players.length}人）</button>
           ${(() => { let _c = ''; const _cupOrder = ['faCup','championsCup','leagueCup','associationCup']; _cupOrder.forEach(_cid => { const _cup = sd.cups && sd.cups[_cid]; const _inCup = _cup && ((_cup.teams && _cup.teams.includes(teamId)) || (_cup.matches && _cup.matches.some(m => m.homeTeam === teamId || m.awayTeam === teamId))); if (_inCup) { _c += "<button class='data-tab' id='dataTab_cup_" + _cid + "' onclick='switchPlayerSubTab(&#39;cup_" + _cid + "&#39;,&#39;" + teamId + "&#39;)'>🏆 " + (CUP_NAMES[_cid]||_cid).replace('🏆 ','') + '球员</button>'; } }); return _c; })()}
-          ${state.currentUser && state.currentUser.isSuperAdmin ? '<button class="data-tab" id="dataTab_transfer" onclick="switchPlayerSubTab(\'transfer\',\'' + teamId + '\')">🔄 转出球员</button>' : ''}
         </div>
         <div id="teamPlayersList" style="overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch"></div>
       </div>
+      <div id="teamTabContent_inTransfer" style="display:none;overflow-y:auto;flex:1"></div>
+      <div id="teamTabContent_outTransfer" style="display:none;overflow-y:auto;flex:1"></div>
     </div>
     <button class="btn btn-secondary btn-full" onclick="closeModal()" style="flex-shrink:0">关闭</button>
   `;
@@ -5497,14 +5500,16 @@ function showTeamDetail(teamId) {
 
   // 切换球队详情Tab
   window.switchTeamTab = (tab, teamId) => {
-    ['league','cup','player'].forEach(t => {
+    ['league','cup','player','inTransfer','outTransfer'].forEach(t => {
       const btn = document.getElementById('tabBtn_' + t);
       const content = document.getElementById('teamTabContent_' + t);
       if (btn) btn.classList.toggle('active', t === tab);
       if (content) {
         if (t === tab) {
-          // player tab 需要 flex 布局，其他 block 即可
           content.style.display = t === 'player' ? 'flex' : '';
+          // 首次打开对应Tab时渲染内容
+          if (t === 'inTransfer') renderTeamInTransferTab(teamId);
+          if (t === 'outTransfer') renderTeamOutTransferTab(teamId);
         } else {
           content.style.display = 'none';
         }
@@ -5514,6 +5519,74 @@ function showTeamDetail(teamId) {
     if (tab === 'player') {
       switchPlayerSubTab('league', teamId);
     }
+  };
+
+  // 渲染转入球员Tab
+  window.renderTeamInTransferTab = (teamId) => {
+    const container = document.getElementById('teamTabContent_inTransfer');
+    if (!container) return;
+    const sd = getCurrentSeasonData();
+    const all = (state.pendingTransfers || []).filter(t => t.toTeamId === teamId);
+    if (all.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-state-emoji">⬇️</div><div class="empty-state-text">暂无转入球员</div></div>';
+      return;
+    }
+    container.innerHTML = all.map(t => {
+      const feeTag = t.transferFee > 0 ? `<span style="font-size:11px;color:#FF9800;margin-left:6px">${t.transferFee}M</span>` : '';
+      const roundTag = t.effectiveRound === 0
+        ? `<span style="font-size:11px;color:#228B22">⚡立即</span>`
+        : `<span style="font-size:11px;color:#999">第${t.effectiveRound}轮</span>`;
+      const statusTag = t.status === 'pending'
+        ? `<span style="font-size:10px;background:#FFF3E0;color:#FF9800;padding:1px 5px;border-radius:4px">待生效</span>`
+        : `<span style="font-size:10px;background:#E8F5E9;color:#4caf50;padding:1px 5px;border-radius:4px">已完成</span>`;
+      const timeTag = t.createdAt ? `<div style="font-size:10px;color:#bbb;margin-top:2px">${new Date(t.createdAt).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).replace(/\//g,'-')}</div>` : '';
+      return `<div style="display:flex;align-items:center;padding:8px 10px;border-bottom:1px solid #f0f0f0;gap:10px">
+        <img src="${getTeamLogo({name: t.fromTeamName})}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600">${t.playerName}</div>
+          <div style="font-size:11px;color:#888">来自：${t.fromTeamName}</div>
+          ${timeTag}
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          ${statusTag}
+          <div style="font-size:11px;color:#999;margin-top:2px">${roundTag}${feeTag}</div>
+        </div>
+      </div>`;
+    }).join('');
+  };
+
+  // 渲染转出球员Tab
+  window.renderTeamOutTransferTab = (teamId) => {
+    const container = document.getElementById('teamTabContent_outTransfer');
+    if (!container) return;
+    const sd = getCurrentSeasonData();
+    const all = (state.pendingTransfers || []).filter(t => t.fromTeamId === teamId);
+    if (all.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-state-emoji">⬆️</div><div class="empty-state-text">暂无转出球员</div></div>';
+      return;
+    }
+    container.innerHTML = all.map(t => {
+      const feeTag = t.transferFee > 0 ? `<span style="font-size:11px;color:#FF9800;margin-left:6px">${t.transferFee}M</span>` : '';
+      const roundTag = t.effectiveRound === 0
+        ? `<span style="font-size:11px;color:#228B22">⚡立即</span>`
+        : `<span style="font-size:11px;color:#999">第${t.effectiveRound}轮</span>`;
+      const statusTag = t.status === 'pending'
+        ? `<span style="font-size:10px;background:#FFF3E0;color:#FF9800;padding:1px 5px;border-radius:4px">待生效</span>`
+        : `<span style="font-size:10px;background:#E8F5E9;color:#4caf50;padding:1px 5px;border-radius:4px">已完成</span>`;
+      const timeTag = t.createdAt ? `<div style="font-size:10px;color:#bbb;margin-top:2px">${new Date(t.createdAt).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).replace(/\//g,'-')}</div>` : '';
+      return `<div style="display:flex;align-items:center;padding:8px 10px;border-bottom:1px solid #f0f0f0;gap:10px">
+        <img src="${getTeamLogo({name: t.toTeamName})}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600">${t.playerName}</div>
+          <div style="font-size:11px;color:#888">去往：${t.toTeamName}</div>
+          ${timeTag}
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          ${statusTag}
+          <div style="font-size:11px;color:#999;margin-top:2px">${roundTag}${feeTag}</div>
+        </div>
+      </div>`;
+    }).join('');
   };
 
   // 球员子Tab切换
