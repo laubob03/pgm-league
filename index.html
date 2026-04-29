@@ -7335,9 +7335,7 @@ function renderTransferManage() {
       const roundLabel = t.effectiveRound === 0
         ? '<span style="font-size:11px;color:#228B22">⚡立即</span>'
         : `<span style="font-size:11px;color:#999">第${t.effectiveRound}轮生效</span>`;
-      // 操作时间
       const createdAtStr = t.createdAt ? new Date(t.createdAt).toLocaleString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).replace(/\//g,'-') : '';
-      const createdAtTag = createdAtStr ? `<div style="font-size:10px;color:#bbb;margin-top:2px">${createdAtStr}</div>` : '';
       const cancelBtn = isAdmin
         ? `<button onclick="cancelTransfer('${t.id}')" style="background:#f44336;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;flex-shrink:0">取消</button>`
         : '';
@@ -7346,8 +7344,10 @@ function renderTransferManage() {
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.playerName} ${leagueTag}</div>
           <div style="font-size:11px;color:#888">${t.fromTeamName} → ${t.toTeamName}</div>
-          <div style="font-size:11px;color:#999;flex-shrink:0">${roundLabel}${feeTag}</div>
-          ${createdAtTag}
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:11px;color:#999">${roundLabel}${feeTag}</div>
+          ${createdAtStr ? `<div style="font-size:10px;color:#bbb;margin-top:2px">${createdAtStr}</div>` : ''}
         </div>
         ${cancelBtn}
       </div>`;
