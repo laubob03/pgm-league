@@ -511,7 +511,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 278 };
+const APP_VERSION = { major: 1, minor: 0, patch: 279 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -523,7 +523,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.278', date: '2026-04-29', items: ['🔐 足总杯数据员仅能录入比赛（点击VS），选队/修改赛程结构仅超级管理员可操作'] },
+  { v: '1.0.279', date: '2026-04-29', items: ['📊 所有杯赛积分榜增加交互式排序功能：点击任意字段（场/胜/平/负/进/失/净/分）表头可升序/降序排列'] },
   { v: '1.0.276', date: '2026-04-29', items: ['➕ 新增足总杯数据员账号：zuzongbei（足总杯数据员），可管理足总杯对阵和录入比赛'] },
   { v: '1.0.274', date: '2026-04-29', items: ['🔗 顶部工具栏"登录"按钮点击打开侧边栏，而非直接弹出登录框'] },
   { v: '1.0.273', date: '2026-04-29', items: ['🗑️ 无出价挂牌删除规则：挂牌第三天23:59:59无出价自动删除，球员回归原队'] },
@@ -4962,7 +4962,28 @@ function calculateCupStandings(cupId) {
 function renderCupStandings(cupId, container) {
   const sd = getCurrentSeasonData();
   const cup = sd.cups ? sd.cups[cupId] : null;
-  const standings = calculateCupStandings(cupId);
+  let standings = calculateCupStandings(cupId);
+
+  // 排序逻辑（与联赛积分榜一致）
+  const sortCol = window.standingsSortCol || 'points';
+  const sortDir = window.standingsSortDir || 'desc';
+  const sortIcon = (col) => sortCol === col ? (sortDir === 'desc' ? ' ↓' : ' ↑') : '';
+
+  standings.sort((a, b) => {
+    let valA, valB;
+    switch (sortCol) {
+      case 'name': valA = a.team.name; valB = b.team.name; return sortDir === 'desc' ? valB.localeCompare(valA) : valA.localeCompare(valB);
+      case 'played': valA = a.played; valB = b.played; break;
+      case 'won': valA = a.won; valB = b.won; break;
+      case 'draw': valA = a.draw; valB = b.draw; break;
+      case 'lost': valA = a.lost; valB = b.lost; break;
+      case 'gf': valA = a.gf; valB = b.gf; break;
+      case 'ga': valA = a.ga; valB = b.ga; break;
+      case 'gd': valA = a.gf - a.ga; valB = b.gf - b.ga; break;
+      default: valA = a.points; valB = b.points;
+    }
+    return sortDir === 'desc' ? valB - valA : valA - valB;
+  });
 
   if (!cup || !(cup.teams && cup.teams.length > 0)) {
     container.innerHTML = '<div class="cup-empty"><div class="cup-empty-icon">🏆</div><div>暂无' + (CUP_NAMES[cupId] || '杯赛') + '数据</div></div>';
@@ -4970,7 +4991,16 @@ function renderCupStandings(cupId, container) {
   }
 
   let html = '<table class="standings-table"><thead><tr>';
-  html += '<th>#</th><th>球队</th><th>场</th><th>胜</th><th>平</th><th>负</th><th>进</th><th>失</th><th>净</th><th>分</th>';
+  html += '<th>#</th>';
+  html += `<th class="sortable" onclick="sortCupStandings('name')">球队${sortIcon('name')}</th>`;
+  html += `<th class="sortable" onclick="sortCupStandings('played')">场${sortIcon('played')}</th>`;
+  html += `<th class="sortable" onclick="sortCupStandings('won')">胜${sortIcon('won')}</th>`;
+  html += `<th class="sortable" onclick="sortCupStandings('draw')">平${sortIcon('draw')}</th>`;
+  html += `<th class="sortable" onclick="sortCupStandings('lost')">负${sortIcon('lost')}</th>`;
+  html += `<th class="sortable" onclick="sortCupStandings('gf')">进${sortIcon('gf')}</th>`;
+  html += `<th class="sortable" onclick="sortCupStandings('ga')">失${sortIcon('ga')}</th>`;
+  html += `<th class="sortable" onclick="sortCupStandings('gd')">净${sortIcon('gd')}</th>`;
+  html += `<th class="sortable" onclick="sortCupStandings('points')">分${sortIcon('points')}</th>`;
   html += '</tr></thead><tbody>';
 
   standings.forEach((s, i) => {
@@ -4984,6 +5014,16 @@ function renderCupStandings(cupId, container) {
 
   html += '</tbody></table>';
   container.innerHTML = html;
+}
+
+function sortCupStandings(col) {
+  if (window.standingsSortCol === col) {
+    window.standingsSortDir = window.standingsSortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    window.standingsSortCol = col;
+    window.standingsSortDir = 'desc';
+  }
+  renderStandings();
 }
 
 function calculateStandings(teams, sd) {
