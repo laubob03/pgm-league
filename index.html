@@ -6,50 +6,61 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <link rel="icon" type="image/png" sizes="192x192" href="unpackage/res/icons/192x192.png">
-  <!-- 顶部版本检查：即使旧版本被缓存也能触发强制更新 -->
+  <!-- 顶部版本检查：检测到新版本时弹出提示框，用户确认后才升级 -->
   <script>
   !function(){
-    // v1.0.268: 防止刷新循环——sessionStorage 标记确保每次强制更新只执行一次
-    // 若刷新后 version.json 还未更新（GitHub Pages 延迟），跳过重复清理
-    var _upgrading = sessionStorage.getItem('pgm_upgrading');
-    if (_upgrading && (Date.now() - parseInt(_upgrading, 10)) < 30000) {
-      sessionStorage.removeItem('pgm_upgrading');
-      var baseUrl = location.href.split('?')[0].split('#')[0];
-      if (location.href !== baseUrl) location.replace(baseUrl);
-      return;
-    }
-    // v1.0.257: 彻底修复 SW 缓存死锁
-    // 版本检查 fetch 带 cache:no-store + 时间戳，绕过 SW 缓存和 HTTP 缓存
-    // 检测到版本落后时：注销 SW → 清缓存 → 带时间戳强制跳转（防旧 SW 拦截）
+    // v1.0.284: 新版本策略——弹出提示框，用户点击"立即更新"后才执行升级
     fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
       // 公告条
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';b.innerHTML='<div style="max-width:600px;margin:0 auto;">📢 '+d.notice+'</div>';document.body.prepend(b)}
-      // 强制版本检查：如果本地版本低于 minVersion，注销 SW + 清缓存 + 强制跳转
+      // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
         var myV=0;try{var parts2='1.0.283'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
-          // v1.0.268: 记录升级时间戳，防止刷新循环
-          try{sessionStorage.setItem('pgm_upgrading', Date.now())}catch(e){}
-          Promise.resolve().then(function(){
-            var tasks=[];
-            // 注销所有 Service Worker
+          // 创建升级提示框
+          var overlay = document.createElement('div');
+          overlay.id = 'versionUpdateOverlay';
+          overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999998;display:flex;align-items:center;justify-content:center;';
+          overlay.innerHTML = '<div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);">' +
+            '<div style="font-size:52px;margin-bottom:12px;">🚀</div>' +
+            '<div style="font-size:20px;font-weight:bold;color:#1B5E20;margin-bottom:6px;">发现新版本</div>' +
+            '<div style="font-size:13px;color:#666;margin-bottom:20px;line-height:1.7;">' +
+              '当前版本：v' + parts2.join('.') + '<br>' +
+              '最新版本：<b style="color:#e91e63;">v' + d.minVersion + '</b><br>' +
+              '点击下方按钮更新到最新版本' +
+            '</div>' +
+            '<button id="btnUpdateNow" style="width:100%;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;padding:13px 0;border-radius:50px;font-size:15px;font-weight:bold;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 12px rgba(27,94,32,0.35);">🚀 立即更新</button>' +
+            '<button id="btnUpdateLater" style="width:100%;background:#f5f5f5;color:#999;border:none;padding:11px 0;border-radius:50px;font-size:14px;cursor:pointer;">稍后再说</button>' +
+          '</div>';
+          document.body.appendChild(overlay);
+
+          // 立即更新按钮
+          document.getElementById('btnUpdateNow').onclick = function(){
+            var btn = this;
+            btn.disabled = true;
+            btn.textContent = '⏳ 正在清理缓存...';
+            var tasks = [];
             if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
-            // 清除所有 Cache Storage
             if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
-            return Promise.all(tasks);
-          }).then(function(){
-            // 关键修复：不用 location.reload()，改用 location.replace 带时间戳
-            // reload 可能被旧 SW 拦截再次返回缓存，replace+时间戳强制浏览器走网络
-            setTimeout(function(){
-              var url = location.href.split('?')[0].split('#')[0] + '?_v=' + Date.now();
-              location.replace(url);
-            }, 800);
-          }).catch(function(){
-            var url = location.href.split('?')[0].split('#')[0] + '?_v=' + Date.now();
-            location.replace(url);
-          });
+            Promise.all(tasks).then(function(){
+              overlay.remove();
+              var baseUrl = location.href.split('?')[0].split('#')[0];
+              var newUrl = baseUrl + '?_v=' + Date.now();
+              location.replace(newUrl);
+            }).catch(function(){
+              overlay.remove();
+              var baseUrl = location.href.split('?')[0].split('#')[0];
+              var newUrl = baseUrl + '?_v=' + Date.now();
+              location.replace(newUrl);
+            });
+          };
+
+          // 稍后再说按钮
+          document.getElementById('btnUpdateLater').onclick = function(){
+            overlay.remove();
+          };
         }
       }
     }).catch(function(){})
@@ -8446,13 +8457,13 @@ document.getElementById('modalOverlay').onclick = (e) => {
         const parts = v.minVersion.split('.').map(Number);
         const minVer = parts[0] * 10000 + (parts[1] || 0) * 100 + (parts[2] || 0);
         if (myVer < minVer) {
-          showForceUpdateModal(v.minVersion);
-          return; // 阻止初始化
+          // 版本检查已在顶部 head 脚本中处理（弹出版本更新提示框）
+          // 此处不再重复处理，继续正常初始化（用户选择"稍后再说"后页面仍可使用）
         }
       }
     }
   } catch(e) { /* 网络异常忽略 */ }
-  // 版本检查通过，正常初始化
+  // 正常初始化
   loadState();
   // 从URL hash恢复状态（如果有）
   restoreFromUrlHash();
@@ -8471,56 +8482,8 @@ document.getElementById('modalOverlay').onclick = (e) => {
   }
 })();
 
-// 强制升级弹窗
-function showForceUpdateModal(minVer) {
-  const overlay = document.createElement('div');
-  overlay.id = 'forceUpdateOverlay';
-  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:9999999;display:flex;align-items:center;justify-content:center;';
-  overlay.innerHTML = `
-    <div style="background:#fff;border-radius:16px;padding:40px 36px;max-width:400px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-      <div style="font-size:64px;margin-bottom:16px;">🚨</div>
-      <div style="font-size:22px;font-weight:bold;color:#e91e63;margin-bottom:8px;">版本过低</div>
-      <div style="font-size:14px;color:#666;margin-bottom:24px;line-height:1.8;">
-        当前版本：<b>v${getAppVersion()} By Pgm联赛—J.K</b><br>
-        最低要求：<b>v${minVer}</b><br>
-        <span style="color:#f44336;font-weight:bold;">点击下方按钮强制更新</span>
-      </div>
-      <button id="forceUpdateBtn" style="
-        background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;border:none;padding:14px 48px;
-        border-radius:50px;font-size:16px;font-weight:bold;cursor:pointer;
-        box-shadow:0 4px 15px rgba(233,30,99,0.4);transition:transform 0.2s;
-      " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-        🔄 强制更新
-      </button>
-    </div>
-  `;
-  document.body.prepend(overlay);
-  // ★ v1.0.221: 点击按钮后先注销 SW + 清缓存，等待完成后再刷新
-  document.getElementById('forceUpdateBtn').onclick = async function() {
-    this.disabled = true;
-    this.textContent = '⏳ 正在清理缓存...';
-    try {
-      // 1. 注销所有 Service Worker
-      if ('serviceWorker' in navigator) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(regs.map(r => r.unregister()));
-      }
-      // 2. 清除所有缓存
-      if ('caches' in window) {
-        const names = await caches.keys();
-        await Promise.all(names.map(n => caches.delete(n)));
-      }
-      // 3. 清除 sessionStorage 中的升级标记
-      try { sessionStorage.removeItem('pgm_upgrading'); } catch(e) {}
-    } catch(e) {
-      // 即使出错也继续
-    }
-    // 4. 用 location.replace 带时间戳强制跳转，绕过所有缓存
-    var baseUrl = location.href.split('?')[0].split('#')[0];
-    var newUrl = baseUrl + '?_v=' + Date.now();
-    location.replace(newUrl);
-  };
-}
+// 强制升级弹窗（已废弃，由顶部 head 脚本中的绿色提示框替代）
+// function showForceUpdateModal(minVer) { ... }
 
 // 自动同步云端数据（静默，不弹确认框）
 async function autoSyncFromCloud() {
