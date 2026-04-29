@@ -511,7 +511,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 275 };
+const APP_VERSION = { major: 1, minor: 0, patch: 276 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -523,7 +523,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.275', date: '2026-04-29', items: ['🐛 修复足总杯对阵每次更新后消失：needInit 仅超管/杯赛数据员才执行重置，initFaCupBracket 不清空已选队伍，云端同步保护本地cups数据'] },
+  { v: '1.0.276', date: '2026-04-29', items: ['➕ 新增足总杯数据员账号：zuzongbei（足总杯数据员），可管理足总杯对阵和录入比赛'] },
   { v: '1.0.274', date: '2026-04-29', items: ['🔗 顶部工具栏"登录"按钮点击打开侧边栏，而非直接弹出登录框'] },
   { v: '1.0.273', date: '2026-04-29', items: ['🗑️ 无出价挂牌删除规则：挂牌第三天23:59:59无出价自动删除，球员回归原队'] },
   { v: '1.0.272', date: '2026-04-29', items: ['💰 出价规则调整：底价>15M球员首次出价上限改为底价；后续出价加价1-10M，上不封顶'] },
@@ -650,6 +650,7 @@ const DATA_RECORDERS = {
   guanjunbei: { id: 'guanjunbei', name: '冠军杯数据员', league: 'championsCup', type: 'cup', cupId: 'championsCup', pwHash: '5583c4f288568d923af6fb0495512755b01da7542c22df11eada4f58039b58fc' },
   lianmengbei:{ id: 'lianmengbei',name: '联盟杯数据员', league: 'leagueCup',    type: 'cup', cupId: 'leagueCup', pwHash: 'a698b6d845d59570cdcd01ab82affd47ecc81024c64d67c25ed2a1e059dcab04' },
   xiehuibei:  { id: 'xiehuibei', name: '协会杯数据员', league: 'associationCup',type: 'cup', cupId: 'associationCup', pwHash: '39177a353066fd6fad3022967f0112a7ea1c09bab1b99ba3e10a998d7a15ac22' },
+  zuzongbei:  { id: 'zuzongbei', name: '足总杯数据员', league: 'faCup',        type: 'cup', cupId: 'faCup', pwHash: '760cc5ecf657ab5794d89e19dfac457a134689d3e56285be79325665168688e9' },
   // 积分榜统计员 - 只能录入比分、下载云端、本地导出导入，不能上传云端
   jfchaoji:  { id: 'jfchaoji',  name: '超级积分',     league: 'super',       type: 'league', cupId: null, role: 'stats', pwHash: '31077cdd17cef44f3253343c69533a239146694e1fee5b676505a4120be95fd2' },
   jfjiadong: { id: 'jfjiadong', name: '甲东积分',     league: 'jiaEast',     type: 'league', cupId: null, role: 'stats', pwHash: 'd9904bb24f7accd93ca29687e9a638ea0cda8fef934aaf394a5a6937069d3d04' },
