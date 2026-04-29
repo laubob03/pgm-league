@@ -511,7 +511,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 277 };
+const APP_VERSION = { major: 1, minor: 0, patch: 278 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -523,7 +523,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.277', date: '2026-04-29', items: ['✅ 足总杯数据员（zuzongbei）可在对阵图中点击VS录入比赛结果'] },
+  { v: '1.0.278', date: '2026-04-29', items: ['🔐 足总杯数据员仅能录入比赛（点击VS），选队/修改赛程结构仅超级管理员可操作'] },
   { v: '1.0.276', date: '2026-04-29', items: ['➕ 新增足总杯数据员账号：zuzongbei（足总杯数据员），可管理足总杯对阵和录入比赛'] },
   { v: '1.0.274', date: '2026-04-29', items: ['🔗 顶部工具栏"登录"按钮点击打开侧边栏，而非直接弹出登录框'] },
   { v: '1.0.273', date: '2026-04-29', items: ['🗑️ 无出价挂牌删除规则：挂牌第三天23:59:59无出价自动删除，球员回归原队'] },
@@ -1795,8 +1795,10 @@ function renderFaCupBracket(cupId) {
   }
 
   var isAdmin = state.currentUser && (state.currentUser.isSuperAdmin || state.currentUser.isDataRecorder);
-  // 足总杯操作（比分录入、选队）仅超级管理员或足总杯数据员可操作
-  var isCupAdmin = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cupId));
+  // 选队（修改赛程结构）仅超级管理员可操作
+  var isCupAdmin = state.currentUser && state.currentUser.isSuperAdmin;
+  // 录入比赛：超管或足总杯数据员均可
+  var canEnterCup = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cupId));
   var roundNames = {1:'第1轮',2:'第2轮',3:'8强赛',4:'4强赛',5:'半决赛',6:'决赛'};
 
   // 获取可选球队（排除已选的）
@@ -1881,15 +1883,15 @@ function renderFaCupBracket(cupId) {
           scoreText += '（' + replayHomeScore + '-' + replayAwayScore + '）';
         }
       }
-      // 仅超级管理员可点击录入
-      if (isCupAdmin) {
+      // 超管或足总杯数据员可点击录入
+      if (canEnterCup) {
         return '<div class="fc-score done" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'faCup\')">' + scoreText + '</div>';
       }
       return '<div class="fc-score">' + scoreText + '</div>';
     }
-    // 两队都已选且未完赛：仅超级管理员可点击录入
+    // 两队都已选且未完赛：超管或足总杯数据员可点击录入
     if (m.homeTeam && m.awayTeam) {
-      if (isCupAdmin) {
+      if (canEnterCup) {
         return '<div class="fc-score done" onclick="showEnterCupMatchModal(\'' + m.id + '\',\'faCup\')">VS</div>';
       }
       return '<div class="fc-score">VS</div>';
@@ -1918,14 +1920,14 @@ function renderFaCupBracket(cupId) {
       ? '<div class="fc-id">A' + m.id.replace('cup_faCup_m','') + '</div>'
       : '';
     var cls = 'fc-match' + (done ? ' has-result' : '');
-    // 有待进行重赛时，高亮提醒（仅超级管理员可见）
-    if (replayPending && isCupAdmin) cls += ' has-replay';
+    // 有待进行重赛时，高亮提醒（超管或足总杯数据员可见）
+    if (replayPending && canEnterCup) cls += ' has-replay';
     var style = top !== undefined ? 'top:' + top + 'px' : '';
-    // 重赛待进行时点击卡片进入重赛录入（仅超级管理员）
-    var clickAttr = (replayPending && isCupAdmin) ? ' onclick="showEnterCupMatchModal(\'' + replay.id + '\',\'faCup\')"' : '';
+    // 重赛待进行时点击卡片进入重赛录入（超管或足总杯数据员）
+    var clickAttr = (replayPending && canEnterCup) ? ' onclick="showEnterCupMatchModal(\'' + replay.id + '\',\'faCup\')"' : '';
     return '<div class="' + cls + '" data-id="' + m.id + '"' + (style ? ' style="' + style + '"' : '') + clickAttr + '>'
       + idLabel
-      + (replayPending && isCupAdmin ? '<div style="text-align:center;font-size:10px;color:#f5a623;font-weight:700;margin-bottom:2px">\uD83D\uDD04 重赛待进行（点击录入）</div>' : '')
+      + (replayPending && canEnterCup ? '<div style="text-align:center;font-size:10px;color:#f5a623;font-weight:700;margin-bottom:2px">\uD83D\uDD04 重赛待进行（点击录入）</div>' : '')
       + rTeamSelect(m, 'home', m.homeTeam, hw) + rScore(m) + rTeamSelect(m, 'away', m.awayTeam, aw)
       + '</div>';
   }
