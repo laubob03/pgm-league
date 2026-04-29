@@ -511,7 +511,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 274 };
+const APP_VERSION = { major: 1, minor: 0, patch: 275 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -523,6 +523,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.275', date: '2026-04-29', items: ['🐛 修复足总杯对阵每次更新后消失：needInit 仅超管/杯赛数据员才执行重置，initFaCupBracket 不清空已选队伍，云端同步保护本地cups数据'] },
   { v: '1.0.274', date: '2026-04-29', items: ['🔗 顶部工具栏"登录"按钮点击打开侧边栏，而非直接弹出登录框'] },
   { v: '1.0.273', date: '2026-04-29', items: ['🗑️ 无出价挂牌删除规则：挂牌第三天23:59:59无出价自动删除，球员回归原队'] },
   { v: '1.0.272', date: '2026-04-29', items: ['💰 出价规则调整：底价>15M球员首次出价上限改为底价；后续出价加价1-10M，上不封顶'] },
@@ -1710,15 +1711,20 @@ function renderFaCupBracket(cupId) {
   var container = document.getElementById('scheduleContent');
   var sd = getCurrentSeasonData();
   var cup = sd.cups ? sd.cups[cupId] : null;
-  // 如果足总杯没有赛程、格式旧（没有half字段）、或R1不是14场，自动初始化
+  // 如果足总杯没有赛程、格式旧（没有half字段）、或R1不是14场，仅有权限用户才自动初始化
+  // ★ v1.0.275 修复：之前任何用户打开足总杯页面都会触发 needInit，导致对阵数据被重置
+  // 现在：无权限用户只展示现有数据（即使格式旧），有权限用户才执行 initFaCupBracket
   var needInit = !cup || !cup.matches || cup.matches.length === 0 || !cup.matches[0].half;
   if (!needInit) {
     var lR1 = cup.matches.filter(m => m.half === 'L' && m.round === 1 && !m.isReplay).length;
     if (lR1 !== 14) needInit = true;
   }
+  var isCupAdmin = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cupId));
   if (needInit) {
     if (!state.cups.faCup) state.cups.faCup = { teams: [], matches: [] };
-    initFaCupBracket();
+    if (isCupAdmin) {
+      initFaCupBracket();
+    }
     cup = state.cups.faCup;
   }
 
@@ -3182,7 +3188,8 @@ function initFaCupBracket() {
     scorers: [], assists: [], motm: null, status: 'pending'
   });
   cup.matches = matches;
-  cup.teams = [];
+  // ★ v1.0.275：不清空 teams，保留已选队伍（仅超管/杯赛数据员才能调用此函数重置 matches 骨架）
+  if (!cup.teams) cup.teams = [];
   saveState();
 }
 
@@ -8605,12 +8612,27 @@ async function autoSyncFromCloud() {
       // 否则主 Gist 覆盖后，本地新出价丢失，后续 autoSyncTransferGist 合并也不完整
       const localTransferMarket = state.transferMarket || [];
       const localPendingTransfers = state.pendingTransfers || [];
+      // ★ v1.0.275 修复：保护本地 cups 数据，避免云端旧格式触发 initFaCupBracket 重置对阵
+      // 若本地 cups 有实质性数据（任何杯赛有 matches），则在云端 cups 无数据或为空时保留本地版本
+      const localCups = state.cups || {};
       state = cloudData;
       delete state._lastUpload;
       state.currentUser = loginUser;
       // ★ 转会数据始终以本地 + 转会Gist为准，主Gist中的转会数据已过时
       state.transferMarket = localTransferMarket;
       state.pendingTransfers = localPendingTransfers;
+      // ★ cups 保护：逐个杯赛检查，若云端该杯赛数据为空/无效，保留本地数据
+      if (!state.cups) state.cups = {};
+      Object.keys(localCups).forEach(cid => {
+        const localCup = localCups[cid];
+        const cloudCup = state.cups[cid];
+        const localHasData = localCup && localCup.matches && localCup.matches.length > 0;
+        const cloudHasData = cloudCup && cloudCup.matches && cloudCup.matches.length > 0;
+        if (localHasData && !cloudHasData) {
+          // 云端该杯赛为空，但本地有数据，保留本地
+          state.cups[cid] = localCup;
+        }
+      });
       // 兼容旧数据没有 logo/teamUid - 自动补充
       state.teams.forEach(t => {
         if (TEAM_LOGOS && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
