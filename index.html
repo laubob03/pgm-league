@@ -511,7 +511,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 279 };
+const APP_VERSION = { major: 1, minor: 0, patch: 280 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -523,7 +523,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.279', date: '2026-04-29', items: ['📊 所有杯赛积分榜增加交互式排序功能：点击任意字段（场/胜/平/负/进/失/净/分）表头可升序/降序排列'] },
+  { v: '1.0.280', date: '2026-04-29', items: ['📋 转会管理待生效转会卡片显示操作时间（所有人可见），格式 MM-DD HH:mm:ss'] },
   { v: '1.0.276', date: '2026-04-29', items: ['➕ 新增足总杯数据员账号：zuzongbei（足总杯数据员），可管理足总杯对阵和录入比赛'] },
   { v: '1.0.274', date: '2026-04-29', items: ['🔗 顶部工具栏"登录"按钮点击打开侧边栏，而非直接弹出登录框'] },
   { v: '1.0.273', date: '2026-04-29', items: ['🗑️ 无出价挂牌删除规则：挂牌第三天23:59:59无出价自动删除，球员回归原队'] },
@@ -7335,7 +7335,9 @@ function renderTransferManage() {
       const roundLabel = t.effectiveRound === 0
         ? '<span style="font-size:11px;color:#228B22">⚡立即</span>'
         : `<span style="font-size:11px;color:#999">第${t.effectiveRound}轮生效</span>`;
-      // ★ 仅超管可见“取消”按钮
+      // 操作时间
+      const createdAtStr = t.createdAt ? new Date(t.createdAt).toLocaleString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).replace(/\//g,'-') : '';
+      const createdAtTag = createdAtStr ? `<div style="font-size:10px;color:#bbb;margin-top:2px">${createdAtStr}</div>` : '';
       const cancelBtn = isAdmin
         ? `<button onclick="cancelTransfer('${t.id}')" style="background:#f44336;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;flex-shrink:0">取消</button>`
         : '';
@@ -7344,8 +7346,9 @@ function renderTransferManage() {
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.playerName} ${leagueTag}</div>
           <div style="font-size:11px;color:#888">${t.fromTeamName} → ${t.toTeamName}</div>
+          <div style="font-size:11px;color:#999;flex-shrink:0">${roundLabel}${feeTag}</div>
+          ${createdAtTag}
         </div>
-        <div style="font-size:11px;color:#999;flex-shrink:0;text-align:right">${roundLabel}${feeTag}</div>
         ${cancelBtn}
       </div>`;
     }).join('');
