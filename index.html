@@ -9,7 +9,7 @@
   <!-- 顶部版本检查：检测到新版本时弹出提示框，用户确认后才升级 -->
   <script>
   !function(){
-    // v1.0.288: 转会管理/转入转出球员名可点击查看详情
+    // v1.0.289: 升级跳转后用 sessionStorage 标记确保不循环弹框
     var _upgraded = sessionStorage.getItem('pgm_upgraded');
     if (_upgraded) {
       // 上一次是升级跳转来的，清除 SW 缓存并移除标记
@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';b.innerHTML='<div style="max-width:600px;margin:0 auto;">📢 '+d.notice+'</div>';document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.288'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.289'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -45,9 +45,10 @@
             '<div style="font-size:13px;color:#666;margin-bottom:20px;line-height:1.7;">' +
               '当前版本：v' + parts2.join('.') + '<br>' +
               '最新版本：<b style="color:#e91e63;">v' + d.minVersion + '</b><br>' +
-              '请点击下方按钮完成更新' +
+              '点击下方按钮更新到最新版本' +
             '</div>' +
-            '<button id="btnUpdateNow" style="width:100%;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;padding:13px 0;border-radius:50px;font-size:15px;font-weight:bold;cursor:pointer;box-shadow:0 4px 12px rgba(27,94,32,0.35);">🚀 立即更新</button>' +
+            '<button id="btnUpdateNow" style="width:100%;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;padding:13px 0;border-radius:50px;font-size:15px;font-weight:bold;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 12px rgba(27,94,32,0.35);">🚀 立即更新</button>' +
+            '<button id="btnUpdateLater" style="width:100%;background:#f5f5f5;color:#999;border:none;padding:11px 0;border-radius:50px;font-size:14px;cursor:pointer;">稍后再说</button>' +
           '</div>';
           document.body.appendChild(overlay);
 
@@ -70,6 +71,11 @@
               var newUrl = baseUrl + '?_v=' + Date.now();
               location.replace(newUrl);
             });
+          };
+
+          // 稍后再说按钮
+          document.getElementById('btnUpdateLater').onclick = function(){
+            overlay.remove();
           };
         }
       }
@@ -481,6 +487,7 @@
     <button class="sidebar-item" id="btnAdminImport" style="display:none"><span class="sidebar-item-icon">⚙️</span>管理员导入</button>
     <button class="sidebar-item" id="btnCupManage" style="display:none"><span class="sidebar-item-icon">🏆</span>杯赛管理</button>
     <button class="sidebar-item" id="btnArchiveSeason" style="display:none"><span class="sidebar-item-icon">📦</span>归档赛季</button>
+    <button class="sidebar-item" id="btnLoginLogs" style="display:none"><span class="sidebar-item-icon">🔍</span>本站登录详情</button>
     <!-- 转会管理已移至顶部工具栏 -->
     <button class="sidebar-item" id="btnSyncCloud"><span class="sidebar-item-icon">☁️</span>数据同步</button>
     <button class="sidebar-item" id="sidebarLoginBtn"><span class="sidebar-item-icon">🔑</span>登录</button>
@@ -532,7 +539,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 288 };
+const APP_VERSION = { major: 1, minor: 0, patch: 289 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -544,8 +551,8 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.288', date: '2026-04-30', items: ['👆 转会管理/转入球员/转出球员中球员名可点击查看详情（共用 togglePlayerSeasonDetail 系统）'] },
-  { v: '1.0.286', date: '2026-04-29', items: ['🛡️ 升级跳转后用 sessionStorage 标记防止循环弹框'] },
+  { v: '1.0.289', date: '2026-04-30', items: ['🔍 超管侧边栏新增"本站登录详情"：实时显示全站所有账号的登录ID、角色、时间、IP及地理位置，数据同步到Gist云端'] },
+  { v: '1.0.282', date: '2026-04-29', items: ['📋 球队详情页新增两个TAB：⬇️ 转入球员 / ⬆️ 转出球员，所有人可见，显示待生效/已完成、轮次、费用、时间'] },
   { v: '1.0.276', date: '2026-04-29', items: ['➕ 新增足总杯数据员账号：zuzongbei（足总杯数据员），可管理足总杯对阵和录入比赛'] },
   { v: '1.0.274', date: '2026-04-29', items: ['🔗 顶部工具栏"登录"按钮点击打开侧边栏，而非直接弹出登录框'] },
   { v: '1.0.273', date: '2026-04-29', items: ['🗑️ 无出价挂牌删除规则：挂牌第三天23:59:59无出价自动删除，球员回归原队'] },
@@ -5565,7 +5572,7 @@ function showTeamDetail(teamId) {
       return `<div style="display:flex;align-items:center;padding:8px 10px;border-bottom:1px solid #f0f0f0;gap:10px">
         <img src="${getTeamLogo({name: t.fromTeamName})}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600"><span class="player-expand" onclick="event.stopPropagation();togglePlayerSeasonDetail(this,'${t.playerUid}')">${t.playerName}</span></div>
+          <div style="font-size:13px;font-weight:600">${t.playerName}</div>
           <div style="font-size:11px;color:#888">来自：${t.fromTeamName}</div>
           ${timeTag}
         </div>
@@ -5599,7 +5606,7 @@ function showTeamDetail(teamId) {
       return `<div style="display:flex;align-items:center;padding:8px 10px;border-bottom:1px solid #f0f0f0;gap:10px">
         <img src="${getTeamLogo({name: t.toTeamName})}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600"><span class="player-expand" onclick="event.stopPropagation();togglePlayerSeasonDetail(this,'${t.playerUid}')">${t.playerName}</span></div>
+          <div style="font-size:13px;font-weight:600">${t.playerName}</div>
           <div style="font-size:11px;color:#888">去往：${t.toTeamName}</div>
           ${timeTag}
         </div>
@@ -6288,6 +6295,7 @@ function showLoginModal() {
       updateNavCloudBtn();
       render();
       showToast('欢迎，超级管理员！');
+      recordLoginLog('pgmjk', '超级管理员');
     } else if (DATA_RECORDERS[teamId] && DATA_RECORDERS[teamId].pwHash && pwHash === DATA_RECORDERS[teamId].pwHash) {
       // 数据员/统计员登录
       const rec = DATA_RECORDERS[teamId];
@@ -6299,6 +6307,7 @@ function showLoginModal() {
       updateNavCloudBtn();
       render();
       showToast('欢迎，' + rec.name + '！');
+      recordLoginLog(rec.id, rec.name + '（' + (isStats ? '统计员' : '数据员') + '）');
     } else if (state.teams && (state.teams.find(t => t.id === teamId) || state.teams.find(t => t.name === teamId))) {
       // 教练登录（支持球队ID如t1或队名如Arsenal）密码规则：队名首字母+尾字母+123
       const team = state.teams.find(t => t.id === teamId) || state.teams.find(t => t.name === teamId);
@@ -6313,6 +6322,7 @@ function showLoginModal() {
       updateNavCloudBtn();
       render();
       showToast('欢迎，' + (team.coach || team.name) + '主教练！');
+      recordLoginLog(team.id, (team.coach || team.name) + '（' + team.name + ' 主教练）');
     } else {
       showToast('密码错误！');
     }
@@ -6326,6 +6336,174 @@ function logout() {
   updateNavCloudBtn();
   render();
   showToast('已退出登录');
+}
+
+// ============ 登录日志 ============
+// 记录登录事件（含IP/地理位置），存 localStorage，并异步同步到 Gist
+async function recordLoginLog(userId, displayName) {
+  const entry = {
+    id: userId,
+    name: displayName,
+    time: new Date().toISOString(),
+    ua: navigator.userAgent.slice(0, 120),
+    ip: null, city: null, region: null, country: null
+  };
+  // 先存本地，保证即使 IP 查询失败也有记录
+  _saveLoginLog(entry);
+  // 异步获取 IP 和地理位置
+  try {
+    const r = await fetch('https://ipapi.co/json/', { cache: 'no-store' });
+    if (r.ok) {
+      const d = await r.json();
+      entry.ip = d.ip || null;
+      entry.city = d.city || null;
+      entry.region = d.region || null;
+      entry.country = d.country_name || null;
+      _saveLoginLog(entry); // 更新到本地（替换最新一条）
+      _syncLoginLogToGist(entry); // 异步上传到 Gist（fire-and-forget）
+    }
+  } catch(e) {
+    console.warn('recordLoginLog: 获取IP失败', e.message);
+  }
+}
+
+function _saveLoginLog(entry) {
+  let logs = [];
+  try { logs = JSON.parse(localStorage.getItem('pgm_login_logs') || '[]'); } catch(e) {}
+  // 同一 time 的条目直接替换（IP查到后更新）
+  const idx = logs.findIndex(l => l.time === entry.time && l.id === entry.id);
+  if (idx >= 0) {
+    logs[idx] = entry;
+  } else {
+    logs.unshift(entry);
+    if (logs.length > 100) logs = logs.slice(0, 100); // 最多保留100条
+  }
+  localStorage.setItem('pgm_login_logs', JSON.stringify(logs));
+}
+
+async function _syncLoginLogToGist(entry) {
+  const token = ADMIN_BUILTIN_TOKEN;
+  if (!token || !GIST_ID) return;
+  try {
+    // 先拉取现有 login_logs.json
+    let existing = [];
+    const getResp = await fetch(GIST_API + '/' + GIST_ID, {
+      headers: { 'Authorization': 'Bearer ' + token },
+      cache: 'no-store'
+    });
+    if (getResp.ok) {
+      const gist = await getResp.json();
+      const logFile = gist.files && gist.files['login_logs.json'];
+      if (logFile && logFile.content) {
+        try { existing = JSON.parse(logFile.content); } catch(e) {}
+      }
+    }
+    // 合并（同 time+id 去重）
+    const idx = existing.findIndex(l => l.time === entry.time && l.id === entry.id);
+    if (idx >= 0) { existing[idx] = entry; } else { existing.unshift(entry); }
+    if (existing.length > 200) existing = existing.slice(0, 200);
+    await fetch(GIST_API + '/' + GIST_ID, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ files: { 'login_logs.json': { content: JSON.stringify(existing) } } })
+    });
+  } catch(e) {
+    console.warn('_syncLoginLogToGist: 同步失败', e.message);
+  }
+}
+
+async function showLoginLogsModal() {
+  if (!state.currentUser || !state.currentUser.isSuperAdmin) return;
+  closeSidebar();
+
+  // 优先从 Gist 拉取最新数据，拉取失败则用本地
+  let logs = [];
+  try { logs = JSON.parse(localStorage.getItem('pgm_login_logs') || '[]'); } catch(e) {}
+
+  // 先用本地数据展示，同时后台拉取 Gist
+  function renderModal(logList, loading) {
+    const rows = logList.length === 0
+      ? '<div style="text-align:center;color:#999;padding:32px 0;font-size:14px">暂无登录记录</div>'
+      : logList.map((l, i) => {
+          const dt = new Date(l.time);
+          const dateStr = dt.toLocaleDateString('zh-CN', { month:'2-digit', day:'2-digit' });
+          const timeStr = dt.toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+          const loc = [l.city, l.region, l.country].filter(Boolean).join(' · ') || '位置未知';
+          const ipStr = l.ip ? l.ip : '—';
+          const bgColor = i % 2 === 0 ? '#fff' : '#f9fafb';
+          const nameColor = l.id === 'pgmjk' ? '#b71c1c' : (l.name && l.name.includes('教练') ? '#1B5E20' : '#1565C0');
+          const ua = l.ua || '';
+          const device = ua.includes('Mobile') || ua.includes('Android') || ua.includes('iPhone') ? '📱' : '💻';
+          return `<div style="padding:10px 14px;background:${bgColor};border-bottom:1px solid #f0f0f0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="font-weight:700;font-size:14px;color:${nameColor}">${device} ${l.name || l.id}</span>
+              <span style="font-size:11px;color:#999">${dateStr} ${timeStr}</span>
+            </div>
+            <div style="font-size:12px;color:#555;display:flex;gap:12px;flex-wrap:wrap;">
+              <span>🆔 ${l.id}</span>
+              <span>🌐 ${ipStr}</span>
+              <span>📍 ${loc}</span>
+            </div>
+          </div>`;
+        }).join('');
+
+    const content = `
+      <div style="padding:16px 16px 8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:17px;font-weight:700;color:#1B5E20">🔍 本站登录详情</div>
+          ${loading ? '<span style="font-size:12px;color:#999">⏳ 云端同步中…</span>' : '<span style="font-size:12px;color:#4CAF50">✅ 最新数据</span>'}
+        </div>
+        <div style="font-size:12px;color:#888;margin-bottom:8px">共 ${logList.length} 条登录记录（最近100条）</div>
+      </div>
+      <div style="max-height:65vh;overflow-y:auto;border-top:1px solid #eee;border-bottom:1px solid #eee;">
+        ${rows}
+      </div>
+      <div style="padding:10px 16px;text-align:right">
+        <button onclick="closeModal()" style="background:#e8f5e9;color:#1B5E20;border:none;padding:8px 20px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600">关闭</button>
+      </div>
+    `;
+    return content;
+  }
+
+  showModal(renderModal(logs, true));
+
+  // 后台拉取 Gist 最新数据
+  try {
+    const token = ADMIN_BUILTIN_TOKEN;
+    if (token && GIST_ID) {
+      const getResp = await fetch(GIST_API + '/' + GIST_ID, {
+        headers: { 'Authorization': 'Bearer ' + token },
+        cache: 'no-store'
+      });
+      if (getResp.ok) {
+        const gist = await getResp.json();
+        const logFile = gist.files && gist.files['login_logs.json'];
+        if (logFile && logFile.content) {
+          let remoteLogs = [];
+          try { remoteLogs = JSON.parse(logFile.content); } catch(e) {}
+          // 合并本地+远端，按时间降序，去重
+          const merged = [...remoteLogs];
+          for (const l of logs) {
+            if (!merged.find(r => r.time === l.time && r.id === l.id)) merged.push(l);
+          }
+          merged.sort((a, b) => b.time.localeCompare(a.time));
+          logs = merged.slice(0, 100);
+          // 更新本地缓存
+          localStorage.setItem('pgm_login_logs', JSON.stringify(logs));
+          // 刷新弹窗内容
+          const modalBody = document.getElementById('modalContent');
+          if (modalBody) modalBody.innerHTML = renderModal(logs, false);
+        }
+      }
+    }
+  } catch(e) {
+    console.warn('showLoginLogsModal: 拉取Gist失败', e.message);
+    const modalBody = document.getElementById('modalContent');
+    if (modalBody) modalBody.innerHTML = renderModal(logs, false);
+  }
 }
 
 // ============ NAVIGATION ============
@@ -6475,6 +6653,10 @@ function updateSidebar() {
     const archiveSeasonBtn = document.getElementById('btnArchiveSeason');
     if (archiveSeasonBtn) {
       archiveSeasonBtn.style.display = state.currentUser.isSuperAdmin ? 'flex' : 'none';
+    }
+    const loginLogsBtn = document.getElementById('btnLoginLogs');
+    if (loginLogsBtn) {
+      loginLogsBtn.style.display = state.currentUser.isSuperAdmin ? 'flex' : 'none';
     }
     // 转会管理已移至顶部工具栏
     const userIdEl = document.getElementById('sidebarUserId');
@@ -7448,7 +7630,7 @@ function renderTransferManage() {
       return `<div style="display:flex;align-items:center;padding:10px;background:#fff;border:1px solid #eee;border-radius:8px;margin-bottom:6px;gap:8px">
         <img src="${getTeamLogo({name: t.fromTeamName})}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span class="player-expand" onclick="event.stopPropagation();togglePlayerSeasonDetail(this,'${t.playerUid}')">${t.playerName}</span> ${leagueTag}</div>
+          <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.playerName} ${leagueTag}</div>
           <div style="font-size:11px">${t.fromTeamName} → <span ${toTeamStyle}>${t.toTeamName}</span></div>
         </div>
         <div style="text-align:right;flex-shrink:0">
@@ -7467,7 +7649,7 @@ function renderTransferManage() {
       ${processed.map(t => {
         const feeStr = t.transferFee > 0 ? `（${t.transferFee}M）` : '';
         const immTag = t.effectiveRound === 0 ? ' ⚡' : '';
-        return `<div style="font-size:12px;color:#666;padding:3px 0"><span class="player-expand" onclick="event.stopPropagation();togglePlayerSeasonDetail(this,'${t.playerUid}')">${t.playerName}</span>：${t.fromTeamName} → ${t.toTeamName}${feeStr}${immTag}</div>`;
+        return `<div style="font-size:12px;color:#666;padding:3px 0">${t.playerName}：${t.fromTeamName} → ${t.toTeamName}${feeStr}${immTag}</div>`;
       }).join('')}
     </div>`;
   }
@@ -8451,6 +8633,7 @@ document.getElementById('changelogHint').innerHTML = '<span style="font-size:10p
 document.getElementById('btnAdminImport').onclick = () => showAdminImportModal();
 document.getElementById('btnCupManage').onclick = () => showCupManageModal();
 document.getElementById('btnArchiveSeason').onclick = () => showArchiveSeasonModal();
+document.getElementById('btnLoginLogs').onclick = () => showLoginLogsModal();
 // 转会管理已移至顶部工具栏（按钮已移除）
 document.getElementById('btnSyncCloud').onclick = () => showSyncModal();
 
