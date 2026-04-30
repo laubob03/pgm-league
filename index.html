@@ -9,7 +9,7 @@
   <!-- 顶部版本检查：检测到新版本时弹出提示框，用户确认后才升级 -->
   <script>
   !function(){
-    // v1.0.287: 移除"稍后再说"按钮，新版本必须强制更新
+    // v1.0.288: 转会管理/转入转出球员名可点击查看详情
     var _upgraded = sessionStorage.getItem('pgm_upgraded');
     if (_upgraded) {
       // 上一次是升级跳转来的，清除 SW 缓存并移除标记
@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';b.innerHTML='<div style="max-width:600px;margin:0 auto;">📢 '+d.notice+'</div>';document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.287'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.288'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -532,7 +532,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 287 };
+const APP_VERSION = { major: 1, minor: 0, patch: 288 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -544,7 +544,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.287', date: '2026-04-29', items: ['🗑️ 移除"稍后再说"按钮，新版本检测到后强制更新'] },
+  { v: '1.0.288', date: '2026-04-30', items: ['👆 转会管理/转入球员/转出球员中球员名可点击查看详情（共用 togglePlayerSeasonDetail 系统）'] },
   { v: '1.0.286', date: '2026-04-29', items: ['🛡️ 升级跳转后用 sessionStorage 标记防止循环弹框'] },
   { v: '1.0.276', date: '2026-04-29', items: ['➕ 新增足总杯数据员账号：zuzongbei（足总杯数据员），可管理足总杯对阵和录入比赛'] },
   { v: '1.0.274', date: '2026-04-29', items: ['🔗 顶部工具栏"登录"按钮点击打开侧边栏，而非直接弹出登录框'] },
@@ -5565,7 +5565,7 @@ function showTeamDetail(teamId) {
       return `<div style="display:flex;align-items:center;padding:8px 10px;border-bottom:1px solid #f0f0f0;gap:10px">
         <img src="${getTeamLogo({name: t.fromTeamName})}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600">${t.playerName}</div>
+          <div style="font-size:13px;font-weight:600"><span class="player-expand" onclick="event.stopPropagation();togglePlayerSeasonDetail(this,'${t.playerUid}')">${t.playerName}</span></div>
           <div style="font-size:11px;color:#888">来自：${t.fromTeamName}</div>
           ${timeTag}
         </div>
@@ -5599,7 +5599,7 @@ function showTeamDetail(teamId) {
       return `<div style="display:flex;align-items:center;padding:8px 10px;border-bottom:1px solid #f0f0f0;gap:10px">
         <img src="${getTeamLogo({name: t.toTeamName})}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600">${t.playerName}</div>
+          <div style="font-size:13px;font-weight:600"><span class="player-expand" onclick="event.stopPropagation();togglePlayerSeasonDetail(this,'${t.playerUid}')">${t.playerName}</span></div>
           <div style="font-size:11px;color:#888">去往：${t.toTeamName}</div>
           ${timeTag}
         </div>
@@ -7448,7 +7448,7 @@ function renderTransferManage() {
       return `<div style="display:flex;align-items:center;padding:10px;background:#fff;border:1px solid #eee;border-radius:8px;margin-bottom:6px;gap:8px">
         <img src="${getTeamLogo({name: t.fromTeamName})}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.playerName} ${leagueTag}</div>
+          <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span class="player-expand" onclick="event.stopPropagation();togglePlayerSeasonDetail(this,'${t.playerUid}')">${t.playerName}</span> ${leagueTag}</div>
           <div style="font-size:11px">${t.fromTeamName} → <span ${toTeamStyle}>${t.toTeamName}</span></div>
         </div>
         <div style="text-align:right;flex-shrink:0">
@@ -7467,7 +7467,7 @@ function renderTransferManage() {
       ${processed.map(t => {
         const feeStr = t.transferFee > 0 ? `（${t.transferFee}M）` : '';
         const immTag = t.effectiveRound === 0 ? ' ⚡' : '';
-        return `<div style="font-size:12px;color:#666;padding:3px 0">${t.playerName}：${t.fromTeamName} → ${t.toTeamName}${feeStr}${immTag}</div>`;
+        return `<div style="font-size:12px;color:#666;padding:3px 0"><span class="player-expand" onclick="event.stopPropagation();togglePlayerSeasonDetail(this,'${t.playerUid}')">${t.playerName}</span>：${t.fromTeamName} → ${t.toTeamName}${feeStr}${immTag}</div>`;
       }).join('')}
     </div>`;
   }
