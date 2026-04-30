@@ -6476,6 +6476,7 @@ async function showLoginLogsModal() {
       fetchLoginLogsFromGist();
     }
   }
+  window.switchTab = switchTab; // 暴露到全局，供 onclick 调用
 
   function fmtTime(isoStr) {
     const d = new Date(isoStr);
