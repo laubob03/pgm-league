@@ -342,34 +342,35 @@
     .transfer-tab-btn{padding:7px 14px;border:none;background:transparent;color:#222;font-size:13px;cursor:pointer;font-weight:500;transition:all .25s;text-align:center;border-radius:18px}
     .transfer-tab-btn.active{background:#d0d0d0;color:#222;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.1)}
     .transfer-tab-btn:hover:not(.active){background:rgba(0,0,0,.04);color:#555}
-    /* === v1.0.293: 用户水印 === */
+    /* === v1.0.293: 用户水印（装饰斜向大字） === */
     #userWatermark {
-      position: fixed; bottom: 18px; right: 18px;
-      display: flex; align-items: center; gap: 0;
-      padding: 5px 10px 5px 8px;
-      background: rgba(255,255,255,0.72);
-      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-      border: 1px solid rgba(200,200,200,0.4);
-      border-radius: 24px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-      font-size: 12px; color: #555;
-      z-index: 9999; pointer-events: none;
-      opacity: 0.28;
-      transition: opacity 0.4s ease, transform 0.3s ease;
-      max-width: 220px; overflow: hidden;
-      white-space: nowrap; text-overflow: ellipsis;
+      display: none;
+      text-align: center;
+      font-size: 1.4em;
+      font-weight: 700;
+      letter-spacing: 6px;
+      color: rgba(190, 195, 200, 0.45);
+      transform: rotate(-45deg);
+      pointer-events: none;
+      user-select: none;
+      padding: 10px 0 4px;
+      white-space: nowrap;
+      overflow: hidden;
     }
-    #userWatermark:hover { opacity: 0.75; transform: scale(1.02); }
     #userWatermark .wm-role {
-      display: inline-block; padding: 1px 7px; border-radius: 10px;
-      font-size: 10px; font-weight: 700; margin-right: 7px;
-      letter-spacing: 0.3px; flex-shrink: 0;
+      display: inline-block;
+      padding: 1px 9px;
+      border-radius: 10px;
+      font-size: 0.75em;
+      font-weight: 700;
+      letter-spacing: 1px;
+      vertical-align: middle;
+      margin-right: 8px;
     }
-    #userWatermark .wm-role.admin { background: #ffe0e0; color: #c62828; }
-    #userWatermark .wm-role.recorder { background: #fff3e0; color: #e65100; }
-    #userWatermark .wm-role.coach { background: #e8f5e9; color: #2e7d32; }
-    #userWatermark .wm-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
-    #userWatermark .wm-sep { margin: 0 5px 0 0; color: #bbb; }
+    #userWatermark .wm-role.admin  { background: rgba(220,100,100,0.15); color: rgba(180,80,80,0.65); }
+    #userWatermark .wm-role.recorder { background: rgba(230,150,50,0.15);  color: rgba(180,110,40,0.65); }
+    #userWatermark .wm-role.coach  { background: rgba(80,180,100,0.15);  color: rgba(60,140,80,0.65); }
+    #userWatermark .wm-name { font-weight: 800; letter-spacing: 2px; }
   </style>
 </head>
 <body>
@@ -421,6 +422,7 @@
         <button class="league-chip cup-chip" data-cup="associationCup">🏆协会杯</button>
         <button class="league-chip cup-chip" data-cup="faCup">🏆足总杯</button>
       </div>
+      <div id="userWatermark" style="display:none"></div>
       <div id="standingsContent"></div>
     </div>
   </div>
@@ -503,9 +505,6 @@
   </div>
 </main>
 
-<!-- 用户水印（登录后显示） -->
-<div id="userWatermark" style="display:none"></div>
-
 <!-- Sidebar -->
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 <aside class="sidebar" id="sidebar">
@@ -582,7 +581,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.293', date: '2026-05-02', items: ['💧 登录账号在页面右下角显示淡雅水印：超管/数据员/主教练各有专属颜色徽章，hover 时放大显示球队名，毛玻璃质感设计，opacity 0.28 不干扰正常浏览'] },
+  { v: '1.0.293', date: '2026-05-02', items: ['💧 登录账号在主页（积分榜）卡片标题下方居中显示装饰水印：45度斜向大字，角色徽章（超管红/数据员橙/主教练绿），浅色半透明，不干扰正常信息浏览'] },
   { v: '1.0.292', date: '2026-05-02', items: ['🔍 登录/浏览日志迁移到专用独立 Gist，不再污染主数据 Gist；浏览记录也支持 Gist 云端同步，超管可见所有用户的访问记录'] },
   { v: '1.0.291', date: '2026-05-02', items: ['📊 球队详情页"球员"TAB新增"总榜"子Tab，汇总联赛+所有杯赛数据，支持进球/助攻/MVP/号码排序'] },
   { v: '1.0.289', date: '2026-04-30', items: ['🔍 超管侧边栏新增"本站登录详情"：实时显示全站所有账号的登录ID、角色、时间、IP及地理位置，数据同步到Gist云端'] },
@@ -6791,7 +6790,7 @@ function renderUserWatermark() {
   wm.innerHTML =
     '<span class="wm-role ' + roleClass + '">' + roleLabel + '</span>'
     + '<span class="wm-name">' + name + '</span>';
-  wm.style.display = 'flex';
+  wm.style.display = 'block';
 }
 
 // ============ NAVIGATION ============
