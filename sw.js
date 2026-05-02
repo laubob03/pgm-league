@@ -34,10 +34,11 @@ self.addEventListener('message', event => {
 });
 
 self.addEventListener('fetch', event => {
-  if (event.request.url.includes('api.github.com')) {
+  const url = event.request.url;
+  if (url.includes('api.github.com') || url.includes('gist.githubusercontent.com') || url.includes('github.com/')) {
     return;
   }
-  if (event.request.url.includes('sw.js') || event.request.url.includes('version.json') || event.request.url.endsWith('index.html') || event.request.url.endsWith('/')) {
+  if (url.includes('sw.js') || url.includes('version.json') || url.endsWith('index.html') || url.endsWith('/')) {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' })
         .then(response => response)
