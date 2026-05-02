@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pgm-league-v298';
+const CACHE_NAME = 'pgm-league-v299';
 const urlsToCache = [
   './index.html',
   './manifest.json'
@@ -28,7 +28,9 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // version.json 和 index.html 永不缓存，确保版本检查和主页面始终拿到最新数据
+  if (event.request.url.includes('pgm-league-proxy.laubob.workers.dev')) {
+    return;
+  }
   if (event.request.url.includes('version.json') || event.request.url.endsWith('index.html') || event.request.url.endsWith('/')) {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' })
