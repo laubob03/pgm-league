@@ -350,12 +350,13 @@
       font-weight: 700;
       letter-spacing: 6px;
       color: rgba(190, 195, 200, 0.45);
-      transform: rotate(-45deg);
+      transform: rotate(30deg);
       pointer-events: none;
       user-select: none;
-      padding: 10px 0 4px;
+      padding: 14px 0;
       white-space: nowrap;
       overflow: hidden;
+      width: 100%;
     }
     #userWatermark .wm-role {
       display: inline-block;
@@ -422,7 +423,9 @@
         <button class="league-chip cup-chip" data-cup="associationCup">🏆协会杯</button>
         <button class="league-chip cup-chip" data-cup="faCup">🏆足总杯</button>
       </div>
-      <div id="userWatermark" style="display:none"></div>
+      <div style="display:flex;justify-content:center;align-items:center;min-height:56px;">
+        <div id="userWatermark" style="display:none"></div>
+      </div>
       <div id="standingsContent"></div>
     </div>
   </div>
@@ -6772,7 +6775,11 @@ function renderUserWatermark() {
   const wm = document.getElementById('userWatermark');
   if (!wm) return;
   const u = state.currentUser;
-  if (!u) { wm.style.display = 'none'; return; }
+  if (!u) {
+    wm.innerHTML = '<span class="wm-name">未登录</span>';
+    wm.style.display = 'block';
+    return;
+  }
 
   let roleLabel = '', roleClass = '';
   if (u.isSuperAdmin) {
