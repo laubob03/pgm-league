@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';b.innerHTML='<div style="max-width:600px;margin:0 auto;">📢 '+d.notice+'</div>';document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.291'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.292'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -539,7 +539,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 291 };
+const APP_VERSION = { major: 1, minor: 0, patch: 292 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -551,6 +551,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.292', date: '2026-05-02', items: ['🔍 登录/浏览日志迁移到专用独立 Gist，不再污染主数据 Gist；浏览记录也支持 Gist 云端同步，超管可见所有用户的访问记录'] },
   { v: '1.0.291', date: '2026-05-02', items: ['📊 球队详情页"球员"TAB新增"总榜"子Tab，汇总联赛+所有杯赛数据，支持进球/助攻/MVP/号码排序'] },
   { v: '1.0.289', date: '2026-04-30', items: ['🔍 超管侧边栏新增"本站登录详情"：实时显示全站所有账号的登录ID、角色、时间、IP及地理位置，数据同步到Gist云端'] },
   { v: '1.0.282', date: '2026-04-29', items: ['📋 球队详情页新增两个TAB：⬇️ 转入球员 / ⬆️ 转出球员，所有人可见，显示待生效/已完成、轮次、费用、时间'] },
@@ -6465,11 +6466,11 @@ function _saveLoginLog(entry) {
 
 async function _syncLoginLogToGist(entry) {
   const token = ADMIN_BUILTIN_TOKEN;
-  if (!token || !GIST_ID) return;
+  if (!token || !LOG_GIST_ID) return;
   try {
     // 先拉取现有 login_logs.json
     let existing = [];
-    const getResp = await fetch(GIST_API + '/' + GIST_ID, {
+    const getResp = await fetch(GIST_API + '/' + LOG_GIST_ID, {
       headers: { 'Authorization': 'Bearer ' + token },
       cache: 'no-store'
     });
@@ -6484,7 +6485,7 @@ async function _syncLoginLogToGist(entry) {
     const idx = existing.findIndex(l => l.time === entry.time && l.id === entry.id);
     if (idx >= 0) { existing[idx] = entry; } else { existing.unshift(entry); }
     if (existing.length > 200) existing = existing.slice(0, 200);
-    await fetch(GIST_API + '/' + GIST_ID, {
+    await fetch(GIST_API + '/' + LOG_GIST_ID, {
       method: 'PATCH',
       headers: {
         'Authorization': 'Bearer ' + token,
@@ -6494,6 +6495,41 @@ async function _syncLoginLogToGist(entry) {
     });
   } catch(e) {
     console.warn('_syncLoginLogToGist: 同步失败', e.message);
+  }
+}
+
+// ============ 浏览日志 Gist 同步 ============
+async function _syncVisitLogToGist(entry) {
+  const token = ADMIN_BUILTIN_TOKEN;
+  if (!token || !LOG_GIST_ID) return;
+  try {
+    // 先拉取现有 visit_logs.json
+    let existing = [];
+    const getResp = await fetch(GIST_API + '/' + LOG_GIST_ID, {
+      headers: { 'Authorization': 'Bearer ' + token },
+      cache: 'no-store'
+    });
+    if (getResp.ok) {
+      const gist = await getResp.json();
+      const logFile = gist.files && gist.files['visit_logs.json'];
+      if (logFile && logFile.content) {
+        try { existing = JSON.parse(logFile.content); } catch(e) {}
+      }
+    }
+    // 合并（同 time 去重）
+    const idx = existing.findIndex(l => l.time === entry.time);
+    if (idx >= 0) { existing[idx] = entry; } else { existing.unshift(entry); }
+    if (existing.length > 200) existing = existing.slice(0, 200);
+    await fetch(GIST_API + '/' + LOG_GIST_ID, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ files: { 'visit_logs.json': { content: JSON.stringify(existing) } } })
+    });
+  } catch(e) {
+    console.warn('_syncVisitLogToGist: 同步失败', e.message);
   }
 }
 
@@ -6516,6 +6552,7 @@ async function recordVisitLog() {
   logs.unshift(entry);
   if (logs.length > 100) logs = logs.slice(0, 100);
   localStorage.setItem('pgm_visit_logs', JSON.stringify(logs));
+  _syncVisitLogToGist(entry); // 异步上传到 Gist（fire-and-forget）
   // 异步获取 IP 和地理位置，然后更新本地
   try {
     const r = await fetch('https://ipapi.co/json/', { cache: 'no-store' });
@@ -6531,6 +6568,7 @@ async function recordVisitLog() {
       if (idx >= 0) logs[idx] = entry;
       else { logs.unshift(entry); if (logs.length > 100) logs = logs.slice(0, 100); }
       localStorage.setItem('pgm_visit_logs', JSON.stringify(logs));
+      _syncVisitLogToGist(entry); // IP 更新后再同步一次
     }
   } catch(e) { console.warn('recordVisitLog: 获取IP失败', e.message); }
 }
@@ -6545,16 +6583,20 @@ async function showLoginLogsModal() {
   try { loginLogs = JSON.parse(localStorage.getItem('pgm_login_logs') || '[]'); } catch(e) {}
   try { visitLogs = JSON.parse(localStorage.getItem('pgm_visit_logs') || '[]'); } catch(e) {}
   let activeTab = 'login';
-  let gistSynced = false;
+  let loginSynced = false;
+  let visitSynced = false;
 
   function switchTab(tab) {
     activeTab = tab;
     const mc = document.getElementById('modalContent');
     if (mc) mc.innerHTML = renderModal();
-    // 同步登录记录 Gist（首次切到登录 tab 且尚未同步过）
-    if (tab === 'login' && !gistSynced) {
-      gistSynced = true;
-      fetchLoginLogsFromGist();
+    if (tab === 'login' && !loginSynced) {
+      loginSynced = true;
+      fetchLogsFromGist('login');
+    }
+    if (tab === 'visit' && !visitSynced) {
+      visitSynced = true;
+      fetchLogsFromGist('visit');
     }
   }
   window.switchTab = switchTab; // 暴露到全局，供 onclick 调用
@@ -6616,7 +6658,7 @@ async function showLoginLogsModal() {
       <div style="padding:16px 16px 8px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
           <div style="font-size:17px;font-weight:700;color:#1B5E20">🔍 访问详情</div>
-          <span style="font-size:12px;color:#888">${gistSynced || !isLogin ? '📱 本地数据' : '⏳ 加载中…'}</span>
+          <span style="font-size:12px;color:#888">${(loginSynced && isLogin) || (visitSynced && !isLogin) ? '☁️ Gist 已同步' : '📱 本地数据'}</span>
         </div>
         <div style="display:flex;gap:0;border-radius:10px;overflow:hidden;border:1.5px solid #1B5E20;margin-bottom:10px;">
           <div onclick="switchTab('login')" style="flex:1;padding:8px 0;text-align:center;font-size:13px;font-weight:700;cursor:pointer;background:${tabLoginBg};color:${tabLoginColor};transition:all 0.2s">🔑 登录记录</div>
@@ -6635,17 +6677,20 @@ async function showLoginLogsModal() {
   // 初始显示
   showModal(renderModal());
 
-  // Gist 同步登录日志（切到登录 tab 时触发）
-  async function fetchLoginLogsFromGist() {
+  // Gist 同步日志（切到对应 tab 时触发）
+  async function fetchLogsFromGist(tab) {
     try {
       const token = ADMIN_BUILTIN_TOKEN;
-      if (!token || !GIST_ID) return;
-      const getResp = await fetch(GIST_API + '/' + GIST_ID, {
+      if (!token || !LOG_GIST_ID) return;
+      const getResp = await fetch(GIST_API + '/' + LOG_GIST_ID, {
         headers: { 'Authorization': 'Bearer ' + token },
         cache: 'no-store'
       });
-      if (getResp.ok) {
-        const gist = await getResp.json();
+      if (!getResp.ok) return;
+      const gist = await getResp.json();
+
+      // 同步登录日志
+      if (tab === 'login' || tab === 'both') {
         const logFile = gist.files && gist.files['login_logs.json'];
         if (logFile && logFile.content) {
           let remoteLogs = [];
@@ -6655,16 +6700,39 @@ async function showLoginLogsModal() {
             if (!merged.find(r => r.time === l.time && r.id === l.id)) merged.push(l);
           }
           merged.sort((a, b) => b.time.localeCompare(a.time));
-          loginLogs = merged.slice(0, 100);
+          loginLogs = merged.slice(0, 200);
           localStorage.setItem('pgm_login_logs', JSON.stringify(loginLogs));
-          if (activeTab === 'login') {
-            const mc = document.getElementById('modalContent');
-            if (mc) mc.innerHTML = renderModal();
-          }
         }
       }
+
+      // 同步浏览日志
+      if (tab === 'visit' || tab === 'both') {
+        const visitFile = gist.files && gist.files['visit_logs.json'];
+        if (visitFile && visitFile.content) {
+          let remoteLogs = [];
+          try { remoteLogs = JSON.parse(visitFile.content); } catch(e) {}
+          const merged = [...remoteLogs];
+          for (const l of visitLogs) {
+            if (!merged.find(r => r.time === l.time)) merged.push(l);
+          }
+          merged.sort((a, b) => b.time.localeCompare(a.time));
+          visitLogs = merged.slice(0, 200);
+          localStorage.setItem('pgm_visit_logs', JSON.stringify(visitLogs));
+        }
+      }
+
+      // 刷新显示
+      const mc = document.getElementById('modalContent');
+      if (mc) mc.innerHTML = renderModal();
     } catch(e) { console.warn('showLoginLogsModal: Gist同步失败', e.message); }
   }
+
+  // 初始显示
+  showModal(renderModal());
+  // 打开时立即从专用日志 Gist 拉取两种日志
+  loginSynced = true;
+  visitSynced = true;
+  fetchLogsFromGist('both');
 }
 
 // ============ NAVIGATION ============
@@ -7178,6 +7246,9 @@ let GIST_ID = localStorage.getItem('pgm_gist_id') || '4a08491692074f35f0f2320434
 // 之前每个浏览器动态创建各自的 Gist，导致数据分散、互不可见
 const BUILTIN_TRANSFER_GIST_ID = '23f2ae315efea15025414f7a155dc352';
 let TRANSFER_GIST_ID = BUILTIN_TRANSFER_GIST_ID;
+// ★ v1.0.292：专用日志 Gist（登录+浏览记录），与主数据 Gist 分离
+const BUILTIN_LOG_GIST_ID = '571fee2e0964f3533ea8cef4bebffd4a';
+let LOG_GIST_ID = BUILTIN_LOG_GIST_ID;
 let GITHUB_TOKEN = localStorage.getItem('pgm_github_token') || '';
 
 // ★ 清理已废弃的缓存（v1.0.214 移除 ETag，v1.0.215 统一 TRANSFER_GIST_ID）
