@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -28,7 +28,7 @@
     }
     fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
       // 公告条
-      if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';b.innerHTML='<div style="max-width:600px;margin:0 auto;">📢 '+d.notice+'</div>';document.body.prepend(b)}
+      if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
         var myV=0;try{var parts2='1.0.298'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
@@ -3319,7 +3319,7 @@ function render() {
   if (notice) {
     if (viewingSeasonId !== null) {
       notice.style.display = 'block';
-      notice.innerHTML = '📜 历史赛季（第' + viewingSeasonId + '届） - 只读模式';
+      notice.textContent = '📜 历史赛季（第' + viewingSeasonId + '届） - 只读模式';
     } else {
       notice.style.display = 'none';
     }
@@ -6526,13 +6526,11 @@ function _saveLoginLog(entry) {
 }
 
 async function _syncLoginLogToGist(entry) {
-  const token = ADMIN_BUILTIN_TOKEN;
-  if (!token || !LOG_GIST_ID) return;
+  if (!LOG_GIST_ID) return;
   try {
     // 先拉取现有 login_logs.json
     let existing = [];
-    const getResp = await fetch(GIST_API + '/' + LOG_GIST_ID, {
-      headers: { 'Authorization': 'Bearer ' + token },
+    const getResp = await gistFetch(GIST_API + '/' + LOG_GIST_ID, {
       cache: 'no-store'
     });
     if (getResp.ok) {
@@ -6546,10 +6544,9 @@ async function _syncLoginLogToGist(entry) {
     const idx = existing.findIndex(l => l.time === entry.time && l.id === entry.id);
     if (idx >= 0) { existing[idx] = entry; } else { existing.unshift(entry); }
     if (existing.length > 200) existing = existing.slice(0, 200);
-    await fetch(GIST_API + '/' + LOG_GIST_ID, {
+    await gistFetch(GIST_API + '/' + LOG_GIST_ID, {
       method: 'PATCH',
       headers: {
-        'Authorization': 'Bearer ' + token,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ files: { 'login_logs.json': { content: JSON.stringify(existing) } } })
@@ -6561,13 +6558,11 @@ async function _syncLoginLogToGist(entry) {
 
 // ============ 浏览日志 Gist 同步 ============
 async function _syncVisitLogToGist(entry) {
-  const token = ADMIN_BUILTIN_TOKEN;
-  if (!token || !LOG_GIST_ID) return;
+  if (!LOG_GIST_ID) return;
   try {
     // 先拉取现有 visit_logs.json
     let existing = [];
-    const getResp = await fetch(GIST_API + '/' + LOG_GIST_ID, {
-      headers: { 'Authorization': 'Bearer ' + token },
+    const getResp = await gistFetch(GIST_API + '/' + LOG_GIST_ID, {
       cache: 'no-store'
     });
     if (getResp.ok) {
@@ -6581,10 +6576,9 @@ async function _syncVisitLogToGist(entry) {
     const idx = existing.findIndex(l => l.time === entry.time);
     if (idx >= 0) { existing[idx] = entry; } else { existing.unshift(entry); }
     if (existing.length > 200) existing = existing.slice(0, 200);
-    await fetch(GIST_API + '/' + LOG_GIST_ID, {
+    await gistFetch(GIST_API + '/' + LOG_GIST_ID, {
       method: 'PATCH',
       headers: {
-        'Authorization': 'Bearer ' + token,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ files: { 'visit_logs.json': { content: JSON.stringify(existing) } } })
@@ -6741,10 +6735,8 @@ async function showLoginLogsModal() {
   // Gist 同步日志（切到对应 tab 时触发）
   async function fetchLogsFromGist(tab) {
     try {
-      const token = ADMIN_BUILTIN_TOKEN;
-      if (!token || !LOG_GIST_ID) return;
-      const getResp = await fetch(GIST_API + '/' + LOG_GIST_ID, {
-        headers: { 'Authorization': 'Bearer ' + token },
+      if (!LOG_GIST_ID) return;
+  const getResp = await gistFetch(GIST_API + '/' + LOG_GIST_ID, {
         cache: 'no-store'
       });
       if (!getResp.ok) return;
@@ -7334,36 +7326,44 @@ function resetAllData() {
 
 // ============ CLOUD SYNC MODULE ============
 // 云端同步模块 - 使用 GitHub Gist 作为免费云端数据库
-// 支持多设备数据同步，无需后端服务器
+// 通过 Cloudflare Workers 代理 + HMAC 签名验证，Token 安全存储在 Worker 端
 
 let GIST_ID = localStorage.getItem('pgm_gist_id') || '4a08491692074f35f0f2320434826e41';
-// ★ v1.0.215 修复：硬编码固定 TRANSFER_GIST_ID，确保所有用户读写同一个 Gist
-// 之前每个浏览器动态创建各自的 Gist，导致数据分散、互不可见
 const BUILTIN_TRANSFER_GIST_ID = '23f2ae315efea15025414f7a155dc352';
 let TRANSFER_GIST_ID = BUILTIN_TRANSFER_GIST_ID;
-// ★ v1.0.292：专用日志 Gist（登录+浏览记录），与主数据 Gist 分离
 const BUILTIN_LOG_GIST_ID = '571fee2e0964f3533ea8cef4bebffd4a';
 let LOG_GIST_ID = BUILTIN_LOG_GIST_ID;
-let GITHUB_TOKEN = localStorage.getItem('pgm_github_token') || '';
 
-// ★ 清理已废弃的缓存（v1.0.214 移除 ETag，v1.0.215 统一 TRANSFER_GIST_ID）
 localStorage.removeItem('pgm_gist_etag');
 localStorage.removeItem('pgm_transfer_gist_etag');
-// 清理旧的动态 TRANSFER_GIST_ID（不再从 localStorage 读取）
 localStorage.removeItem('pgm_transfer_gist_id');
+localStorage.removeItem('pgm_github_token');
 
-const _rt = ['REDACTED_1','REDACTED_2','REDACTED_3'];
-const RECORDER_BUILTIN_TOKEN = _rt.join('');
+const GIST_API = '/api/gists';
 
-const _at = ['REDACTED_1','REDACTED_2REDACTED_3'];
-const ADMIN_BUILTIN_TOKEN = _at.join('');
-
-const GIST_API = 'https://api.github.com/gists';
+// ============ HMAC 签名工具 ============
+const _SIGNING_SECRET = 'pgm_league_2026_hmac_secret_key';
+async function _hmacSign(message) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(_SIGNING_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
+  return btoa(String.fromCharCode(...new Uint8Array(sig)));
+}
+async function gistFetch(url, opts = {}) {
+  const ts = String(Date.now());
+  const method = (opts.method || 'GET').toUpperCase();
+  const path = new URL(url, location.origin).pathname + (new URL(url, location.origin).search || '');
+  const sig = await _hmacSign(ts + method + path);
+  opts.headers = Object.assign({}, opts.headers || {}, {
+    'X-Timestamp': ts,
+    'X-Signature': sig
+  });
+  return fetch(url, opts);
+}
 
 function showSyncModal() {
   const isAdmin = state.currentUser && state.currentUser.isSuperAdmin;
   const isRecorder = state.currentUser && state.currentUser.isDataRecorder;
-  const hasToken = !!GITHUB_TOKEN;
   const hasGist = !!GIST_ID;
 
   // 数据员/统计员视图
@@ -7451,7 +7451,6 @@ function showSyncModal() {
     }
 
     // ===== 数据员视图（完整权限：上传+下载+导出导入） =====
-    const recorderToken = RECORDER_BUILTIN_TOKEN;
     const gistKey = 'pgm_recorder_gist_' + state.currentUser.teamId;
     const recorderGist = localStorage.getItem(gistKey) || '';
     const content = `
@@ -7703,7 +7702,7 @@ async function fetchCloudUploadInfo() {
   const infoEl = document.getElementById('cloudUploadInfo');
   if (!infoEl) return;
   try {
-    const resp = await fetch(GIST_API + '/' + GIST_ID);
+    const resp = await gistFetch(GIST_API + '/' + GIST_ID);
     if (!resp.ok) { infoEl.innerHTML = '❌ 无法查询云端信息'; return; }
     const gist = await resp.json();
     const gistFiles = gist.files;
@@ -8303,8 +8302,6 @@ function mergeLeagueData(leagueData) {
 
 // 数据员上传数据到独立 Gist
 async function recorderUpload() {
-  const token = GITHUB_TOKEN || RECORDER_BUILTIN_TOKEN;
-  if (!token) { showToast('请先配置 GitHub Token'); return; }
   const league = state.currentUser ? state.currentUser.league : '';
   const recorderType = state.currentUser ? (state.currentUser.recorderType || 'league') : 'league';
   const cupId = state.currentUser ? (state.currentUser.cupId || null) : null;
@@ -8320,7 +8317,6 @@ async function recorderUpload() {
     showSyncProgress('upload', 1);
     const filename = (recorderType === 'cup' ? 'cup_' + cupId : league) + '_data_' + new Date().toISOString().slice(0, 10) + '.json';
     const headers = {
-      'Authorization': 'Bearer ' + token,
       'Accept': 'application/vnd.github.v3+json',
       'Content-Type': 'application/json'
     };
@@ -8331,15 +8327,13 @@ async function recorderUpload() {
     showSyncProgress('upload', 2);
     let recorderGistId = getRecorderGistId();
     if (recorderGistId) {
-      const getResp = await fetch(GIST_API + '/' + recorderGistId, {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
+      const getResp = await gistFetch(GIST_API + '/' + recorderGistId);
       if (getResp.ok) {
         const gist = await getResp.json();
         const body = { description: 'PGM ' + leagueName + '数据 - 数据员同步', files: {} };
         for (const fname of Object.keys(gist.files)) { body.files[fname] = null; }
         body.files[filename] = { content: dataStr };
-        const resp = await fetch(GIST_API + '/' + recorderGistId, { method: 'PATCH', headers, body: JSON.stringify(body) });
+        const resp = await gistFetch(GIST_API + '/' + recorderGistId, { method: 'PATCH', headers, body: JSON.stringify(body) });
         if (!resp.ok) {
           const errData = await resp.json().catch(() => ({}));
           if (resp.status === 403) throw new Error('权限不足(403)，请确认 Token 勾选了 gist 权限');
@@ -8355,7 +8349,7 @@ async function recorderUpload() {
     }
     if (!recorderGistId) {
       const body = { description: 'PGM ' + leagueName + '数据 - 数据员同步', public: true, files: { [filename]: { content: dataStr } } };
-      const resp = await fetch(GIST_API, { method: 'POST', headers, body: JSON.stringify(body) });
+      const resp = await gistFetch(GIST_API, { method: 'POST', headers, body: JSON.stringify(body) });
       if (!resp.ok) {
         const errData = await resp.json().catch(() => ({}));
         if (resp.status === 403) throw new Error('权限不足(403)');
@@ -8370,7 +8364,7 @@ async function recorderUpload() {
     if (GIST_ID) {
       showSyncProgress('upload', 3);
       try {
-        const mainResp = await fetch(GIST_API + '/' + GIST_ID);
+        const mainResp = await gistFetch(GIST_API + '/' + GIST_ID);
         if (mainResp.ok) {
           const mainGist = await mainResp.json();
           let mainState = null;
@@ -8462,7 +8456,7 @@ async function recorderUpload() {
             const mainOther = Object.assign({}, mainState); delete mainOther.teams; delete mainOther.matches;
             mainBody.files['other_' + dStr + '.json'] = { content: safeStringify(mainOther) || '{}' };
             mainBody.files[mainFilename] = { content: mainDataStr };
-            const patchResp = await fetch(GIST_API + '/' + GIST_ID, { method: 'PATCH', headers, body: JSON.stringify(mainBody) });
+            const patchResp = await gistFetch(GIST_API + '/' + GIST_ID, { method: 'PATCH', headers, body: JSON.stringify(mainBody) });
             if (patchResp.ok) {
               showToast('已合并' + leagueName + '数据到主云端 ✓');
             } else {
@@ -8494,8 +8488,6 @@ async function recorderUpload() {
 
 
 async function syncUpload() {
-  const token = GITHUB_TOKEN || ADMIN_BUILTIN_TOKEN;
-  if (!token) { showToast('云端同步不可用'); return; }
   if (!confirm('确定要上传数据到云端吗？这将覆盖云端现有数据。')) return;
 
   showSyncProgress('upload', 0);
@@ -8526,7 +8518,6 @@ async function syncUpload() {
     // ★ 同时保留全量文件用于兼容旧版客户端
     splitFiles['pgm_league_data_' + dateStr + '.json'] = { content: dataStr };
     const headers = {
-      'Authorization': 'Bearer ' + token,
       'Accept': 'application/vnd.github.v3+json',
       'Content-Type': 'application/json'
     };
@@ -8534,9 +8525,7 @@ async function syncUpload() {
     const hasValidGistId = !!GIST_ID;
     if (hasValidGistId) {
       // 更新已有 Gist
-      const getResp = await fetch(GIST_API + '/' + GIST_ID, {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
+      const getResp = await gistFetch(GIST_API + '/' + GIST_ID);
       if (getResp.ok) {
         const gist = await getResp.json();
         const body = { description: 'PGM足球经理联赛数据 - 自动同步', files: {} };
@@ -8546,7 +8535,7 @@ async function syncUpload() {
         // ★ 写入拆分后的多文件
         Object.assign(body.files, splitFiles);
 
-        const resp = await fetch(GIST_API + '/' + GIST_ID, {
+        const resp = await gistFetch(GIST_API + '/' + GIST_ID, {
           method: 'PATCH',
           headers,
           body: JSON.stringify(body)
@@ -8578,7 +8567,7 @@ async function syncUpload() {
         files: splitFiles
       };
 
-      const resp = await fetch(GIST_API, {
+      const resp = await gistFetch(GIST_API, {
         method: 'POST',
         headers,
         body: JSON.stringify(body)
@@ -8623,8 +8612,6 @@ async function syncUpload() {
 // 静默上传转会数据到独立 Gist（出价/挂牌后自动触发，无需confirm）
 // 只上传 transferMarket + pendingTransfers，数据量仅几KB
 async function autoCloudUpload() {
-  const token = GITHUB_TOKEN || RECORDER_BUILTIN_TOKEN || ADMIN_BUILTIN_TOKEN;
-  if (!token) { console.warn('autoCloudUpload: 无可用Token，跳过自动上传'); return; }
   try {
     // 只打包转会相关数据（通常几KB，而非全量state几百KB~MB）
     const uploadData = {
@@ -8645,7 +8632,6 @@ async function autoCloudUpload() {
 
     const filename = 'pgm_transfer_data_' + new Date().toISOString().slice(0, 10) + '.json';
     const headers = {
-      'Authorization': 'Bearer ' + token,
       'Accept': 'application/vnd.github.v3+json',
       'Content-Type': 'application/json'
     };
@@ -8655,8 +8641,7 @@ async function autoCloudUpload() {
       // 先 GET 获取已有文件列表，清理旧文件
       const body = { description: 'PGM转会市场数据 - 自动同步', files: {} };
       try {
-        const getResp = await fetch(GIST_API + '/' + TRANSFER_GIST_ID, {
-          headers: { 'Authorization': 'Bearer ' + token },
+        const getResp = await gistFetch(GIST_API + '/' + TRANSFER_GIST_ID, {
           cache: 'no-store'
         });
         if (getResp.ok) {
@@ -8669,7 +8654,7 @@ async function autoCloudUpload() {
       body.files[filename] = { content: dataStr };
       const patchBody = JSON.stringify(body);
       console.log(`autoCloudUpload: PATCH body size=${patchBody.length} bytes, files=[${Object.keys(body.files).join(',')}]`);
-      const resp = await fetch(GIST_API + '/' + TRANSFER_GIST_ID, { method: 'PATCH', headers, body: patchBody });
+      const resp = await gistFetch(GIST_API + '/' + TRANSFER_GIST_ID, { method: 'PATCH', headers, body: patchBody });
       if (!resp.ok) {
         const errText = await resp.text().catch(() => '');
         console.error('autoCloudUpload: 上传失败', resp.status, errText);
@@ -8689,7 +8674,7 @@ async function autoCloudUpload() {
     } else {
       // 理论上不会走到这里（TRANSFER_GIST_ID 已硬编码），但保留创建逻辑作为安全网
       const body = { description: 'PGM转会市场数据 - 自动同步', public: true, files: { [filename]: { content: dataStr } } };
-      const resp = await fetch(GIST_API, { method: 'POST', headers, body: JSON.stringify(body) });
+      const resp = await gistFetch(GIST_API, { method: 'POST', headers, body: JSON.stringify(body) });
       if (!resp.ok) { console.error('autoCloudUpload: 创建转会Gist失败', resp.status); return; }
       const result = await resp.json();
       console.warn('autoCloudUpload: 意外创建了新 Gist，请更新 BUILTIN_TRANSFER_GIST_ID:', result.id);
@@ -8718,7 +8703,7 @@ async function syncDownload() {
   
   try {
     showSyncProgress('download', 1);
-    const resp = await fetch(GIST_API + '/' + GIST_ID);
+    const resp = await gistFetch(GIST_API + '/' + GIST_ID);
     
     if (!resp.ok) {
       if (resp.status === 404) throw new Error('云端数据不存在，请联系管理员');
@@ -8982,7 +8967,12 @@ document.getElementById('modalOverlay').onclick = (e) => {
         const banner = document.createElement('div');
         banner.id = 'versionBanner';
         banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;box-shadow:0 2px 8px rgba(0,0,0,0.3);';
-        banner.innerHTML = '<div style="max-width:600px;margin:0 auto;">📢 ' + notice + '</div>';
+        const _ns2 = document.createElement('span');
+        _ns2.textContent = '📢 ' + notice;
+        const _nw2 = document.createElement('div');
+        _nw2.style.cssText = 'max-width:600px;margin:0 auto;';
+        _nw2.appendChild(_ns2);
+        banner.appendChild(_nw2);
         document.body.prepend(banner);
       }
       if (v.minVersion) {
@@ -9051,10 +9041,7 @@ async function autoSyncFromCloud() {
     // 改为始终获取 Gist 元数据（几KB），再通过 updated_at 判断是否需要下载完整数据
     const fetchHeaders = { 'Accept': 'application/vnd.github.v3+json' };
     // ★ 使用内置 Token 提升 API 限流（60→5000次/小时），防止频繁刷新被限流
-    const token = GITHUB_TOKEN || RECORDER_BUILTIN_TOKEN;
-    if (token) fetchHeaders['Authorization'] = 'Bearer ' + token;
-
-    const resp = await fetch(GIST_API + '/' + GIST_ID, {
+    const resp = await gistFetch(GIST_API + '/' + GIST_ID, {
       headers: fetchHeaders,
       cache: 'no-store'  // ★ 防止浏览器 HTTP 缓存返回过期数据
     });
@@ -9335,10 +9322,7 @@ async function autoSyncTransferGist() {
   try {
     // ★ 修复：移除 ETag/If-None-Match，与主同步函数保持一致
     const fetchHeaders = { 'Accept': 'application/vnd.github.v3+json' };
-    const token = GITHUB_TOKEN || RECORDER_BUILTIN_TOKEN;
-    if (token) fetchHeaders['Authorization'] = 'Bearer ' + token;
-
-    const resp = await fetch(GIST_API + '/' + TRANSFER_GIST_ID, {
+    const resp = await gistFetch(GIST_API + '/' + TRANSFER_GIST_ID, {
       headers: fetchHeaders,
       cache: 'no-store'
     });
