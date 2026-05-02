@@ -342,36 +342,54 @@
     .transfer-tab-btn{padding:7px 14px;border:none;background:transparent;color:#222;font-size:13px;cursor:pointer;font-weight:500;transition:all .25s;text-align:center;border-radius:18px}
     .transfer-tab-btn.active{background:#d0d0d0;color:#222;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.1)}
     .transfer-tab-btn:hover:not(.active){background:rgba(0,0,0,.04);color:#555}
-    /* === v1.0.293: 用户水印（装饰斜向大字） === */
+    /* === v1.0.294: 用户水印（水平居中，装饰醒目） === */
     #userWatermark {
       display: none;
-      text-align: center;
-      font-size: 1.4em;
-      font-weight: 700;
-      letter-spacing: 6px;
-      color: rgba(190, 195, 200, 0.45);
-      transform: rotate(30deg);
+      justify-content: center;
+      align-items: center;
+      padding-top: 38px;
+      padding-bottom: 4px;
       pointer-events: none;
       user-select: none;
-      padding: 14px 0;
-      white-space: nowrap;
-      overflow: hidden;
-      width: 100%;
+    }
+    #userWatermark .wm-inner {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      border-radius: 28px;
+      padding: 5px 20px 5px 14px;
+      background: rgba(255,255,255,0.85);
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06);
+      backdrop-filter: blur(8px);
     }
     #userWatermark .wm-role {
       display: inline-block;
-      padding: 1px 9px;
-      border-radius: 10px;
-      font-size: 0.75em;
+      padding: 3px 11px;
+      border-radius: 18px;
+      font-size: 11px;
       font-weight: 700;
-      letter-spacing: 1px;
-      vertical-align: middle;
-      margin-right: 8px;
+      letter-spacing: 1.5px;
+      margin-right: 10px;
+      text-transform: uppercase;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      color: #fff;
     }
-    #userWatermark .wm-role.admin  { background: rgba(220,100,100,0.15); color: rgba(180,80,80,0.65); }
-    #userWatermark .wm-role.recorder { background: rgba(230,150,50,0.15);  color: rgba(180,110,40,0.65); }
-    #userWatermark .wm-role.coach  { background: rgba(80,180,100,0.15);  color: rgba(60,140,80,0.65); }
-    #userWatermark .wm-name { font-weight: 800; letter-spacing: 2px; }
+    #userWatermark .wm-role.admin   { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+    #userWatermark .wm-role.recorder { background: linear-gradient(135deg, #e67e22, #d35400); }
+    #userWatermark .wm-role.coach    { background: linear-gradient(135deg, #27ae60, #1e8449); }
+    #userWatermark .wm-name {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 2.5px;
+      color: #333;
+    }
+    #userWatermark .wm-sep {
+      width: 1px;
+      height: 18px;
+      background: rgba(0,0,0,0.12);
+      margin: 0 10px 0 2px;
+    }
   </style>
 </head>
 <body>
@@ -404,6 +422,8 @@
   </div>
 </nav>
 
+<div id="userWatermark" style="display:none"></div>
+
 <div class="season-selector" id="seasonSelector"></div>
 <div class="archive-notice" id="archiveNotice" style="display:none"></div>
 
@@ -422,9 +442,6 @@
         <button class="league-chip cup-chip" data-cup="leagueCup">🏆联盟杯</button>
         <button class="league-chip cup-chip" data-cup="associationCup">🏆协会杯</button>
         <button class="league-chip cup-chip" data-cup="faCup">🏆足总杯</button>
-      </div>
-      <div style="display:flex;justify-content:center;align-items:center;min-height:56px;">
-        <div id="userWatermark" style="display:none"></div>
       </div>
       <div id="standingsContent"></div>
     </div>
@@ -572,7 +589,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 293 };
+const APP_VERSION = { major: 1, minor: 0, patch: 294 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -584,7 +601,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.293', date: '2026-05-02', items: ['💧 登录账号在主页（积分榜）卡片标题下方居中显示装饰水印：45度斜向大字，角色徽章（超管红/数据员橙/主教练绿），浅色半透明，不干扰正常信息浏览'] },
+  { v: '1.0.294', date: '2026-05-02', items: ['🎨 水印移至顶部工具栏下方居中显示（所有页面可见）；去角度改为水平居中；重新设计：白色磨砂胶囊容器+彩色角色徽章+深色加粗名字'] },
   { v: '1.0.292', date: '2026-05-02', items: ['🔍 登录/浏览日志迁移到专用独立 Gist，不再污染主数据 Gist；浏览记录也支持 Gist 云端同步，超管可见所有用户的访问记录'] },
   { v: '1.0.291', date: '2026-05-02', items: ['📊 球队详情页"球员"TAB新增"总榜"子Tab，汇总联赛+所有杯赛数据，支持进球/助攻/MVP/号码排序'] },
   { v: '1.0.289', date: '2026-04-30', items: ['🔍 超管侧边栏新增"本站登录详情"：实时显示全站所有账号的登录ID、角色、时间、IP及地理位置，数据同步到Gist云端'] },
@@ -6775,29 +6792,33 @@ function renderUserWatermark() {
   const wm = document.getElementById('userWatermark');
   if (!wm) return;
   const u = state.currentUser;
+
+  // 构建水印内容
+  let innerHTML = '<div class="wm-inner">';
+
   if (!u) {
-    wm.innerHTML = '<span class="wm-name">未登录</span>';
-    wm.style.display = 'block';
-    return;
+    innerHTML += '<span class="wm-name">未登录</span>';
+  } else {
+    let roleLabel = '', roleClass = '';
+    if (u.isSuperAdmin) {
+      roleLabel = '超管';
+      roleClass = 'admin';
+    } else if (u.isDataRecorder || u.isStatsRecorder) {
+      roleLabel = u.isStatsRecorder ? '统计员' : '数据员';
+      roleClass = 'recorder';
+    } else if (u.isCoach) {
+      roleLabel = '主教练';
+      roleClass = 'coach';
+    }
+    const name = u.teamName || u.coachName || u.id || '';
+    innerHTML += '<span class="wm-role ' + roleClass + '">' + roleLabel + '</span>';
+    innerHTML += '<span class="wm-sep"></span>';
+    innerHTML += '<span class="wm-name">' + name + '</span>';
   }
 
-  let roleLabel = '', roleClass = '';
-  if (u.isSuperAdmin) {
-    roleLabel = '超管';
-    roleClass = 'admin';
-  } else if (u.isDataRecorder || u.isStatsRecorder) {
-    roleLabel = u.isStatsRecorder ? '统计员' : '数据员';
-    roleClass = 'recorder';
-  } else if (u.isCoach) {
-    roleLabel = '主教练';
-    roleClass = 'coach';
-  }
-
-  const name = u.teamName || u.coachName || u.id || '';
-  wm.innerHTML =
-    '<span class="wm-role ' + roleClass + '">' + roleLabel + '</span>'
-    + '<span class="wm-name">' + name + '</span>';
-  wm.style.display = 'block';
+  innerHTML += '</div>';
+  wm.innerHTML = innerHTML;
+  wm.style.display = 'flex';
 }
 
 // ============ NAVIGATION ============
