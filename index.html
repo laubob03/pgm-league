@@ -2697,7 +2697,7 @@ function submitCupMatchResult(matchId, cupId) {
       cup.matches.push(replayMatch);
       window['_cupSchedRound_' + cupId] = match.round;
       state.currentPage = 'schedule';
-      saveState(); closeModal(); renderFaCupBracket(cupId); saveToUrlHash(); updateNavAndHeader();
+      saveState(); closeModal(); renderCupSchedule(cupId); saveToUrlHash(); updateNavAndHeader();
       showToast('\u2696\uFE0F \u5E73\u5C40\uFF01\u5DF2\u81EA\u52A8\u751F\u6210\u91CD\u8D5B\u573A\u6B21\uFF08\u4E3B\u5BA2\u4E92\u6362\uFF09\uFF0C\u8BF7\u5F55\u5165\u91CD\u8D5B\u7ED3\u679C');
       return;
     }
@@ -2712,7 +2712,7 @@ function submitCupMatchResult(matchId, cupId) {
     } else {
       window['_cupSchedRound_' + cupId] = match.round;
       state.currentPage = 'schedule';
-      saveState(); closeModal(); renderFaCupBracket(cupId); saveToUrlHash(); updateNavAndHeader();
+      saveState(); closeModal(); renderCupSchedule(cupId); saveToUrlHash(); updateNavAndHeader();
       showToast('⚽ 比赛已保存！（存在待进行重赛后晋级）');
       return;
     }
@@ -2720,7 +2720,7 @@ function submitCupMatchResult(matchId, cupId) {
 
   window['_cupSchedRound_' + cupId] = match.round;
   state.currentPage = 'schedule';
-  saveState(); closeModal(); renderFaCupBracket(cupId); saveToUrlHash(); updateNavAndHeader(); showToast(isEdit ? '比赛结果已更新！' : '比赛结果已保存！');
+  saveState(); closeModal(); renderCupSchedule(cupId); saveToUrlHash(); updateNavAndHeader(); showToast(isEdit ? '比赛结果已更新！' : '比赛结果已保存！');
 }
 
 // 足总杯胜者自动晋级到下一轮
@@ -3138,7 +3138,7 @@ function showCupManageModal() {
 function clearCup(cupId) {
   if (!confirm('确定要清除' + (CUP_NAMES[cupId] || '杯赛') + '的所有赛程数据吗？')) return;
   state.cups[cupId] = { teams: [], matches: [] };
-  saveState(); closeModal(); renderFaCupBracket(cupId); showToast('杯赛数据已清除');
+  saveState(); closeModal(); renderCupSchedule(cupId); showToast('杯赛数据已清除');
 }
 
 function showImportCupModal(cupId) {
@@ -3238,7 +3238,7 @@ function importCupSchedule(cupId) {
     if (newMatches.length === 0) return;
     cup.teams = Array.from(teamIds);
     cup.matches = newMatches;
-    saveState(); closeModal(); renderFaCupBracket(cupId);
+    saveState(); closeModal(); renderCupSchedule(cupId);
     showToast(cupName + '赛程导入成功！共 ' + newMatches.length + ' 场比赛');
   } catch(e) {
     showToast('JSON解析错误: ' + e.message);
