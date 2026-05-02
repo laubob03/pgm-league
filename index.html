@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';b.innerHTML='<div style="max-width:600px;margin:0 auto;">📢 '+d.notice+'</div>';document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.292'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.293'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -342,6 +342,34 @@
     .transfer-tab-btn{padding:7px 14px;border:none;background:transparent;color:#222;font-size:13px;cursor:pointer;font-weight:500;transition:all .25s;text-align:center;border-radius:18px}
     .transfer-tab-btn.active{background:#d0d0d0;color:#222;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.1)}
     .transfer-tab-btn:hover:not(.active){background:rgba(0,0,0,.04);color:#555}
+    /* === v1.0.293: 用户水印 === */
+    #userWatermark {
+      position: fixed; bottom: 18px; right: 18px;
+      display: flex; align-items: center; gap: 0;
+      padding: 5px 10px 5px 8px;
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(200,200,200,0.4);
+      border-radius: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      font-size: 12px; color: #555;
+      z-index: 9999; pointer-events: none;
+      opacity: 0.28;
+      transition: opacity 0.4s ease, transform 0.3s ease;
+      max-width: 220px; overflow: hidden;
+      white-space: nowrap; text-overflow: ellipsis;
+    }
+    #userWatermark:hover { opacity: 0.75; transform: scale(1.02); }
+    #userWatermark .wm-role {
+      display: inline-block; padding: 1px 7px; border-radius: 10px;
+      font-size: 10px; font-weight: 700; margin-right: 7px;
+      letter-spacing: 0.3px; flex-shrink: 0;
+    }
+    #userWatermark .wm-role.admin { background: #ffe0e0; color: #c62828; }
+    #userWatermark .wm-role.recorder { background: #fff3e0; color: #e65100; }
+    #userWatermark .wm-role.coach { background: #e8f5e9; color: #2e7d32; }
+    #userWatermark .wm-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+    #userWatermark .wm-sep { margin: 0 5px 0 0; color: #bbb; }
   </style>
 </head>
 <body>
@@ -475,6 +503,9 @@
   </div>
 </main>
 
+<!-- 用户水印（登录后显示） -->
+<div id="userWatermark" style="display:none"></div>
+
 <!-- Sidebar -->
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 <aside class="sidebar" id="sidebar">
@@ -539,7 +570,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 292 };
+const APP_VERSION = { major: 1, minor: 0, patch: 293 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -551,6 +582,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.293', date: '2026-05-02', items: ['💧 登录账号在页面右下角显示淡雅水印：超管/数据员/主教练各有专属颜色徽章，hover 时放大显示球队名，毛玻璃质感设计，opacity 0.28 不干扰正常浏览'] },
   { v: '1.0.292', date: '2026-05-02', items: ['🔍 登录/浏览日志迁移到专用独立 Gist，不再污染主数据 Gist；浏览记录也支持 Gist 云端同步，超管可见所有用户的访问记录'] },
   { v: '1.0.291', date: '2026-05-02', items: ['📊 球队详情页"球员"TAB新增"总榜"子Tab，汇总联赛+所有杯赛数据，支持进球/助攻/MVP/号码排序'] },
   { v: '1.0.289', date: '2026-04-30', items: ['🔍 超管侧边栏新增"本站登录详情"：实时显示全站所有账号的登录ID、角色、时间、IP及地理位置，数据同步到Gist云端'] },
@@ -3276,6 +3308,7 @@ function render() {
     renderTransferMarket();
   }
   updateNavAndHeader();
+  renderUserWatermark();
 }
 
 function renderStandings() {
@@ -6733,6 +6766,32 @@ async function showLoginLogsModal() {
   loginSynced = true;
   visitSynced = true;
   fetchLogsFromGist('both');
+}
+
+// ============ 用户水印 ============
+function renderUserWatermark() {
+  const wm = document.getElementById('userWatermark');
+  if (!wm) return;
+  const u = state.currentUser;
+  if (!u) { wm.style.display = 'none'; return; }
+
+  let roleLabel = '', roleClass = '';
+  if (u.isSuperAdmin) {
+    roleLabel = '超管';
+    roleClass = 'admin';
+  } else if (u.isDataRecorder || u.isStatsRecorder) {
+    roleLabel = u.isStatsRecorder ? '统计员' : '数据员';
+    roleClass = 'recorder';
+  } else if (u.isCoach) {
+    roleLabel = '主教练';
+    roleClass = 'coach';
+  }
+
+  const name = u.teamName || u.coachName || u.id || '';
+  wm.innerHTML =
+    '<span class="wm-role ' + roleClass + '">' + roleLabel + '</span>'
+    + '<span class="wm-name">' + name + '</span>';
+  wm.style.display = 'flex';
 }
 
 // ============ NAVIGATION ============
