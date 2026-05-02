@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';b.innerHTML='<div style="max-width:600px;margin:0 auto;">📢 '+d.notice+'</div>';document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.297'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.298'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -585,7 +585,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 297 };
+const APP_VERSION = { major: 1, minor: 0, patch: 298 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -597,7 +597,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.297', date: '2026-05-02', items: ['🎨 水印名字字体/大小与球队名完全一致（12px，font-weight:500，同字族）', '🎨 水印与积分榜间距压至最小：.card 上内边距0，.card-title 上padding 16px独立控制'] },
+  { v: '1.0.298', date: '2026-05-02', items: ['🔒 严修足总杯数据丢失：autoSyncFromCloud 增加真实对阵判断（检查主队或客队是否存在），有真实对阵的版本优先保留；renderFaCupBracket needInit 增加真实对阵检测，已有真实对阵不触发 initFaCupBracket 覆盖'] },
   { v: '1.0.295', date: '2026-05-02', items: ['修复手机端水印顶部被固定导航栏遮挡（移入main内部）；缩小main-content margin-top 48px，水印与积分榜间距压至最小'] },
   { v: '1.0.294', date: '2026-05-02', items: ['水印移至顶部工具栏下方居中显示（所有页面可见）；去角度改为水平居中；重新设计：白色磨砂胶囊容器+彩色角色徽章+深色加粗名字'] },
   { v: '1.0.293', date: '2026-05-02', items: ['登录账号在主页（积分榜）卡片标题下方居中显示装饰水印'] },
@@ -1797,11 +1797,20 @@ function renderFaCupBracket(cupId) {
   var cup = sd.cups ? sd.cups[cupId] : null;
   // 如果足总杯没有赛程、格式旧（没有half字段）、或R1不是14场，仅有权限用户才自动初始化
   // ★ v1.0.275 修复：之前任何用户打开足总杯页面都会触发 needInit，导致对阵数据被重置
-  // 现在：无权限用户只展示现有数据（即使格式旧），有权限用户才执行 initFaCupBracket
-  var needInit = !cup || !cup.matches || cup.matches.length === 0 || !cup.matches[0].half;
-  if (!needInit) {
-    var lR1 = cup.matches.filter(m => m.half === 'L' && m.round === 1 && !m.isReplay).length;
-    if (lR1 !== 14) needInit = true;
+  // ★ v1.0.298 修复：即使格式旧，只要现有数据中有真实的对阵（至少一场有主队或客队），就不触发 initFaCupBracket，避免已填好的对阵被重置
+  var needInit = !cup || !cup.matches || cup.matches.length === 0;
+  if (needInit) {
+    // 数据为空才需要初始化，检查是否已有真实对阵（有实际球队）
+  } else {
+    // 有数据时：若 R1 不是14场 → 需要初始化；但若已有真实对阵（格式旧但有实际内容）→ 不重置
+    var hasRealMatch = cup.matches.some(m => m.homeTeam || m.awayTeam);
+    if (hasRealMatch) {
+      // 现有数据有实际内容，即使格式旧也不重置
+      needInit = false;
+    } else {
+      var lR1 = cup.matches.filter(m => m.half === 'L' && m.round === 1 && !m.isReplay).length;
+      if (lR1 !== 14) needInit = true;
+    }
   }
   var isCupAdmin = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cupId));
   if (needInit) {
@@ -9222,24 +9231,38 @@ async function autoSyncFromCloud() {
       const localTransferMarket = state.transferMarket || [];
       const localPendingTransfers = state.pendingTransfers || [];
       // ★ v1.0.275 修复：保护本地 cups 数据，避免云端旧格式触发 initFaCupBracket 重置对阵
-      // 若本地 cups 有实质性数据（任何杯赛有 matches），则在云端 cups 无数据或为空时保留本地版本
+      // ★ v1.0.298 修复：增强判断——不仅比较 matches 长度，还检查是否有真实的对阵（至少一场有主队或客队）
+      // 若本地杯赛有真实的对阵数据（球队已填入），即使云端也有 matches，仍优先保留本地（防止云端旧格式覆盖真实数据）
       const localCups = state.cups || {};
+      const cloudCups = cloudData.cups || {};
       state = cloudData;
       delete state._lastUpload;
       state.currentUser = loginUser;
       // ★ 转会数据始终以本地 + 转会Gist为准，主Gist中的转会数据已过时
       state.transferMarket = localTransferMarket;
       state.pendingTransfers = localPendingTransfers;
-      // ★ cups 保护：逐个杯赛检查，若云端该杯赛数据为空/无效，保留本地数据
+      // ★ cups 保护：逐个杯赛检查，优先保留有真实对阵数据的版本
       if (!state.cups) state.cups = {};
       Object.keys(localCups).forEach(cid => {
         const localCup = localCups[cid];
-        const cloudCup = state.cups[cid];
-        const localHasData = localCup && localCup.matches && localCup.matches.length > 0;
-        const cloudHasData = cloudCup && cloudCup.matches && cloudCup.matches.length > 0;
-        if (localHasData && !cloudHasData) {
-          // 云端该杯赛为空，但本地有数据，保留本地
+        const cloudCup = cloudCups[cid];
+        // 检查本地是否有真实对阵（至少一场比赛有主队或客队）
+        const localHasRealMatches = localCup && localCup.matches && localCup.matches.some(m => m.homeTeam || m.awayTeam);
+        // 检查云端是否有真实对阵
+        const cloudHasRealMatches = cloudCup && cloudCup.matches && cloudCup.matches.some(m => m.homeTeam || m.awayTeam);
+        if (localHasRealMatches) {
+          // 本地有真实对阵 → 始终保留本地，无论云端状态
           state.cups[cid] = localCup;
+        } else if (cloudHasRealMatches) {
+          // 云端有真实对阵 → 使用云端
+          // state.cups[cid] 已是 cloudData 中的值，无需额外操作
+        } else {
+          // 双方都没有真实对阵 → 保留数据量较多的那个（长度优先）
+          const localLen = localCup && localCup.matches ? localCup.matches.length : 0;
+          const cloudLen = cloudCup && cloudCup.matches ? cloudCup.matches.length : 0;
+          if (localLen > cloudLen && localCup) {
+            state.cups[cid] = localCup;
+          }
         }
       });
       // 兼容旧数据没有 logo/teamUid - 自动补充
