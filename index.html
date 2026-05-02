@@ -6999,6 +6999,12 @@ function updateSidebar() {
     if (navLoginBtn) navLoginBtn.style.display = 'inline-flex';
     if (menuBtn) menuBtn.style.display = 'none';
   }
+  const cachedHint = localStorage.getItem('pgm_last_upload_hint');
+  if (cachedHint) {
+    try { updateSidebarCloudInfo(JSON.parse(cachedHint)); } catch(e) {}
+  } else if (GIST_ID) {
+    updateSidebarCloudInfo(null);
+  }
 }
 
 function showToast(msg) {
@@ -8486,6 +8492,13 @@ async function recorderUpload() {
     }
 
     recordSyncTime();
+    const recorderUploadInfo = {
+      by: state.currentUser ? state.currentUser.coachName : '未知',
+      role: state.currentUser ? (state.currentUser.isStatsRecorder ? '统计员' : '数据员') : '未知',
+      at: new Date().toISOString()
+    };
+    localStorage.setItem('pgm_last_upload_hint', safeStringify(recorderUploadInfo) || '');
+    updateSidebarCloudInfo(recorderUploadInfo);
     showSyncProgress('upload', -1);
     setTimeout(() => { hideSyncProgress(); showSyncModal(); }, 1200);
   } catch(e) {
@@ -8609,6 +8622,14 @@ async function syncUpload() {
       String(now.getMinutes()).padStart(2,'0');
     localStorage.setItem('pgm_last_sync_time', timeStr);
 
+    const uploadInfo = {
+      by: state.currentUser ? state.currentUser.coachName : '未知',
+      role: state.currentUser ? (state.currentUser.isSuperAdmin ? '超级管理员' : (state.currentUser.isStatsRecorder ? '统计员' : '数据员')) : '未知',
+      at: new Date().toISOString()
+    };
+    localStorage.setItem('pgm_last_upload_hint', safeStringify(uploadInfo) || '');
+    updateSidebarCloudInfo(uploadInfo);
+
     showToast('上传成功！Gist: ' + GIST_ID);
     showSyncProgress('upload', -1);
     setTimeout(() => { hideSyncProgress(); showSyncModal(); }, 1200);
@@ -8698,6 +8719,13 @@ async function autoCloudUpload() {
     // ★ v1.0.215: 更新 pgm_transfer_gist_updated_at 缓存，防止 autoSyncTransferGist 误判"无变化"
     localStorage.setItem('pgm_transfer_gist_updated_at', new Date().toISOString());
     saveState();
+    const transferUploadInfo = {
+      by: state.currentUser ? state.currentUser.coachName : '未知',
+      role: state.currentUser ? (state.currentUser.isSuperAdmin ? '超级管理员' : (state.currentUser.isCoach ? '主教练' : '数据员')) : '未知',
+      at: new Date().toISOString()
+    };
+    localStorage.setItem('pgm_last_upload_hint', safeStringify(transferUploadInfo) || '');
+    updateSidebarCloudInfo(transferUploadInfo);
     console.log('autoCloudUpload: 转会数据上传成功', timeStr);
     showToast('☁️ 已自动同步到云端');
   } catch(e) {
