@@ -9489,13 +9489,32 @@ setInterval(updateClock, 1000);
 
 // 注册 Service Worker 实现 PWA 离线功能
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
-    console.log('Service Worker 注册成功');
-    reg.update();
-  });
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    console.log('Service Worker 已更新，刷新页面');
-    location.reload();
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    const oldRegs = regs.filter(r => !r.active || !r.active.scriptURL.includes('sw.js'));
+    return Promise.all(oldRegs.map(r => r.unregister()));
+  }).then(() => {
+    return navigator.serviceWorker.getRegistration('sw.js');
+  }).then(existing => {
+    if (existing) {
+      return existing.update().then(() => existing);
+    }
+    return navigator.serviceWorker.register('sw.js?v=300', { updateViaCache: 'none' });
+  }).then(reg => {
+    console.log('Service Worker 就绪, scope:', reg.scope);
+    if (reg.waiting) {
+      reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+    reg.addEventListener('updatefound', () => {
+      const newWorker = reg.installing;
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'activated') {
+          console.log('新 Service Worker 已激活，刷新页面');
+          location.reload();
+        }
+      });
+    });
+  }).catch(err => {
+    console.warn('Service Worker 注册失败:', err);
   });
 }
 </script>
