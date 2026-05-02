@@ -9,7 +9,7 @@
   <!-- 顶部版本检查：检测到新版本时弹出提示框，用户确认后才升级 -->
   <script>
   !function(){
-    // v1.0.290: 升级跳转后用 sessionStorage 标记确保不循环弹框
+    // v1.0.291: 球队详情页球员TAB新增总榜
     var _upgraded = sessionStorage.getItem('pgm_upgraded');
     if (_upgraded) {
       // 上一次是升级跳转来的，清除 SW 缓存并移除标记
@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';b.innerHTML='<div style="max-width:600px;margin:0 auto;">📢 '+d.notice+'</div>';document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.290'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.291'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -539,7 +539,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 290 };
+const APP_VERSION = { major: 1, minor: 0, patch: 291 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -551,7 +551,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.290', date: '2026-04-30', items: ['🔍 登录详情弹窗新增TAB：登录记录 / 浏览记录切换，浏览记录显示未登录访客的访问时间和地点'] },
+  { v: '1.0.291', date: '2026-05-02', items: ['📊 球队详情页"球员"TAB新增"总榜"子Tab，汇总联赛+所有杯赛数据，支持进球/助攻/MVP/号码排序'] },
   { v: '1.0.289', date: '2026-04-30', items: ['🔍 超管侧边栏新增"本站登录详情"：实时显示全站所有账号的登录ID、角色、时间、IP及地理位置，数据同步到Gist云端'] },
   { v: '1.0.282', date: '2026-04-29', items: ['📋 球队详情页新增两个TAB：⬇️ 转入球员 / ⬆️ 转出球员，所有人可见，显示待生效/已完成、轮次、费用、时间'] },
   { v: '1.0.276', date: '2026-04-29', items: ['➕ 新增足总杯数据员账号：zuzongbei（足总杯数据员），可管理足总杯对阵和录入比赛'] },
@@ -5516,8 +5516,9 @@ function showTeamDetail(teamId) {
       <div id="teamTabContent_cup" style="display:none;overflow-y:auto;flex:1">${cupMatchesHtml || '<div class="empty-state"><div class="empty-state-emoji">🏆</div><div class="empty-state-text">暂无杯赛</div></div>'}</div>
       <div id="teamTabContent_player" style="display:none;overflow:hidden;flex:1;min-height:0;flex-direction:column">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;flex-shrink:0">
-          <button class="data-tab active" id="dataTab_league" onclick="switchPlayerSubTab('league','${teamId}')">👥 联赛球员（${team.players.length}人）</button>
-          ${(() => { let _c = ''; const _cupOrder = ['faCup','championsCup','leagueCup','associationCup']; _cupOrder.forEach(_cid => { const _cup = sd.cups && sd.cups[_cid]; const _inCup = _cup && ((_cup.teams && _cup.teams.includes(teamId)) || (_cup.matches && _cup.matches.some(m => m.homeTeam === teamId || m.awayTeam === teamId))); if (_inCup) { _c += "<button class='data-tab' id='dataTab_cup_" + _cid + "' onclick='switchPlayerSubTab(&#39;cup_" + _cid + "&#39;,&#39;" + teamId + "&#39;)'>🏆 " + (CUP_NAMES[_cid]||_cid).replace('🏆 ','') + '球员</button>'; } }); return _c; })()}
+          <button class="data-tab active" id="dataTab_total" onclick="switchPlayerSubTab('total','${teamId}')">📊 总榜</button>
+          <button class="data-tab" id="dataTab_league" onclick="switchPlayerSubTab('league','${teamId}')">👥 联赛（${team.players.length}人）</button>
+          ${(() => { let _c = ''; const _cupOrder = ['faCup','championsCup','leagueCup','associationCup']; _cupOrder.forEach(_cid => { const _cup = sd.cups && sd.cups[_cid]; const _inCup = _cup && ((_cup.teams && _cup.teams.includes(teamId)) || (_cup.matches && _cup.matches.some(m => m.homeTeam === teamId || m.awayTeam === teamId))); if (_inCup) { _c += "<button class='data-tab' id='dataTab_cup_" + _cid + "' onclick='switchPlayerSubTab(&#39;cup_" + _cid + "&#39;,&#39;" + teamId + "&#39;)'>🏆 " + (CUP_NAMES[_cid]||_cid).replace('🏆 ','') + '</button>'; } }); return _c; })()}
         </div>
         <div id="teamPlayersList" style="overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch"></div>
       </div>
@@ -5545,9 +5546,9 @@ function showTeamDetail(teamId) {
         }
       }
     });
-    // 首次打开球员Tab时，默认显示联赛球员列表
+    // 首次打开球员Tab时，默认显示总榜
     if (tab === 'player') {
-      switchPlayerSubTab('league', teamId);
+      switchPlayerSubTab('total', teamId);
     }
   };
 
@@ -5621,8 +5622,8 @@ function showTeamDetail(teamId) {
 
   // 球员子Tab切换
   window.switchPlayerSubTab = (subTab, teamId) => {
-    // 收集所有子Tab ID：league + 各杯赛 + transfer
-    const allSubTabs = ['league'];
+    // 收集所有子Tab ID：total + league + 各杯赛 + transfer
+    const allSubTabs = ['total', 'league'];
     const _cupOrder = ['faCup','championsCup','leagueCup','associationCup'];
     _cupOrder.forEach(_cid => { const _b = document.getElementById('dataTab_cup_' + _cid); if (_b) allSubTabs.push('cup_' + _cid); });
     if (document.getElementById('dataTab_transfer')) allSubTabs.push('transfer');
@@ -5635,7 +5636,58 @@ function showTeamDetail(teamId) {
     if (!t) return;
     const list = document.getElementById('teamPlayersList');
 
-    if (subTab === 'league') {
+    if (subTab === 'total') {
+      // ★ 总榜：联赛 + 所有杯赛数据汇总
+      const playerStats = {};
+      t.players.forEach(p => { playerStats[p.id] = { ...p, goals: 0, assists: 0, motmCount: 0 }; });
+
+      // 汇总联赛数据
+      (sd.matches || []).filter(m => m.status === 'completed' && (m.homeTeam === teamId || m.awayTeam === teamId)).forEach(m => {
+        if (m.scorers) m.scorers.filter(s => s.teamId === teamId && playerStats[s.playerId]).forEach(s => playerStats[s.playerId].goals++);
+        if (m.assists) m.assists.filter(a => a.teamId === teamId && playerStats[a.playerId]).forEach(a => playerStats[a.playerId].assists++);
+        if (m.motm) {
+          if (playerStats[m.motm]) playerStats[m.motm].motmCount++;
+          else if (isPlayerOfTeam(m.motm, teamId)) {
+            const uid = m.motm.substring(('p' + teamId + '_').length);
+            const fallback = Object.keys(playerStats).find(k => k.endsWith('_' + uid));
+            if (fallback) playerStats[fallback].motmCount++;
+          }
+        }
+      });
+
+      // 汇总所有杯赛数据
+      const _cupOrder2 = ['faCup','championsCup','leagueCup','associationCup'];
+      _cupOrder2.forEach(cupId => {
+        if (!(sd.cups && sd.cups[cupId])) return;
+        const cup = sd.cups[cupId];
+        if (!cup.matches) return;
+        cup.matches.filter(m => m.status === 'completed' && (m.homeTeam === teamId || m.awayTeam === teamId)).forEach(m => {
+          if (m.scorers) m.scorers.filter(s => s.teamId === teamId && playerStats[s.playerId]).forEach(s => playerStats[s.playerId].goals++);
+          if (m.assists) m.assists.filter(a => a.teamId === teamId && playerStats[a.playerId]).forEach(a => playerStats[a.playerId].assists++);
+          if (m.motm) {
+            if (playerStats[m.motm]) playerStats[m.motm].motmCount++;
+            else if (isPlayerOfTeam(m.motm, teamId)) {
+              const uid = m.motm.substring(('p' + teamId + '_').length);
+              const fallback = Object.keys(playerStats).find(k => k.endsWith('_' + uid));
+              if (fallback) playerStats[fallback].motmCount++;
+            }
+          }
+        });
+      });
+
+      const players = Object.values(playerStats);
+      list.innerHTML = `
+        <div class="sort-btns">
+          <button class="sort-btn" onclick="sortTotalPlayers('number')">号码</button>
+          <button class="sort-btn active" onclick="sortTotalPlayers('goals')">进球</button>
+          <button class="sort-btn" onclick="sortTotalPlayers('assists')">助攻</button>
+          <button class="sort-btn" onclick="sortTotalPlayers('motm')">MVP</button>
+        </div>
+        <div id="totalPlayersInner" style="overflow-y:auto;max-height:650px"></div>`;
+      window._curTotalPlayers = players;
+      sortTotalPlayers('goals', players);
+
+    } else if (subTab === 'league') {
       // 联赛球员（含进球/助攻/MVP实时计算）
       const playerStats = {};
       t.players.forEach(p => { playerStats[p.id] = { ...p, goals: 0, assists: 0, motmCount: 0 }; });
@@ -5751,6 +5803,35 @@ function showTeamDetail(teamId) {
           </div>
         </div>`;
     }
+  };
+
+  // 总榜排序
+  window.sortTotalPlayers = (sortBy, players) => {
+    if (players === undefined) players = window._curTotalPlayers;
+    window._curTotalSortBy = sortBy;
+    let sorted;
+    switch(sortBy) {
+      case 'goals': sorted = [...players].sort((a, b) => (b.goals||0) - (a.goals||0) || (a.number||0) - (b.number||0)); break;
+      case 'assists': sorted = [...players].sort((a, b) => (b.assists||0) - (a.assists||0) || (a.number||0) - (b.number||0)); break;
+      case 'motm': sorted = [...players].sort((a, b) => (b.motmCount||0) - (a.motmCount||0) || (a.number||0) - (b.number||0)); break;
+      default: sorted = [...players].sort((a, b) => (a.number||0) - (b.number||0));
+    }
+    window._curTotalPlayers = sorted;
+    const inner = document.getElementById('totalPlayersInner');
+    if (!inner) return;
+    // 高亮当前排序按钮
+    const sortLabels = { number:'号码', goals:'进球', assists:'助攻', motm:'MVP' };
+    const sortBtns = inner.parentElement ? inner.parentElement.querySelectorAll('.sort-btn') : [];
+    sortBtns.forEach(b => b.classList.toggle('active', b.textContent.trim() === (sortLabels[sortBy] || sortBy)));
+    inner.innerHTML = sorted.map(p => {
+      const feeTag = p.transferFee > 0 ? `<span style="font-size:9px;color:#FF9800;margin-left:3px" title="转会费${p.transferFee}M">${p.transferFee}M</span>` : '';
+      const uid = p.uid || (p.id ? p.id.split('_')[1] : '');
+      return `<div class="player-row">
+        <span class="player-num">${p.number}</span>
+        <span class="player-nm"><span class="player-expand" onclick="event.stopPropagation();togglePlayerSeasonDetail(this,'${uid}')">${p.name}</span>${feeTag}</span>
+        <span class="player-st">⚽${p.goals||0} 👟${p.assists||0} ⭐${p.motmCount||0}</span>
+      </div>`;
+    }).join('');
   };
 
   // 联赛球员排序
