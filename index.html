@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';b.innerHTML='<div style="max-width:600px;margin:0 auto;">📢 '+d.notice+'</div>';document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.293'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.295'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -586,7 +586,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 294 };
+const APP_VERSION = { major: 1, minor: 0, patch: 295 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -598,7 +598,10 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.294', date: '2026-05-02', items: ['🎨 水印移至顶部工具栏下方居中显示（所有页面可见）；去角度改为水平居中；重新设计：白色磨砂胶囊容器+彩色角色徽章+深色加粗名字'] },
+  { v: '1.0.295', date: '2026-05-02', items: ['修复手机端水印顶部被固定导航栏遮挡（移入main内部）；缩小main-content margin-top 48px，水印与积分榜间距压至最小'] },
+  { v: '1.0.294', date: '2026-05-02', items: ['水印移至顶部工具栏下方居中显示（所有页面可见）；去角度改为水平居中；重新设计：白色磨砂胶囊容器+彩色角色徽章+深色加粗名字'] },
+  { v: '1.0.293', date: '2026-05-02', items: ['登录账号在主页（积分榜）卡片标题下方居中显示装饰水印'] },
+
   { v: '1.0.292', date: '2026-05-02', items: ['🔍 登录/浏览日志迁移到专用独立 Gist，不再污染主数据 Gist；浏览记录也支持 Gist 云端同步，超管可见所有用户的访问记录'] },
   { v: '1.0.291', date: '2026-05-02', items: ['📊 球队详情页"球员"TAB新增"总榜"子Tab，汇总联赛+所有杯赛数据，支持进球/助攻/MVP/号码排序'] },
   { v: '1.0.289', date: '2026-04-30', items: ['🔍 超管侧边栏新增"本站登录详情"：实时显示全站所有账号的登录ID、角色、时间、IP及地理位置，数据同步到Gist云端'] },
