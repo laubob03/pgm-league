@@ -7337,28 +7337,35 @@ let LOG_GIST_ID = BUILTIN_LOG_GIST_ID;
 localStorage.removeItem('pgm_gist_etag');
 localStorage.removeItem('pgm_transfer_gist_etag');
 localStorage.removeItem('pgm_transfer_gist_id');
-localStorage.removeItem('pgm_github_token');
 
-const GIST_API = 'https://pgm-league-proxy.laubob.workers.dev/api/gists';
+const GIST_API = 'https://api.github.com/gists';
 
-// ============ HMAC 签名工具 ============
-const _SIGNING_SECRET = 'pgm_league_2026_hmac_secret_key';
-async function _hmacSign(message) {
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey('raw', enc.encode(_SIGNING_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
-  return btoa(String.fromCharCode(...new Uint8Array(sig)));
+function getGithubToken() {
+  return localStorage.getItem('pgm_github_token') || '';
 }
+
 async function gistFetch(url, opts = {}) {
-  const ts = String(Date.now());
-  const method = (opts.method || 'GET').toUpperCase();
-  const path = new URL(url, location.origin).pathname + (new URL(url, location.origin).search || '');
-  const sig = await _hmacSign(ts + method + path);
+  const token = getGithubToken();
   opts.headers = Object.assign({}, opts.headers || {}, {
-    'X-Timestamp': ts,
-    'X-Signature': sig
+    'Accept': 'application/vnd.github.v3+json'
   });
+  if (token) {
+    opts.headers['Authorization'] = 'token ' + token;
+  }
   return fetch(url, opts);
+}
+
+function saveGithubToken() {
+  const input = document.getElementById('githubTokenInput');
+  const val = (input.value || '').trim();
+  if (val) {
+    localStorage.setItem('pgm_github_token', val);
+    showToast('✅ Token 已保存');
+  } else {
+    localStorage.removeItem('pgm_github_token');
+    showToast('🗑️ Token 已清除');
+  }
+  showSyncModal();
 }
 
 function showSyncModal() {
@@ -7604,6 +7611,7 @@ function showSyncModal() {
 
   
   // ===== 管理员视图 =====
+  const _tk = getGithubToken();
   const content = `
     <div class="modal-header">
       <div class="modal-title">☁️ 数据同步中心（管理员）</div>
@@ -7611,6 +7619,24 @@ function showSyncModal() {
     </div>
     <div style="max-height:70vh;overflow-y:auto;padding:4px 0">
       
+      <!-- Token 设置 -->
+      <div class="import-section" style="border-color:${_tk ? '#4CAF50' : '#f44336'};">
+        <div class="import-section-title" style="color:${_tk ? '#4CAF50' : '#f44336'};">🔑 GitHub Token</div>
+        <div style="font-size:12px;color:#333;line-height:1.6;margin-bottom:8px;">
+          ${_tk ? '<span style="color:#4CAF50">✅ Token 已设置</span>（上传/下载均可用）' : '<span style="color:#f44336">⚠️ 未设置 Token，无法上传到云端</span><br>请输入 GitHub Personal Access Token（需 gist 权限）'}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="password" id="githubTokenInput" placeholder="ghp_xxxxxxxxxxxx" value="${_tk}" 
+            style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:monospace;">
+          <button class="btn btn-primary" style="background:#4CAF50;white-space:nowrap;" onclick="saveGithubToken()">
+            💾 保存
+          </button>
+        </div>
+        <div style="font-size:11px;color:#888;margin-top:6px;line-height:1.5;">
+          Token 仅存储在本地浏览器，不会上传到任何服务器。下载公开数据无需 Token。
+        </div>
+      </div>
+
       <!-- 云端同步操作 -->
       <div class="import-section" style="border-color:#FF9800;">
         <div class="import-section-title" style="color:#FF9800;">☁️ 云端同步 (Gist)</div>
@@ -8302,6 +8328,7 @@ function mergeLeagueData(leagueData) {
 
 // 数据员上传数据到独立 Gist
 async function recorderUpload() {
+  if (!getGithubToken()) { showToast('⚠️ 请先在同步中心设置 GitHub Token'); showSyncModal(); return; }
   const league = state.currentUser ? state.currentUser.league : '';
   const recorderType = state.currentUser ? (state.currentUser.recorderType || 'league') : 'league';
   const cupId = state.currentUser ? (state.currentUser.cupId || null) : null;
@@ -8488,6 +8515,7 @@ async function recorderUpload() {
 
 
 async function syncUpload() {
+  if (!getGithubToken()) { showToast('⚠️ 请先在同步中心设置 GitHub Token'); showSyncModal(); return; }
   if (!confirm('确定要上传数据到云端吗？这将覆盖云端现有数据。')) return;
 
   showSyncProgress('upload', 0);
@@ -8612,6 +8640,7 @@ async function syncUpload() {
 // 静默上传转会数据到独立 Gist（出价/挂牌后自动触发，无需confirm）
 // 只上传 transferMarket + pendingTransfers，数据量仅几KB
 async function autoCloudUpload() {
+  if (!getGithubToken()) return;
   try {
     // 只打包转会相关数据（通常几KB，而非全量state几百KB~MB）
     const uploadData = {
