@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pgm-league-v306';
+const CACHE_NAME = 'pgm-league-v307';
 const urlsToCache = [
   './index.html',
   './manifest.json'
@@ -35,9 +35,12 @@ self.addEventListener('message', event => {
 
 self.addEventListener('fetch', event => {
   const url = event.request.url;
+  const method = event.request.method;
+
   if (url.includes('api.github.com') || url.includes('gist.githubusercontent.com') || url.includes('github.com/')) {
     return;
   }
+
   if (url.includes('sw.js') || url.includes('version.json') || url.endsWith('index.html') || url.endsWith('/')) {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' })
@@ -46,6 +49,9 @@ self.addEventListener('fetch', event => {
     );
     return;
   }
+
+  if (method !== 'GET') return;
+
   event.respondWith(
     fetch(event.request)
       .then(response => {

@@ -7731,7 +7731,7 @@ async function fetchCloudUploadInfo() {
       const mf = gistFiles[otherKey];
       if (mf.truncated || !mf.content) {
         if (!mf.raw_url) { infoEl.innerHTML = '⚠️ 云端数据过大且无法获取'; return; }
-        const rawR = await gistFetch(mf.raw_url);
+        const rawR = await fetch(mf.raw_url);
         if (!rawR.ok) { infoEl.innerHTML = '⚠️ 获取完整数据失败'; return; }
         data = JSON.parse(await rawR.text());
       } else {
@@ -7745,7 +7745,7 @@ async function fetchCloudUploadInfo() {
       let dataContent;
       if (mf.truncated || !mf.content) {
         if (!mf.raw_url) { infoEl.innerHTML = '⚠️ 云端数据过大且无法获取'; return; }
-        const rawR = await gistFetch(mf.raw_url);
+        const rawR = await fetch(mf.raw_url);
         if (!rawR.ok) { infoEl.innerHTML = '⚠️ 获取完整数据失败'; return; }
         dataContent = await rawR.text();
       } else {
@@ -8397,7 +8397,7 @@ async function recorderUpload() {
               const fetchRaw = async (fileObj) => {
                 if (!fileObj) return null;
                 if (fileObj.truncated || !fileObj.content) {
-                  if (fileObj.raw_url) { const r = await gistFetch(fileObj.raw_url); return r.ok ? JSON.parse(await r.text()) : null; }
+                  if (fileObj.raw_url) { const r = await fetch(fileObj.raw_url); return r.ok ? JSON.parse(await r.text()) : null; }
                   return null;
                 }
                 return JSON.parse(fileObj.content);
@@ -8419,7 +8419,7 @@ async function recorderUpload() {
               try {
                 if (mf.truncated || !mf.content) {
                   if (mf.raw_url) {
-                    const rawR = await gistFetch(mf.raw_url);
+                    const rawR = await fetch(mf.raw_url);
                     if (rawR.ok) mainState = JSON.parse(await rawR.text());
                   }
                 } else {
@@ -8763,7 +8763,7 @@ async function syncDownload() {
         if (!fileObj) return null;
         if (fileObj.truncated || !fileObj.content) {
           if (!fileObj.raw_url) throw new Error('no raw_url');
-          const r = await gistFetch(fileObj.raw_url);
+          const r = await fetch(fileObj.raw_url);
           if (!r.ok) throw new Error('获取数据失败 ' + r.status);
           return JSON.parse(await r.text());
         }
@@ -8785,7 +8785,7 @@ async function syncDownload() {
       if (dataFile.truncated || !dataFile.content) {
         if (!dataFile.raw_url) throw new Error('云端数据文件过大且无raw_url，请联系管理员');
         showToast('数据较大，正在获取完整内容...');
-        const rawResp = await gistFetch(dataFile.raw_url);
+        const rawResp = await fetch(dataFile.raw_url);
         if (!rawResp.ok) throw new Error('获取完整数据失败 ' + rawResp.status);
         content = await rawResp.text();
       } else {
@@ -9165,7 +9165,7 @@ async function autoSyncFromCloud() {
         if (!fileObj) return null;
         if (fileObj.truncated || !fileObj.content) {
           if (!fileObj.raw_url) throw new Error('no raw_url');
-          const r = await gistFetch(fileObj.raw_url);
+          const r = await fetch(fileObj.raw_url);
           if (!r.ok) throw new Error('raw fail');
           return JSON.parse(await r.text());
         }
@@ -9194,7 +9194,7 @@ async function autoSyncFromCloud() {
       let content;
       if (dataFile.truncated || !dataFile.content) {
         if (!dataFile.raw_url) throw new Error('no raw_url');
-        const rawResp = await gistFetch(dataFile.raw_url);
+        const rawResp = await fetch(dataFile.raw_url);
         if (!rawResp.ok) throw new Error('raw fail');
         content = await rawResp.text();
       } else {
@@ -9393,7 +9393,7 @@ async function autoSyncTransferGist() {
     let content;
     if (dataFile.truncated || !dataFile.content) {
       if (!dataFile.raw_url) throw new Error('no raw_url');
-      const rawResp = await gistFetch(dataFile.raw_url);
+      const rawResp = await fetch(dataFile.raw_url);
       if (!rawResp.ok) throw new Error('raw fail');
       content = await rawResp.text();
     } else {
