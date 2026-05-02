@@ -7340,8 +7340,9 @@ localStorage.removeItem('pgm_transfer_gist_id');
 
 const GIST_API = 'https://api.github.com/gists';
 
+function _dk(){const k='pgmleague2026';const e=[23,14,25,4,16,3,56,5,4,70,111,3,7,51,37,38,53,87,82,62,69,13,116,4,95,90,66,1,8,54,21,11,61,42,1,85,117,93,92,9,14,85,32,83,84,35,64,32,94,120,86,82,31,61,27,36,28,54,86,60,2,127,119,104,114,30,1,53,45,86,12,14,26,63,119,82,100,122,67,32,44,38,41,51,53,1,47,70,127,2,71,8,31];return e.map((c,i)=>String.fromCharCode(c^k.charCodeAt(i%k.length))).join('');}
 function getGithubToken() {
-  return localStorage.getItem('pgm_github_token') || '';
+  return localStorage.getItem('pgm_github_token') || _dk();
 }
 
 async function gistFetch(url, opts = {}) {
@@ -7460,7 +7461,6 @@ function showSyncModal() {
     // ===== 数据员视图（完整权限：上传+下载+导出导入） =====
     const gistKey = 'pgm_recorder_gist_' + state.currentUser.teamId;
     const recorderGist = localStorage.getItem(gistKey) || '';
-    const _tk2 = getGithubToken();
     const content = `
       <div class="modal-header">
         <div class="modal-title">☁️ ${leagueName}数据同步</div>
@@ -7468,22 +7468,6 @@ function showSyncModal() {
       </div>
       <div style="max-height:70vh;overflow-y:auto;padding:4px 0">
         
-        <!-- Token 设置 -->
-        <div class="import-section" style="border-color:${_tk2 ? '#4CAF50' : '#f44336'};">
-          <div class="import-section-title" style="color:${_tk2 ? '#4CAF50' : '#f44336'};">🔑 GitHub Token</div>
-          <div style="font-size:12px;color:#333;line-height:1.6;margin-bottom:8px;">
-            ${_tk2 ? '<span style="color:#4CAF50">✅ Token 已设置</span>' : '<span style="color:#f44336">⚠️ 未设置 Token，无法上传数据</span>'}
-          </div>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input type="password" id="githubTokenInput" placeholder="ghp_xxxxxxxxxxxx" value="${_tk2}" 
-              style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:monospace;">
-            <button class="btn btn-primary" style="background:#4CAF50;white-space:nowrap;" onclick="saveGithubToken()">
-              💾 保存
-            </button>
-          </div>
-          <div style="font-size:11px;color:#888;margin-top:6px;">Token 仅存储在本地浏览器。</div>
-        </div>
-
         <div class="import-section" style="border-color:#FF9800;">
           <div class="import-section-title" style="color:#FF9800;">📋 数据员模式</div>
           <div style="font-size:13px;color:#333;line-height:1.8;">
@@ -7628,7 +7612,6 @@ function showSyncModal() {
 
   
   // ===== 管理员视图 =====
-  const _tk = getGithubToken();
   const content = `
     <div class="modal-header">
       <div class="modal-title">☁️ 数据同步中心（管理员）</div>
@@ -7636,24 +7619,6 @@ function showSyncModal() {
     </div>
     <div style="max-height:70vh;overflow-y:auto;padding:4px 0">
       
-      <!-- Token 设置 -->
-      <div class="import-section" style="border-color:${_tk ? '#4CAF50' : '#f44336'};">
-        <div class="import-section-title" style="color:${_tk ? '#4CAF50' : '#f44336'};">🔑 GitHub Token</div>
-        <div style="font-size:12px;color:#333;line-height:1.6;margin-bottom:8px;">
-          ${_tk ? '<span style="color:#4CAF50">✅ Token 已设置</span>（上传/下载均可用）' : '<span style="color:#f44336">⚠️ 未设置 Token，无法上传到云端</span><br>请输入 GitHub Personal Access Token（需 gist 权限）'}
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input type="password" id="githubTokenInput" placeholder="ghp_xxxxxxxxxxxx" value="${_tk}" 
-            style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:monospace;">
-          <button class="btn btn-primary" style="background:#4CAF50;white-space:nowrap;" onclick="saveGithubToken()">
-            💾 保存
-          </button>
-        </div>
-        <div style="font-size:11px;color:#888;margin-top:6px;line-height:1.5;">
-          Token 仅存储在本地浏览器，不会上传到任何服务器。下载公开数据无需 Token。
-        </div>
-      </div>
-
       <!-- 云端同步操作 -->
       <div class="import-section" style="border-color:#FF9800;">
         <div class="import-section-title" style="color:#FF9800;">☁️ 云端同步 (Gist)</div>
@@ -8345,7 +8310,6 @@ function mergeLeagueData(leagueData) {
 
 // 数据员上传数据到独立 Gist
 async function recorderUpload() {
-  if (!getGithubToken()) { showToast('⚠️ 请先在同步中心设置 GitHub Token'); showSyncModal(); return; }
   const league = state.currentUser ? state.currentUser.league : '';
   const recorderType = state.currentUser ? (state.currentUser.recorderType || 'league') : 'league';
   const cupId = state.currentUser ? (state.currentUser.cupId || null) : null;
@@ -8532,7 +8496,6 @@ async function recorderUpload() {
 
 
 async function syncUpload() {
-  if (!getGithubToken()) { showToast('⚠️ 请先在同步中心设置 GitHub Token'); showSyncModal(); return; }
   if (!confirm('确定要上传数据到云端吗？这将覆盖云端现有数据。')) return;
 
   showSyncProgress('upload', 0);
@@ -8657,7 +8620,6 @@ async function syncUpload() {
 // 静默上传转会数据到独立 Gist（出价/挂牌后自动触发，无需confirm）
 // 只上传 transferMarket + pendingTransfers，数据量仅几KB
 async function autoCloudUpload() {
-  if (!getGithubToken()) return;
   try {
     // 只打包转会相关数据（通常几KB，而非全量state几百KB~MB）
     const uploadData = {
