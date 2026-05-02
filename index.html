@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';b.innerHTML='<div style="max-width:600px;margin:0 auto;">📢 '+d.notice+'</div>';document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.295'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.297'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -101,8 +101,8 @@
     .main-content{margin-top:48px;padding:0 12px;padding-bottom:50px}
     .page{display:none}
     .page.active{display:block}
-    .card{background:var(--card);border-radius:12px;padding:16px 16px 12px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
-    .card-title{font-size:16px;font-weight:700;color:var(--primary);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+    .card{background:var(--card);border-radius:12px;padding:0 16px 12px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+    .card-title{font-size:16px;font-weight:700;color:var(--primary);margin-bottom:4px;display:flex;align-items:center;gap:8px;padding-top:16px}
     .stats-tabs{display:flex;gap:4px;border-bottom:1px solid var(--border)}
     #statsPage .card:first-child{padding-bottom:0}
     #statsPage .card:last-child{padding-top:0}
@@ -111,7 +111,7 @@
     .stats-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
     .league-selector{display:flex;flex-wrap:wrap;gap:4px;padding:4px 0}
     .league-selector::-webkit-scrollbar{display:none}
-    #schedulePage .card-title{padding:16px 16px 0}
+    #schedulePage .card-title{padding:0 16px 0}
     #schedulePage .league-selector{padding:4px 12px 12px}
     #schedulePage .schedule-scroll-area{max-height:calc(100vh - 200px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#ccc transparent}
     #schedulePage .schedule-scroll-area::-webkit-scrollbar{width:4px}
@@ -377,9 +377,8 @@
     #userWatermark .wm-role.recorder { background: linear-gradient(135deg, #e67e22, #d35400); }
     #userWatermark .wm-role.coach    { background: linear-gradient(135deg, #27ae60, #1e8449); }
     #userWatermark .wm-name {
-      font-size: 16px;
-      font-weight: 800;
-      letter-spacing: 2.5px;
+      font-size: 12px;
+      font-weight: 500;
       color: #333;
     }
     #userWatermark .wm-sep {
@@ -586,7 +585,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 295 };
+const APP_VERSION = { major: 1, minor: 0, patch: 297 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -598,6 +597,7 @@ const APP_BUILD_DATE = '2026-04-27';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.297', date: '2026-05-02', items: ['🎨 水印名字字体/大小与球队名完全一致（12px，font-weight:500，同字族）', '🎨 水印与积分榜间距压至最小：.card 上内边距0，.card-title 上padding 16px独立控制'] },
   { v: '1.0.295', date: '2026-05-02', items: ['修复手机端水印顶部被固定导航栏遮挡（移入main内部）；缩小main-content margin-top 48px，水印与积分榜间距压至最小'] },
   { v: '1.0.294', date: '2026-05-02', items: ['水印移至顶部工具栏下方居中显示（所有页面可见）；去角度改为水平居中；重新设计：白色磨砂胶囊容器+彩色角色徽章+深色加粗名字'] },
   { v: '1.0.293', date: '2026-05-02', items: ['登录账号在主页（积分榜）卡片标题下方居中显示装饰水印'] },
