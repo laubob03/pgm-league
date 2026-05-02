@@ -98,7 +98,7 @@
     .header-tabs::-webkit-scrollbar{display:none}
     .tab-btn{background:rgba(255,255,255,0.12);border:none;color:rgba(255,255,255,0.75);padding:6px 16px;border-radius:16px;font-size:14px;font-weight:500;white-space:nowrap;cursor:pointer;transition:all 0.2s}
     .tab-btn.active{background:white;color:var(--primary);font-weight:600}
-    .main-content{margin-top:70px;padding:0 12px;padding-bottom:50px}
+    .main-content{margin-top:48px;padding:0 12px;padding-bottom:50px}
     .page{display:none}
     .page.active{display:block}
     .card{background:var(--card);border-radius:12px;padding:16px 16px 12px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
@@ -346,9 +346,7 @@
     #userWatermark {
       display: none;
       justify-content: center;
-      align-items: center;
-      padding-top: 38px;
-      padding-bottom: 4px;
+      padding: 4px 0 2px 0;
       pointer-events: none;
       user-select: none;
     }
@@ -422,12 +420,11 @@
   </div>
 </nav>
 
-<div id="userWatermark" style="display:none"></div>
-
 <div class="season-selector" id="seasonSelector"></div>
 <div class="archive-notice" id="archiveNotice" style="display:none"></div>
 
 <main class="main-content">
+<div id="userWatermark" style="display:none"></div>
   <!-- Standings Page -->
   <div class="page active" id="standingsPage">
     <div class="card">
