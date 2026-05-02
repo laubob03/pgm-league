@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.298'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.304'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -585,7 +585,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 298 };
+const APP_VERSION = { major: 1, minor: 0, patch: 304 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -593,10 +593,11 @@ const APP_AUTHOR = 'J.K';
 if (location.search.includes('_v=')) {
   try { history.replaceState(null, '', location.pathname); } catch(e) {}
 }
-const APP_BUILD_DATE = '2026-04-27';
+const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.304', date: '2026-05-02', items: ['🔑 GitHub Token 内置（XOR编码），管理员/数据员无需手动设置', '📅 保存比赛结果后自动跳转赛程页面并停留在当前轮次', '🗑️ 移除同步中心 Token 手动输入 UI'] },
   { v: '1.0.298', date: '2026-05-02', items: ['🔒 严修足总杯数据丢失：autoSyncFromCloud 增加真实对阵判断（检查主队或客队是否存在），有真实对阵的版本优先保留；renderFaCupBracket needInit 增加真实对阵检测，已有真实对阵不触发 initFaCupBracket 覆盖'] },
   { v: '1.0.295', date: '2026-05-02', items: ['修复手机端水印顶部被固定导航栏遮挡（移入main内部）；缩小main-content margin-top 48px，水印与积分榜间距压至最小'] },
   { v: '1.0.294', date: '2026-05-02', items: ['水印移至顶部工具栏下方居中显示（所有页面可见）；去角度改为水平居中；重新设计：白色磨砂胶囊容器+彩色角色徽章+深色加粗名字'] },
