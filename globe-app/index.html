@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a0a2e">
+  <title>3D 地球 - 真实地形</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    #globeContainer {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+    }
+    #globeContainer canvas {
+      display: block;
+    }
+
+    #infoOverlay {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: rgba(255, 255, 255, 0.85);
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      z-index: 10;
+      pointer-events: none;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      white-space: nowrap;
+    }
+
+    #topBar {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .top-title {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    .btn-toolbar {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s;
+    }
+    .btn-icon:hover {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: scale(1.05);
+    }
+    .btn-icon:active {
+      transform: scale(0.95);
+    }
+
+    #zoomControls {
+      position: fixed;
+      right: 16px;
+      bottom: 100px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .btn-zoom {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-size: 22px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s;
+      font-weight: 300;
+    }
+    .btn-zoom:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+    .btn-zoom:active {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    #loadingScreen {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse at center, #0a1628 0%, #020810 100%);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.6s ease;
+    }
+    #loadingScreen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .loader-ring {
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #4fc3f7;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .loading-text {
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 16px;
+      font-size: 14px;
+    }
+
+    #tooltip {
+      position: fixed;
+      pointer-events: none;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      z-index: 20;
+      display: none;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+  </style>
+</head>
+<body>
+  <div id="globeContainer"></div>
+
+  <div id="topBar">
+    <div class="top-title">🌍 3D 地球</div>
+    <div class="btn-toolbar">
+      <button class="btn-icon" id="btnReset" title="重置视角">🏠</button>
+      <button class="btn-icon" id="btnLogout" title="退出登录">🚪</button>
+    </div>
+  </div>
+
+  <div id="zoomControls">
+    <button class="btn-zoom" id="btnZoomIn" title="放大">+</button>
+    <button class="btn-zoom" id="btnZoomOut" title="缩小">−</button>
+  </div>
+
+  <div id="infoOverlay">
+    <span>📍 加载中...</span>
+    <span style="margin:0 12px">|</span>
+    <span>🔭 高度: -- km</span>
+  </div>
+
+  <div id="tooltip"></div>
+
+  <div id="loadingScreen">
+    <div class="loader-ring"></div>
+    <div class="loading-text">正在加载地球数据...</div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script src="js/auth.js"></script>
+
+  <script type="module">
+    import GlobeRenderer from './js/globe.js';
+
+    if (!GlobeAuth.checkAuth()) {
+      window.location.href = 'login.html';
+    }
+
+    var container = document.getElementById('globeContainer');
+    var loadingScreen = document.getElementById('loadingScreen');
+    var tooltip = document.getElementById('tooltip');
+
+    GlobeRenderer.init(container);
+    GlobeRenderer.createLighting();
+    GlobeRenderer.createStars();
+    GlobeRenderer.createAtmosphere();
+    GlobeRenderer.createEarth();
+    GlobeRenderer.animate();
+
+    window.addEventListener('resize', function () {
+      GlobeRenderer.handleResize();
+    });
+
+    setTimeout(function () {
+      loadingScreen.classList.add('hidden');
+      setTimeout(function () { loadingScreen.remove(); }, 600);
+    }, 2000);
+
+    document.getElementById('btnReset').addEventListener('click', function () {
+      GlobeRenderer.camera.position.set(0, 30, 120);
+      GlobeRenderer.controls.target.set(0, 0, 0);
+      GlobeRenderer.controls.update();
+    });
+
+    document.getElementById('btnLogout').addEventListener('click', function () {
+      GlobeAuth.logout();
+      GlobeRenderer.dispose();
+      window.location.href = 'login.html';
+    });
+
+    document.getElementById('btnZoomIn').addEventListener('click', function () {
+      var dir = new THREE.Vector3();
+      GlobeRenderer.camera.getWorldDirection(dir);
+      GlobeRenderer.camera.position.addScaledVector(dir, 15);
+      GlobeRenderer.controls.update();
+    });
+
+    document.getElementById('btnZoomOut').addEventListener('click', function () {
+      var dir = new THREE.Vector3();
+      GlobeRenderer.camera.getWorldDirection(dir);
+      GlobeRenderer.camera.position.addScaledVector(dir, -15);
+      GlobeRenderer.controls.update();
+    });
+
+    document.addEventListener('keydown', function (e) {
+      switch (e.key.toLowerCase()) {
+        case 'r':
+          GlobeRenderer.camera.position.set(0, 30, 120);
+          GlobeRenderer.controls.target.set(0, 0, 0);
+          GlobeRenderer.controls.update();
+          break;
+        case '+':
+        case '=':
+          var d1 = new THREE.Vector3();
+          GlobeRenderer.camera.getWorldDirection(d1);
+          GlobeRenderer.camera.position.addScaledVector(d1, 15);
+          GlobeRenderer.controls.update();
+          break;
+        case '-':
+          var d2 = new THREE.Vector3();
+          GlobeRenderer.camera.getWorldDirection(d2);
+          GlobeRenderer.camera.position.addScaledVector(d2, -15);
+          GlobeRenderer.controls.update();
+          break;
+      }
+    });
+
+    var raycaster = new THREE.Raycaster();
+    var mouse = new THREE.Vector2();
+
+    GlobeRenderer.renderer.domElement.addEventListener('mousemove', function (e) {
+      var rect = GlobeRenderer.renderer.domElement.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, GlobeRenderer.camera);
+      var intersects = raycaster.intersectObject(GlobeRenderer.earth);
+
+      if (intersects.length > 0) {
+        var p = intersects[0].point;
+        var ll = GlobeRenderer.xyzToLatLon(p.x, p.y, p.z);
+        var latLabel = Math.abs(ll.lat).toFixed(2) + '°' + (ll.lat >= 0 ? 'N' : 'S');
+        var lonLabel = Math.abs(ll.lon).toFixed(2) + '°' + (ll.lon >= 0 ? 'E' : 'W');
+        var surfaceDist = p.distanceTo(new THREE.Vector3(0, 0, 0));
+        var elevM = Math.round((surfaceDist - GlobeRenderer.EARTH_RADIUS) / GlobeRenderer.scaleFactor);
+        tooltip.style.display = 'block';
+        tooltip.style.left = (e.clientX + 16) + 'px';
+        tooltip.style.top = (e.clientY - 30) + 'px';
+        tooltip.textContent = latLabel + ', ' + lonLabel + ' | ⛰ ' + elevM + ' m';
+        GlobeRenderer.renderer.domElement.style.cursor = 'grab';
+      } else {
+        tooltip.style.display = 'none';
+        GlobeRenderer.renderer.domElement.style.cursor = '';
+      }
+    });
+
+    GlobeRenderer.renderer.domElement.addEventListener('mouseleave', function () {
+      tooltip.style.display = 'none';
+    });
+  </script>
+</body>
+</html>
