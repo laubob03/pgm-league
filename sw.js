@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pgm-league-v299';
+const CACHE_NAME = 'pgm-league-v300';
 const urlsToCache = [
   './index.html',
   './manifest.json'
@@ -31,7 +31,7 @@ self.addEventListener('fetch', event => {
   if (event.request.url.includes('pgm-league-proxy.laubob.workers.dev')) {
     return;
   }
-  if (event.request.url.includes('version.json') || event.request.url.endsWith('index.html') || event.request.url.endsWith('/')) {
+  if (event.request.url.includes('sw.js') || event.request.url.includes('version.json') || event.request.url.endsWith('index.html') || event.request.url.endsWith('/')) {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' })
         .then(response => response)

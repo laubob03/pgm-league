@@ -9489,8 +9489,13 @@ setInterval(updateClock, 1000);
 
 // 注册 Service Worker 实现 PWA 离线功能
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(() => {
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
     console.log('Service Worker 注册成功');
+    reg.update();
+  });
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    console.log('Service Worker 已更新，刷新页面');
+    location.reload();
   });
 }
 </script>
