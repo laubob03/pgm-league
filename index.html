@@ -9,7 +9,7 @@
   <!-- 顶部版本检查：检测到新版本时弹出提示框，用户确认后才升级 -->
   <script>
   !function(){
-    // v1.0.291: 球队详情页球员TAB新增总榜
+    // v1.0.343: 12强预赛(A01-A04)显示两场比分，晋级仍按单场制
     var _upgraded = sessionStorage.getItem('pgm_upgraded');
     if (_upgraded) {
       // 上一次是升级跳转来的，清除 SW 缓存并移除标记
@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 342 };
+const APP_VERSION = { major: 1, minor: 0, patch: 344 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,8 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.344', date: '2026-05-10', items: ['🎨 12强预赛(A01-A04)全新规则：第一场平局后主客场互换重赛，显示两场比赛完整比分'] },
+  { v: '1.0.343', date: '2026-05-10', items: ['🎨 12强预赛(A01-A04)显示两场比分，晋级仍按单场制（只看第一场结果）'] },
   { v: '1.0.342', date: '2026-05-09', items: ['🐛 强制刷新：解决GitHub Pages缓存导致界面不更新问题'] },
   { v: '1.0.341', date: '2026-05-09', items: ['🎨 重新设计12强杯赛录入界面：两回合制比赛两场比分垂直排列，更直观清晰'] },
   { v: '1.0.340', date: '2026-05-09', items: ['🐛 修复12强杯赛录入界面HTML结构错误，两回合制比分正确显示'] },
@@ -2615,11 +2617,11 @@ function renderCup12Bracket(cup12Id, targetContainer) {
     var emptyCup = sd.cups[cup12Id];
     if (emptyCup.matches.length === 0) {
       emptyCup.matches = [
-        // 预赛 4场 round=0, slot=0-3 (单场比赛，可能有点球)
-        { id: cup12Id + '_R0S0', round: 0, slot: 0, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
-        { id: cup12Id + '_R0S1', round: 0, slot: 1, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
-        { id: cup12Id + '_R0S2', round: 0, slot: 2, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
-        { id: cup12Id + '_R0S3', round: 0, slot: 3, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
+        // 预赛 4场 round=0, slot=0-3 (两回合制)
+        { id: cup12Id + '_R0S0', round: 0, slot: 0, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined, leg2: { homeScore: undefined, awayScore: undefined, status: undefined } },
+        { id: cup12Id + '_R0S1', round: 0, slot: 1, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined, leg2: { homeScore: undefined, awayScore: undefined, status: undefined } },
+        { id: cup12Id + '_R0S2', round: 0, slot: 2, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined, leg2: { homeScore: undefined, awayScore: undefined, status: undefined } },
+        { id: cup12Id + '_R0S3', round: 0, slot: 3, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined, leg2: { homeScore: undefined, awayScore: undefined, status: undefined } },
         // 1/4决赛 4场 round=1, slot=0-3 (两回合制)
         { id: cup12Id + '_R1S0', round: 1, slot: 0, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined, leg2: { homeScore: undefined, awayScore: undefined, status: undefined } },
         { id: cup12Id + '_R1S1', round: 1, slot: 1, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined, leg2: { homeScore: undefined, awayScore: undefined, status: undefined } },
@@ -2647,19 +2649,19 @@ function renderCup12Bracket(cup12Id, targetContainer) {
   if (cup && cup.matches) {
     var needSave = false;
     if (!cup.matches.some(function(m) { return m.round === 0 && m.slot === 0; })) {
-      cup.matches.push({ id: cup12Id + '_R0S0', round: 0, slot: 0, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined });
+      cup.matches.push({ id: cup12Id + '_R0S0', round: 0, slot: 0, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined, leg2: { homeScore: undefined, awayScore: undefined, status: undefined } });
       needSave = true;
     }
     if (!cup.matches.some(function(m) { return m.round === 0 && m.slot === 1; })) {
-      cup.matches.push({ id: cup12Id + '_R0S1', round: 0, slot: 1, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined });
+      cup.matches.push({ id: cup12Id + '_R0S1', round: 0, slot: 1, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined, leg2: { homeScore: undefined, awayScore: undefined, status: undefined } });
       needSave = true;
     }
     if (!cup.matches.some(function(m) { return m.round === 0 && m.slot === 2; })) {
-      cup.matches.push({ id: cup12Id + '_R0S2', round: 0, slot: 2, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined });
+      cup.matches.push({ id: cup12Id + '_R0S2', round: 0, slot: 2, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined, leg2: { homeScore: undefined, awayScore: undefined, status: undefined } });
       needSave = true;
     }
     if (!cup.matches.some(function(m) { return m.round === 0 && m.slot === 3; })) {
-      cup.matches.push({ id: cup12Id + '_R0S3', round: 0, slot: 3, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined });
+      cup.matches.push({ id: cup12Id + '_R0S3', round: 0, slot: 3, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined, leg2: { homeScore: undefined, awayScore: undefined, status: undefined } });
       needSave = true;
     }
     if (needSave) {
@@ -2798,22 +2800,27 @@ function renderCup12Bracket(cup12Id, targetContainer) {
   };
 
   // 获取胜者teamId
-  // 预赛(round=0, A01-A04): 单场比赛，平局后点球决胜
+  // 预赛(round=0, A01-A04): 第一场有胜负直接晋级；平局后主客场互换重赛，第二场定胜负
   // 其他轮次: 两回合制，总进球多者晋级；相同则客场进球多者晋级
   function getWinner(round, slot) {
     var m = gM(round, slot);
     if (!m) return null;
     
-    // 预赛：单场比赛（可能有点球）
+    // 预赛（A01-A04）：第一场有胜负直接晋级；平局看重赛第二场
     if (round === 0) {
       if (m.status !== 'completed') return null;
-      // 常规时间有胜负
+      // 第一场常规时间有胜负
       if (m.homeScore > m.awayScore) return m.homeTeam;
       if (m.awayScore > m.homeScore) return m.awayTeam;
-      // 平局：看点球
-      if (m.penalty) {
-        if (m.penalty.homeScore > m.penalty.awayScore) return m.homeTeam;
-        if (m.penalty.awayScore > m.penalty.homeScore) return m.awayTeam;
+      // 第一场平局：看重赛第二场
+      if (m.leg2 && m.leg2.status === 'completed') {
+        if (m.leg2.homeScore > m.leg2.awayScore) return m.homeTeam;
+        if (m.leg2.awayScore > m.leg2.homeScore) return m.awayTeam;
+        // 第二场还平局：点球决胜
+        if (m.penalty) {
+          if (m.penalty.homeScore > m.penalty.awayScore) return m.homeTeam;
+          if (m.penalty.awayScore > m.penalty.homeScore) return m.awayTeam;
+        }
       }
       return null;
     }
@@ -2991,8 +2998,8 @@ function renderCup12Bracket(cup12Id, targetContainer) {
       var clickHandler = canEdit ? 'onclick="showEnterCupMatchModal(\'' + mId + '\', \'' + cup12Id + '\')"' : '';
       var cursorStyle = canEdit ? 'cursor:pointer;' : '';
       
-      // 预赛：单场比赛
-      if (round === 0) {
+      // 冠军赛：单场比赛
+      if (round === 4) {
         if (done) {
           var scoreText = (m.homeScore !== undefined ? m.homeScore : '-') + ' - ' + (m.awayScore !== undefined ? m.awayScore : '-');
           // 显示点球结果（如果有）
@@ -3007,7 +3014,39 @@ function renderCup12Bracket(cup12Id, targetContainer) {
         return '<div class="fc-score">VS</div>';
       }
       
-      // 其他轮次：两回合制
+      // 预赛（A01-A04）：第一场平局后主客场互换重赛，显示两场比赛比分
+      if (round === 0) {
+        var leg1Done = m.status === 'completed';
+        var leg2Done = m.leg2 && m.leg2.status === 'completed';
+        var leg1Draw = leg1Done && m.homeScore === m.awayScore;
+        
+        if (leg1Done) {
+          var leg1Text = (m.homeScore !== undefined ? m.homeScore : '-') + '-' + (m.awayScore !== undefined ? m.awayScore : '-');
+          var scoreHtml = '<div style="font-size:10px;line-height:1.3;text-align:center;' + cursorStyle + '" ' + clickHandler + '>';
+          scoreHtml += '<div style="color:#666">第一场 ' + leg1Text + '</div>';
+          
+          // 第一场平局且第二场已赛
+          if (leg1Draw && leg2Done) {
+            var leg2Text = (m.leg2.homeScore !== undefined ? m.leg2.homeScore : '-') + '-' + (m.leg2.awayScore !== undefined ? m.leg2.awayScore : '-');
+            scoreHtml += '<div style="color:#ff9800;font-size:9px;margin:1px 0">↓平局重赛↓</div>';
+            scoreHtml += '<div style="color:#666">第二场 ' + leg2Text + '</div>';
+          }
+          // 第一场平局但第二场未赛
+          else if (leg1Draw && !leg2Done) {
+            scoreHtml += '<div style="color:#ff9800;font-size:9px;margin-top:2px">平局，待重赛</div>';
+          }
+          
+          scoreHtml += '</div>';
+          return scoreHtml;
+        }
+        
+        if (homeTeamId && awayTeamId && canEdit) {
+          return '<div class="fc-score done" style="background:linear-gradient(135deg,#4DB6AC 0%,#26A69A 100%);color:#fff;border-radius:6px;padding:4px 0;margin:2px 4px;font-size:11px;letter-spacing:1px;box-shadow:0 1px 4px rgba(38,166,154,0.3);' + cursorStyle + '" ' + clickHandler + '>VS</div>';
+        }
+        return '<div class="fc-score">VS</div>';
+      }
+      
+      // ¼决赛、半决赛、决赛：两回合制
       var leg1Done = m.status === 'completed';
       var leg2Done = m.leg2 && m.leg2.status === 'completed';
       
@@ -3461,6 +3500,8 @@ function showEnterCupMatchModal12() {
   
   // 判断是否为两回合制（round>=1 且不是冠军赛）
   var isTwoLegs = match.round >= 1 && match.round <= 3;
+  // 预赛是否已赛第一场且平局
+  var isPrelimDraw = match.round === 0 && match.status === 'completed' && match.homeScore === match.awayScore;
   
   var md = '<div style="display:flex;flex-direction:column;gap:12px;padding:4px;">';
   md += '<div style="text-align:center;font-weight:bold;color:' + accentClr + ';margin-bottom:4px;">' + (cupName[cup12Id] || cup12Id) + ' · ' + (roundName[match.round] || ('第' + match.round + '轮')) + '</div>';
@@ -3469,7 +3510,7 @@ function showEnterCupMatchModal12() {
   md += '<div style="background:#f5f5f5;padding:10px;border-radius:8px;">';
   
   if (isTwoLegs) {
-    // 两回合制：两场比分垂直排列，更直观
+    // 两回合制：两场比分垂直排列
     // 第一场比赛
     md += '<div style="margin-bottom:10px;">';
     md += '<div style="text-align:center;font-size:11px;color:#666;margin-bottom:6px;">第一场比赛</div>';
@@ -3502,8 +3543,42 @@ function showEnterCupMatchModal12() {
     md += '</div>';
     
     md += '</div>';  // 关闭 background:#f5f5f5 的 div
+  } else if (match.round === 0) {
+    // 预赛（A01-A04）：第一场 + 平局后第二场
+    // 第一场比赛
+    md += '<div style="margin-bottom:10px;">';
+    md += '<div style="text-align:center;font-size:11px;color:#666;margin-bottom:6px;">第一场比赛</div>';
+    md += '<div style="display:flex;align-items:center;gap:8px;">';
+    md += '<div style="flex:1;text-align:right;font-size:13px;">' + homeName + '</div>';
+    md += '<div style="display:flex;gap:6px;align-items:center;">';
+    md += '<input id="m12h" type="number" min="0" value="' + (match.homeScore !== undefined ? match.homeScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:15px;">';
+    md += '<span style="color:#999;font-weight:bold;">:</span>';
+    md += '<input id="m12a" type="number" min="0" value="' + (match.awayScore !== undefined ? match.awayScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:15px;">';
+    md += '</div>';
+    md += '<div style="flex:1;font-size:13px;">' + awayName + '</div>';
+    md += '</div>';
+    md += '</div>';
+    
+    // 如果第一场已赛且平局，显示第二场
+    if (isPrelimDraw) {
+      md += '<div style="border-top:1px dashed #ff9800;margin:10px 0;"></div>';
+      md += '<div style="background:#fff8e1;padding:8px;border-radius:6px;">';
+      md += '<div style="text-align:center;font-size:11px;color:#e65100;margin-bottom:6px;">⚠️ 第一场平局，进行第二场（主客场互换）</div>';
+      md += '<div style="display:flex;align-items:center;gap:8px;">';
+      md += '<div style="flex:1;text-align:right;font-size:13px;">' + awayName + '</div>';
+      md += '<div style="display:flex;gap:6px;align-items:center;">';
+      md += '<input id="m12h2" type="number" min="0" value="' + (match.leg2 && match.leg2.homeScore !== undefined ? match.leg2.homeScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:6px;border:1px solid #ff9800;border-radius:6px;font-size:15px;">';
+      md += '<span style="color:#ff9800;font-weight:bold;">:</span>';
+      md += '<input id="m12a2" type="number" min="0" value="' + (match.leg2 && match.leg2.awayScore !== undefined ? match.leg2.awayScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:6px;border:1px solid #ff9800;border-radius:6px;font-size:15px;">';
+      md += '</div>';
+      md += '<div style="flex:1;font-size:13px;">' + homeName + '</div>';
+      md += '</div>';
+      md += '</div>';
+    }
+    
+    md += '</div>';  // 关闭 background:#f5f5f5 的 div
   } else {
-    // 单场制：简洁显示
+    // 冠军赛单场制
     md += '<div style="text-align:center;font-size:12px;color:#666;margin-bottom:8px;">比赛比分</div>';
     md += '<div style="display:flex;align-items:center;gap:8px;">';
     md += '<div style="flex:1;text-align:right;font-size:14px;font-weight:500;">' + homeName + '</div>';
@@ -3517,10 +3592,10 @@ function showEnterCupMatchModal12() {
     md += '</div>';  // 关闭 background:#f5f5f5 的 div
   }
   
-  // 点球（预赛平局或两回合总比分平局时显示）
+  // 点球（预赛第二场平局或两回合总比分平局时显示）
   var showPenalty = false;
-  if (match.round === 0 && match.homeScore !== undefined && match.awayScore !== undefined && match.homeScore === match.awayScore) {
-    showPenalty = true;
+  if (match.round === 0 && match.leg2 && match.leg2.status === 'completed' && match.leg2.homeScore === match.leg2.awayScore) {
+    showPenalty = true;  // 预赛第二场平局
   } else if (isTwoLegs && match.leg2 && match.leg2.homeScore !== undefined) {
     var totalHome = (match.homeScore || 0) + (match.leg2.awayScore || 0);
     var totalAway = (match.awayScore || 0) + (match.leg2.homeScore || 0);
@@ -3566,9 +3641,10 @@ function submitCupMatchResult12() {
   match.awayScore = awayScore;
   match.status = 'completed';
   
-  // 两回合制：保存第二场比赛
+  // 两回合制或预赛平局后的第二场：保存第二场比赛
   var isTwoLegs = match.round >= 1 && match.round <= 3;
-  if (isTwoLegs) {
+  var isPrelimDraw = match.round === 0 && homeScore === awayScore;
+  if (isTwoLegs || isPrelimDraw) {
     var h2 = document.getElementById('m12h2');
     var a2 = document.getElementById('m12a2');
     if (h2 && a2) {
