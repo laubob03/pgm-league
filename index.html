@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 335 };
+const APP_VERSION = { major: 1, minor: 0, patch: 336 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.336', date: '2026-05-09', items: ['🔧 12强杯赛VS点击录入改为使用与普通杯赛相同的完整录入系统（showEnterCupMatchModal），支持进球、助攻、MOTM等完整功能'] },
   { v: '1.0.335', date: '2026-05-09', items: ['🐛 修复12强杯赛选队字段名错误：field参数是home/away，但match对象字段是homeTeam/awayTeam，导致选队数据写入错误位置'] },
   { v: '1.0.334', date: '2026-05-09', items: ['🔍 增强诊断日志：追踪选队时sd与state的关系，上传时state与uploadData的对比'] },
   { v: '1.0.333', date: '2026-05-09', items: ['🔍 添加诊断日志：追踪12强杯赛数据在保存、上传、下载、加载全流程中的状态'] },
@@ -2935,14 +2936,16 @@ function renderCup12Bracket(cup12Id, targetContainer) {
       if (done) {
         var scoreText = m.homeScore + ' - ' + m.awayScore;
         if (canEdit) {
-          return '<div class="fc-score done" onclick="window._editingMatchId=\'' + mId + '\';showEnterCupMatchModal12()">' + scoreText + '</div>';
+          var cup12IdForModal = cup12Id;
+          return '<div class="fc-score done" onclick="showEnterCupMatchModal(\'' + mId + '\', \'' + cup12IdForModal + '\')">' + scoreText + '</div>';
         }
         return '<div class="fc-score">' + scoreText + '</div>';
       }
-      // 两队都已选且未完赛：管理员可点击录入
+      // 两队都已选且未完赛：管理员可点击录入（使用与普通杯赛相同的录入系统）
       if (homeTeamId && awayTeamId) {
         if (canEdit) {
-          return '<div class="fc-score done" style="background:linear-gradient(135deg,#4DB6AC 0%,#26A69A 100%);color:#fff;border-radius:6px;padding:4px 0;margin:2px 4px;font-size:11px;letter-spacing:1px;box-shadow:0 1px 4px rgba(38,166,154,0.3)" onclick="window._editingMatchId=\'' + mId + '\';showEnterCupMatchModal12()">VS</div>';
+          var cup12IdForModal = cup12Id; // championsCup12, leagueCup12, associationCup12
+          return '<div class="fc-score done" style="background:linear-gradient(135deg,#4DB6AC 0%,#26A69A 100%);color:#fff;border-radius:6px;padding:4px 0;margin:2px 4px;font-size:11px;letter-spacing:1px;box-shadow:0 1px 4px rgba(38,166,154,0.3)" onclick="showEnterCupMatchModal(\'' + mId + '\', \'' + cup12IdForModal + '\')">VS</div>';
         }
         return '<div class="fc-score">VS</div>';
       }
