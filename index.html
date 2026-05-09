@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 332 };
+const APP_VERSION = { major: 1, minor: 0, patch: 333 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.333', date: '2026-05-09', items: ['🔍 添加诊断日志：追踪12强杯赛数据在保存、上传、下载、加载全流程中的状态'] },
   { v: '1.0.332', date: '2026-05-09', items: ['🐛 修复recorderUpload杯赛合并：数据员上传时不再用空初始化数据覆盖超管已上传的真实对阵数据', '🐛 修复renderCup12Bracket查看归档赛季时会污染state.cups当前赛季数据的bug', '🛡️ 自动同步后强制刷新12强杯赛页面确保云端数据即时可见'] },
   { v: '1.0.331', date: '2026-05-09', items: ['🐛 修复其他用户看不到超管上传的对阵球队：移除autoSyncFromCloud中cups保护逻辑，所有用户的对阵数据以云端为准'] },
   { v: '1.0.324', date: '2026-05-09', items: ['🔧 showEnterCupMatchModal12和submitCupMatchResult12改为从window._editingMatchId自动推导cup12Id，不再依赖onclick传参，彻底解决VS点击无反应问题'] },
@@ -1187,6 +1188,10 @@ function safeStringify(obj, indent) {
 
 // ============ STORAGE ============
 function saveState() {
+  var hasChampionsCup12 = state.cups && state.cups.championsCup12;
+  var matchesCount = hasChampionsCup12 && state.cups.championsCup12.matches ? state.cups.championsCup12.matches.length : 0;
+  var teamsSelected = hasChampionsCup12 && state.cups.championsCup12.matches ? state.cups.championsCup12.matches.filter(function(m) { return m.homeTeam || m.awayTeam; }).length : 0;
+  console.log('[DIAG] saveState: championsCup12 exists=' + !!hasChampionsCup12 + ', matches=' + matchesCount + ', teamsSelected=' + teamsSelected);
   localStorage.setItem('pgm_football_state', safeStringify(state) || '{}');
 }
 
@@ -1223,6 +1228,10 @@ function loadState() {
       if (!state.cups) {
         state.cups = { championsCup: { teams: [], matches: [] }, leagueCup: { teams: [], matches: [] }, associationCup: { teams: [], matches: [] }, faCup: { teams: [], matches: [] } };
       }
+      var loadedHasChampionsCup12 = state.cups && state.cups.championsCup12;
+      var loadedMatchesCount = loadedHasChampionsCup12 && state.cups.championsCup12.matches ? state.cups.championsCup12.matches.length : 0;
+      var loadedTeamsSelected = loadedHasChampionsCup12 && state.cups.championsCup12.matches ? state.cups.championsCup12.matches.filter(function(m) { return m.homeTeam || m.awayTeam; }).length : 0;
+      console.log('[DIAG] loadState: championsCup12 exists=' + !!loadedHasChampionsCup12 + ', matches=' + loadedMatchesCount + ', teamsSelected=' + loadedTeamsSelected);
       // 兼容旧版本没有赛季字段 - 自动识别为第62赛季
       if (!state.currentSeasonId) state.currentSeasonId = 62;
       if (!state.seasons) state.seasons = {};
@@ -3402,6 +3411,9 @@ window._c12SelectTeam = function(cup12Id, round, slot, field, teamId) {
     match.awayScore = undefined;
     match.status = undefined;
   }
+  console.log('[DIAG] _c12SelectTeam: cup12Id=' + cup12Id + ', round=' + round + ', slot=' + slot + ', field=' + field + ', teamId=' + teamId);
+  console.log('[DIAG] _c12SelectTeam: match.homeTeam=' + match.homeTeam + ', match.awayTeam=' + match.awayTeam);
+  console.log('[DIAG] _c12SelectTeam: sd.cups[cup12Id] exists=' + !!sd.cups[cup12Id] + ', matches count=' + (sd.cups[cup12Id] && sd.cups[cup12Id].matches ? sd.cups[cup12Id].matches.length : 0));
   saveState();
   renderCup12Bracket(cup12Id);
   saveToUrlHash();
@@ -9424,6 +9436,11 @@ async function syncUpload() {
       role: state.currentUser ? (state.currentUser.isSuperAdmin ? '超级管理员' : (state.currentUser.isStatsRecorder ? '统计员' : '数据员')) : '未知',
       at: new Date().toISOString()
     };
+    // DIAG: Log cups data before upload
+    var uploadHasChampionsCup12 = uploadData.cups && uploadData.cups.championsCup12;
+    var uploadMatchesCount = uploadHasChampionsCup12 && uploadData.cups.championsCup12.matches ? uploadData.cups.championsCup12.matches.length : 0;
+    var uploadTeamsSelected = uploadHasChampionsCup12 && uploadData.cups.championsCup12.matches ? uploadData.cups.championsCup12.matches.filter(function(m) { return m.homeTeam || m.awayTeam; }).length : 0;
+    console.log('[DIAG] syncUpload: uploadData.cups.championsCup12 exists=' + !!uploadHasChampionsCup12 + ', matches=' + uploadMatchesCount + ', teamsSelected=' + uploadTeamsSelected);
     const dataStr = safeStringify(uploadData); // ★ minify: 无缩进，省 ~74KB
     if (!dataStr) { showToast('数据序列化失败，请检查数据'); return; }
     showSyncProgress('upload', 2);
@@ -10082,6 +10099,11 @@ async function autoSyncFromCloud() {
       cloudData = otherObj || {};
       if (teamsArr) cloudData.teams = teamsArr;
       if (matchesArr) cloudData.matches = matchesArr;
+      // DIAG: Log downloaded cups data
+      var downloadHasChampionsCup12 = cloudData.cups && cloudData.cups.championsCup12;
+      var downloadMatchesCount = downloadHasChampionsCup12 && cloudData.cups.championsCup12.matches ? cloudData.cups.championsCup12.matches.length : 0;
+      var downloadTeamsSelected = downloadHasChampionsCup12 && cloudData.cups.championsCup12.matches ? cloudData.cups.championsCup12.matches.filter(function(m) { return m.homeTeam || m.awayTeam; }).length : 0;
+      console.log('[DIAG] autoSyncFromCloud: downloaded cloudData.cups.championsCup12 exists=' + !!downloadHasChampionsCup12 + ', matches=' + downloadMatchesCount + ', teamsSelected=' + downloadTeamsSelected);
     } else {
       // 旧格式：全量单文件（向后兼容）
       const dataFile = Object.values(gistFiles)[0];
@@ -10163,6 +10185,11 @@ async function autoSyncFromCloud() {
       state = cloudData;
       delete state._lastUpload;
       state.currentUser = loginUser;
+      // DIAG: Log state after sync
+      var afterSyncHasChampionsCup12 = state.cups && state.cups.championsCup12;
+      var afterSyncMatchesCount = afterSyncHasChampionsCup12 && state.cups.championsCup12.matches ? state.cups.championsCup12.matches.length : 0;
+      var afterSyncTeamsSelected = afterSyncHasChampionsCup12 && state.cups.championsCup12.matches ? state.cups.championsCup12.matches.filter(function(m) { return m.homeTeam || m.awayTeam; }).length : 0;
+      console.log('[DIAG] autoSyncFromCloud after state=cloudData: state.cups.championsCup12 exists=' + !!afterSyncHasChampionsCup12 + ', matches=' + afterSyncMatchesCount + ', teamsSelected=' + afterSyncTeamsSelected);
       // ★ 转会数据始终以本地 + 转会Gist为准，主Gist中的转会数据已过时
       state.transferMarket = localTransferMarket;
       state.pendingTransfers = localPendingTransfers;
