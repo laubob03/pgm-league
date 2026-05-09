@@ -8714,7 +8714,17 @@ function extractCupData(cupId) {
   const cup = state.cups ? state.cups[cupId] : null;
   if (!cup) return null;
   const cupTeams = (cup.teams || []).map(tid => state.teams.find(t => t.id === tid)).filter(Boolean);
-  return { cupTeams, cupMatches: cup.matches || [], cupId, type: 'cup', cups: { [cupId]: { teams: cup.teams || [], matches: cup.matches || [] } }, exportedAt: new Date().toISOString() };
+  const result = { cupTeams, cupMatches: cup.matches || [], cupId, type: 'cup', cups: { [cupId]: { teams: cup.teams || [], matches: cup.matches || [] } }, exportedAt: new Date().toISOString() };
+  
+  // 杯赛数据员同时提取对应的12强杯赛数据
+  const cup12Map = { championsCup: 'championsCup12', leagueCup: 'leagueCup12', associationCup: 'associationCup12' };
+  const cup12Id = cup12Map[cupId];
+  if (cup12Id && state.cups && state.cups[cup12Id]) {
+    const cup12 = state.cups[cup12Id];
+    result.cups[cup12Id] = { teams: cup12.teams || [], matches: cup12.matches || [] };
+  }
+  
+  return result;
 }
 
 // 合并联赛数据到本地
