@@ -2806,9 +2806,18 @@ function renderCup12Bracket(cup12Id, targetContainer) {
 
   // ── team info ──
   function teamInfo(teamId) {
-    if (!teamId) return { name: '待定', logo: null };
+    if (!teamId) return { name: '待定', logo: null, league: null };
     var t = sd.teams ? sd.teams.find(function(t) { return t.id === teamId; }) : null;
-    return { name: t ? t.name : (teamId + ''), logo: t ? (t.logo || t.badge || '') : '' };
+    return { name: t ? t.name : (teamId + ''), logo: t ? (t.logo || t.badge || '') : '', league: t ? (t.league || null) : null };
+  }
+
+  // 获取球队联赛底色（与足总杯一致）
+  function leagueBg(teamObj) {
+    if (!teamObj || !teamObj.league) return '';
+    if (teamObj.league === 'super') return 'background:#c0392b;color:#fff'; // 深红底
+    if (teamObj.league === 'jiaEast' || teamObj.league === 'jiaWest') return 'background:#1e8449;color:#fff'; // 深绿底
+    if (teamObj.league === 'yiEast' || teamObj.league === 'yiWest') return 'background:#5d6d7e;color:#fff'; // 深灰底
+    return '';
   }
 
   // 渲染前自动填充胜者晋级
@@ -2834,26 +2843,32 @@ function renderCup12Bracket(cup12Id, targetContainer) {
     var editAttr = canEdit && m ? ' onclick="window._editingMatchId=\'' + m.id + '\';showEnterCupMatchModal12(\'' + cup12Id + '\');"' : '';
 
     // 主场行
+    var homeBg = home ? leagueBg(home) : '';
+    var homeBgStyle = homeBg ? ' style="padding:1px 4px;border-radius:3px;' + homeBg + '"' : '';
+    var homeScoreStyle = homeBg ? ' style="color:#fff!important"' : '';
     var homeRow;
     if (!homeTeamId && isSuperAdmin && needSelect(round, slot, 'home')) {
       homeRow = teamSelectHtml(round, slot, 'home', homeTeamId);
     } else {
-      homeRow = '<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">' +
+      homeRow = '<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px"' + homeBgStyle + '>' +
         (hl ? '<img class="c12-logo" src="' + hl + '" onerror="this.style.display=\'none\'">' : '<div class="c12-logo"></div>') +
         '<span class="c12-tn' + (home ? '' : ' tbd') + '">' + hn + '</span>' +
-        '<span class="c12-sc' + (done ? ' done' : '') + '">' + hs + '</span>' +
+        '<span class="c12-sc' + (done ? ' done' : '') + '"' + homeScoreStyle + '>' + hs + '</span>' +
       '</div>';
     }
 
     // 客场行
+    var awayBg = away ? leagueBg(away) : '';
+    var awayBgStyle = awayBg ? ' style="padding:1px 4px;border-radius:3px;' + awayBg + '"' : '';
+    var awayScoreStyle = awayBg ? ' style="color:#fff!important"' : '';
     var awayRow;
     if (!awayTeamId && isSuperAdmin && needSelect(round, slot, 'away')) {
       awayRow = teamSelectHtml(round, slot, 'away', awayTeamId);
     } else {
-      awayRow = '<div style="display:flex;align-items:center;gap:4px">' +
+      awayRow = '<div style="display:flex;align-items:center;gap:4px"' + awayBgStyle + '>' +
         (al ? '<img class="c12-logo" src="' + al + '" onerror="this.style.display=\'none\'">' : '<div class="c12-logo"></div>') +
         '<span class="c12-tn' + (away ? '' : ' tbd') + '">' + an + '</span>' +
-        '<span class="c12-sc' + (done ? ' done' : '') + '">' + as + '</span>' +
+        '<span class="c12-sc' + (done ? ' done' : '') + '"' + awayScoreStyle + '>' + as + '</span>' +
       '</div>';
     }
 
