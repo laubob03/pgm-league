@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.324'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.331'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 324 };
+const APP_VERSION = { major: 1, minor: 0, patch: 331 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,12 +610,8 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.330', date: '2026-05-09', items: ['🐛 修复超管选队上传后其他人看不到：cups保护逻辑"本地有真实对阵→始终保留本地"导致其他用户的旧数据覆盖云端更新'] },
-  { v: '1.0.329', date: '2026-05-09', items: ['🔄 12强超管选队改为手动上传云端'] },
-  { v: '1.0.328', date: '2026-05-09', items: ['☁️ 12强超管选队后自动上传云端（已改为手动）'] },
-  { v: '1.0.327', date: '2026-05-09', items: ['📋 12强下拉选队限制为父杯赛积分榜前12名，已选球队不可重复选择'] },
-  { v: '1.0.326', date: '2026-05-09', items: ['🐛 12强A05-A08主客下拉选队根本修复：rTeam未完赛时field推断Bug导致客场下拉永远不出现'] },
-  { v: '1.0.324', date: '2026-05-09', items: ['🔧 showEnterCupMatchModal12和submitCupMatchResult12改为从window._editingMatchId自动推导cup12Id'] },
+  { v: '1.0.331', date: '2026-05-09', items: ['🐛 修复其他用户看不到超管上传的对阵球队：移除autoSyncFromCloud中cups保护逻辑，所有用户的对阵数据以云端为准'] },
+  { v: '1.0.324', date: '2026-05-09', items: ['🔧 showEnterCupMatchModal12和submitCupMatchResult12改为从window._editingMatchId自动推导cup12Id，不再依赖onclick传参，彻底解决VS点击无反应问题'] },
   { v: '1.0.321', date: '2026-05-09', items: ['🔧 12强对阵图A01/A02垂直间距重叠修复，cardH从56增至112匹配实际卡片高度', '✅ 超级管理员可录入比分（canEdit已含isSuperAdmin）'] },
   { v: '1.0.320', date: '2026-05-09', items: ['🎨 12强对阵图球队显示/队徽/底色/比分录入/晋级条件全面对齐足总杯', '✅ 比赛完成状态改用status=completed，录入比分自动设置，胜者晋级更准确'] },
   { v: '1.0.319', date: '2026-05-09', items: ['🎨 12强对阵图球队显示队徽+联赛底色（超级深红/甲级深绿/乙级深灰），队徽改用getTeamLogo确保显示'] },
@@ -10143,32 +10139,17 @@ async function autoSyncFromCloud() {
       // 否则主 Gist 覆盖后，本地新出价丢失，后续 autoSyncTransferGist 合并也不完整
       const localTransferMarket = state.transferMarket || [];
       const localPendingTransfers = state.pendingTransfers || [];
-      // ★ v1.0.275 修复：保护本地 cups 数据，避免云端旧格式触发 initFaCupBracket 重置对阵
-      // ★ v1.0.298 修复：增强判断——不仅比较 matches 长度，还检查是否有真实的对阵（至少一场有主队或客队）
-      // 若本地杯赛有真实的对阵数据（球队已填入），即使云端也有 matches，仍优先保留本地（防止云端旧格式覆盖真实数据）
-      const localCups = state.cups || {};
-      const cloudCups = cloudData.cups || {};
+      // ★ v1.0.331 修复：移除 cups 保护逻辑
+      // 旧逻辑(v275/v298/v330)在"本地有真实对阵时保留本地"，导致其他用户永远看不到超管上传的新对阵
+      // 用户明确要求：所有人的对阵以云端对阵为准
+      // needUpdate=true 说明云端比本地更新，此时 state = cloudData 已经包含了最新的云端 cups 数据
+      // 无需额外保护，直接使用云端数据即可
       state = cloudData;
       delete state._lastUpload;
       state.currentUser = loginUser;
       // ★ 转会数据始终以本地 + 转会Gist为准，主Gist中的转会数据已过时
       state.transferMarket = localTransferMarket;
       state.pendingTransfers = localPendingTransfers;
-      // ★ v1.0.330 修复：cups 保护逻辑重构
-      // 旧逻辑"本地有真实对阵→始终保留本地"导致其他用户永远看不到超管的新选择
-      // 新逻辑：needUpdate=true说明云端更新，仅当云端无真实对阵而本地有时才保留本地
-      if (!state.cups) state.cups = {};
-      Object.keys(localCups).forEach(cid => {
-        const localCup = localCups[cid];
-        const cloudCup = cloudCups[cid];
-        const localHasReal = localCup && localCup.matches && localCup.matches.some(m => m.homeTeam || m.awayTeam);
-        const cloudHasReal = cloudCup && cloudCup.matches && cloudCup.matches.some(m => m.homeTeam || m.awayTeam);
-        if (localHasReal && !cloudHasReal) {
-          // 仅本地有真实对阵，云端无 → 保留本地（防止云端旧格式覆盖）
-          state.cups[cid] = localCup;
-        }
-        // else: 云端有真实对阵 或 双方都无 → 保留云端（state已是cloudData）
-      });
       // 兼容旧数据没有 logo/teamUid - 自动补充
       state.teams.forEach(t => {
         if (TEAM_LOGOS && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
