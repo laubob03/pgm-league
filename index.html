@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 353 };
+const APP_VERSION = { major: 1, minor: 0, patch: 354 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.354', date: '2026-05-10', items: ['🐛 12强选队即时更新：使用 requestAnimationFrame 确保下拉菜单立即刷新'] },
   { v: '1.0.353', date: '2026-05-10', items: ['🐛 12强选队下拉菜单：已选球队不再显示（而非显示为禁用）'] },
   { v: '1.0.352', date: '2026-05-10', items: ['🐛 修复预赛第二场比分显示顺序：应与第一场保持一致（原主队在左）'] },
   { v: '1.0.351', date: '2026-05-10', items: ['🐛 修复预赛第二场晋级逻辑：主客场互换后晋级球队判断错误'] },
@@ -3841,13 +3842,16 @@ window._c12SelectTeam = function(cup12Id, round, slot, field, teamId) {
   }
   console.log('[DIAG] _c12SelectTeam: cup12Id=' + cup12Id + ', round=' + round + ', slot=' + slot + ', field=' + field + ', teamId=' + teamId);
   console.log('[DIAG] _c12SelectTeam: match.homeTeam=' + match.homeTeam + ', match.awayTeam=' + match.awayTeam);
-  console.log('[DIAG] _c12SelectTeam: sd === state ? ' + (sd === state));
-  console.log('[DIAG] _c12SelectTeam: sd.cups === state.cups ? ' + (sd.cups === state.cups));
-  console.log('[DIAG] _c12SelectTeam: sd.cups[cup12Id] === state.cups[cup12Id] ? ' + (sd.cups[cup12Id] === state.cups[cup12Id]));
-  var selectedCount = sd.cups[cup12Id].matches.filter(function(m) { return m.homeTeam || m.awayTeam; }).length;
-  console.log('[DIAG] _c12SelectTeam: 当前已选球队场次=' + selectedCount);
+  
+  // 立即保存并重新渲染
   saveState();
-  renderCup12Bracket(cup12Id);
+  
+  // 强制立即重新渲染对阵图
+  requestAnimationFrame(function() {
+    renderCup12Bracket(cup12Id);
+    console.log('[DIAG] _c12SelectTeam: 对阵图已重新渲染');
+  });
+  
   saveToUrlHash();
 };
 
