@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 345 };
+const APP_VERSION = { major: 1, minor: 0, patch: 346 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.346', date: '2026-05-10', items: ['🐛 修复预赛第二场录入逻辑：第一场平局后，录入界面只显示第二场（主客场互换），第一场结果只读展示'] },
   { v: '1.0.345', date: '2026-05-10', items: ['📝 12强预赛文案优化："重赛"改为"第二场"，更准确的描述'] },
   { v: '1.0.344', date: '2026-05-10', items: ['🎨 12强预赛(A01-A04)全新规则：第一场平局后主客场互换进行第二场，显示两场比赛完整比分'] },
   { v: '1.0.343', date: '2026-05-10', items: ['🎨 12强预赛(A01-A04)显示两场比分，晋级仍按单场制（只看第一场结果）'] },
@@ -3545,35 +3546,46 @@ function showEnterCupMatchModal12() {
     
     md += '</div>';  // 关闭 background:#f5f5f5 的 div
   } else if (match.round === 0) {
-    // 预赛（A01-A04）：第一场 + 平局后第二场
-    // 第一场比赛
-    md += '<div style="margin-bottom:10px;">';
-    md += '<div style="text-align:center;font-size:11px;color:#666;margin-bottom:6px;">第一场比赛</div>';
-    md += '<div style="display:flex;align-items:center;gap:8px;">';
-    md += '<div style="flex:1;text-align:right;font-size:13px;">' + homeName + '</div>';
-    md += '<div style="display:flex;gap:6px;align-items:center;">';
-    md += '<input id="m12h" type="number" min="0" value="' + (match.homeScore !== undefined ? match.homeScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:15px;">';
-    md += '<span style="color:#999;font-weight:bold;">:</span>';
-    md += '<input id="m12a" type="number" min="0" value="' + (match.awayScore !== undefined ? match.awayScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:15px;">';
-    md += '</div>';
-    md += '<div style="flex:1;font-size:13px;">' + awayName + '</div>';
-    md += '</div>';
-    md += '</div>';
-    
-    // 如果第一场已赛且平局，显示第二场
+    // 预赛（A01-A04）
     if (isPrelimDraw) {
-      md += '<div style="border-top:1px dashed #ff9800;margin:10px 0;"></div>';
-      md += '<div style="background:#fff8e1;padding:8px;border-radius:6px;">';
-      md += '<div style="text-align:center;font-size:11px;color:#e65100;margin-bottom:6px;">第一场平局，进行第二场（主客场互换）</div>';
+      // 第一场已平局，现在录入第二场（全新的比赛，主客场互换）
+      md += '<div style="background:#e8f5e9;padding:10px;border-radius:8px;border:1px solid #4caf50;">';
+      md += '<div style="text-align:center;font-size:12px;color:#2e7d32;margin-bottom:8px;font-weight:bold;">第二场比赛（主客场互换）</div>';
       md += '<div style="display:flex;align-items:center;gap:8px;">';
-      md += '<div style="flex:1;text-align:right;font-size:13px;">' + awayName + '</div>';
+      md += '<div style="flex:1;text-align:right;font-size:14px;font-weight:500;color:#1b5e20;">' + awayName + '</div>';
       md += '<div style="display:flex;gap:6px;align-items:center;">';
-      md += '<input id="m12h2" type="number" min="0" value="' + (match.leg2 && match.leg2.homeScore !== undefined ? match.leg2.homeScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:6px;border:1px solid #ff9800;border-radius:6px;font-size:15px;">';
-      md += '<span style="color:#ff9800;font-weight:bold;">:</span>';
-      md += '<input id="m12a2" type="number" min="0" value="' + (match.leg2 && match.leg2.awayScore !== undefined ? match.leg2.awayScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:6px;border:1px solid #ff9800;border-radius:6px;font-size:15px;">';
+      md += '<input id="m12h2" type="number" min="0" value="' + (match.leg2 && match.leg2.homeScore !== undefined ? match.leg2.homeScore : '') + '" placeholder="-" style="width:52px;text-align:center;padding:6px;border:2px solid #4caf50;border-radius:6px;font-size:16px;">';
+      md += '<span style="color:#4caf50;font-weight:bold;">:</span>';
+      md += '<input id="m12a2" type="number" min="0" value="' + (match.leg2 && match.leg2.awayScore !== undefined ? match.leg2.awayScore : '') + '" placeholder="-" style="width:52px;text-align:center;padding:6px;border:2px solid #4caf50;border-radius:6px;font-size:16px;">';
       md += '</div>';
-      md += '<div style="flex:1;font-size:13px;">' + homeName + '</div>';
+      md += '<div style="flex:1;font-size:14px;font-weight:500;color:#1b5e20;">' + homeName + '</div>';
       md += '</div>';
+      md += '</div>';
+      
+      // 显示第一场结果（只读）
+      md += '<div style="background:#f5f5f5;padding:8px;border-radius:6px;margin-top:10px;">';
+      md += '<div style="text-align:center;font-size:10px;color:#666;margin-bottom:4px;">第一场结果（已结束）</div>';
+      md += '<div style="display:flex;align-items:center;gap:8px;opacity:0.7;">';
+      md += '<div style="flex:1;text-align:right;font-size:12px;">' + homeName + '</div>';
+      md += '<div style="font-size:14px;font-weight:bold;color:#666;">' + match.homeScore + ' - ' + match.awayScore + '</div>';
+      md += '<div style="flex:1;font-size:12px;">' + awayName + '</div>';
+      md += '</div>';
+      md += '</div>';
+      
+      // 隐藏字段，保存第一场比分（用于提交时保持数据）
+      md += '<input type="hidden" id="m12h" value="' + match.homeScore + '">';
+      md += '<input type="hidden" id="m12a" value="' + match.awayScore + '">';
+    } else {
+      // 第一场未赛或已有胜负，录入第一场
+      md += '<div style="text-align:center;font-size:12px;color:#666;margin-bottom:8px;">第一场比赛</div>';
+      md += '<div style="display:flex;align-items:center;gap:8px;">';
+      md += '<div style="flex:1;text-align:right;font-size:14px;font-weight:500;">' + homeName + '</div>';
+      md += '<div style="display:flex;gap:6px;align-items:center;">';
+      md += '<input id="m12h" type="number" min="0" value="' + (match.homeScore !== undefined ? match.homeScore : '') + '" placeholder="-" style="width:52px;text-align:center;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:16px;">';
+      md += '<span style="color:#999;font-weight:bold;font-size:14px;">:</span>';
+      md += '<input id="m12a" type="number" min="0" value="' + (match.awayScore !== undefined ? match.awayScore : '') + '" placeholder="-" style="width:52px;text-align:center;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:16px;">';
+      md += '</div>';
+      md += '<div style="flex:1;font-size:14px;font-weight:500;">' + awayName + '</div>';
       md += '</div>';
     }
     
