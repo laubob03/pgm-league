@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 320 };
+const APP_VERSION = { major: 1, minor: 0, patch: 321 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.321', date: '2026-05-09', items: ['🔧 12强对阵图A01/A02垂直间距重叠修复，cardH从56增至112匹配实际卡片高度', '✅ 超级管理员可录入比分（canEdit已含isSuperAdmin）'] },
   { v: '1.0.320', date: '2026-05-09', items: ['🎨 12强对阵图球队显示/队徽/底色/比分录入/晋级条件全面对齐足总杯', '✅ 比赛完成状态改用status=completed，录入比分自动设置，胜者晋级更准确'] },
   { v: '1.0.319', date: '2026-05-09', items: ['🎨 12强对阵图球队显示队徽+联赛底色（超级深红/甲级深绿/乙级深灰），队徽改用getTeamLogo确保显示'] },
   { v: '1.0.318', date: '2026-05-09', items: ['🎨 12强赛程图添加联赛底色（超级深红/甲级深绿/乙级深灰），移除赛程页12强按钮', '🏆 冠军展示文字替换为emoji'] },
@@ -2944,17 +2945,17 @@ function renderCup12Bracket(cup12Id, targetContainer) {
   }
 
   // ── layout constants ──
-  var cardH = 56, cardGap = 32, colW = 170, colGap = 14, colHdH = 28, labelW = 40;
+  var cardH = 112, cardGap = 24, colW = 170, colGap = 14, colHdH = 28, labelW = 40;
 
   // 左半区：QF slot0+slot1 → SF slot0
   // 右半区：QF slot2+slot3 → SF slot1
   // 两半区 → 决赛 → 冠军
   var qfTop0 = 0;
-  var qfTop1 = cardH + cardGap;  // = 84
+  var qfTop1 = cardH + cardGap;  // = 136
   // 半决赛居中于两场¼决赛之间
-  var sfTop = (qfTop0 + cardH / 2 + qfTop1 + cardH / 2) / 2 - cardH / 2;  // = 42
+  var sfTop = (qfTop0 + cardH / 2 + qfTop1 + cardH / 2) / 2 - cardH / 2;  // = 68
   var finTop = sfTop;
-  var bracketH = qfTop1 + cardH;  // = 128
+  var bracketH = qfTop1 + cardH;  // = 248
 
   // ── build HTML ──
   var bodyHtml = '';
