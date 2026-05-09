@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.323'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.324'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 323 };
+const APP_VERSION = { major: 1, minor: 0, patch: 324 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,7 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.323', date: '2026-05-09', items: ['🐛 修复VS点击无法弹出录入界面——showEnterCupMatchModal12引用了不存在的accentColor变量导致ReferenceError'] },
+  { v: '1.0.324', date: '2026-05-09', items: ['🔧 showEnterCupMatchModal12和submitCupMatchResult12改为从window._editingMatchId自动推导cup12Id，不再依赖onclick传参，彻底解决VS点击无反应问题'] },
   { v: '1.0.321', date: '2026-05-09', items: ['🔧 12强对阵图A01/A02垂直间距重叠修复，cardH从56增至112匹配实际卡片高度', '✅ 超级管理员可录入比分（canEdit已含isSuperAdmin）'] },
   { v: '1.0.320', date: '2026-05-09', items: ['🎨 12强对阵图球队显示/队徽/底色/比分录入/晋级条件全面对齐足总杯', '✅ 比赛完成状态改用status=completed，录入比分自动设置，胜者晋级更准确'] },
   { v: '1.0.319', date: '2026-05-09', items: ['🎨 12强对阵图球队显示队徽+联赛底色（超级深红/甲级深绿/乙级深灰），队徽改用getTeamLogo确保显示'] },
@@ -2922,14 +2922,14 @@ function renderCup12Bracket(cup12Id, targetContainer) {
       if (done) {
         var scoreText = m.homeScore + ' - ' + m.awayScore;
         if (canEdit) {
-          return '<div class="fc-score done" onclick="window._editingMatchId=\'' + m.id + '\';showEnterCupMatchModal12(\'' + cup12Id + '\')">' + scoreText + '</div>';
+          return '<div class="fc-score done" onclick="window._editingMatchId=\'' + mId + '\';showEnterCupMatchModal12()">' + scoreText + '</div>';
         }
         return '<div class="fc-score">' + scoreText + '</div>';
       }
       // 两队都已选且未完赛：管理员可点击录入
       if (homeTeamId && awayTeamId) {
         if (canEdit) {
-          return '<div class="fc-score done" style="background:linear-gradient(135deg,#4DB6AC 0%,#26A69A 100%);color:#fff;border-radius:6px;padding:4px 0;margin:2px 4px;font-size:11px;letter-spacing:1px;box-shadow:0 1px 4px rgba(38,166,154,0.3)" onclick="window._editingMatchId=\'' + m.id + '\';showEnterCupMatchModal12(\'' + cup12Id + '\')">VS</div>';
+          return '<div class="fc-score done" style="background:linear-gradient(135deg,#4DB6AC 0%,#26A69A 100%);color:#fff;border-radius:6px;padding:4px 0;margin:2px 4px;font-size:11px;letter-spacing:1px;box-shadow:0 1px 4px rgba(38,166,154,0.3)" onclick="window._editingMatchId=\'' + mId + '\';showEnterCupMatchModal12()">VS</div>';
         }
         return '<div class="fc-score">VS</div>';
       }
@@ -3304,7 +3304,7 @@ function renderCup12Match(match, cup12Id) {
   var enterHint = '', editHint = '';
   if (state.currentUser && (state.currentUser.isSuperAdmin || state.currentUser.isDataRecorder)) {
     enterHint = 'cursor:pointer;';
-    editHint = ' onclick="window._editingMatchId=\'' + match.id + '\';showEnterCupMatchModal12(\'' + cup12Id + '\');"';
+    editHint = ' onclick="window._editingMatchId=\'' + match.id + '\';showEnterCupMatchModal12()"';
   }
   return '<div class="cup12-m" data-id="' + match.id + '" style="min-width:130px;max-width:160px;background:white;border:1.5px solid ' + borderColor + ';border-radius:8px;padding:6px 10px;cursor:default;' + enterHint + ';box-shadow:0 1px 3px rgba(0,0,0,0.08);">' +
     '<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;">' +
@@ -3328,8 +3328,11 @@ function drawCup12Lines(cup12Id, accentColor) {
   // 简化：连接线通过CSS flex居中对齐实现，无需SVG定位
 }
 
-function showEnterCupMatchModal12(cup12Id) {
+function showEnterCupMatchModal12() {
   var matchId = window._editingMatchId;
+  if (!matchId) { showToast('未设置比赛ID'); return; }
+  // 从 matchId 推导 cup12Id（格式：championsCup12_R0S0 → championsCup12）
+  var cup12Id = matchId.split('_')[0];
   var sd = getCurrentSeasonData();
   var cup = sd.cups && sd.cups[cup12Id];
   var match = cup && cup.matches ? cup.matches.find(function(m) { return m.id === matchId; }) : null;
@@ -3355,13 +3358,15 @@ function showEnterCupMatchModal12(cup12Id) {
   md += '<div style="flex:1;font-size:13px;">' + awayName + '</div>';
   md += '</div>';
   md += '<div style="text-align:center;margin-top:4px;">';
-  md += '<button onclick="submitCupMatchResult12(\'' + cup12Id + '\');" style="background:' + accentClr + ';color:white;border:none;padding:8px 24px;border-radius:20px;font-size:13px;cursor:pointer;">保存</button>';
+  md += '<button onclick="submitCupMatchResult12()" style="background:' + accentClr + ';color:white;border:none;padding:8px 24px;border-radius:20px;font-size:13px;cursor:pointer;">保存</button>';
   md += '</div></div>';
   showModal(md);
 }
 
-function submitCupMatchResult12(cup12Id) {
+function submitCupMatchResult12() {
   var matchId = window._editingMatchId;
+  if (!matchId) { showToast('未设置比赛ID'); return; }
+  var cup12Id = matchId.split('_')[0];
   var homeScore = parseInt(document.getElementById('m12h').value);
   var awayScore = parseInt(document.getElementById('m12a').value);
   if (isNaN(homeScore) || isNaN(awayScore) || homeScore < 0 || awayScore < 0) { showToast('请输入有效比分'); return; }
