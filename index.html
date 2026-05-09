@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 337 };
+const APP_VERSION = { major: 1, minor: 0, patch: 338 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.338', date: '2026-05-09', items: ['🔧 12强杯赛录入界面支持第二场比赛和点球录入，两回合制比赛可分别录入两场比赛比分'] },
   { v: '1.0.337', date: '2026-05-09', items: ['🔧 12强杯赛晋级规则更新：A01-A04预赛单场比赛（平局点球决胜），A05起两回合制（总进球→客场进球→点球），比分显示支持双回合'] },
   { v: '1.0.336', date: '2026-05-09', items: ['🔧 12强杯赛VS点击录入改为使用与普通杯赛相同的完整录入系统（showEnterCupMatchModal），支持进球、助攻、MOTM等完整功能'] },
   { v: '1.0.335', date: '2026-05-09', items: ['🐛 修复12强杯赛选队字段名错误：field参数是home/away，但match对象字段是homeTeam/awayTeam，导致选队数据写入错误位置'] },
@@ -3453,8 +3454,16 @@ function showEnterCupMatchModal12() {
   var awayTeam = match.awayTeam ? sd.teams.find(function(t){return t.id===match.awayTeam;}) : null;
   var homeName = homeTeam ? homeTeam.name : '主队';
   var awayName = awayTeam ? awayTeam.name : '客队';
+  
+  // 判断是否为两回合制（round>=1 且不是冠军赛）
+  var isTwoLegs = match.round >= 1 && match.round <= 3;
+  
   var md = '<div style="display:flex;flex-direction:column;gap:12px;padding:4px;">';
   md += '<div style="text-align:center;font-weight:bold;color:' + accentClr + ';margin-bottom:4px;">' + (cupName[cup12Id] || cup12Id) + ' · ' + (roundName[match.round] || ('第' + match.round + '轮')) + '</div>';
+  
+  // 第一场比赛
+  md += '<div style="background:#f5f5f5;padding:8px;border-radius:8px;">';
+  md += '<div style="text-align:center;font-size:11px;color:#666;margin-bottom:6px;">第一场比赛</div>';
   md += '<div style="display:flex;align-items:center;gap:8px;">';
   md += '<div style="flex:1;text-align:right;font-size:13px;">' + homeName + '</div>';
   md += '<div style="display:flex;gap:6px;align-items:center;">';
@@ -3464,6 +3473,49 @@ function showEnterCupMatchModal12() {
   md += '</div>';
   md += '<div style="flex:1;font-size:13px;">' + awayName + '</div>';
   md += '</div>';
+  md += '</div>';
+  
+  // 第二场比赛（仅两回合制显示）
+  if (isTwoLegs) {
+    md += '<div style="background:#f5f5f5;padding:8px;border-radius:8px;">';
+    md += '<div style="text-align:center;font-size:11px;color:#666;margin-bottom:6px;">第二场比赛（主客场互换）</div>';
+    md += '<div style="display:flex;align-items:center;gap:8px;">';
+    md += '<div style="flex:1;text-align:right;font-size:13px;">' + awayName + '</div>';
+    md += '<div style="display:flex;gap:6px;align-items:center;">';
+    md += '<input id="m12h2" type="number" min="0" value="' + (match.leg2 && match.leg2.homeScore !== undefined ? match.leg2.homeScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:4px;border:1px solid #ddd;border-radius:6px;font-size:14px;">';
+    md += '<span style="color:#999;">:</span>';
+    md += '<input id="m12a2" type="number" min="0" value="' + (match.leg2 && match.leg2.awayScore !== undefined ? match.leg2.awayScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:4px;border:1px solid #ddd;border-radius:6px;font-size:14px;">';
+    md += '</div>';
+    md += '<div style="flex:1;font-size:13px;">' + homeName + '</div>';
+    md += '</div>';
+    md += '</div>';
+  }
+  
+  // 点球（预赛平局或两回合总比分平局时显示）
+  var showPenalty = false;
+  if (match.round === 0 && match.homeScore !== undefined && match.awayScore !== undefined && match.homeScore === match.awayScore) {
+    showPenalty = true;
+  } else if (isTwoLegs && match.leg2 && match.leg2.homeScore !== undefined) {
+    var totalHome = (match.homeScore || 0) + (match.leg2.awayScore || 0);
+    var totalAway = (match.awayScore || 0) + (match.leg2.homeScore || 0);
+    if (totalHome === totalAway) showPenalty = true;
+  }
+  
+  if (showPenalty) {
+    md += '<div style="background:#fff8e1;padding:8px;border-radius:8px;border:1px solid #ffcc80;">';
+    md += '<div style="text-align:center;font-size:11px;color:#e65100;margin-bottom:6px;">点球决胜</div>';
+    md += '<div style="display:flex;align-items:center;gap:8px;">';
+    md += '<div style="flex:1;text-align:right;font-size:13px;">' + homeName + '</div>';
+    md += '<div style="display:flex;gap:6px;align-items:center;">';
+    md += '<input id="m12ph" type="number" min="0" value="' + (match.penalty && match.penalty.homeScore !== undefined ? match.penalty.homeScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:4px;border:1px solid #ff9800;border-radius:6px;font-size:14px;">';
+    md += '<span style="color:#ff9800;">:</span>';
+    md += '<input id="m12pa" type="number" min="0" value="' + (match.penalty && match.penalty.awayScore !== undefined ? match.penalty.awayScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:4px;border:1px solid #ff9800;border-radius:6px;font-size:14px;">';
+    md += '</div>';
+    md += '<div style="flex:1;font-size:13px;">' + awayName + '</div>';
+    md += '</div>';
+    md += '</div>';
+  }
+  
   md += '<div style="text-align:center;margin-top:4px;">';
   md += '<button onclick="submitCupMatchResult12()" style="background:' + accentClr + ';color:white;border:none;padding:8px 24px;border-radius:20px;font-size:13px;cursor:pointer;">保存</button>';
   md += '</div></div>';
@@ -3477,13 +3529,47 @@ function submitCupMatchResult12() {
   var homeScore = parseInt(document.getElementById('m12h').value);
   var awayScore = parseInt(document.getElementById('m12a').value);
   if (isNaN(homeScore) || isNaN(awayScore) || homeScore < 0 || awayScore < 0) { showToast('请输入有效比分'); return; }
+  
   var sd = getCurrentSeasonData();
   var cup = sd.cups[cup12Id];
   var match = cup.matches.find(function(m) { return m.id === matchId; });
   if (!match) return;
+  
+  // 保存第一场比赛
   match.homeScore = homeScore;
   match.awayScore = awayScore;
   match.status = 'completed';
+  
+  // 两回合制：保存第二场比赛
+  var isTwoLegs = match.round >= 1 && match.round <= 3;
+  if (isTwoLegs) {
+    var h2 = document.getElementById('m12h2');
+    var a2 = document.getElementById('m12a2');
+    if (h2 && a2) {
+      var homeScore2 = parseInt(h2.value);
+      var awayScore2 = parseInt(a2.value);
+      if (!isNaN(homeScore2) && !isNaN(awayScore2) && homeScore2 >= 0 && awayScore2 >= 0) {
+        if (!match.leg2) match.leg2 = {};
+        match.leg2.homeScore = homeScore2;
+        match.leg2.awayScore = awayScore2;
+        match.leg2.status = 'completed';
+      }
+    }
+  }
+  
+  // 保存点球
+  var ph = document.getElementById('m12ph');
+  var pa = document.getElementById('m12pa');
+  if (ph && pa) {
+    var penHome = parseInt(ph.value);
+    var penAway = parseInt(pa.value);
+    if (!isNaN(penHome) && !isNaN(penAway) && penHome >= 0 && penAway >= 0) {
+      if (!match.penalty) match.penalty = {};
+      match.penalty.homeScore = penHome;
+      match.penalty.awayScore = penAway;
+    }
+  }
+  
   saveState();
   closeModal();
   renderCup12Bracket(cup12Id);
