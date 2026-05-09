@@ -2570,7 +2570,7 @@ function renderFaCupBracket(cupId) {
 // 8强杯赛对阵图（12强杯赛通用，8场1/4决赛→4场半决赛→2场决赛→1场冠军赛）
 // cup12Id: championsCup12 | leagueCup12 | associationCup12
 // 颜色主题：championsCup12=金色系 | leagueCup12=青色系 | associationCup12=紫色系
-function renderCup12Bracket(cup12Id) {
+function renderCup12Bracket(cup12Id, targetContainer) {
   var cupName = { championsCup12: '冠军杯12强', leagueCup12: '联盟杯12强', associationCup12: '协会杯12强' };
   var accentColor = { championsCup12: '#E6A800', leagueCup12: '#00897B', associationCup12: '#7B1FA2' };
   var name = cupName[cup12Id] || cup12Id;
@@ -2578,7 +2578,7 @@ function renderCup12Bracket(cup12Id) {
   var sd = getCurrentSeasonData();
   var cup = sd.cups && sd.cups[cup12Id] ? sd.cups[cup12Id] : null;
 
-  var container = document.getElementById('scheduleContent');
+  var container = targetContainer || document.getElementById('scheduleContent');
 
   if (!cup || !cup.matches || cup.matches.length === 0) {
     var cupName2 = { championsCup12: '冠军杯12强', leagueCup12: '联盟杯12强', associationCup12: '协会杯12强' };
@@ -2604,11 +2604,13 @@ function renderCup12Bracket(cup12Id) {
   var curR = window['_cup12SchedRound_' + cup12Id] || defaultRound;
 
   // 轮次标签栏
-  var html = '<div style="display:flex;align-items:center;gap:8px;padding:12px 16px;flex-wrap:wrap;border-bottom:1px solid #eee;">';
+  var containerKey = '_cup12SchedContainer_' + cup12Id;
+  window[containerKey] = container;
+  html += '<div style="display:flex;align-items:center;gap:8px;padding:12px 16px;flex-wrap:wrap;border-bottom:1px solid #eee;">';
   html += '<span style="font-weight:bold;color:' + accent + ';font-size:14px;">' + name + '</span>';
   roundKeys.forEach(function(r) {
     var active = (r === curR) ? 'background:' + accent + ';color:white;border-color:' + accent + ';' : 'background:white;color:#333;border-color:#ddd;';
-    html += '<button onclick="window[\'_cup12SchedRound_' + cup12Id + '\']=' + r + ';renderCup12Bracket(\'' + cup12Id + '\');saveToUrlHash();updateNavAndHeader();" style="' + active + 'border:1px solid;padding:4px 12px;border-radius:16px;font-size:12px;cursor:pointer;transition:all .2s;">' + (R_NAMES[r] || ('第' + r + '轮')) + '</button>';
+    html += '<button onclick="window[\'_cup12SchedRound_' + cup12Id + '\']=' + r + ';renderCup12Bracket(\'' + cup12Id + '\', window[\'_cup12SchedContainer_' + cup12Id + '\']);" style="' + active + 'border:1px solid;padding:4px 12px;border-radius:16px;font-size:12px;cursor:pointer;transition:all .2s;">' + (R_NAMES[r] || ('第' + r + '轮')) + '</button>';
   });
   html += '</div>';
 
@@ -3591,9 +3593,12 @@ function renderStandings() {
   let league = state.currentLeague;
   const sd = getCurrentSeasonData();
 
-  // 12强杯赛别名映射到主杯赛
+  // 12强杯赛显示8强树状对阵图
   const cup12Map = { championsCup12: 'championsCup', leagueCup12: 'leagueCup', associationCup12: 'associationCup' };
-  if (cup12Map[league]) league = cup12Map[league];
+  if (cup12Map[league]) {
+    renderCup12Bracket(league, container);
+    return;
+  }
 
   // 杯赛积分榜
   if (isCupLeague(league)) {
