@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 348 };
+const APP_VERSION = { major: 1, minor: 0, patch: 349 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.349', date: '2026-05-10', items: ['🐛 修复第二场录入界面错误显示"修改"的问题，第二场是全新比赛应显示"录入"'] },
   { v: '1.0.348', date: '2026-05-10', items: ['✨ 12强杯赛录入界面全面升级：与普通杯赛保持一致，支持完整的进球/助攻/MOTM统计功能'] },
   { v: '1.0.347', date: '2026-05-10', items: ['🐛 修复严重逻辑错误：12强杯赛点击比分应进入showEnterCupMatchModal12，而不是普通杯赛的showEnterCupMatchModal'] },
   { v: '1.0.346', date: '2026-05-10', items: ['🐛 修复预赛第二场录入逻辑：第一场平局后，录入界面只显示第二场（主客场互换），第一场结果只读展示'] },
@@ -3514,7 +3515,6 @@ function showEnterCupMatchModal12() {
   
   var isTwoLegs = match.round >= 1 && match.round <= 3;
   var isPrelimDraw = match.round === 0 && match.status === 'completed' && match.homeScore === match.awayScore;
-  var isEdit = match.status === 'completed';
   
   // 判断当前录入哪一场（第一场或第二场）
   var editingLeg2 = false;
@@ -3528,6 +3528,9 @@ function showEnterCupMatchModal12() {
   
   // 获取当前编辑的比赛数据
   var currentMatch = editingLeg2 && match.leg2 ? match.leg2 : match;
+  
+  // isEdit 应该基于 currentMatch 判断，而不是 match
+  var isEdit = currentMatch.status === 'completed';
   var currentHomeTeam = editingLeg2 ? awayTeam : homeTeam;  // 第二场主客场互换
   var currentAwayTeam = editingLeg2 ? homeTeam : awayTeam;
   var legLabel = editingLeg2 ? (isTwoLegs ? '第二场比赛（主客场互换）' : '第二场比赛（主客场互换）') : (isTwoLegs ? '第一场比赛' : '比赛');
