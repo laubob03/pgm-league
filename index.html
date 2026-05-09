@@ -9,7 +9,7 @@
   <!-- 顶部版本检查：检测到新版本时弹出提示框，用户确认后才升级 -->
   <script>
   !function(){
-    // v1.0.343: 12强预赛(A01-A04)显示两场比分，晋级仍按单场制
+    // v1.0.358: 修复12强杯赛 container 致命bug——_c12SelectTeam/submitCupMatchResult12 写入 scheduleContent 而非 standingsContent，导致选队/录入比分后对阵图不刷新；修复 submitCupMatchResult12 中 inp.datasetpid 笔误
     var _upgraded = sessionStorage.getItem('pgm_upgraded');
     if (_upgraded) {
       // 上一次是升级跳转来的，清除 SW 缓存并移除标记
@@ -2662,7 +2662,12 @@ function renderCup12Bracket(cup12Id, targetContainer) {
   var cup = sd.cups && sd.cups[cup12Id] ? sd.cups[cup12Id] : null;
   console.log('[杯赛12强] 正在渲染', cup12Id, '数据:', cup ? '存在' : '不存在', '比赛数:', cup && cup.matches ? cup.matches.length : 0);
 
-  var container = targetContainer || document.getElementById('scheduleContent');
+  // ★ v1.0.358 修复：自动检测 12 强对阵图的容器（_c12SelectTeam 等不带 targetContainer 的调用会写错 DOM）
+  var container = targetContainer;
+  if (!container) {
+    var c12El = document.querySelector('.c12');
+    container = c12El ? c12El.parentElement : document.getElementById('scheduleContent');
+  }
   var canEdit = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && (state.currentUser.cupId === cup12Id || state.currentUser.cupId === cup12Id.replace('12', ''))));
 
   // 无数据时自动初始化空框架（仅管理员可见可编辑）
@@ -3792,7 +3797,7 @@ function submitCupMatchResult12() {
       if (p) {
         p.assists = (p.assists||0) + a;
         involvedPlayers.add(p.id);
-        for (var i=0;i<a;i++) currentMatch.assists.push({playerId:inp.datasetpid, teamId:editingLeg2?match.awayTeam:match.homeTeam});
+        for (var i=0;i<a;i++) currentMatch.assists.push({playerId:inp.dataset.pid, teamId:editingLeg2?match.awayTeam:match.homeTeam});
       }
     }
   });
