@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.318'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.319'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 318 };
+const APP_VERSION = { major: 1, minor: 0, patch: 319 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.319', date: '2026-05-09', items: ['🎨 12强对阵图球队显示队徽+联赛底色（超级深红/甲级深绿/乙级深灰），队徽改用getTeamLogo确保显示'] },
   { v: '1.0.318', date: '2026-05-09', items: ['🎨 12强赛程图添加联赛底色（超级深红/甲级深绿/乙级深灰），移除赛程页12强按钮', '🏆 冠军展示文字替换为emoji'] },
   { v: '1.0.317', date: '2026-05-09', items: ['👤 12强对阵图超管下拉选队：A01-A04主客均可选，A05客场/A06主场/A07主场/A08客场可选，胜者自动晋级', '🔄 胜者自动晋级：预赛→¼决赛→半决赛→决赛→冠军'] },
   { v: '1.0.316', date: '2026-05-09', items: ['🏷️ 12强对阵图右半区新增预赛轮次，左右完全对称，编号调整为A01-A11'] },
@@ -2809,7 +2810,7 @@ function renderCup12Bracket(cup12Id, targetContainer) {
   function teamInfo(teamId) {
     if (!teamId) return { name: '待定', logo: null, league: null };
     var t = sd.teams ? sd.teams.find(function(t) { return t.id === teamId; }) : null;
-    return { name: t ? t.name : (teamId + ''), logo: t ? (t.logo || t.badge || '') : '', league: t ? (t.league || null) : null };
+    return { name: t ? t.name : (teamId + ''), logo: t ? getTeamLogo(t) : '', league: t ? (t.league || null) : null };
   }
 
   // 获取球队联赛底色（与足总杯一致）
