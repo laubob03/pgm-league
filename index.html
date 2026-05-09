@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.324'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.325'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 324 };
+const APP_VERSION = { major: 1, minor: 0, patch: 325 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.325', date: '2026-05-09', items: ['🔄 12强A05-A08主客方向调整：A05主场/A06客场/A07客场/A08主场由超管选择，预赛胜者自动填入对侧'] },
   { v: '1.0.324', date: '2026-05-09', items: ['🔧 showEnterCupMatchModal12和submitCupMatchResult12改为从window._editingMatchId自动推导cup12Id，不再依赖onclick传参，彻底解决VS点击无反应问题'] },
   { v: '1.0.321', date: '2026-05-09', items: ['🔧 12强对阵图A01/A02垂直间距重叠修复，cardH从56增至112匹配实际卡片高度', '✅ 超级管理员可录入比分（canEdit已含isSuperAdmin）'] },
   { v: '1.0.320', date: '2026-05-09', items: ['🎨 12强对阵图球队显示/队徽/底色/比分录入/晋级条件全面对齐足总杯', '✅ 比赛完成状态改用status=completed，录入比分自动设置，胜者晋级更准确'] },
@@ -2748,24 +2749,24 @@ function renderCup12Bracket(cup12Id, targetContainer) {
     return (sd.teams || []).map(function(t) { return { id: t.id, name: t.name, logo: t.logo || t.badge || '' }; });
   }
 
-  // 哪些位置需要下拉选队：A01-A04全部, A05客场, A06主场, A07主场, A08客场
+  // 哪些位置需要下拉选队：A01-A04全部, A05主场, A06客场, A07客场, A08主场
   function needSelect(round, slot, field) {
     if (round === 0) return true;  // 预赛：主客都可选
     if (round === 1) {
-      if (slot === 0 && field === 'away') return true;   // A05客场
-      if (slot === 1 && field === 'home') return true;   // A06主场
-      if (slot === 2 && field === 'home') return true;   // A07主场
-      if (slot === 3 && field === 'away') return true;   // A08客场
+      if (slot === 0 && field === 'home') return true;   // A05主场
+      if (slot === 1 && field === 'away') return true;   // A06客场
+      if (slot === 2 && field === 'away') return true;   // A07客场
+      if (slot === 3 && field === 'home') return true;   // A08主场
     }
     return false;
   }
 
   // 胜者晋级映射：round_slot → { round, slot, field }
   var winnerMap = {
-    '0_0': { r: 1, s: 0, f: 'homeTeam' },  // A01胜 → A05主场
-    '0_1': { r: 1, s: 1, f: 'awayTeam' },  // A02胜 → A06客场
-    '0_2': { r: 1, s: 2, f: 'awayTeam' },  // A03胜 → A07客场
-    '0_3': { r: 1, s: 3, f: 'homeTeam' },  // A04胜 → A08主场
+    '0_0': { r: 1, s: 0, f: 'awayTeam' },  // A01胜 → A05客场
+    '0_1': { r: 1, s: 1, f: 'homeTeam' },  // A02胜 → A06主场
+    '0_2': { r: 1, s: 2, f: 'homeTeam' },  // A03胜 → A07主场
+    '0_3': { r: 1, s: 3, f: 'awayTeam' },  // A04胜 → A08客场
     '1_0': { r: 2, s: 0, f: 'homeTeam' },  // A05胜 → A09主场
     '1_1': { r: 2, s: 0, f: 'awayTeam' },  // A06胜 → A09客场
     '1_2': { r: 2, s: 1, f: 'homeTeam' },  // A07胜 → A10主场
