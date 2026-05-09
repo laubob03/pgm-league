@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 350 };
+const APP_VERSION = { major: 1, minor: 0, patch: 351 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.351', date: '2026-05-10', items: ['🐛 修复预赛第二场晋级逻辑：主客场互换后晋级球队判断错误'] },
   { v: '1.0.350', date: '2026-05-10', items: ['🐛 彻底修复第二场录入界面显示问题：确保录入第二场时currentMatch正确指向leg2对象'] },
   { v: '1.0.349', date: '2026-05-10', items: ['🐛 修复第二场录入界面错误显示"修改"的问题，第二场是全新比赛应显示"录入"'] },
   { v: '1.0.348', date: '2026-05-10', items: ['✨ 12强杯赛录入界面全面升级：与普通杯赛保持一致，支持完整的进球/助攻/MOTM统计功能'] },
@@ -2819,10 +2820,11 @@ function renderCup12Bracket(cup12Id, targetContainer) {
       if (m.homeScore > m.awayScore) return m.homeTeam;
       if (m.awayScore > m.homeScore) return m.awayTeam;
       // 第一场平局：看重赛第二场
+      // 注意：第二场主客场互换，leg2.homeScore 是原客队的得分，leg2.awayScore 是原主队的得分
       if (m.leg2 && m.leg2.status === 'completed') {
-        if (m.leg2.homeScore > m.leg2.awayScore) return m.homeTeam;
-        if (m.leg2.awayScore > m.leg2.homeScore) return m.awayTeam;
-        // 第二场还平局：点球决胜
+        if (m.leg2.homeScore > m.leg2.awayScore) return m.awayTeam;  // 原客队（第二场主队）赢了
+        if (m.leg2.awayScore > m.leg2.homeScore) return m.homeTeam;  // 原主队（第二场客队）赢了
+        // 第二场还平局：点球决胜（点球时主客场已换回原位）
         if (m.penalty) {
           if (m.penalty.homeScore > m.penalty.awayScore) return m.homeTeam;
           if (m.penalty.awayScore > m.penalty.homeScore) return m.awayTeam;
