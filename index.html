@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 339 };
+const APP_VERSION = { major: 1, minor: 0, patch: 340 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.340', date: '2026-05-09', items: ['🐛 修复12强杯赛录入界面HTML结构错误，两回合制比分正确显示'] },
   { v: '1.0.339', date: '2026-05-09', items: ['🎨 12强杯赛录入界面优化：两回合制比赛的两场比分并排显示，更紧凑直观'] },
   { v: '1.0.338', date: '2026-05-09', items: ['🔧 12强杯赛录入界面支持第二场比赛和点球录入，两回合制比赛可分别录入两场比赛比分'] },
   { v: '1.0.337', date: '2026-05-09', items: ['🔧 12强杯赛晋级规则更新：A01-A04预赛单场比赛（平局点球决胜），A05起两回合制（总进球→客场进球→点球），比分显示支持双回合'] },
@@ -3494,6 +3495,7 @@ function showEnterCupMatchModal12() {
     md += '<div style="flex:1;text-align:center;">' + homeName + ' vs ' + awayName + '</div>';
     md += '<div style="flex:1;text-align:center;">' + awayName + ' vs ' + homeName + '</div>';
     md += '</div>';
+    md += '</div>';  // 关闭 background:#f5f5f5 的 div
   } else {
     // 单场制：简洁显示
     md += '<div style="text-align:center;font-size:11px;color:#666;margin-bottom:6px;">比赛比分</div>';
@@ -3506,9 +3508,8 @@ function showEnterCupMatchModal12() {
     md += '</div>';
     md += '<div style="flex:1;font-size:13px;">' + awayName + '</div>';
     md += '</div>';
+    md += '</div>';  // 关闭 background:#f5f5f5 的 div
   }
-  
-  md += '</div>';
   
   // 点球（预赛平局或两回合总比分平局时显示）
   var showPenalty = false;
