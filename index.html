@@ -2575,9 +2575,22 @@ function renderCup12Bracket(cup12Id, targetContainer) {
   var name = cupName[cup12Id] || cup12Id;
   var sd = getCurrentSeasonData();
   var cup = sd.cups && sd.cups[cup12Id] ? sd.cups[cup12Id] : null;
+  console.log('[杯赛12强] 正在渲染', cup12Id, '数据:', cup ? '存在' : '不存在', '比赛数:', cup && cup.matches ? cup.matches.length : 0);
 
   var container = targetContainer || document.getElementById('scheduleContent');
   var canEdit = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cup12Id));
+
+  // 无数据时显示引导
+  if (!cup || !cup.matches || cup.matches.length === 0) {
+    container.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;padding:40px;color:#999;gap:16px;text-align:center">' +
+      '<div style="font-size:56px">🏆</div>' +
+      '<div style="font-size:16px;font-weight:bold;color:#555">暂无' + name + '赛程</div>' +
+      '<div style="font-size:13px">请在"杯赛管理"中创建赛程或导入赛程数据</div>' +
+      '<div style="font-size:12px;margin-top:8px;padding:8px 16px;background:#f5f5f5;border-radius:8px;color:#888">提示：需要先在"杯赛管理"中添加12强杯赛数据，对阵图才会显示</div>' +
+      '</div>';
+    saveToUrlHash();
+    return;
+  }
 
   // ── inject CSS once ──
   if (!document.getElementById('cup12-bracket-css')) {
