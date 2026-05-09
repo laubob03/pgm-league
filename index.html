@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 334 };
+const APP_VERSION = { major: 1, minor: 0, patch: 335 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.335', date: '2026-05-09', items: ['🐛 修复12强杯赛选队字段名错误：field参数是home/away，但match对象字段是homeTeam/awayTeam，导致选队数据写入错误位置'] },
   { v: '1.0.334', date: '2026-05-09', items: ['🔍 增强诊断日志：追踪选队时sd与state的关系，上传时state与uploadData的对比'] },
   { v: '1.0.333', date: '2026-05-09', items: ['🔍 添加诊断日志：追踪12强杯赛数据在保存、上传、下载、加载全流程中的状态'] },
   { v: '1.0.332', date: '2026-05-09', items: ['🐛 修复recorderUpload杯赛合并：数据员上传时不再用空初始化数据覆盖超管已上传的真实对阵数据', '🐛 修复renderCup12Bracket查看归档赛季时会污染state.cups当前赛季数据的bug', '🛡️ 自动同步后强制刷新12强杯赛页面确保云端数据即时可见'] },
@@ -3405,7 +3406,8 @@ window._c12SelectTeam = function(cup12Id, round, slot, field, teamId) {
   if (!cup || !cup.matches) return;
   var match = cup.matches.find(function(m) { return m.round === round && m.slot === slot; });
   if (!match) return;
-  match[field] = teamId || null;
+  var teamField = field === 'home' ? 'homeTeam' : (field === 'away' ? 'awayTeam' : field);
+  match[teamField] = teamId || null;
   if (!teamId) {
     // 清空球队时也清空比分和状态
     match.homeScore = undefined;
