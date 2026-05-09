@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 355 };
+const APP_VERSION = { major: 1, minor: 0, patch: 356 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.356', date: '2026-05-10', items: ['🐛 12强选队即时更新：完全采用足总杯模式，新增 getCup12AvailableTeams 函数，移除 requestAnimationFrame 延迟'] },
   { v: '1.0.355', date: '2026-05-10', items: ['🐛 12强选队即时更新：teamSelectHtml 直接从 getCurrentSeasonData() 获取最新数据'] },
   { v: '1.0.354', date: '2026-05-10', items: ['🐛 12强选队即时更新：使用 requestAnimationFrame 确保下拉菜单立即刷新'] },
   { v: '1.0.353', date: '2026-05-10', items: ['🐛 12强选队下拉菜单：已选球队不再显示（而非显示为禁用）'] },
@@ -2608,6 +2609,48 @@ function renderFaCupBracket(cupId) {
   saveToUrlHash();
 }
 
+// ========== 12强杯赛选队辅助函数（模仿足总杯模式） ==========
+function getCup12AvailableTeams(cup12Id) {
+  var sd = getCurrentSeasonData();
+  var cup = sd.cups && sd.cups[cup12Id] ? sd.cups[cup12Id] : null;
+  if (!cup) return [];
+  
+  // 获取已选球队
+  var usedIds = {};
+  if (cup.matches) {
+    cup.matches.forEach(function(m) {
+      if (m.homeTeam) usedIds[m.homeTeam] = true;
+      if (m.awayTeam) usedIds[m.awayTeam] = true;
+    });
+  }
+  
+  // 获取候选球队列表（模仿 getRankedTeams）
+  var parentCupId = cup12Id.replace('12', '');
+  var teams = [];
+  
+  // 优先从 cup.teams 取
+  if (cup.teams && cup.teams.length > 0) {
+    teams = cup.teams.map(function(tid) {
+      var t = sd.teams ? sd.teams.find(function(x) { return x.id === tid; }) : null;
+      return t ? { id: tid, name: t.name, logo: t.logo || t.badge || '', league: t.league || '' } : null;
+    }).filter(Boolean);
+  } else if (parentCupId && typeof calculateCupStandings === 'function') {
+    // 从父杯赛积分榜取前12名
+    var cStandings = calculateCupStandings(parentCupId);
+    if (cStandings.length > 0) {
+      teams = cStandings.slice(0, 12).map(function(s) {
+        return { id: s.teamId, name: s.team ? s.team.name : s.teamId, logo: s.team ? (s.team.logo || '') : '', league: s.team ? (s.team.league || '') : '' };
+      });
+    }
+  }
+  
+  // 如果没有候选列表，返回空数组
+  if (teams.length === 0) return [];
+  
+  // 过滤掉已选的球队
+  return teams.filter(function(t) { return !usedIds[t.id]; });
+}
+
 // ========== 12强杯赛8强对阵图渲染（DOM+SVG连接线） ==========
 function renderCup12Bracket(cup12Id, targetContainer) {
   var cupName = { championsCup12: '冠军杯12强', leagueCup12: '联盟杯12强', associationCup12: '协会杯12强' };
@@ -2881,31 +2924,33 @@ function renderCup12Bracket(cup12Id, targetContainer) {
     });
   }
 
-  // 下拉选队HTML
+  // 下拉选队HTML（模仿足总杯模式）
   function teamSelectHtml(round, slot, field, currentTeamId) {
-    var teams = getRankedTeams();
-    // ★ 每次都从最新的 state 获取数据，确保已选球队列表即时更新
-    var sd = getCurrentSeasonData();
-    var currentCup = sd.cups && sd.cups[cup12Id] ? sd.cups[cup12Id] : null;
-    // 收集已被其他位置选走的球队（避免重复选择）
-    var usedIds = {};
-    if (currentCup && currentCup.matches) {
-      currentCup.matches.forEach(function(m) {
-        if (m.homeTeam) usedIds[m.homeTeam] = true;
-        if (m.awayTeam) usedIds[m.awayTeam] = true;
-      });
+    // ★ 模仿足总杯：使用 getCup12AvailableTeams 获取可用球队列表
+    var availableTeams = getCup12AvailableTeams(cup12Id);
+    var currentTeamObj = null;
+    
+    // 如果有当前选中的球队，获取其信息
+    if (currentTeamId) {
+      var t = sd.teams ? sd.teams.find(function(x) { return x.id === currentTeamId; }) : null;
+      if (t) currentTeamObj = { id: t.id, name: t.name, logo: t.logo || t.badge || '', league: t.league || '' };
     }
-    // 当前位置已选的不算占用
-    if (currentTeamId) delete usedIds[currentTeamId];
-
+    
+    // 构建选项
     var opts = '<option value="">-- 选队 --</option>';
-    teams.forEach(function(t, idx) {
-      // 已选球队不显示（当前位置已选的除外）
-      if (usedIds[t.id]) return;
-      var selected = t.id === currentTeamId ? ' selected' : '';
-      var label = (idx + 1) + '. ' + t.name;
-      opts += '<option value="' + t.id + '"' + selected + '>' + label + '</option>';
+    
+    // 如果当前位置已选球队，添加该选项（并选中）
+    if (currentTeamObj) {
+      opts += '<option value="' + currentTeamObj.id + '" selected>' + currentTeamObj.name + '</option>';
+      // 添加清除选项
+      opts = '<option value="">-- 清除 --</option>' + opts.substring('<option value="">-- 选队 --</option>'.length);
+    }
+    
+    // 添加可用球队选项
+    availableTeams.forEach(function(t) {
+      opts += '<option value="' + t.id + '">' + t.name + '</option>';
     });
+    
     return '<select class="fc-sel" onchange="window._c12SelectTeam(\'' + cup12Id + '\',' + round + ',' + slot + ',\'' + field + '\',this.value)">' + opts + '</select>';
   }
 
@@ -3844,18 +3889,9 @@ window._c12SelectTeam = function(cup12Id, round, slot, field, teamId) {
     match.awayScore = undefined;
     match.status = undefined;
   }
-  console.log('[DIAG] _c12SelectTeam: cup12Id=' + cup12Id + ', round=' + round + ', slot=' + slot + ', field=' + field + ', teamId=' + teamId);
-  console.log('[DIAG] _c12SelectTeam: match.homeTeam=' + match.homeTeam + ', match.awayTeam=' + match.awayTeam);
-  
-  // 立即保存并重新渲染
+  // 立即保存并重新渲染（模仿足总杯 faCupSelectTeam）
   saveState();
-  
-  // 强制立即重新渲染对阵图
-  requestAnimationFrame(function() {
-    renderCup12Bracket(cup12Id);
-    console.log('[DIAG] _c12SelectTeam: 对阵图已重新渲染');
-  });
-  
+  renderCup12Bracket(cup12Id);
   saveToUrlHash();
 };
 
