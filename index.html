@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 351 };
+const APP_VERSION = { major: 1, minor: 0, patch: 352 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.352', date: '2026-05-10', items: ['🐛 修复预赛第二场比分显示顺序：应与第一场保持一致（原主队在左）'] },
   { v: '1.0.351', date: '2026-05-10', items: ['🐛 修复预赛第二场晋级逻辑：主客场互换后晋级球队判断错误'] },
   { v: '1.0.350', date: '2026-05-10', items: ['🐛 彻底修复第二场录入界面显示问题：确保录入第二场时currentMatch正确指向leg2对象'] },
   { v: '1.0.349', date: '2026-05-10', items: ['🐛 修复第二场录入界面错误显示"修改"的问题，第二场是全新比赛应显示"录入"'] },
@@ -3044,7 +3045,8 @@ function renderCup12Bracket(cup12Id, targetContainer) {
           
           // 第一场平局且第二场已赛
           if (leg1Draw && leg2Done) {
-            var leg2Text = (m.leg2.homeScore !== undefined ? m.leg2.homeScore : '-') + '-' + (m.leg2.awayScore !== undefined ? m.leg2.awayScore : '-');
+            // 第二场主客场互换，显示时按原主队在左、原客队在右的顺序
+            var leg2Text = (m.leg2.awayScore !== undefined ? m.leg2.awayScore : '-') + '-' + (m.leg2.homeScore !== undefined ? m.leg2.homeScore : '-');
             scoreHtml += '<div style="color:#ff9800;font-size:9px;margin:1px 0">↓主客场互换↓</div>';
             scoreHtml += '<div style="color:#666">第二场 ' + leg2Text + '</div>';
           }
