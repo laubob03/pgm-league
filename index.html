@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 344 };
+const APP_VERSION = { major: 1, minor: 0, patch: 345 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,7 +610,8 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.344', date: '2026-05-10', items: ['🎨 12强预赛(A01-A04)全新规则：第一场平局后主客场互换重赛，显示两场比赛完整比分'] },
+  { v: '1.0.345', date: '2026-05-10', items: ['📝 12强预赛文案优化："重赛"改为"第二场"，更准确的描述'] },
+  { v: '1.0.344', date: '2026-05-10', items: ['🎨 12强预赛(A01-A04)全新规则：第一场平局后主客场互换进行第二场，显示两场比赛完整比分'] },
   { v: '1.0.343', date: '2026-05-10', items: ['🎨 12强预赛(A01-A04)显示两场比分，晋级仍按单场制（只看第一场结果）'] },
   { v: '1.0.342', date: '2026-05-09', items: ['🐛 强制刷新：解决GitHub Pages缓存导致界面不更新问题'] },
   { v: '1.0.341', date: '2026-05-09', items: ['🎨 重新设计12强杯赛录入界面：两回合制比赛两场比分垂直排列，更直观清晰'] },
@@ -3028,12 +3029,12 @@ function renderCup12Bracket(cup12Id, targetContainer) {
           // 第一场平局且第二场已赛
           if (leg1Draw && leg2Done) {
             var leg2Text = (m.leg2.homeScore !== undefined ? m.leg2.homeScore : '-') + '-' + (m.leg2.awayScore !== undefined ? m.leg2.awayScore : '-');
-            scoreHtml += '<div style="color:#ff9800;font-size:9px;margin:1px 0">↓平局重赛↓</div>';
+            scoreHtml += '<div style="color:#ff9800;font-size:9px;margin:1px 0">↓主客场互换↓</div>';
             scoreHtml += '<div style="color:#666">第二场 ' + leg2Text + '</div>';
           }
           // 第一场平局但第二场未赛
           else if (leg1Draw && !leg2Done) {
-            scoreHtml += '<div style="color:#ff9800;font-size:9px;margin-top:2px">平局，待重赛</div>';
+            scoreHtml += '<div style="color:#ff9800;font-size:9px;margin-top:2px">平局，进行第二场</div>';
           }
           
           scoreHtml += '</div>';
@@ -3563,7 +3564,7 @@ function showEnterCupMatchModal12() {
     if (isPrelimDraw) {
       md += '<div style="border-top:1px dashed #ff9800;margin:10px 0;"></div>';
       md += '<div style="background:#fff8e1;padding:8px;border-radius:6px;">';
-      md += '<div style="text-align:center;font-size:11px;color:#e65100;margin-bottom:6px;">⚠️ 第一场平局，进行第二场（主客场互换）</div>';
+      md += '<div style="text-align:center;font-size:11px;color:#e65100;margin-bottom:6px;">第一场平局，进行第二场（主客场互换）</div>';
       md += '<div style="display:flex;align-items:center;gap:8px;">';
       md += '<div style="flex:1;text-align:right;font-size:13px;">' + awayName + '</div>';
       md += '<div style="display:flex;gap:6px;align-items:center;">';
