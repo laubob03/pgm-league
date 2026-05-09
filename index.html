@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 346 };
+const APP_VERSION = { major: 1, minor: 0, patch: 347 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.347', date: '2026-05-10', items: ['🐛 修复严重逻辑错误：12强杯赛点击比分应进入showEnterCupMatchModal12，而不是普通杯赛的showEnterCupMatchModal'] },
   { v: '1.0.346', date: '2026-05-10', items: ['🐛 修复预赛第二场录入逻辑：第一场平局后，录入界面只显示第二场（主客场互换），第一场结果只读展示'] },
   { v: '1.0.345', date: '2026-05-10', items: ['📝 12强预赛文案优化："重赛"改为"第二场"，更准确的描述'] },
   { v: '1.0.344', date: '2026-05-10', items: ['🎨 12强预赛(A01-A04)全新规则：第一场平局后主客场互换进行第二场，显示两场比赛完整比分'] },
@@ -2997,7 +2998,16 @@ function renderCup12Bracket(cup12Id, targetContainer) {
 
     // 比分显示（支持单回合/两回合制）
     function rScore() {
-      var clickHandler = canEdit ? 'onclick="showEnterCupMatchModal(\'' + mId + '\', \'' + cup12Id + '\')"' : '';
+      // 12强杯赛使用特殊的录入函数
+      var isCup12 = cup12Id === 'championsCup12' || cup12Id === 'leagueCup12' || cup12Id === 'associationCup12';
+      var clickHandler = '';
+      if (canEdit) {
+        if (isCup12) {
+          clickHandler = 'onclick="window._editingMatchId=\'' + mId + '\';showEnterCupMatchModal12()"';
+        } else {
+          clickHandler = 'onclick="showEnterCupMatchModal(\'' + mId + '\', \'' + cup12Id + '\')"';
+        }
+      }
       var cursorStyle = canEdit ? 'cursor:pointer;' : '';
       
       // 冠军赛：单场比赛
