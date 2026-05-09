@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.313'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.314'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -601,7 +601,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 313 };
+const APP_VERSION = { major: 1, minor: 0, patch: 314 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -613,7 +613,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.313', date: '2026-05-09', items: ['🏷️ 12强赛程图添加比赛编号：冠军杯A01-A07、联盟杯B01-B07、协会杯C01-C07', '🐛 修复赛程图显示不完整：移除c12的overflow:hidden和min-height:100vh，c12-view改为overflow-y:auto'] },
+  { v: '1.0.314', date: '2026-05-09', items: ['📐 12强赛程图改为整页自由缩放：无滚动条、自动适配屏幕、滚轮/按钮缩放、拖拽平移、双击重置、触摸捏合', '🏷️ 12强赛程图添加比赛编号：冠军杯A01-A07、联盟杯B01-B07、协会杯C01-C07'] },
   { v: '1.0.311', date: '2026-05-09', items: ['🐛 修复冠军杯12强/联盟杯12强/协会杯12强赛程图无法显示：c12-canvas 改为 position:relative，c12-view 改为 overflow-x:auto，解决 absolute 定位导致父容器高度为0内容被隐藏'] },
   { v: '1.0.310', date: '2026-05-09', items: ['🔧 统一所有版本号（APP_VERSION/CHANGELOG/minVersion/SW缓存），修复浏览器缓存旧版无法自动更新的问题'] },
   { v: '1.0.306', date: '2026-05-02', items: ['🎨 赛程页新增冠军杯12强/联盟杯12强/协会杯12强 TAB，各配专属8强树状赛程图+轮次标签+比分录入；积分榜同步新增12强 TAB'] },
@@ -2617,11 +2617,18 @@ function renderCup12Bracket(cup12Id, targetContainer) {
     var st = document.createElement('style');
     st.id = 'cup12-bracket-css';
     st.textContent =
-      '.c12{background:#f8fafc;box-sizing:border-box;user-select:none;position:relative}' +
+      '.c12{background:#f8fafc;box-sizing:border-box;user-select:none;position:relative;display:flex;flex-direction:column;height:100%}' +
       '.c12-hd{display:flex;align-items:center;justify-content:center;padding:8px 16px;flex-shrink:0;background:linear-gradient(135deg,' + accent + ',#333);border-bottom:2px solid ' + accent + '}' +
       '.c12-title{color:white;font-size:14px;font-weight:700;letter-spacing:2px}' +
-      '.c12-view{width:100%;overflow-x:auto;overflow-y:auto;position:relative}' +
-      '.c12-canvas{position:relative;transform-origin:0 0;cursor:grab;will-change:transform}' +
+      '.c12-toolbar{display:flex;align-items:center;justify-content:center;gap:8px;padding:4px 8px;flex-shrink:0;background:#fff8e7;border-radius:6px;margin:4px 8px;font-size:11px;color:#7a5c00}' +
+      '.c12-zoom-btn{background:transparent;border:1px solid rgba(0,0,0,.12);width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;color:#7a5c00}' +
+      '.c12-zoom-btn:hover{background:rgba(0,0,0,.06)}' +
+      '.c12-zoom-label{min-width:36px;text-align:center;font-family:monospace;font-weight:700;font-size:11px;color:#7a5c00}' +
+      '.c12-view{flex:1;width:100%;overflow:hidden;position:relative}' +
+      '.c12-canvas{position:absolute;transform-origin:0 0;cursor:grab;will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}' +
+      '.c12-canvas.smooth{transition:transform .25s cubic-bezier(.22,.68,0,1)}' +
+      '.c12-canvas:active{cursor:grabbing}' +
+      '.c12-canvas.dragging{transition:none}' +
       '.c12-body{display:flex;align-items:center;gap:0;padding:16px 12px;min-width:max-content}' +
       '.c12-col{display:block;flex-shrink:0;position:relative;padding-top:28px;width:170px}' +
       '.c12-col-hd{position:absolute;top:0;left:0;right:0;text-align:center}' +
@@ -2783,17 +2790,32 @@ function renderCup12Bracket(cup12Id, targetContainer) {
 
   var html = '<div class="c12">' +
     '<div class="c12-hd"><div class="c12-title">' + name + '</div></div>' +
-    '<div style="text-align:center;padding:6px 0;font-size:12px;color:#7a5c00;background:#fff8e7;border-radius:6px;margin:4px 8px">💡 首次使用：点击下方空白卡片即可选择球队并录入比分</div>' +
+    '<div class="c12-toolbar">' +
+      '<span>💡 点击空白卡片录入比分</span>' +
+      '<button class="c12-zoom-btn" onclick="window._c12Zoom(-1)" title="缩小">−</button>' +
+      '<span class="c12-zoom-label" id="c12ZoomLabel">100%</span>' +
+      '<button class="c12-zoom-btn" onclick="window._c12Zoom(1)" title="放大">+</button>' +
+      '<button class="c12-zoom-btn" onclick="window._c12Zoom(0)" title="适配屏幕" style="font-size:11px;width:auto;padding:0 8px">适配</button>' +
+    '</div>' +
     '<div class="c12-view" id="c12View">' +
       '<div class="c12-canvas" id="c12Canvas">' +
         '<div class="c12-body">' + bodyHtml + '</div>' +
         '<svg class="c12-lines" id="c12Lines"></svg>' +
       '</div>' +
     '</div>' +
-    champHtml +
   '</div>';
 
   container.innerHTML = html;
+
+  // ── set c12 height to fill viewport ──
+  (function() {
+    var c12El = container.querySelector('.c12');
+    if (!c12El) return;
+    var rect = c12El.getBoundingClientRect();
+    var topOffset = rect.top + window.scrollY;
+    var availH = window.innerHeight - topOffset - 8; // 8px bottom margin
+    c12El.style.height = Math.max(availH, 300) + 'px';
+  })();
 
   // ── draw SVG connector lines ──
   (function drawLines() {
@@ -2860,19 +2882,135 @@ function renderCup12Bracket(cup12Id, targetContainer) {
     if (fin && sf1) addCurve(sf1.l, sf1.cy, fin.r, fin.cy, accent);
   })();
 
-  // ── mouse wheel zoom ──
-  var vport = document.getElementById('c12View');
-  if (vport) {
+  // ── zoom / pan / touch interaction ──
+  (function initInteraction() {
+    var vport = document.getElementById('c12View');
+    var cv = document.getElementById('c12Canvas');
+    if (!vport || !cv) return;
+
+    var scale = 1, tx = 0, ty = 0;
+    var MIN_SCALE = 0.2, MAX_SCALE = 3;
+
+    function apply(smooth) {
+      if (smooth) { cv.classList.add('smooth'); setTimeout(function(){ cv.classList.remove('smooth'); }, 300); }
+      else { cv.classList.remove('smooth'); }
+      cv.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
+      var lbl = document.getElementById('c12ZoomLabel');
+      if (lbl) lbl.textContent = Math.round(scale * 100) + '%';
+    }
+
+    function fitToView() {
+      var vw = vport.clientWidth, vh = vport.clientHeight;
+      var cw = cv.scrollWidth, ch = cv.scrollHeight;
+      if (cw === 0 || ch === 0) return;
+      scale = Math.min(vw / cw, vh / ch, 1.2);
+      tx = (vw - cw * scale) / 2;
+      ty = (vh - ch * scale) / 2;
+      apply(true);
+    }
+
+    // auto fit on first render
+    setTimeout(fitToView, 50);
+
+    // toolbar buttons
+    window._c12Zoom = function(dir) {
+      if (dir === 0) { fitToView(); return; }
+      var vw = vport.clientWidth, vh = vport.clientHeight;
+      var cx = vw / 2, cy = vh / 2;
+      var oldS = scale;
+      scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * (dir > 0 ? 1.2 : 1/1.2)));
+      tx = cx - (cx - tx) * (scale / oldS);
+      ty = cy - (cy - ty) * (scale / oldS);
+      apply(true);
+    };
+
+    // mouse wheel zoom (centered on cursor)
     vport.addEventListener('wheel', function(e) {
       e.preventDefault();
-      var cv = document.getElementById('c12Canvas');
-      if (!cv) return;
-      var scale = parseFloat(cv.dataset.scale || '1');
-      scale = Math.max(0.3, Math.min(2, scale - e.deltaY * 0.001));
-      cv.dataset.scale = scale;
-      cv.style.transform = 'scale(' + scale + ')';
+      var rect = vport.getBoundingClientRect();
+      var mx = e.clientX - rect.left, my = e.clientY - rect.top;
+      var oldS = scale;
+      scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale - e.deltaY * 0.001 * scale));
+      tx = mx - (mx - tx) * (scale / oldS);
+      ty = my - (my - ty) * (scale / oldS);
+      apply(false);
     }, { passive: false });
-  }
+
+    // mouse drag pan
+    var dragging = false, startX, startY, startTx, startTy;
+    vport.addEventListener('mousedown', function(e) {
+      if (e.target.closest('.c12-match')) return; // don't drag on match cards
+      dragging = true; startX = e.clientX; startY = e.clientY; startTx = tx; startTy = ty;
+      cv.classList.add('dragging');
+    });
+    window.addEventListener('mousemove', function(e) {
+      if (!dragging) return;
+      tx = startTx + (e.clientX - startX);
+      ty = startTy + (e.clientY - startY);
+      apply(false);
+    });
+    window.addEventListener('mouseup', function() {
+      if (dragging) { dragging = false; cv.classList.remove('dragging'); }
+    });
+
+    // double click to fit
+    vport.addEventListener('dblclick', function(e) {
+      if (e.target.closest('.c12-match')) return;
+      fitToView();
+    });
+
+    // touch: pinch zoom + single finger pan
+    var lastTouches = null;
+    var lastTouchDist = 0;
+    var lastTouchScale = 1;
+    var touchDragging = false;
+    var touchStartTx = 0, touchStartTy = 0, touchStartX = 0, touchStartY = 0;
+
+    vport.addEventListener('touchstart', function(e) {
+      if (e.touches.length === 1) {
+        touchDragging = true;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchStartTx = tx; touchStartTy = ty;
+        cv.classList.add('dragging');
+      }
+      if (e.touches.length === 2) {
+        touchDragging = false;
+        var dx = e.touches[1].clientX - e.touches[0].clientX;
+        var dy = e.touches[1].clientY - e.touches[0].clientY;
+        lastTouchDist = Math.sqrt(dx * dx + dy * dy);
+        lastTouchScale = scale;
+        cv.classList.add('dragging');
+      }
+    }, { passive: true });
+
+    vport.addEventListener('touchmove', function(e) {
+      if (e.touches.length === 1 && touchDragging) {
+        tx = touchStartTx + (e.touches[0].clientX - touchStartX);
+        ty = touchStartTy + (e.touches[0].clientY - touchStartY);
+        apply(false);
+      }
+      if (e.touches.length === 2) {
+        var dx = e.touches[1].clientX - e.touches[0].clientX;
+        var dy = e.touches[1].clientY - e.touches[0].clientY;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        var rect = vport.getBoundingClientRect();
+        var cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+        var cy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+        var oldS = scale;
+        scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, lastTouchScale * (dist / lastTouchDist)));
+        tx = cx - (cx - tx) * (scale / oldS);
+        ty = cy - (cy - ty) * (scale / oldS);
+        apply(false);
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    vport.addEventListener('touchend', function() {
+      touchDragging = false;
+      cv.classList.remove('dragging');
+    }, { passive: true });
+  })();
 
   saveToUrlHash();
 }
