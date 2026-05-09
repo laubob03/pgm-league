@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 347 };
+const APP_VERSION = { major: 1, minor: 0, patch: 348 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.348', date: '2026-05-10', items: ['✨ 12强杯赛录入界面全面升级：与普通杯赛保持一致，支持完整的进球/助攻/MOTM统计功能'] },
   { v: '1.0.347', date: '2026-05-10', items: ['🐛 修复严重逻辑错误：12强杯赛点击比分应进入showEnterCupMatchModal12，而不是普通杯赛的showEnterCupMatchModal'] },
   { v: '1.0.346', date: '2026-05-10', items: ['🐛 修复预赛第二场录入逻辑：第一场平局后，录入界面只显示第二场（主客场互换），第一场结果只读展示'] },
   { v: '1.0.345', date: '2026-05-10', items: ['📝 12强预赛文案优化："重赛"改为"第二场"，更准确的描述'] },
@@ -3491,208 +3492,296 @@ function drawCup12Lines(cup12Id, accentColor) {
   // 简化：连接线通过CSS flex居中对齐实现，无需SVG定位
 }
 
+// 12强杯赛录入界面 - 与普通杯赛保持一致，支持完整球员统计
 function showEnterCupMatchModal12() {
   var matchId = window._editingMatchId;
   if (!matchId) { showToast('未设置比赛ID'); return; }
-  // 从 matchId 推导 cup12Id（格式：championsCup12_R0S0 → championsCup12）
   var cup12Id = matchId.split('_')[0];
   var sd = getCurrentSeasonData();
   var cup = sd.cups && sd.cups[cup12Id];
   var match = cup && cup.matches ? cup.matches.find(function(m) { return m.id === matchId; }) : null;
   if (!match) { showToast('未找到比赛'); return; }
+  if (!match.homeTeam || !match.awayTeam) { showToast('请先选择对阵球队'); return; }
+  
   var cupName = { championsCup12: '冠军杯12强', leagueCup12: '联盟杯12强', associationCup12: '协会杯12强' };
   var accentMap = { championsCup12: '#E6A800', leagueCup12: '#00897B', associationCup12: '#7B1FA2' };
   var accentClr = accentMap[cup12Id] || '#228B22';
   var roundName = { 0: '预赛', 1: '¼决赛', 2: '半决赛', 3: '决赛', 4: '冠军' };
-  // 获取球队名称
-  var homeTeam = match.homeTeam ? sd.teams.find(function(t){return t.id===match.homeTeam;}) : null;
-  var awayTeam = match.awayTeam ? sd.teams.find(function(t){return t.id===match.awayTeam;}) : null;
-  var homeName = homeTeam ? homeTeam.name : '主队';
-  var awayName = awayTeam ? awayTeam.name : '客队';
   
-  // 判断是否为两回合制（round>=1 且不是冠军赛）
+  var homeTeam = sd.teams.find(function(t){return t.id===match.homeTeam;});
+  var awayTeam = sd.teams.find(function(t){return t.id===match.awayTeam;});
+  if (!homeTeam || !awayTeam) { showToast('球队数据未找到'); return; }
+  
   var isTwoLegs = match.round >= 1 && match.round <= 3;
-  // 预赛是否已赛第一场且平局
   var isPrelimDraw = match.round === 0 && match.status === 'completed' && match.homeScore === match.awayScore;
+  var isEdit = match.status === 'completed';
   
-  var md = '<div style="display:flex;flex-direction:column;gap:12px;padding:4px;">';
-  md += '<div style="text-align:center;font-weight:bold;color:' + accentClr + ';margin-bottom:4px;">' + (cupName[cup12Id] || cup12Id) + ' · ' + (roundName[match.round] || ('第' + match.round + '轮')) + '</div>';
-  
-  // 比赛比分录入
-  md += '<div style="background:#f5f5f5;padding:10px;border-radius:8px;">';
-  
-  if (isTwoLegs) {
-    // 两回合制：两场比分垂直排列
-    // 第一场比赛
-    md += '<div style="margin-bottom:10px;">';
-    md += '<div style="text-align:center;font-size:11px;color:#666;margin-bottom:6px;">第一场比赛</div>';
-    md += '<div style="display:flex;align-items:center;gap:8px;">';
-    md += '<div style="flex:1;text-align:right;font-size:13px;">' + homeName + '</div>';
-    md += '<div style="display:flex;gap:6px;align-items:center;">';
-    md += '<input id="m12h" type="number" min="0" value="' + (match.homeScore !== undefined ? match.homeScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:15px;">';
-    md += '<span style="color:#999;font-weight:bold;">:</span>';
-    md += '<input id="m12a" type="number" min="0" value="' + (match.awayScore !== undefined ? match.awayScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:15px;">';
-    md += '</div>';
-    md += '<div style="flex:1;font-size:13px;">' + awayName + '</div>';
-    md += '</div>';
-    md += '</div>';
-    
-    // 分隔线
-    md += '<div style="border-top:1px dashed #ccc;margin:10px 0;"></div>';
-    
-    // 第二场比赛（主客场互换）
-    md += '<div>';
-    md += '<div style="text-align:center;font-size:11px;color:#666;margin-bottom:6px;">第二场比赛（主客场互换）</div>';
-    md += '<div style="display:flex;align-items:center;gap:8px;">';
-    md += '<div style="flex:1;text-align:right;font-size:13px;">' + awayName + '</div>';
-    md += '<div style="display:flex;gap:6px;align-items:center;">';
-    md += '<input id="m12h2" type="number" min="0" value="' + (match.leg2 && match.leg2.homeScore !== undefined ? match.leg2.homeScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:15px;">';
-    md += '<span style="color:#999;font-weight:bold;">:</span>';
-    md += '<input id="m12a2" type="number" min="0" value="' + (match.leg2 && match.leg2.awayScore !== undefined ? match.leg2.awayScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:15px;">';
-    md += '</div>';
-    md += '<div style="flex:1;font-size:13px;">' + homeName + '</div>';
-    md += '</div>';
-    md += '</div>';
-    
-    md += '</div>';  // 关闭 background:#f5f5f5 的 div
-  } else if (match.round === 0) {
-    // 预赛（A01-A04）
-    if (isPrelimDraw) {
-      // 第一场已平局，现在录入第二场（全新的比赛，主客场互换）
-      md += '<div style="background:#e8f5e9;padding:10px;border-radius:8px;border:1px solid #4caf50;">';
-      md += '<div style="text-align:center;font-size:12px;color:#2e7d32;margin-bottom:8px;font-weight:bold;">第二场比赛（主客场互换）</div>';
-      md += '<div style="display:flex;align-items:center;gap:8px;">';
-      md += '<div style="flex:1;text-align:right;font-size:14px;font-weight:500;color:#1b5e20;">' + awayName + '</div>';
-      md += '<div style="display:flex;gap:6px;align-items:center;">';
-      md += '<input id="m12h2" type="number" min="0" value="' + (match.leg2 && match.leg2.homeScore !== undefined ? match.leg2.homeScore : '') + '" placeholder="-" style="width:52px;text-align:center;padding:6px;border:2px solid #4caf50;border-radius:6px;font-size:16px;">';
-      md += '<span style="color:#4caf50;font-weight:bold;">:</span>';
-      md += '<input id="m12a2" type="number" min="0" value="' + (match.leg2 && match.leg2.awayScore !== undefined ? match.leg2.awayScore : '') + '" placeholder="-" style="width:52px;text-align:center;padding:6px;border:2px solid #4caf50;border-radius:6px;font-size:16px;">';
-      md += '</div>';
-      md += '<div style="flex:1;font-size:14px;font-weight:500;color:#1b5e20;">' + homeName + '</div>';
-      md += '</div>';
-      md += '</div>';
-      
-      // 显示第一场结果（只读）
-      md += '<div style="background:#f5f5f5;padding:8px;border-radius:6px;margin-top:10px;">';
-      md += '<div style="text-align:center;font-size:10px;color:#666;margin-bottom:4px;">第一场结果（已结束）</div>';
-      md += '<div style="display:flex;align-items:center;gap:8px;opacity:0.7;">';
-      md += '<div style="flex:1;text-align:right;font-size:12px;">' + homeName + '</div>';
-      md += '<div style="font-size:14px;font-weight:bold;color:#666;">' + match.homeScore + ' - ' + match.awayScore + '</div>';
-      md += '<div style="flex:1;font-size:12px;">' + awayName + '</div>';
-      md += '</div>';
-      md += '</div>';
-      
-      // 隐藏字段，保存第一场比分（用于提交时保持数据）
-      md += '<input type="hidden" id="m12h" value="' + match.homeScore + '">';
-      md += '<input type="hidden" id="m12a" value="' + match.awayScore + '">';
-    } else {
-      // 第一场未赛或已有胜负，录入第一场
-      md += '<div style="text-align:center;font-size:12px;color:#666;margin-bottom:8px;">第一场比赛</div>';
-      md += '<div style="display:flex;align-items:center;gap:8px;">';
-      md += '<div style="flex:1;text-align:right;font-size:14px;font-weight:500;">' + homeName + '</div>';
-      md += '<div style="display:flex;gap:6px;align-items:center;">';
-      md += '<input id="m12h" type="number" min="0" value="' + (match.homeScore !== undefined ? match.homeScore : '') + '" placeholder="-" style="width:52px;text-align:center;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:16px;">';
-      md += '<span style="color:#999;font-weight:bold;font-size:14px;">:</span>';
-      md += '<input id="m12a" type="number" min="0" value="' + (match.awayScore !== undefined ? match.awayScore : '') + '" placeholder="-" style="width:52px;text-align:center;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:16px;">';
-      md += '</div>';
-      md += '<div style="flex:1;font-size:14px;font-weight:500;">' + awayName + '</div>';
-      md += '</div>';
-    }
-    
-    md += '</div>';  // 关闭 background:#f5f5f5 的 div
-  } else {
-    // 冠军赛单场制
-    md += '<div style="text-align:center;font-size:12px;color:#666;margin-bottom:8px;">比赛比分</div>';
-    md += '<div style="display:flex;align-items:center;gap:8px;">';
-    md += '<div style="flex:1;text-align:right;font-size:14px;font-weight:500;">' + homeName + '</div>';
-    md += '<div style="display:flex;gap:6px;align-items:center;">';
-    md += '<input id="m12h" type="number" min="0" value="' + (match.homeScore !== undefined ? match.homeScore : '') + '" placeholder="-" style="width:52px;text-align:center;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:16px;">';
-    md += '<span style="color:#999;font-weight:bold;font-size:14px;">:</span>';
-    md += '<input id="m12a" type="number" min="0" value="' + (match.awayScore !== undefined ? match.awayScore : '') + '" placeholder="-" style="width:52px;text-align:center;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:16px;">';
-    md += '</div>';
-    md += '<div style="flex:1;font-size:14px;font-weight:500;">' + awayName + '</div>';
-    md += '</div>';
-    md += '</div>';  // 关闭 background:#f5f5f5 的 div
+  // 判断当前录入哪一场（第一场或第二场）
+  var editingLeg2 = false;
+  if (isTwoLegs && match.leg2 && match.leg2.status === 'completed') {
+    editingLeg2 = true;  // 第二场已赛，编辑模式
+  } else if (isTwoLegs && match.status === 'completed' && (!match.leg2 || match.leg2.status !== 'completed')) {
+    editingLeg2 = true;  // 第一场已赛，现在录入第二场
+  } else if (isPrelimDraw) {
+    editingLeg2 = true;  // 预赛第一场平局，现在录入第二场
   }
   
-  // 点球（预赛第二场平局或两回合总比分平局时显示）
-  var showPenalty = false;
-  if (match.round === 0 && match.leg2 && match.leg2.status === 'completed' && match.leg2.homeScore === match.leg2.awayScore) {
-    showPenalty = true;  // 预赛第二场平局
-  } else if (isTwoLegs && match.leg2 && match.leg2.homeScore !== undefined) {
-    var totalHome = (match.homeScore || 0) + (match.leg2.awayScore || 0);
-    var totalAway = (match.awayScore || 0) + (match.leg2.homeScore || 0);
-    if (totalHome === totalAway) showPenalty = true;
+  // 获取当前编辑的比赛数据
+  var currentMatch = editingLeg2 && match.leg2 ? match.leg2 : match;
+  var currentHomeTeam = editingLeg2 ? awayTeam : homeTeam;  // 第二场主客场互换
+  var currentAwayTeam = editingLeg2 ? homeTeam : awayTeam;
+  var legLabel = editingLeg2 ? (isTwoLegs ? '第二场比赛（主客场互换）' : '第二场比赛（主客场互换）') : (isTwoLegs ? '第一场比赛' : '比赛');
+  
+  // 球员数据
+  var homePlayers = [...currentHomeTeam.players].sort(function(a,b){return a.name.localeCompare(b.name,'zh-CN');});
+  var awayPlayers = [...currentAwayTeam.players].sort(function(a,b){return a.name.localeCompare(b.name,'zh-CN');});
+  
+  var getGoalCount = function(pid, teamId) {
+    if (!currentMatch.scorers) return 0;
+    return currentMatch.scorers.filter(function(s){return s.playerId===pid&&s.teamId===teamId;}).length;
+  };
+  var getAssistCount = function(pid, teamId) {
+    if (!currentMatch.assists) return 0;
+    return currentMatch.assists.filter(function(a){return a.playerId===pid&&a.teamId===teamId;}).length;
+  };
+  
+  var homeGoalsHtml = homePlayers.map(function(p){return '<div class="pr"><span class="pn">' + p.name + '</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="' + p.id + '" data-goal="home" value="' + getGoalCount(p.id, currentHomeTeam.id) + '" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>';}).join('');
+  var homeAssistsHtml = homePlayers.map(function(p){return '<div class="pr"><span class="pn">' + p.name + '</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="' + p.id + '" data-ast="home" value="' + getAssistCount(p.id, currentHomeTeam.id) + '" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>';}).join('');
+  var awayGoalsHtml = awayPlayers.map(function(p){return '<div class="pr"><span class="pn">' + p.name + '</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="' + p.id + '" data-goal="away" value="' + getGoalCount(p.id, currentAwayTeam.id) + '" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>';}).join('');
+  var awayAssistsHtml = awayPlayers.map(function(p){return '<div class="pr"><span class="pn">' + p.name + '</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="' + p.id + '" data-ast="away" value="' + getAssistCount(p.id, currentAwayTeam.id) + '" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>';}).join('');
+  
+  var motmId = currentMatch.motm || '';
+  var homeMotmHtml = homePlayers.map(function(p){return '<div class="mr' + (motmId===p.id?' selected':'') + '" onclick="selMotm(this,\'' + p.id + '\')"><span>' + p.name + '</span></div>';}).join('');
+  var awayMotmHtml = awayPlayers.map(function(p){return '<div class="mr' + (motmId===p.id?' selected':'') + '" onclick="selMotm(this,\'' + p.id + '\')"><span>' + p.name + '</span></div>';}).join('');
+  
+  var style = '<style>.pr{display:flex;align-items:center;padding:3px 8px;border-bottom:1px solid #f0f0f0;transition:all .2s ease}.pr:last-child{border-bottom:none}.pr:hover{background:rgba(255,183,77,0.1);border:1.5px solid #FFB74D;box-shadow:0 2px 8px rgba(255,152,0,0.15);transform:scale(1.02);border-radius:8px}.pr.has-val{background:linear-gradient(90deg,#86efac 0%,#bbf7d0 30%,#fff 80%);border-left:3px solid #059669;box-shadow:0 1px 6px rgba(5,150,105,0.12)}.pr.has-val:hover{background:linear-gradient(90deg,#4ade80 0%,#86efac 30%,#bbf7d0 80%)}.pc{display:flex;align-items:center;gap:3px;flex-shrink:0;margin-left:auto}.bm,.bp{width:26px;height:26px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;transition:all .12s;box-shadow:0 1px 3px rgba(0,0,0,0.08)}.bm{background:#fff;color:#888;border:1.5px solid #ddd}.bm:hover{background:#fee;border-color:#f44;color:#f44}.bm:active{transform:scale(.92)}.bp{background:#228B22;color:#fff;border:none}.bp:hover{background:#FF6D00;box-shadow:0 2px 8px rgba(255,109,0,0.5)}.bp:active{transform:scale(.92)}.pr.has-val .bp{background:#FF6B00;border:2px solid #E65100;box-shadow:0 0 8px rgba(255,107,0,0.5)}.pr.has-val .bp:hover{background:#E65100}.pv{width:32px;height:30px;text-align:center;font-size:14px;font-weight:700;border:1.5px solid #ddd;border-radius:6px;padding:0;background:#fafafa;color:#333;font-variant-numeric:tabular-nums;-moz-appearance:textfield;outline:none}.pr.has-val .pv{border-color:#198754;background:#198754;color:#fff;font-size:17px;font-weight:800;box-shadow:0 2px 6px rgba(25,135,84,0.4);height:30px}.pn{flex:1;font-size:15px;font-weight:600;color:#333;padding-right:8px}.pr.has-val .pn{color:#14532d}.mtb{background:#fff;border:2px solid #ddd;border-radius:20px;padding:5px 10px;font-size:12px;cursor:pointer;transition:all .15s}.mtb.active{background:#228B22;border-color:#228B22;color:#fff}.mr{display:flex;align-items:center;padding:6px 8px;border-bottom:1px solid #eee;cursor:pointer;font-size:13px;transition:all .2s ease;min-width:0}.mr:last-child{border-bottom:none}.mr:hover{background:rgba(255,183,77,0.1);border:1.5px solid #FFB74D;box-shadow:0 2px 8px rgba(255,152,0,0.15);transform:scale(1.02);border-radius:8px}.mr.selected{background:transparent;color:#059669;font-weight:800;border-left:3px solid #059669;font-size:16px;text-shadow:0 0 1px rgba(5,150,105,0.3);box-shadow:none}.mr span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500}.mc{flex:1;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:8px;margin:0 2px;min-width:0}.mct{text-align:center;font-weight:700;font-size:13px;padding:5px;background:#228B22;color:#fff;border-radius:8px 8px 0 0;letter-spacing:.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}</style>';
+  
+  var header = '<div class="modal-header"><div class="modal-title">' + (isEdit?'✏️ 修改':'✏️ 录入') + '比赛结果（' + (cupName[cup12Id]||cup12Id) + ' · ' + (roundName[match.round]||('第'+match.round+'轮')) + '）</div><button class="modal-close" onclick="closeModal()">×</button></div>';
+  
+  var score = '<div style="text-align:center;padding:8px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:8px"><span style="font-size:13px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + currentHomeTeam.name + '</span><img src="' + getTeamLogo(currentHomeTeam) + '" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><input type="number" id="cupHomeScore" value="' + (currentMatch.homeScore||0) + '" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid ' + accentClr + ';border-radius:4px">:<input type="number" id="cupAwayScore" value="' + (currentMatch.awayScore||0) + '" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid ' + accentClr + ';border-radius:4px"><img src="' + getTeamLogo(currentAwayTeam) + '" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><span style="font-size:13px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + currentAwayTeam.name + '</span></div>';
+  
+  var legInfo = (isTwoLegs || match.round === 0) ? '<div style="text-align:center;font-size:11px;color:#666;margin-bottom:8px;">' + legLabel + '</div>' : '';
+  
+  // 如果第一场已赛且现在录入第二场，显示第一场结果
+  var leg1Result = '';
+  if (editingLeg2 && match.status === 'completed' && match.homeScore !== undefined) {
+    leg1Result = '<div style="background:#f5f5f5;padding:8px;border-radius:6px;margin-bottom:10px;"><div style="text-align:center;font-size:10px;color:#666;margin-bottom:4px;">第一场结果（已结束）</div><div style="display:flex;align-items:center;gap:8px;opacity:0.7;"><div style="flex:1;text-align:right;font-size:12px;">' + homeTeam.name + '</div><div style="font-size:14px;font-weight:bold;color:#666;">' + match.homeScore + ' - ' + match.awayScore + '</div><div style="flex:1;font-size:12px;">' + awayTeam.name + '</div></div></div>';
   }
   
-  if (showPenalty) {
-    md += '<div style="background:#fff8e1;padding:8px;border-radius:8px;border:1px solid #ffcc80;">';
-    md += '<div style="text-align:center;font-size:11px;color:#e65100;margin-bottom:6px;">点球决胜</div>';
-    md += '<div style="display:flex;align-items:center;gap:8px;">';
-    md += '<div style="flex:1;text-align:right;font-size:13px;">' + homeName + '</div>';
-    md += '<div style="display:flex;gap:6px;align-items:center;">';
-    md += '<input id="m12ph" type="number" min="0" value="' + (match.penalty && match.penalty.homeScore !== undefined ? match.penalty.homeScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:4px;border:1px solid #ff9800;border-radius:6px;font-size:14px;">';
-    md += '<span style="color:#ff9800;">:</span>';
-    md += '<input id="m12pa" type="number" min="0" value="' + (match.penalty && match.penalty.awayScore !== undefined ? match.penalty.awayScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:4px;border:1px solid #ff9800;border-radius:6px;font-size:14px;">';
-    md += '</div>';
-    md += '<div style="flex:1;font-size:13px;">' + awayName + '</div>';
-    md += '</div>';
-    md += '</div>';
-  }
+  var tabs = '<div style="display:flex;gap:2px;overflow-x:auto;padding:2px 0"><button type="button" class="mtb active" data-tab="hg">⚽ ' + currentHomeTeam.name + ' 进球</button><button type="button" class="mtb" data-tab="ha">👟 ' + currentHomeTeam.name + ' 助攻</button><button type="button" class="mtb" data-tab="ag">⚽ ' + currentAwayTeam.name + ' 进球</button><button type="button" class="mtb" data-tab="aa">👟 ' + currentAwayTeam.name + ' 助攻</button><button type="button" class="mtb" data-tab="motm">⭐ 最佳球员</button></div>';
   
-  md += '<div style="text-align:center;margin-top:4px;">';
-  md += '<button onclick="submitCupMatchResult12()" style="background:' + accentClr + ';color:white;border:none;padding:8px 24px;border-radius:20px;font-size:13px;cursor:pointer;">保存</button>';
-  md += '</div></div>';
-  showModal(md);
+  var panels = '<div id="tab-hg" class="tp" style="max-height:50vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + homeGoalsHtml + '</div><div id="tab-ha" class="tp" style="display:none;max-height:50vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + homeAssistsHtml + '</div><div id="tab-ag" class="tp" style="display:none;max-height:50vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + awayGoalsHtml + '</div><div id="tab-aa" class="tp" style="display:none;max-height:50vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + awayAssistsHtml + '</div><div id="tab-motm" class="tp" style="display:none"><div style="display:flex;gap:4px"><div class="mc"><div class="mct">' + currentHomeTeam.name + '</div><div>' + homeMotmHtml + '</div></div><div class="mc"><div class="mct">' + currentAwayTeam.name + '</div><div>' + awayMotmHtml + '</div></div></div><input type="hidden" id="cupMotm" value="' + motmId + '"></div>';
+  
+  var submitBtn = '<button type="button" class="btn btn-primary btn-full" style="margin-top:8px;padding:10px;font-size:14px;background:' + accentClr + ';border-color:' + accentClr + '" id="saveCupMatchBtn12">' + (isEdit?'更新':'保存') + '比赛结果</button>';
+  
+  showModal(style + header + legInfo + leg1Result + score + '<form id="cupMatchForm12">' + tabs + panels + submitBtn + '</form>');
+  
+  window.adjInp = function(btn, d) {
+    var inp = btn.parentElement.querySelector('.pv');
+    var v = parseInt(inp.value) || 0;
+    v = Math.max(0, v + d);
+    inp.value = v;
+    inp.closest('.pr').classList.toggle('has-val', v > 0);
+    inp.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  
+  window.selMotm = function(row, pid) {
+    document.querySelectorAll('.mr').forEach(function(r){r.classList.remove('selected');});
+    row.classList.add('selected');
+    document.getElementById('cupMotm').value = pid;
+  };
+  
+  document.querySelectorAll('.mtb').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.mtb').forEach(function(b){b.classList.remove('active');});
+      this.classList.add('active');
+      document.querySelectorAll('.tp').forEach(function(p){p.style.display='none';});
+      document.getElementById('tab-' + this.dataset.tab).style.display = 'block';
+    });
+  });
+  
+  document.querySelectorAll('[data-goal]').forEach(function(inp){
+    inp.addEventListener('input', function(){
+      var hg = 0, ag = 0;
+      document.querySelectorAll('[data-goal="home"]').forEach(function(i){hg += parseInt(i.value) || 0;});
+      document.querySelectorAll('[data-goal="away"]').forEach(function(i){ag += parseInt(i.value) || 0;});
+      document.getElementById('cupHomeScore').value = hg;
+      document.getElementById('cupAwayScore').value = ag;
+    });
+  });
+  
+  window._cup12EditingLeg2 = editingLeg2;
+  window._cup12MatchId = matchId;
+  window._cup12CupId = cup12Id;
+  
+  document.querySelectorAll('.pv').forEach(function(inp){
+    if ((parseInt(inp.value) || 0) > 0) inp.closest('.pr').classList.add('has-val');
+  });
+  
+  document.getElementById('saveCupMatchBtn12').onclick = function(){
+    try { submitCupMatchResult12(); } catch(err) { showToast('错误: ' + err.message); }
+  };
 }
 
 function submitCupMatchResult12() {
-  var matchId = window._editingMatchId;
+  var matchId = window._cup12MatchId;
+  var editingLeg2 = window._cup12EditingLeg2;
+  var cup12Id = window._cup12CupId;
   if (!matchId) { showToast('未设置比赛ID'); return; }
-  var cup12Id = matchId.split('_')[0];
-  var homeScore = parseInt(document.getElementById('m12h').value);
-  var awayScore = parseInt(document.getElementById('m12a').value);
-  if (isNaN(homeScore) || isNaN(awayScore) || homeScore < 0 || awayScore < 0) { showToast('请输入有效比分'); return; }
   
   var sd = getCurrentSeasonData();
   var cup = sd.cups[cup12Id];
   var match = cup.matches.find(function(m) { return m.id === matchId; });
-  if (!match) return;
+  if (!match) { showToast('比赛未找到'); return; }
   
-  // 保存第一场比赛
-  match.homeScore = homeScore;
-  match.awayScore = awayScore;
-  match.status = 'completed';
+  var homeTeam = sd.teams.find(function(t){return t.id===match.homeTeam;});
+  var awayTeam = sd.teams.find(function(t){return t.id===match.awayTeam;});
+  if (!homeTeam || !awayTeam) { showToast('球队未找到'); return; }
   
-  // 两回合制或预赛平局后的第二场：保存第二场比赛
-  var isTwoLegs = match.round >= 1 && match.round <= 3;
-  var isPrelimDraw = match.round === 0 && homeScore === awayScore;
-  if (isTwoLegs || isPrelimDraw) {
-    var h2 = document.getElementById('m12h2');
-    var a2 = document.getElementById('m12a2');
-    if (h2 && a2) {
-      var homeScore2 = parseInt(h2.value);
-      var awayScore2 = parseInt(a2.value);
-      if (!isNaN(homeScore2) && !isNaN(awayScore2) && homeScore2 >= 0 && awayScore2 >= 0) {
-        if (!match.leg2) match.leg2 = {};
-        match.leg2.homeScore = homeScore2;
-        match.leg2.awayScore = awayScore2;
-        match.leg2.status = 'completed';
-      }
-    }
+  var homeScore = parseInt(document.getElementById('cupHomeScore').value) || 0;
+  var awayScore = parseInt(document.getElementById('cupAwayScore').value) || 0;
+  var motmId = document.getElementById('cupMotm').value;
+  
+  // 确定当前编辑的比赛对象
+  var currentMatch, currentHomeTeam, currentAwayTeam;
+  if (editingLeg2) {
+    if (!match.leg2) match.leg2 = {};
+    currentMatch = match.leg2;
+    currentHomeTeam = awayTeam;  // 第二场主客场互换
+    currentAwayTeam = homeTeam;
+  } else {
+    currentMatch = match;
+    currentHomeTeam = homeTeam;
+    currentAwayTeam = awayTeam;
   }
   
-  // 保存点球
-  var ph = document.getElementById('m12ph');
-  var pa = document.getElementById('m12pa');
-  if (ph && pa) {
-    var penHome = parseInt(ph.value);
-    var penAway = parseInt(pa.value);
-    if (!isNaN(penHome) && !isNaN(penAway) && penHome >= 0 && penAway >= 0) {
-      if (!match.penalty) match.penalty = {};
-      match.penalty.homeScore = penHome;
-      match.penalty.awayScore = penAway;
+  var isEdit = currentMatch.status === 'completed';
+  
+  // 回滚旧数据（编辑模式）
+  var oldPlayers = new Set();
+  if (isEdit && currentMatch.scorers) {
+    currentMatch.scorers.forEach(function(s){
+      var team = s.teamId === match.homeTeam ? homeTeam : awayTeam;
+      var p = team.players.find(function(x){return x.id===s.playerId;});
+      if (p) { p.goals = (p.goals||0) - 1; oldPlayers.add(p); }
+    });
+  }
+  if (isEdit && currentMatch.assists) {
+    currentMatch.assists.forEach(function(a){
+      var team = a.teamId === match.homeTeam ? homeTeam : awayTeam;
+      var p = team.players.find(function(x){return x.id===a.playerId;});
+      if (p) { p.assists = (p.assists||0) - 1; oldPlayers.add(p); }
+    });
+  }
+  oldPlayers.forEach(function(p){ p.gamesPlayed = (p.gamesPlayed||0) - 1; });
+  if (isEdit && currentMatch.motm) {
+    var motmP = [...homeTeam.players, ...awayTeam.players].find(function(x){return x.id===currentMatch.motm;});
+    if (motmP) motmP.motmCount = (motmP.motmCount||0) - 1;
+  }
+  
+  // 更新比赛数据
+  currentMatch.homeScore = homeScore;
+  currentMatch.awayScore = awayScore;
+  currentMatch.status = 'completed';
+  currentMatch.scorers = [];
+  currentMatch.assists = [];
+  currentMatch.motm = motmId || null;
+  
+  // 保存进球/助攻/MOTM
+  var involvedPlayers = new Set();
+  document.querySelectorAll('[data-goal="home"]').forEach(function(inp){
+    var g = parseInt(inp.value) || 0;
+    if (g > 0) {
+      var p = currentHomeTeam.players.find(function(x){return x.id===inp.dataset.pid;});
+      if (p) {
+        p.goals = (p.goals||0) + g;
+        involvedPlayers.add(p.id);
+        for (var i=0;i<g;i++) currentMatch.scorers.push({playerId:inp.dataset.pid, teamId:editingLeg2?match.awayTeam:match.homeTeam, minute:null});
+      }
     }
+  });
+  document.querySelectorAll('[data-goal="away"]').forEach(function(inp){
+    var g = parseInt(inp.value) || 0;
+    if (g > 0) {
+      var p = currentAwayTeam.players.find(function(x){return x.id===inp.dataset.pid;});
+      if (p) {
+        p.goals = (p.goals||0) + g;
+        involvedPlayers.add(p.id);
+        for (var i=0;i<g;i++) currentMatch.scorers.push({playerId:inp.dataset.pid, teamId:editingLeg2?match.homeTeam:match.awayTeam, minute:null});
+      }
+    }
+  });
+  document.querySelectorAll('[data-ast="home"]').forEach(function(inp){
+    var a = parseInt(inp.value) || 0;
+    if (a > 0) {
+      var p = currentHomeTeam.players.find(function(x){return x.id===inp.dataset.pid;});
+      if (p) {
+        p.assists = (p.assists||0) + a;
+        involvedPlayers.add(p.id);
+        for (var i=0;i<a;i++) currentMatch.assists.push({playerId:inp.datasetpid, teamId:editingLeg2?match.awayTeam:match.homeTeam});
+      }
+    }
+  });
+  document.querySelectorAll('[data-ast="away"]').forEach(function(inp){
+    var a = parseInt(inp.value) || 0;
+    if (a > 0) {
+      var p = currentAwayTeam.players.find(function(x){return x.id===inp.dataset.pid;});
+      if (p) {
+        p.assists = (p.assists||0) + a;
+        involvedPlayers.add(p.id);
+        for (var i=0;i<a;i++) currentMatch.assists.push({playerId:inp.dataset.pid, teamId:editingLeg2?match.homeTeam:match.awayTeam});
+      }
+    }
+  });
+  
+  involvedPlayers.forEach(function(pid){
+    var p = [...homeTeam.players, ...awayTeam.players].find(function(x){return x.id===pid;});
+    if (p) p.gamesPlayed = (p.gamesPlayed||0) + 1;
+  });
+  if (motmId) {
+    var motmP = [...homeTeam.players, ...awayTeam.players].find(function(x){return x.id===motmId;});
+    if (motmP) motmP.motmCount = (motmP.motmCount||0) + 1;
+  }
+  
+  // 如果是第一场且平局，不晋级，等待第二场
+  var isTwoLegs = match.round >= 1 && match.round <= 3;
+  var isPrelim = match.round === 0;
+  var isDraw = homeScore === awayScore;
+  
+  if (!editingLeg2 && isDraw && (isTwoLegs || isPrelim)) {
+    // 第一场平局，需要第二场
+    saveState();
+    closeModal();
+    renderCup12Bracket(cup12Id);
+    saveToUrlHash();
+    updateNavAndHeader();
+    showToast('第一场平局，请录入第二场比赛！');
+    return;
+  }
+  
+  // 确定胜者并晋级
+  var winnerId = null;
+  if (isTwoLegs && match.leg2 && match.leg2.status === 'completed') {
+    var totalHome = (match.homeScore||0) + (match.leg2.awayScore||0);
+    var totalAway = (match.awayScore||0) + (match.leg2.homeScore||0);
+    if (totalHome > totalAway) winnerId = match.homeTeam;
+    else if (totalAway > totalHome) winnerId = match.awayTeam;
+    // 总比分平局时，检查客场进球
+    else if ((match.leg2.awayScore||0) > (match.leg2.homeScore||0)) winnerId = match.homeTeam;
+    else if ((match.leg2.homeScore||0) > (match.leg2.awayScore||0)) winnerId = match.awayTeam;
+    // 仍平局则进入点球（点球数据已保存）
+  } else if (isPrelim && match.leg2 && match.leg2.status === 'completed') {
+    // 预赛第二场定胜负
+    if (match.leg2.homeScore > match.leg2.awayScore) winnerId = match.awayTeam;  // 第二场主队是原客队
+    else if (match.leg2.awayScore > match.leg2.homeScore) winnerId = match.homeTeam;
+    // 仍平局则进入点球
+  } else if (!isDraw) {
+    winnerId = homeScore > awayScore ? match.homeTeam : match.awayTeam;
+  }
+  
+  // 自动晋级（如果有胜者）
+  if (winnerId && match.round < 3) {
+    advanceCup12Winner(cup, winnerId, match.round, match.slot, matchId);
   }
   
   saveState();
@@ -3700,7 +3789,20 @@ function submitCupMatchResult12() {
   renderCup12Bracket(cup12Id);
   saveToUrlHash();
   updateNavAndHeader();
-  showToast('比赛结果已保存！');
+  showToast(isEdit?'比赛结果已更新！':'比赛结果已保存！');
+}
+
+// 12强杯赛胜者晋级
+function advanceCup12Winner(cup, winnerId, currentRound, currentSlot, sourceMatchId) {
+  var nextRound = currentRound + 1;
+  var nextSlot = Math.floor(currentSlot / 2);
+  var isHome = currentSlot % 2 === 0;
+  
+  var nextMatch = cup.matches.find(function(m){return m.round===nextRound&&m.slot===nextSlot;});
+  if (nextMatch) {
+    if (isHome) nextMatch.homeTeam = winnerId;
+    else nextMatch.awayTeam = winnerId;
+  }
 }
 
 // 12强杯赛下拉选队回调
