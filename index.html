@@ -2567,138 +2567,251 @@ function renderFaCupBracket(cupId) {
   saveToUrlHash();
 }
 
-// 8强杯赛对阵图（12强杯赛通用，8场1/4决赛→4场半决赛→2场决赛→1场冠军赛）
-// cup12Id: championsCup12 | leagueCup12 | associationCup12
-// 颜色主题：championsCup12=金色系 | leagueCup12=青色系 | associationCup12=紫色系
+// ========== 12强杯赛8强对阵图渲染（DOM+SVG连接线） ==========
 function renderCup12Bracket(cup12Id, targetContainer) {
   var cupName = { championsCup12: '冠军杯12强', leagueCup12: '联盟杯12强', associationCup12: '协会杯12强' };
   var accentColor = { championsCup12: '#E6A800', leagueCup12: '#00897B', associationCup12: '#7B1FA2' };
-  var name = cupName[cup12Id] || cup12Id;
   var accent = accentColor[cup12Id] || '#228B22';
+  var name = cupName[cup12Id] || cup12Id;
   var sd = getCurrentSeasonData();
   var cup = sd.cups && sd.cups[cup12Id] ? sd.cups[cup12Id] : null;
 
   var container = targetContainer || document.getElementById('scheduleContent');
+  var canEdit = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cup12Id));
 
-  if (!cup || !cup.matches || cup.matches.length === 0) {
-    var cupName2 = { championsCup12: '冠军杯12强', leagueCup12: '联盟杯12强', associationCup12: '协会杯12强' };
-    container.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:#999;text-align:center;gap:12px;">' +
-      '<div style="font-size:48px;">🏆</div>' +
-      '<div style="font-size:16px;font-weight:bold;color:#555;">暂无' + (cupName2[cup12Id] || '杯赛') + '赛程</div>' +
-      '<div style="font-size:13px;">管理员可在侧边栏"杯赛管理"中创建赛程</div>' +
-      '</div>';
-    saveToUrlHash();
-    return;
+  // ── inject CSS once ──
+  if (!document.getElementById('cup12-bracket-css')) {
+    var st = document.createElement('style');
+    st.id = 'cup12-bracket-css';
+    st.textContent =
+      '.c12{background:#f8fafc;min-height:100vh;box-sizing:border-box;user-select:none;overflow:hidden;position:relative}' +
+      '.c12-hd{display:flex;align-items:center;justify-content:center;padding:8px 16px;flex-shrink:0;background:linear-gradient(135deg,' + accent + ',#333);border-bottom:2px solid ' + accent + '}' +
+      '.c12-title{color:white;font-size:14px;font-weight:700;letter-spacing:2px}' +
+      '.c12-view{width:100%;overflow:hidden;position:relative}' +
+      '.c12-canvas{position:absolute;transform-origin:0 0;cursor:grab;will-change:transform}' +
+      '.c12-body{display:flex;align-items:center;gap:0;padding:16px 12px;min-width:max-content}' +
+      '.c12-col{display:block;flex-shrink:0;position:relative;padding-top:28px;width:170px}' +
+      '.c12-col-hd{position:absolute;top:0;left:0;right:0;text-align:center}' +
+      '.c12-hd2{color:#374151;font-size:10px;font-weight:700;padding:4px 8px;margin:0 4px 8px;white-space:nowrap;letter-spacing:0.5px;background:#e5e7eb;border-radius:6px;min-width:42px;text-align:center;border:1px solid #d1d5db}' +
+      '.c12-hd2.qf{color:#166534;background:#dcfce7;border-color:#86efac}' +
+      '.c12-hd2.sf{color:#1e40af;background:#dbeafe;border-color:#93c5fd}' +
+      '.c12-hd2.fin{color:#6b21a8;background:#f3e8ff;border-color:#c4b5fd}' +
+      '.c12-hd2.ch{color:#92400e;background:#fef3c7;border-color:#fbbf24}' +
+      '.c12-match{background:#fff;border:1.5px solid #d1d5db;border-radius:8px;padding:5px 5px;width:160px;flex-shrink:0;position:absolute;box-shadow:0 1px 3px rgba(0,0,0,0.08);box-sizing:border-box}' +
+      '.c12-match:hover{border-color:' + accent + ';box-shadow:0 2px 8px rgba(0,0,0,0.12)}' +
+      '.c12-match.done{border-color:' + accent + ';background:#fafffe}' +
+      '.c12-logo{width:14px;height:14px;object-fit:contain;border-radius:2px;flex-shrink:0}' +
+      '.c12-tn{font-size:11px;font-weight:600;color:#1f2937;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+      '.c12-tn.tbd{color:#9ca3af}' +
+      '.c12-tn.win{font-weight:700}' +
+      '.c12-tn.lose{opacity:.4}' +
+      '.c12-sc{text-align:center;font-size:12px;font-weight:700;color:#374151;padding:2px 0}' +
+      '.c12-sc.done{cursor:pointer;color:' + accent + '}' +
+      '.c12-sc.done:hover{opacity:.8}' +
+      '.c12-center{display:flex;flex-direction:column;align-items:center;padding:0 10px;flex-shrink:0;justify-content:center}' +
+      '.c12-vs{color:#6b7280;font-size:11px;font-weight:600;letter-spacing:1px;padding:8px 0}' +
+      '.c12-lines{position:absolute;top:0;left:0;pointer-events:none;z-index:1;overflow:visible}'
+    ;
+    document.head.appendChild(st);
   }
 
-  var rounds = cup ? cup.matches.reduce(function(acc, m) {
-    if (!acc[m.round]) acc[m.round] = [];
-    acc[m.round].push(m);
-    return acc;
-  }, {}) : {};
-
-  // 轮次标签
-  var R_NAMES = { 1: '1/4决赛', 2: '半决赛', 3: '决赛', 4: '冠军赛' };
-  var roundKeys = Object.keys(rounds).map(Number).sort(function(a, b) { return a - b; });
-  var defaultRound = roundKeys[0] || 1;
-  var curR = window['_cup12SchedRound_' + cup12Id] || defaultRound;
-
-  // 轮次标签栏
-  var containerKey = '_cup12SchedContainer_' + cup12Id;
-  window[containerKey] = container;
-  html += '<div style="display:flex;align-items:center;gap:8px;padding:12px 16px;flex-wrap:wrap;border-bottom:1px solid #eee;">';
-  html += '<span style="font-weight:bold;color:' + accent + ';font-size:14px;">' + name + '</span>';
-  roundKeys.forEach(function(r) {
-    var active = (r === curR) ? 'background:' + accent + ';color:white;border-color:' + accent + ';' : 'background:white;color:#333;border-color:#ddd;';
-    html += '<button onclick="window[\'_cup12SchedRound_' + cup12Id + '\']=' + r + ';renderCup12Bracket(\'' + cup12Id + '\', window[\'_cup12SchedContainer_' + cup12Id + '\']);" style="' + active + 'border:1px solid;padding:4px 12px;border-radius:16px;font-size:12px;cursor:pointer;transition:all .2s;">' + (R_NAMES[r] || ('第' + r + '轮')) + '</button>';
-  });
-  html += '</div>';
-
-  // 赛程图区域
-  if (curR === 1) {
-    // 1/4决赛：8场，4组（A左B右），每组2场→胜者进半决赛
-    html += '<div style="padding:20px;display:flex;flex-direction:column;align-items:center;gap:0;">';
-    var S4 = { L: [0, 1, 2, 3], R: [4, 5, 6, 7] };
-    ['L', 'R'].forEach(function(half, hi) {
-      html += '<div style="display:flex;gap:40px;margin-bottom:24px;align-items:center;">';
-      // 左侧4队 vs 右侧4队 → 2场
-      var pairSlots = hi === 0 ? [[0, 1], [2, 3]] : [[4, 5], [6, 7]];
-      pairSlots.forEach(function(pair, pi) {
-        var topMatch = getCup12Match(cup12Id, 1, pair[0]);
-        var botMatch = getCup12Match(cup12Id, 1, pair[1]);
-        html += '<div style="display:flex;flex-direction:column;gap:32px;position:relative;">';
-        html += renderCup12Match(topMatch, cup12Id);
-        // 组内连线（中线左/右）
-        var mT = topMatch ? topMatch.id : 'mt' + pi + hi; var mB = botMatch ? botMatch.id : 'mb' + pi + hi;
-        html += '</div>';
-      });
-      html += '</div>';
-      if (hi === 0) {
-        // 左半区：4队→2队（合并到中部）
-        html += '<div style="display:flex;gap:0;align-items:center;margin-bottom:16px;">';
-        var l2a = getCup12Match(cup12Id, 1, 0), l2b = getCup12Match(cup12Id, 1, 1);
-        var l4a = getCup12Match(cup12Id, 1, 2), l4c = getCup12Match(cup12Id, 1, 3);
-        html += '<div style="display:flex;flex-direction:column;gap:48px;margin-right:20px;">' + renderCup12Match(l2a, cup12Id) + renderCup12Match(l2b, cup12Id) + '</div>';
-        // VS标志
-        html += '<div style="display:flex;flex-direction:column;gap:48px;margin-right:20px;">' + renderCup12VS() + renderCup12VS() + '</div>';
-        html += '<div style="display:flex;flex-direction:column;gap:48px;">' + renderCup12Match(l4a, cup12Id) + renderCup12Match(l4c, cup12Id) + '</div>';
-        // 半决赛入口
-        html += '<div style="display:flex;flex-direction:column;gap:48px;margin-left:20px;">' + renderCup12VS() + renderCup12VS() + '</div>';
-        html += '<div style="display:flex;flex-direction:column;gap:48px;margin-left:20px;">' + renderCup12Match(getCup12Match(cup12Id, 2, 0), cup12Id) + renderCup12Match(getCup12Match(cup12Id, 2, 1), cup12Id) + '</div>';
-        html += '</div>';
-      } else {
-        // 右半区
-        html += '<div style="display:flex;gap:0;align-items:center;margin-bottom:16px;">';
-        var r2a = getCup12Match(cup12Id, 1, 4), r2b = getCup12Match(cup12Id, 1, 5);
-        var r4a = getCup12Match(cup12Id, 1, 6), r4c = getCup12Match(cup12Id, 1, 7);
-        html += '<div style="display:flex;flex-direction:column;gap:48px;margin-right:20px;">' + renderCup12Match(r2a, cup12Id) + renderCup12Match(r2b, cup12Id) + '</div>';
-        html += '<div style="display:flex;flex-direction:column;gap:48px;margin-right:20px;">' + renderCup12VS() + renderCup12VS() + '</div>';
-        html += '<div style="display:flex;flex-direction:column;gap:48px;">' + renderCup12Match(r4a, cup12Id) + renderCup12Match(r4c, cup12Id) + '</div>';
-        html += '<div style="display:flex;flex-direction:column;gap:48px;margin-left:20px;">' + renderCup12VS() + renderCup12VS() + '</div>';
-        html += '<div style="display:flex;flex-direction:column;gap:48px;margin-left:20px;">' + renderCup12Match(getCup12Match(cup12Id, 2, 0), cup12Id) + renderCup12Match(getCup12Match(cup12Id, 2, 1), cup12Id) + '</div>';
-        html += '</div>';
-      }
-    });
-    html += '</div>';
-  } else if (curR === 2) {
-    // 半决赛：4场→2场
-    html += '<div style="padding:20px;display:flex;justify-content:center;">';
-    html += '<div style="display:flex;gap:60px;align-items:center;">';
-    html += '<div style="display:flex;flex-direction:column;gap:32px;">' + renderCup12Match(getCup12Match(cup12Id, 2, 0), cup12Id) + renderCup12Match(getCup12Match(cup12Id, 2, 1), cup12Id) + '</div>';
-    html += '<div style="display:flex;flex-direction:column;gap:64px;">' + renderCup12VS() + renderCup12VS() + '</div>';
-    html += '<div style="display:flex;flex-direction:column;gap:32px;">' + renderCup12Match(getCup12Match(cup12Id, 2, 2), cup12Id) + renderCup12Match(getCup12Match(cup12Id, 2, 3), cup12Id) + '</div>';
-    html += '<div style="display:flex;flex-direction:column;gap:64px;">' + renderCup12VS() + renderCup12VS() + '</div>';
-    html += '<div style="display:flex;flex-direction:column;gap:32px;">' + renderCup12Match(getCup12Match(cup12Id, 3, 0), cup12Id) + renderCup12Match(getCup12Match(cup12Id, 3, 1), cup12Id) + '</div>';
-    html += '</div>';
-    html += '</div>';
-  } else if (curR === 3) {
-    // 决赛：2场→1场
-    html += '<div style="padding:20px;display:flex;justify-content:center;">';
-    html += '<div style="display:flex;gap:60px;align-items:center;">';
-    html += '<div style="display:flex;flex-direction:column;gap:32px;">' + renderCup12Match(getCup12Match(cup12Id, 3, 0), cup12Id) + renderCup12Match(getCup12Match(cup12Id, 3, 1), cup12Id) + '</div>';
-    html += '<div style="display:flex;flex-direction:column;gap:64px;">' + renderCup12VS() + renderCup12VS() + '</div>';
-    html += '<div style="display:flex;flex-direction:column;gap:32px;">' + renderCup12Match(getCup12Match(cup12Id, 4, 0), cup12Id) + '</div>';
-    html += '</div>';
-    html += '</div>';
-  } else {
-    // 冠军赛：1场定冠军
-    var champMatch = getCup12Match(cup12Id, 4, 0);
-    html += '<div style="padding:20px;display:flex;flex-direction:column;align-items:center;gap:12px;">';
-    html += '<div style="font-size:20px;">🏆</div>';
-    html += '<div style="font-size:16px;font-weight:bold;color:' + accent + ';">冠军赛</div>';
-    html += renderCup12Match(champMatch, cup12Id);
-    html += '</div>';
+  // ── match helper ──
+  function gM(round, slot) {
+    if (!cup || !cup.matches) return null;
+    return cup.matches.find(function(m) { return m.round === round && m.slot === slot; }) || null;
   }
 
-  // 底部连接线SVG
-  html += '<svg id="cup12lines_' + cup12Id + '" style="position:absolute;top:0;left:0;pointer-events:none;z-index:1;overflow:visible;width:100%;height:100%;" width="100%" height="100%"></svg>';
+  // ── team info ──
+  function teamInfo(teamId) {
+    if (!teamId) return { name: '待定', logo: null };
+    var t = sd.teams ? sd.teams.find(function(t) { return t.id === teamId; }) : null;
+    return { name: t ? t.name : (teamId + ''), logo: t ? (t.logo || t.badge || '') : '' };
+  }
+
+  // ── single match card ──
+  function rMatch(round, slot, extraTop) {
+    var m = gM(round, slot);
+    var home = m ? teamInfo(m.homeTeam) : null;
+    var away = m ? teamInfo(m.awayTeam) : null;
+    var hn = home ? home.name : '待定';
+    var an = away ? away.name : '待定';
+    var hl = home && home.logo ? home.logo : '';
+    var al = away && away.logo ? away.logo : '';
+    var done = m && m.homeScore !== undefined && m.awayScore !== undefined;
+    var hs = done ? m.homeScore : '';
+    var as = done ? m.awayScore : '';
+    var mId = m ? m.id : ('c12_' + round + '_' + slot);
+    var top = extraTop !== undefined ? extraTop : 0;
+    var editAttr = canEdit && m ? ' onclick="window._editingMatchId=\'' + m.id + '\';showEnterCupMatchModal12(\'' + cup12Id + '\');"' : '';
+
+    return '<div class="c12-match' + (done ? ' done' : '') + '" data-id="' + mId + '" data-round="' + round + '" data-slot="' + slot + '" style="top:' + top + 'px"' + editAttr + '>' +
+      '<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">' +
+        (hl ? '<img class="c12-logo" src="' + hl + '" onerror="this.style.display=\'none\'">' : '<div class="c12-logo"></div>') +
+        '<span class="c12-tn' + (home ? '' : ' tbd') + '">' + hn + '</span>' +
+        '<span class="c12-sc' + (done ? ' done' : '') + '">' + hs + '</span>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:4px">' +
+        (al ? '<img class="c12-logo" src="' + al + '" onerror="this.style.display=\'none\'">' : '<div class="c12-logo"></div>') +
+        '<span class="c12-tn' + (away ? '' : ' tbd') + '">' + an + '</span>' +
+        '<span class="c12-sc' + (done ? ' done' : '') + '">' + as + '</span>' +
+      '</div>' +
+    '</div>';
+  }
+
+  // ── layout constants ──
+  var cardH = 44, cardGap = 24, colW = 175, colGap = 14, colHdH = 28;
+  var halfH = 4 * cardH + 3 * cardGap;       // 4 rows in quarter
+  var qfTop = 0;                               // QF cards top
+
+  // QF pairs: (slot0, slot1) → SF slot0
+  // QF column: 4 slots with gaps
+  // SF column: 2 slots, each spanning 2 QF slots
+  // Fin column: 1 slot spanning 2 SF slots
+  // Ch column: 1 slot
+
+  // QF slot tops: [0, 1, 2, 3] × cardH+cardGap
+  var qfSlotTop = [0, 1, 2, 3].map(function(s) { return qfTop + s * (cardH + cardGap); });
+  // SF slot tops: [0, 1] → each spans 2 QF slots
+  var sfSlotTop = [0, 1].map(function(s) { return qfTop + (s * 2 + 0.5) * (cardH + cardGap) - cardH / 2; });
+  // Fin slot top: center of SF
+  var finTop = qfTop + 1.5 * (cardH + cardGap) - cardH / 2;
+
+  var halfLabelW = 40;
+  var canvasW = halfLabelW + 4 * (colW + colGap);
+  var canvasH = halfH + colHdH;
+
+  // ── build HTML ──
+  var bodyHtml = '';
+  // Left half label
+  bodyHtml += '<div style="writing-mode:vertical-rl;text-orientation:mixed;font-size:12px;color:' + accent + ';letter-spacing:3px;font-weight:800;padding:10px 4px;flex-shrink:0;background:linear-gradient(180deg,#fff8e7,#fff3cd);border-radius:8px;border:1.5px solid #e6c878;box-shadow:0 1px 3px rgba(0,0,0,0.1)">左半区</div>';
+
+  // 4 columns: QF | SF | Final | Champion
+  bodyHtml += '<div class="c12-col">';                              // QF
+  bodyHtml += '<div class="c12-col-hd"><div class="c12-hd2 qf">¼决赛</div></div>';
+  for (var i = 0; i < 4; i++) {
+    bodyHtml += rMatch(1, i, qfSlotTop[i]);
+  }
+  bodyHtml += '</div>';
+
+  bodyHtml += '<div style="flex-shrink:0;width:' + colGap + 'px"></div>';
+
+  bodyHtml += '<div class="c12-col">';                              // SF
+  bodyHtml += '<div class="c12-col-hd"><div class="c12-hd2 sf">半决赛</div></div>';
+  for (var i = 0; i < 2; i++) {
+    bodyHtml += rMatch(2, i, sfSlotTop[i]);
+  }
+  bodyHtml += '</div>';
+
+  bodyHtml += '<div style="flex-shrink:0;width:' + colGap + 'px"></div>';
+
+  bodyHtml += '<div class="c12-col">';                              // Final
+  bodyHtml += '<div class="c12-col-hd"><div class="c12-hd2 fin">决赛</div></div>';
+  bodyHtml += rMatch(3, 0, finTop);
+  bodyHtml += '</div>';
+
+  bodyHtml += '<div style="flex-shrink:0;width:' + colGap + 'px"></div>';
+
+  bodyHtml += '<div class="c12-col">';                              // Champion
+  bodyHtml += '<div class="c12-col-hd"><div class="c12-hd2 ch">🏆冠军</div></div>';
+  bodyHtml += rMatch(4, 0, finTop);
+  bodyHtml += '</div>';
+
+  // Right half label
+  bodyHtml += '<div style="writing-mode:vertical-rl;text-orientation:mixed;font-size:12px;color:' + accent + ';letter-spacing:3px;font-weight:800;padding:10px 4px;flex-shrink:0;background:linear-gradient(180deg,#e8faf5,#d0f5eb);border-radius:8px;border:1.5px solid #4db6ac;box-shadow:0 1px 3px rgba(0,0,0,0.1)">右半区</div>';
+
+  var html = '<div class="c12">' +
+    '<div class="c12-hd"><div class="c12-title">' + name + '</div></div>' +
+    '<div class="c12-view" id="c12View">' +
+      '<div class="c12-canvas" id="c12Canvas" style="width:' + (canvasW * 2) + 'px;height:' + canvasH + 'px">' +
+        '<div class="c12-body">' + bodyHtml + '</div>' +
+        '<svg class="c12-lines" id="c12Lines" width="' + (canvasW * 2) + '" height="' + canvasH + '"></svg>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+
   container.innerHTML = html;
 
-  // 画连接线
-  drawCup12Lines(cup12Id, accent);
+  // ── draw SVG connector lines ──
+  (function drawLines() {
+    var svg = document.getElementById('c12Lines');
+    if (!svg) return;
+    var ns = 'http://www.w3.org/2000/svg';
+
+    function relOffset(el) {
+      var x = 0, y = 0;
+      var cur = el;
+      var canvas = document.getElementById('c12Canvas');
+      while (cur && cur !== canvas) {
+        x += cur.offsetLeft;
+        y += cur.offsetTop;
+        cur = cur.offsetParent;
+      }
+      return { x: x, y: y };
+    }
+
+    function mPos(round, slot) {
+      var el = container.querySelector('[data-round="' + round + '"][data-slot="' + slot + '"]');
+      if (!el) return null;
+      var pos = relOffset(el);
+      return { l: pos.x, r: pos.x + el.offsetWidth, cy: pos.y + el.offsetHeight / 2 };
+    }
+
+    function addCurve(x1, y1, x2, y2, color) {
+      var dx = x2 - x1;
+      var path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', 'M' + x1 + ',' + y1 + ' C' + (x1 + dx * 0.5) + ',' + y1 + ' ' + (x1 + dx * 0.5) + ',' + y2 + ' ' + x2 + ',' + y2);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', color);
+      path.setAttribute('stroke-width', '1.5');
+      path.setAttribute('stroke-opacity', '0.6');
+      path.setAttribute('stroke-linecap', 'round');
+      svg.appendChild(path);
+    }
+
+    // QF → SF: 4 QF slots → 2 SF slots
+    var qfToSf = [[0, 1], [2, 3]];
+    for (var si = 0; si < 2; si++) {
+      var dest = mPos(2, si);
+      if (!dest) continue;
+      for (var qi = 0; qi < 2; qi++) {
+        var src = mPos(1, qfToSf[si][qi]);
+        if (src) addCurve(src.r, src.cy, dest.l, dest.cy, '#6b7280');
+      }
+    }
+
+    // SF → Final: 2 SF slots → 1 Final slot
+    for (var si = 0; si < 2; si++) {
+      var dest = mPos(3, 0);
+      if (!dest) continue;
+      var src = mPos(2, si);
+      if (src) addCurve(src.r, src.cy, dest.l, dest.cy, accent);
+    }
+
+    // Final → Champion: same column, straight line
+    var fin = mPos(3, 0);
+    var ch = mPos(4, 0);
+    if (fin && ch) {
+      addCurve(fin.r, fin.cy, ch.l, ch.cy, '#fbbf24');
+    }
+  })();
+
+  // ── mouse wheel zoom ──
+  var vport = document.getElementById('c12View');
+  if (vport) {
+    vport.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      var cv = document.getElementById('c12Canvas');
+      if (!cv) return;
+      var scale = parseFloat(cv.dataset.scale || '1');
+      scale = Math.max(0.3, Math.min(2, scale - e.deltaY * 0.001));
+      cv.dataset.scale = scale;
+      cv.style.transform = 'scale(' + scale + ')';
+    }, { passive: false });
+  }
+
   saveToUrlHash();
-  window['_cup12SchedRound_' + cup12Id] = curR;
 }
+
 
 function getCup12Match(cup12Id, round, slot) {
   var sd = getCurrentSeasonData();
