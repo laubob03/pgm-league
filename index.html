@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.322'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.323'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 322 };
+const APP_VERSION = { major: 1, minor: 0, patch: 323 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,7 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.322', date: '2026-05-09', items: ['🔧 12强VS点击录入比分：杯赛数据员权限修复（cupId匹配父杯赛）、VS按钮样式增强、触摸事件修复'] },
+  { v: '1.0.323', date: '2026-05-09', items: ['🐛 修复VS点击无法弹出录入界面——showEnterCupMatchModal12引用了不存在的accentColor变量导致ReferenceError'] },
   { v: '1.0.321', date: '2026-05-09', items: ['🔧 12强对阵图A01/A02垂直间距重叠修复，cardH从56增至112匹配实际卡片高度', '✅ 超级管理员可录入比分（canEdit已含isSuperAdmin）'] },
   { v: '1.0.320', date: '2026-05-09', items: ['🎨 12强对阵图球队显示/队徽/底色/比分录入/晋级条件全面对齐足总杯', '✅ 比赛完成状态改用status=completed，录入比分自动设置，胜者晋级更准确'] },
   { v: '1.0.319', date: '2026-05-09', items: ['🎨 12强对阵图球队显示队徽+联赛底色（超级深红/甲级深绿/乙级深灰），队徽改用getTeamLogo确保显示'] },
@@ -3335,6 +3335,8 @@ function showEnterCupMatchModal12(cup12Id) {
   var match = cup && cup.matches ? cup.matches.find(function(m) { return m.id === matchId; }) : null;
   if (!match) { showToast('未找到比赛'); return; }
   var cupName = { championsCup12: '冠军杯12强', leagueCup12: '联盟杯12强', associationCup12: '协会杯12强' };
+  var accentMap = { championsCup12: '#E6A800', leagueCup12: '#00897B', associationCup12: '#7B1FA2' };
+  var accentClr = accentMap[cup12Id] || '#228B22';
   var roundName = { 0: '预赛', 1: '¼决赛', 2: '半决赛', 3: '决赛', 4: '冠军' };
   // 获取球队名称
   var homeTeam = match.homeTeam ? sd.teams.find(function(t){return t.id===match.homeTeam;}) : null;
@@ -3342,7 +3344,7 @@ function showEnterCupMatchModal12(cup12Id) {
   var homeName = homeTeam ? homeTeam.name : '主队';
   var awayName = awayTeam ? awayTeam.name : '客队';
   var md = '<div style="display:flex;flex-direction:column;gap:12px;padding:4px;">';
-  md += '<div style="text-align:center;font-weight:bold;color:' + (accentColor || '#228B22') + ';margin-bottom:4px;">' + (cupName[cup12Id] || cup12Id) + ' · ' + (roundName[match.round] || ('第' + match.round + '轮')) + '</div>';
+  md += '<div style="text-align:center;font-weight:bold;color:' + accentClr + ';margin-bottom:4px;">' + (cupName[cup12Id] || cup12Id) + ' · ' + (roundName[match.round] || ('第' + match.round + '轮')) + '</div>';
   md += '<div style="display:flex;align-items:center;gap:8px;">';
   md += '<div style="flex:1;text-align:right;font-size:13px;">' + homeName + '</div>';
   md += '<div style="display:flex;gap:6px;align-items:center;">';
@@ -3353,7 +3355,7 @@ function showEnterCupMatchModal12(cup12Id) {
   md += '<div style="flex:1;font-size:13px;">' + awayName + '</div>';
   md += '</div>';
   md += '<div style="text-align:center;margin-top:4px;">';
-  md += '<button onclick="submitCupMatchResult12(\'' + cup12Id + '\');" style="background:' + (accentColor || '#228B22') + ';color:white;border:none;padding:8px 24px;border-radius:20px;font-size:13px;cursor:pointer;">保存</button>';
+  md += '<button onclick="submitCupMatchResult12(\'' + cup12Id + '\');" style="background:' + accentClr + ';color:white;border:none;padding:8px 24px;border-radius:20px;font-size:13px;cursor:pointer;">保存</button>';
   md += '</div></div>';
   showModal(md);
 }
