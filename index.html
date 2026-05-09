@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 333 };
+const APP_VERSION = { major: 1, minor: 0, patch: 334 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.334', date: '2026-05-09', items: ['🔍 增强诊断日志：追踪选队时sd与state的关系，上传时state与uploadData的对比'] },
   { v: '1.0.333', date: '2026-05-09', items: ['🔍 添加诊断日志：追踪12强杯赛数据在保存、上传、下载、加载全流程中的状态'] },
   { v: '1.0.332', date: '2026-05-09', items: ['🐛 修复recorderUpload杯赛合并：数据员上传时不再用空初始化数据覆盖超管已上传的真实对阵数据', '🐛 修复renderCup12Bracket查看归档赛季时会污染state.cups当前赛季数据的bug', '🛡️ 自动同步后强制刷新12强杯赛页面确保云端数据即时可见'] },
   { v: '1.0.331', date: '2026-05-09', items: ['🐛 修复其他用户看不到超管上传的对阵球队：移除autoSyncFromCloud中cups保护逻辑，所有用户的对阵数据以云端为准'] },
@@ -3413,7 +3414,11 @@ window._c12SelectTeam = function(cup12Id, round, slot, field, teamId) {
   }
   console.log('[DIAG] _c12SelectTeam: cup12Id=' + cup12Id + ', round=' + round + ', slot=' + slot + ', field=' + field + ', teamId=' + teamId);
   console.log('[DIAG] _c12SelectTeam: match.homeTeam=' + match.homeTeam + ', match.awayTeam=' + match.awayTeam);
-  console.log('[DIAG] _c12SelectTeam: sd.cups[cup12Id] exists=' + !!sd.cups[cup12Id] + ', matches count=' + (sd.cups[cup12Id] && sd.cups[cup12Id].matches ? sd.cups[cup12Id].matches.length : 0));
+  console.log('[DIAG] _c12SelectTeam: sd === state ? ' + (sd === state));
+  console.log('[DIAG] _c12SelectTeam: sd.cups === state.cups ? ' + (sd.cups === state.cups));
+  console.log('[DIAG] _c12SelectTeam: sd.cups[cup12Id] === state.cups[cup12Id] ? ' + (sd.cups[cup12Id] === state.cups[cup12Id]));
+  var selectedCount = sd.cups[cup12Id].matches.filter(function(m) { return m.homeTeam || m.awayTeam; }).length;
+  console.log('[DIAG] _c12SelectTeam: 当前已选球队场次=' + selectedCount);
   saveState();
   renderCup12Bracket(cup12Id);
   saveToUrlHash();
@@ -9441,6 +9446,12 @@ async function syncUpload() {
     var uploadMatchesCount = uploadHasChampionsCup12 && uploadData.cups.championsCup12.matches ? uploadData.cups.championsCup12.matches.length : 0;
     var uploadTeamsSelected = uploadHasChampionsCup12 && uploadData.cups.championsCup12.matches ? uploadData.cups.championsCup12.matches.filter(function(m) { return m.homeTeam || m.awayTeam; }).length : 0;
     console.log('[DIAG] syncUpload: uploadData.cups.championsCup12 exists=' + !!uploadHasChampionsCup12 + ', matches=' + uploadMatchesCount + ', teamsSelected=' + uploadTeamsSelected);
+    // 对比 state.cups 和 uploadData.cups
+    var stateHasChampionsCup12 = state.cups && state.cups.championsCup12;
+    var stateMatchesCount = stateHasChampionsCup12 && state.cups.championsCup12.matches ? state.cups.championsCup12.matches.length : 0;
+    var stateTeamsSelected = stateHasChampionsCup12 && state.cups.championsCup12.matches ? state.cups.championsCup12.matches.filter(function(m) { return m.homeTeam || m.awayTeam; }).length : 0;
+    console.log('[DIAG] syncUpload: state.cups.championsCup12 exists=' + !!stateHasChampionsCup12 + ', matches=' + stateMatchesCount + ', teamsSelected=' + stateTeamsSelected);
+    console.log('[DIAG] syncUpload: state.cups === uploadData.cups ? ' + (state.cups === uploadData.cups));
     const dataStr = safeStringify(uploadData); // ★ minify: 无缩进，省 ~74KB
     if (!dataStr) { showToast('数据序列化失败，请检查数据'); return; }
     showSyncProgress('upload', 2);
