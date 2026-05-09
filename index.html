@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.331'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.332'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 331 };
+const APP_VERSION = { major: 1, minor: 0, patch: 332 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.332', date: '2026-05-09', items: ['🐛 修复recorderUpload杯赛合并：数据员上传时不再用空初始化数据覆盖超管已上传的真实对阵数据', '🐛 修复renderCup12Bracket查看归档赛季时会污染state.cups当前赛季数据的bug', '🛡️ 自动同步后强制刷新12强杯赛页面确保云端数据即时可见'] },
   { v: '1.0.331', date: '2026-05-09', items: ['🐛 修复其他用户看不到超管上传的对阵球队：移除autoSyncFromCloud中cups保护逻辑，所有用户的对阵数据以云端为准'] },
   { v: '1.0.324', date: '2026-05-09', items: ['🔧 showEnterCupMatchModal12和submitCupMatchResult12改为从window._editingMatchId自动推导cup12Id，不再依赖onclick传参，彻底解决VS点击无反应问题'] },
   { v: '1.0.321', date: '2026-05-09', items: ['🔧 12强对阵图A01/A02垂直间距重叠修复，cardH从56增至112匹配实际卡片高度', '✅ 超级管理员可录入比分（canEdit已含isSuperAdmin）'] },
@@ -2614,7 +2615,8 @@ function renderCup12Bracket(cup12Id, targetContainer) {
         // 冠军赛 1场 round=4, slot=0
         { id: cup12Id + '_R4S0', round: 4, slot: 0, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
       ];
-      state.cups[cup12Id] = emptyCup;
+      // ★ v1.0.332 修复：仅在查看当前赛季时同步写入 state.cups，归档赛季操作不污染当前赛季数据
+      if (!viewingSeasonId) state.cups[cup12Id] = emptyCup;
       cup = emptyCup;
     }
     // 所有用户都可以查看空框架，但只有管理员可编辑
@@ -2643,7 +2645,8 @@ function renderCup12Bracket(cup12Id, targetContainer) {
       needSave = true;
     }
     if (needSave) {
-      if (state.cups && state.cups[cup12Id]) state.cups[cup12Id] = cup;
+      // ★ v1.0.332 修复：仅在查看当前赛季时更新 state.cups，归档赛季不污染当前数据
+      if (!viewingSeasonId && state.cups && state.cups[cup12Id]) state.cups[cup12Id] = cup;
       saveState();
     }
   }
@@ -9330,10 +9333,23 @@ async function recorderUpload() {
             mainState.teams = mainState.teams.filter(t => !cupTeamIds.has(t.id)).concat(leagueData.cupTeams);
           }
           // 杯赛赛程数据合并（所有数据员都可能携带杯赛数据）
+          // ★ v1.0.332 修复：只合并有真实对阵数据的杯赛，防止空初始化数据覆盖超管已上传的真数据
           if (mainState.cups && leagueData.cups) {
             Object.keys(leagueData.cups).forEach(cid => {
               if (leagueData.cups[cid]) {
-                mainState.cups[cid] = leagueData.cups[cid];
+                var recorderCup = leagueData.cups[cid];
+                // 检查数据员的杯赛是否有真实对阵（有球队被选中）
+                var hasRealData = recorderCup.matches && recorderCup.matches.some(function(m) {
+                  return (m.homeTeam || m.awayTeam);
+                });
+                if (hasRealData) {
+                  // 数据员有真实数据，合并到主Gist
+                  mainState.cups[cid] = recorderCup;
+                } else if (!mainState.cups[cid] || !mainState.cups[cid].matches || !mainState.cups[cid].matches.some(function(m) { return m.homeTeam || m.awayTeam; })) {
+                  // mainState也没有真实数据，且数据员有框架数据，则保留数据员的框架
+                  mainState.cups[cid] = recorderCup;
+                }
+                // 否则：mainState有真实数据但数据员没有 → 保留mainState的，不覆盖
               }
             });
           }
@@ -10168,6 +10184,16 @@ async function autoSyncFromCloud() {
       // 重新渲染
       updateSidebar();
       render();
+
+      // ★ v1.0.332: 同步后如果当前在12强杯赛页面，强制刷新对阵图确保云端数据即时可见
+      (function() {
+        var cup12Ids = ['championsCup12', 'leagueCup12', 'associationCup12'];
+        if (state.currentPage === 'schedule' && cup12Ids.indexOf(state.currentLeague) !== -1) {
+          console.log('[autoSync] 当前页面为12强杯赛(' + state.currentLeague + ')，强制刷新对阵图');
+          var sc = document.getElementById('scheduleContent');
+          if (sc) { sc.innerHTML = ''; renderCup12Bracket(state.currentLeague, sc); }
+        }
+      })();
 
       inner.style.width = '100%';
       inner.style.background = 'linear-gradient(90deg,#66bb6a,#43a047)';
