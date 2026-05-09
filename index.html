@@ -4047,16 +4047,24 @@ function renderStats() {
     window.currentStatsTab = type;
     const container = document.getElementById('statsContent');
     let players = [];
-    if (isCupLeague(league)) {
-      if (type === 'goals') players = getCupTopScorers(20, league);
-      else if (type === 'assists') players = getCupTopAssists(20, league);
-      else if (type === 'motm') players = getCupTopMotm(20, league);
+    // 12强 榜单数据合并到主杯赛
+    const cup12ToCup = { championsCup12: 'championsCup', leagueCup12: 'leagueCup', associationCup12: 'associationCup' };
+    const effectiveLeague = cup12ToCup[league] || league;
+    const showCup12Name = !!cup12ToCup[league];
+    const cup12Names = { championsCup12: '冠军杯12强', leagueCup12: '联盟杯12强', associationCup12: '协会杯12强' };
+    const effectiveName = showCup12Name ? cup12Names[league] : (CUP_NAMES[effectiveLeague] || '');
+
+    if (isCupLeague(effectiveLeague)) {
+      if (type === 'goals') players = getCupTopScorers(20, effectiveLeague);
+      else if (type === 'assists') players = getCupTopAssists(20, effectiveLeague);
+      else if (type === 'motm') players = getCupTopMotm(20, effectiveLeague);
     } else {
-      if (type === 'goals') players = getTopScorers(20, league);
-      else if (type === 'assists') players = getTopAssists(20, league);
-      else if (type === 'motm') players = getTopMotm(20, league);
+      if (type === 'goals') players = getTopScorers(20, effectiveLeague);
+      else if (type === 'assists') players = getTopAssists(20, effectiveLeague);
+      else if (type === 'motm') players = getTopMotm(20, effectiveLeague);
     }
-    container.innerHTML = renderScorersList(players, type);
+    const titleMap = { goals: '射手榜', assists: '助攻榜', motm: 'MOTM榜' };
+    container.innerHTML = '<div style="padding:12px 16px;font-size:13px;font-weight:bold;color:#555;border-bottom:1px solid #eee;background:#fafafa">' + effectiveName + ' · ' + (titleMap[type] || '') + '</div>' + renderScorersList(players, type);
   }
 }
 
