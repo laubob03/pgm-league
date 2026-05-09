@@ -2603,15 +2603,9 @@ function renderCup12Bracket(cup12Id, targetContainer) {
       state.cups[cup12Id] = emptyCup;
       cup = emptyCup;
     }
-    // 非管理员不显示空框架
+    // 所有用户都可以查看空框架，但只有管理员可编辑
     if (!canEdit) {
-      container.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;padding:40px;color:#999;gap:16px;text-align:center">' +
-        '<div style="font-size:56px">🏆</div>' +
-        '<div style="font-size:16px;font-weight:bold;color:#555">暂无' + name + '赛程</div>' +
-        '<div style="font-size:13px">管理员可在"杯赛管理"中添加赛程</div>' +
-        '</div>';
-      saveToUrlHash();
-      return;
+      // 非管理员也显示空框架（只读模式），不返回
     }
   }
 
