@@ -2576,6 +2576,18 @@ function renderCup12Bracket(cup12Id) {
   var cup = sd.cups && sd.cups[cup12Id] ? sd.cups[cup12Id] : null;
 
   var container = document.getElementById('scheduleContent');
+
+  if (!cup || !cup.matches || cup.matches.length === 0) {
+    var cupName2 = { championsCup12: '冠军杯12强', leagueCup12: '联盟杯12强', associationCup12: '协会杯12强' };
+    container.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:#999;text-align:center;gap:12px;">' +
+      '<div style="font-size:48px;">🏆</div>' +
+      '<div style="font-size:16px;font-weight:bold;color:#555;">暂无' + (cupName2[cup12Id] || '杯赛') + '赛程</div>' +
+      '<div style="font-size:13px;">管理员可在侧边栏"杯赛管理"中创建赛程</div>' +
+      '</div>';
+    saveToUrlHash();
+    return;
+  }
+
   var rounds = cup ? cup.matches.reduce(function(acc, m) {
     if (!acc[m.round]) acc[m.round] = [];
     acc[m.round].push(m);
