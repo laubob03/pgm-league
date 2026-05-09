@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.315'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.316'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -601,7 +601,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 315 };
+const APP_VERSION = { major: 1, minor: 0, patch: 316 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -613,6 +613,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.316', date: '2026-05-09', items: ['🏷️ 12强对阵图右半区新增预赛轮次，左右完全对称，编号调整为A01-A11'] },
   { v: '1.0.315', date: '2026-05-09', items: ['🏷️ 12强对阵图新增预赛轮次（A01/A02左边各新增一场比赛），比赛编号调整为A01-A09'] },
   { v: '1.0.314', date: '2026-05-09', items: ['📐 12强赛程图改为整页自由缩放：无滚动条、自动适配屏幕、滚轮/按钮缩放、拖拽平移、双击重置、触摸捏合', '🏷️ 12强赛程图添加比赛编号：冠军杯A01-A07、联盟杯B01-B07、协会杯C01-C07'] },
   { v: '1.0.311', date: '2026-05-09', items: ['🐛 修复冠军杯12强/联盟杯12强/协会杯12强赛程图无法显示：c12-canvas 改为 position:relative，c12-view 改为 overflow-x:auto，解决 absolute 定位导致父容器高度为0内容被隐藏'] },
@@ -2591,9 +2592,11 @@ function renderCup12Bracket(cup12Id, targetContainer) {
     var emptyCup = sd.cups[cup12Id];
     if (emptyCup.matches.length === 0) {
       emptyCup.matches = [
-        // 预赛 2场 round=0, slot=0-1（左半区，→R1S0/R1S1）
+        // 预赛 4场 round=0, slot=0-3
         { id: cup12Id + '_R0S0', round: 0, slot: 0, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
         { id: cup12Id + '_R0S1', round: 0, slot: 1, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
+        { id: cup12Id + '_R0S2', round: 0, slot: 2, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
+        { id: cup12Id + '_R0S3', round: 0, slot: 3, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
         // 1/4决赛 4场 round=1, slot=0-3
         { id: cup12Id + '_R1S0', round: 1, slot: 0, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
         { id: cup12Id + '_R1S1', round: 1, slot: 1, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
@@ -2617,13 +2620,28 @@ function renderCup12Bracket(cup12Id, targetContainer) {
   }
 
   // 确保预赛数据存在（兼容旧数据自动升级）
-  if (cup && cup.matches && !cup.matches.some(function(m) { return m.round === 0; })) {
-    cup.matches.push(
-      { id: cup12Id + '_R0S0', round: 0, slot: 0, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
-      { id: cup12Id + '_R0S1', round: 0, slot: 1, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined }
-    );
-    if (state.cups && state.cups[cup12Id]) state.cups[cup12Id] = cup;
-    saveState();
+  if (cup && cup.matches) {
+    var needSave = false;
+    if (!cup.matches.some(function(m) { return m.round === 0 && m.slot === 0; })) {
+      cup.matches.push({ id: cup12Id + '_R0S0', round: 0, slot: 0, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined });
+      needSave = true;
+    }
+    if (!cup.matches.some(function(m) { return m.round === 0 && m.slot === 1; })) {
+      cup.matches.push({ id: cup12Id + '_R0S1', round: 0, slot: 1, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined });
+      needSave = true;
+    }
+    if (!cup.matches.some(function(m) { return m.round === 0 && m.slot === 2; })) {
+      cup.matches.push({ id: cup12Id + '_R0S2', round: 0, slot: 2, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined });
+      needSave = true;
+    }
+    if (!cup.matches.some(function(m) { return m.round === 0 && m.slot === 3; })) {
+      cup.matches.push({ id: cup12Id + '_R0S3', round: 0, slot: 3, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined });
+      needSave = true;
+    }
+    if (needSave) {
+      if (state.cups && state.cups[cup12Id]) state.cups[cup12Id] = cup;
+      saveState();
+    }
   }
 
   // ── inject CSS once ──
@@ -2676,10 +2694,10 @@ function renderCup12Bracket(cup12Id, targetContainer) {
   var cPre = codePrefix[cup12Id] || 'X';
   function matchCode(round, slot) {
     var order;
-    if (round === 0) order = slot + 1;          // 预赛: 01-02
-    else if (round === 1) order = 2 + slot + 1;  // ¼决赛: 03-06
-    else if (round === 2) order = 6 + slot + 1;  // 半决赛: 07-08
-    else if (round === 3) order = 9;              // 决赛: 09
+    if (round === 0) order = slot + 1;          // 预赛: 01-04
+    else if (round === 1) order = 4 + slot + 1;  // ¼决赛: 05-08
+    else if (round === 2) order = 8 + slot + 1;  // 半决赛: 09-10
+    else if (round === 3) order = 11;             // 决赛: 11
     else if (round === 4) return '🏆';             // 冠军
     else return '';
     return cPre + (order < 10 ? '0' : '') + order;
@@ -2789,11 +2807,20 @@ function renderCup12Bracket(cup12Id, targetContainer) {
 
   bodyHtml += '<div style="flex-shrink:0;width:' + colGap + 'px"></div>';
 
-  // 右½决赛列（slot 2, 3）
+  // 右¼决赛列（slot 2, 3）
   bodyHtml += '<div class="c12-col">';
   bodyHtml += '<div class="c12-col-hd"><div class="c12-hd2 qf">¼决赛</div></div>';
   bodyHtml += rMatch(1, 2, qfTop0);
   bodyHtml += rMatch(1, 3, qfTop1);
+  bodyHtml += '</div>';
+
+  bodyHtml += '<div style="flex-shrink:0;width:' + colGap + 'px"></div>';
+
+  // 右预赛列（round 0, slot 2, 3）
+  bodyHtml += '<div class="c12-col">';
+  bodyHtml += '<div class="c12-col-hd"><div class="c12-hd2 pre">预赛</div></div>';
+  bodyHtml += rMatch(0, 2, qfTop0);
+  bodyHtml += rMatch(0, 3, qfTop1);
   bodyHtml += '</div>';
 
   // 右半区标签
@@ -2911,6 +2938,12 @@ function renderCup12Bracket(cup12Id, targetContainer) {
 
     // 右半决赛 → 决赛（从右往左）
     if (fin && sf1) addCurve(sf1.l, sf1.cy, fin.r, fin.cy, accent);
+
+    // 右半区：预赛 → ¼决赛（从右往左）
+    var r0s2 = mPos(0, 2), r0s3 = mPos(0, 3);
+    var r1s2 = mPos(1, 2), r1s3 = mPos(1, 3);
+    if (r0s2 && r1s2) addCurve(r0s2.l, r0s2.cy, r1s2.r, r1s2.cy, '#6b7280');
+    if (r0s3 && r1s3) addCurve(r0s3.l, r0s3.cy, r1s3.r, r1s3.cy, '#6b7280');
   })();
 
   // ── zoom / pan / touch interaction ──
