@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 354 };
+const APP_VERSION = { major: 1, minor: 0, patch: 355 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.355', date: '2026-05-10', items: ['🐛 12强选队即时更新：teamSelectHtml 直接从 getCurrentSeasonData() 获取最新数据'] },
   { v: '1.0.354', date: '2026-05-10', items: ['🐛 12强选队即时更新：使用 requestAnimationFrame 确保下拉菜单立即刷新'] },
   { v: '1.0.353', date: '2026-05-10', items: ['🐛 12强选队下拉菜单：已选球队不再显示（而非显示为禁用）'] },
   { v: '1.0.352', date: '2026-05-10', items: ['🐛 修复预赛第二场比分显示顺序：应与第一场保持一致（原主队在左）'] },
@@ -2883,10 +2884,13 @@ function renderCup12Bracket(cup12Id, targetContainer) {
   // 下拉选队HTML
   function teamSelectHtml(round, slot, field, currentTeamId) {
     var teams = getRankedTeams();
+    // ★ 每次都从最新的 state 获取数据，确保已选球队列表即时更新
+    var sd = getCurrentSeasonData();
+    var currentCup = sd.cups && sd.cups[cup12Id] ? sd.cups[cup12Id] : null;
     // 收集已被其他位置选走的球队（避免重复选择）
     var usedIds = {};
-    if (cup && cup.matches) {
-      cup.matches.forEach(function(m) {
+    if (currentCup && currentCup.matches) {
+      currentCup.matches.forEach(function(m) {
         if (m.homeTeam) usedIds[m.homeTeam] = true;
         if (m.awayTeam) usedIds[m.awayTeam] = true;
       });
