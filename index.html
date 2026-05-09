@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.327'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.328'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 327 };
+const APP_VERSION = { major: 1, minor: 0, patch: 328 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,7 +610,9 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.328', date: '2026-05-09', items: ['☁️ 12强超管选队后自动上传云端，所有人可见'] },
   { v: '1.0.327', date: '2026-05-09', items: ['📋 12强下拉选队限制为父杯赛积分榜前12名，已选球队不可重复选择'] },
+  { v: '1.0.326', date: '2026-05-09', items: ['🐛 12强A05-A08主客下拉选队根本修复：rTeam未完赛时field推断Bug导致客场下拉永远不出现'] },
   { v: '1.0.324', date: '2026-05-09', items: ['🔧 showEnterCupMatchModal12和submitCupMatchResult12改为从window._editingMatchId自动推导cup12Id，不再依赖onclick传参，彻底解决VS点击无反应问题'] },
   { v: '1.0.321', date: '2026-05-09', items: ['🔧 12强对阵图A01/A02垂直间距重叠修复，cardH从56增至112匹配实际卡片高度', '✅ 超级管理员可录入比分（canEdit已含isSuperAdmin）'] },
   { v: '1.0.320', date: '2026-05-09', items: ['🎨 12强对阵图球队显示/队徽/底色/比分录入/晋级条件全面对齐足总杯', '✅ 比赛完成状态改用status=completed，录入比分自动设置，胜者晋级更准确'] },
@@ -3402,6 +3404,10 @@ window._c12SelectTeam = function(cup12Id, round, slot, field, teamId) {
   saveState();
   renderCup12Bracket(cup12Id);
   saveToUrlHash();
+  // 自动上传云端，所有人可见
+  if (typeof doCloudUpload === 'function' && typeof syncUpload === 'function') {
+    doCloudUpload(function() { return syncUpload(); });
+  }
 };
 
 // 足总杯下拉选队回调
