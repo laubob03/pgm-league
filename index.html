@@ -2580,16 +2580,39 @@ function renderCup12Bracket(cup12Id, targetContainer) {
   var container = targetContainer || document.getElementById('scheduleContent');
   var canEdit = state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === cup12Id));
 
-  // 无数据时显示引导
+  // 无数据时自动初始化空框架（仅管理员可见可编辑）
   if (!cup || !cup.matches || cup.matches.length === 0) {
-    container.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;padding:40px;color:#999;gap:16px;text-align:center">' +
-      '<div style="font-size:56px">🏆</div>' +
-      '<div style="font-size:16px;font-weight:bold;color:#555">暂无' + name + '赛程</div>' +
-      '<div style="font-size:13px">请在"杯赛管理"中创建赛程或导入赛程数据</div>' +
-      '<div style="font-size:12px;margin-top:8px;padding:8px 16px;background:#f5f5f5;border-radius:8px;color:#888">提示：需要先在"杯赛管理"中添加12强杯赛数据，对阵图才会显示</div>' +
-      '</div>';
-    saveToUrlHash();
-    return;
+    if (!sd.cups) sd.cups = {};
+    if (!sd.cups[cup12Id]) sd.cups[cup12Id] = { teams: [], matches: [] };
+    var emptyCup = sd.cups[cup12Id];
+    if (emptyCup.matches.length === 0) {
+      emptyCup.matches = [
+        // 1/4决赛 4场 round=1, slot=0-3
+        { id: cup12Id + '_R1S0', round: 1, slot: 0, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
+        { id: cup12Id + '_R1S1', round: 1, slot: 1, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
+        { id: cup12Id + '_R1S2', round: 1, slot: 2, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
+        { id: cup12Id + '_R1S3', round: 1, slot: 3, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
+        // 半决赛 2场 round=2, slot=0-1
+        { id: cup12Id + '_R2S0', round: 2, slot: 0, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
+        { id: cup12Id + '_R2S1', round: 2, slot: 1, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
+        // 决赛 1场 round=3, slot=0
+        { id: cup12Id + '_R3S0', round: 3, slot: 0, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
+        // 冠军赛 1场 round=4, slot=0
+        { id: cup12Id + '_R4S0', round: 4, slot: 0, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
+      ];
+      state.cups[cup12Id] = emptyCup;
+      cup = emptyCup;
+    }
+    // 非管理员不显示空框架
+    if (!canEdit) {
+      container.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;padding:40px;color:#999;gap:16px;text-align:center">' +
+        '<div style="font-size:56px">🏆</div>' +
+        '<div style="font-size:16px;font-weight:bold;color:#555">暂无' + name + '赛程</div>' +
+        '<div style="font-size:13px">管理员可在"杯赛管理"中添加赛程</div>' +
+        '</div>';
+      saveToUrlHash();
+      return;
+    }
   }
 
   // ── inject CSS once ──
@@ -2734,6 +2757,7 @@ function renderCup12Bracket(cup12Id, targetContainer) {
 
   var html = '<div class="c12">' +
     '<div class="c12-hd"><div class="c12-title">' + name + '</div></div>' +
+    '<div style="text-align:center;padding:6px 0;font-size:12px;color:#7a5c00;background:#fff8e7;border-radius:6px;margin:4px 8px">💡 首次使用：点击下方空白卡片即可选择球队并录入比分</div>' +
     '<div class="c12-view" id="c12View">' +
       '<div class="c12-canvas" id="c12Canvas" style="width:' + (canvasW * 2) + 'px;height:' + canvasH + 'px">' +
         '<div class="c12-body">' + bodyHtml + '</div>' +
