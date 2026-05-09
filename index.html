@@ -31,7 +31,7 @@
       if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
       // 版本检查：如果本地版本低于 minVersion，弹出升级提示框
       if(d.minVersion){
-        var myV=0;try{var parts2='1.0.319'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+        var myV=0;try{var parts2='1.0.320'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
         var parts=d.minVersion.split('.').map(Number);
         var minV=(parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0);
         if(myV<minV){
@@ -598,7 +598,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 319 };
+const APP_VERSION = { major: 1, minor: 0, patch: 320 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -610,6 +610,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.320', date: '2026-05-09', items: ['🎨 12强对阵图球队显示/队徽/底色/比分录入/晋级条件全面对齐足总杯', '✅ 比赛完成状态改用status=completed，录入比分自动设置，胜者晋级更准确'] },
   { v: '1.0.319', date: '2026-05-09', items: ['🎨 12强对阵图球队显示队徽+联赛底色（超级深红/甲级深绿/乙级深灰），队徽改用getTeamLogo确保显示'] },
   { v: '1.0.318', date: '2026-05-09', items: ['🎨 12强赛程图添加联赛底色（超级深红/甲级深绿/乙级深灰），移除赛程页12强按钮', '🏆 冠军展示文字替换为emoji'] },
   { v: '1.0.317', date: '2026-05-09', items: ['👤 12强对阵图超管下拉选队：A01-A04主客均可选，A05客场/A06主场/A07主场/A08客场可选，胜者自动晋级', '🔄 胜者自动晋级：预赛→¼决赛→半决赛→决赛→冠军'] },
@@ -2671,7 +2672,27 @@ function renderCup12Bracket(cup12Id, targetContainer) {
       '.c12-hd2.fin{color:#6b21a8;background:#f3e8ff;border-color:#c4b5fd}' +
       '.c12-hd2.ch{color:#92400e;background:#fef3c7;border-color:#fbbf24}' +
       '.c12-hd2.pre{color:#9a3412;background:#ffedd5;border-color:#fdba74}' +
-      '.c12-match{background:#fff;border:1.5px solid #d1d5db;border-radius:8px;padding:5px 5px;width:160px;flex-shrink:0;position:absolute;box-shadow:0 1px 3px rgba(0,0,0,0.08);box-sizing:border-box}' +
+      // 足总杯复用的比赛卡片样式（与足总杯完全一致）
+      '.fc-match{background:#ffffff;border:1.5px solid #d1d5db;border-radius:10px;padding:6px 5px;width:160px;flex-shrink:0;position:absolute;box-shadow:0 1px 3px rgba(0,0,0,0.08);box-sizing:border-box}' +
+      '.fc-match:hover{border-color:#9ca3af;box-shadow:0 3px 8px rgba(0,0,0,0.12)}' +
+      '.fc-match.has-result{border-color:' + accent + ';background:#fafffe}' +
+      '.fc-id{font-size:8px;color:#9ca3af;text-align:center;margin-bottom:2px;font-family:monospace;font-weight:700;letter-spacing:0.5px}' +
+      '.fc-team{display:flex;align-items:center;gap:4px;padding:4px 3px;font-size:11px;font-weight:600;cursor:pointer;border-radius:5px;min-height:22px;color:#1f2937}' +
+      '.fc-team:hover{filter:brightness(0.95)}' +
+      '.fc-team.tbd{color:#6b7280;cursor:default}' +
+      '.fc-team.win{font-weight:700;border-radius:4px;padding:2px 4px;border-left:3px solid #166534}' +
+      '.fc-team.lose{opacity:.4}' +
+      '.fc-logo{width:16px;height:16px;object-fit:contain;border-radius:2px;flex-shrink:0}' +
+      '.fc-logo-ph{width:16px;height:16px;flex-shrink:0}' +
+      '.fc-score{text-align:center;font-size:12px;font-weight:700;color:#374151;padding:4px 0;margin:2px 0;letter-spacing:0.5px}' +
+      '.fc-score.done{cursor:pointer;color:#1B5E20}.fc-score.done:hover{color:#228B22}' +
+      '.fc-team-row{display:flex;align-items:center;margin:1px 0}' +
+      '.fc-team-row .fc-sel{flex:1;min-width:0}' +
+      '.fc-sel{width:100%;font-size:10px;padding:3px 2px;border:1px solid #d1d5db;border-radius:4px;background:#ffffff;color:#1f2937;cursor:pointer;margin:1px 0;-webkit-appearance:none;appearance:none;font-weight:600}' +
+      '.fc-sel:focus{outline:none;border-color:#228B22;box-shadow:0 0 0 2px rgba(34,139,34,0.15)}' +
+      '.fc-sel:disabled{cursor:default;opacity:1;color:#1f2937;background:#ffffff}' +
+      '.fc-sel-ro{cursor:pointer;opacity:1;color:#1f2937;background:#ffffff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+      // 12强旧样式（保留兼容）
       '.c12-match:hover{border-color:' + accent + ';box-shadow:0 2px 8px rgba(0,0,0,0.12)}' +
       '.c12-match.done{border-color:' + accent + ';background:#fafffe}' +
       '.c12-logo{width:14px;height:14px;object-fit:contain;border-radius:2px;flex-shrink:0}' +
@@ -2755,7 +2776,7 @@ function renderCup12Bracket(cup12Id, targetContainer) {
   // 获取胜者teamId
   function getWinner(round, slot) {
     var m = gM(round, slot);
-    if (!m || m.homeScore === undefined || m.awayScore === undefined) return null;
+    if (!m || m.status !== 'completed') return null;
     if (m.homeScore > m.awayScore) return m.homeTeam;
     if (m.awayScore > m.homeScore) return m.awayTeam;
     return null;
@@ -2797,7 +2818,7 @@ function renderCup12Bracket(cup12Id, targetContainer) {
       var label = (idx + 1) + '. ' + t.name;
       opts += '<option value="' + t.id + '"' + selected + disabled + '>' + label + '</option>';
     });
-    return '<select class="c12-sel" onchange="window._c12SelectTeam(\'' + cup12Id + '\',' + round + ',' + slot + ',\'' + field + '\',this.value)" style="width:100%;font-size:10px;padding:1px 2px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer">' + opts + '</select>';
+    return '<select class="fc-sel" onchange="window._c12SelectTeam(\'' + cup12Id + '\',' + round + ',' + slot + ',\'' + field + '\',this.value)">' + opts + '</select>';
   }
 
   // ── match helper ──
@@ -2830,55 +2851,96 @@ function renderCup12Bracket(cup12Id, targetContainer) {
     var m = gM(round, slot);
     var homeTeamId = m ? m.homeTeam : null;
     var awayTeamId = m ? m.awayTeam : null;
-    var home = homeTeamId ? teamInfo(homeTeamId) : null;
-    var away = awayTeamId ? teamInfo(awayTeamId) : null;
-    var hn = home ? home.name : '待定';
-    var an = away ? away.name : '待定';
-    var hl = home && home.logo ? home.logo : '';
-    var al = away && away.logo ? away.logo : '';
-    var done = m && m.homeScore !== undefined && m.awayScore !== undefined;
-    var hs = done ? m.homeScore : '';
-    var as = done ? m.awayScore : '';
-    var mId = m ? m.id : ('c12_' + round + '_' + slot);
     var top = extraTop !== undefined ? extraTop : 0;
+    var mId = m ? m.id : ('c12_' + round + '_' + slot);
     var isSuperAdmin = state.currentUser && state.currentUser.isSuperAdmin;
-    var editAttr = canEdit && m ? ' onclick="window._editingMatchId=\'' + m.id + '\';showEnterCupMatchModal12(\'' + cup12Id + '\');"' : '';
 
-    // 主场行
-    var homeBg = home ? leagueBg(home) : '';
-    var homeBgStyle = homeBg ? ' style="padding:1px 4px;border-radius:3px;' + homeBg + '"' : '';
-    var homeScoreStyle = homeBg ? ' style="color:#fff!important"' : '';
-    var homeRow;
-    if (!homeTeamId && isSuperAdmin && needSelect(round, slot, 'home')) {
-      homeRow = teamSelectHtml(round, slot, 'home', homeTeamId);
-    } else {
-      homeRow = '<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px"' + homeBgStyle + '>' +
-        (hl ? '<img class="c12-logo" src="' + hl + '" onerror="this.style.display=\'none\'">' : '<div class="c12-logo"></div>') +
-        '<span class="c12-tn' + (home ? '' : ' tbd') + '">' + hn + '</span>' +
-        '<span class="c12-sc' + (done ? ' done' : '') + '"' + homeScoreStyle + '>' + hs + '</span>' +
-      '</div>';
+    // 判断已完赛（与足总杯一致）
+    var done = m && m.status === 'completed';
+    var hw = done && m.homeScore > m.awayScore;
+    var aw = done && m.awayScore > m.homeScore;
+
+    // 渲染单个球队行（与足总杯 rTeamSelect 逻辑完全一致）
+    function rTeam(teamId, isWin) {
+      var teamObj = (teamId && teamId !== 'TBD') ? sd.teams.find(function(t){return t.id===teamId;}) : null;
+
+      // 已完赛：显示队名+logo+胜负状态+联赛底色
+      if (done && teamObj) {
+        var nm = teamObj.name;
+        var logo = getTeamLogo(teamObj);
+        var cls = 'fc-team' + (isWin === true ? ' win' : (isWin === false ? ' lose' : ''));
+        var clk = ' onclick="showTeamDetail(\'' + teamObj.id + '\')"';
+        var lhtml = logo ? '<img src="' + logo + '" class="fc-logo">' : '<span class="fc-logo-ph"></span>';
+        var bgStyle = leagueBg(teamObj);
+        var styleAttr = bgStyle ? ' style="' + bgStyle + '"' : '';
+        return '<div class="' + cls + '"' + clk + styleAttr + '>' + lhtml + '<span style="overflow-wrap:break-word;line-height:1.2">' + nm + '</span></div>';
+      }
+
+      // 超级管理员且比赛未完赛：显示可操作的下拉选择（与足总杯一致）
+      if (isSuperAdmin && !done) {
+        // 需要下拉选队的位置
+        var field = (isWin === hw) ? 'home' : 'away'; // 根据位置判断主客
+        if (isWin === hw) field = 'home'; // 主场行
+        else field = 'away'; // 客场行
+        var needSel = needSelect(round, slot, field);
+        if (!teamId && needSel) {
+          // 显示下拉选队
+          return '<div class="fc-team-row">' + teamSelectHtml(round, slot, field, teamId) + '</div>';
+        }
+        if (teamId) {
+          // 已选球队，显示logo+下拉（可清除）
+          var currentOpt = '<option value="' + teamObj.id + '" selected>' + teamObj.name + '</option>';
+          var selBg = leagueBg(teamObj);
+          var selStyle = selBg ? ' style="' + selBg + '"' : '';
+          var aLogo = getTeamLogo(teamObj);
+          var adminLogo = aLogo ? '<img src="' + aLogo + '" class="fc-logo" style="margin-right:3px">' : '<span class="fc-logo-ph" style="margin-right:3px"></span>';
+          return '<div class="fc-team-row">' + adminLogo + '<select class="fc-sel"' + selStyle + ' onchange="window._c12SelectTeam(\'' + cup12Id + '\',' + round + ',' + slot + ',\'' + field + '\',this.value)">'
+            + '<option value="">-- 清除 --</option>' + currentOpt
+            + '</select></div>';
+        }
+      }
+
+      // 普通用户且比赛未完赛：模拟 select 样式显示球队（与足总杯一致）
+      if (!done) {
+        if (teamObj) {
+          var selBg2 = leagueBg(teamObj);
+          var selStyle2 = selBg2 ? ' style="' + selBg2 + '"' : '';
+          var roLogo = getTeamLogo(teamObj);
+          var roLogoHtml = roLogo ? '<img src="' + roLogo + '" class="fc-logo" style="margin-right:3px">' : '<span class="fc-logo-ph" style="margin-right:3px"></span>';
+          return '<div class="fc-sel fc-sel-ro"' + selStyle2 + ' onclick="showTeamDetail(\'' + teamObj.id + '\')">' + roLogoHtml + teamObj.name + '</div>';
+        }
+        return '<div class="fc-sel fc-sel-ro">-- 待定 --</div>';
+      }
+
+      return '<div class="fc-team tbd"><span class="fc-logo-ph"></span><span>待定</span></div>';
     }
 
-    // 客场行
-    var awayBg = away ? leagueBg(away) : '';
-    var awayBgStyle = awayBg ? ' style="padding:1px 4px;border-radius:3px;' + awayBg + '"' : '';
-    var awayScoreStyle = awayBg ? ' style="color:#fff!important"' : '';
-    var awayRow;
-    if (!awayTeamId && isSuperAdmin && needSelect(round, slot, 'away')) {
-      awayRow = teamSelectHtml(round, slot, 'away', awayTeamId);
-    } else {
-      awayRow = '<div style="display:flex;align-items:center;gap:4px"' + awayBgStyle + '>' +
-        (al ? '<img class="c12-logo" src="' + al + '" onerror="this.style.display=\'none\'">' : '<div class="c12-logo"></div>') +
-        '<span class="c12-tn' + (away ? '' : ' tbd') + '">' + an + '</span>' +
-        '<span class="c12-sc' + (done ? ' done' : '') + '"' + awayScoreStyle + '>' + as + '</span>' +
-      '</div>';
+    // 比分显示（与足总杯 rScore 逻辑一致）
+    function rScore() {
+      if (done) {
+        var scoreText = m.homeScore + ' - ' + m.awayScore;
+        if (canEdit) {
+          return '<div class="fc-score done" onclick="window._editingMatchId=\'' + m.id + '\';showEnterCupMatchModal12(\'' + cup12Id + '\')">' + scoreText + '</div>';
+        }
+        return '<div class="fc-score">' + scoreText + '</div>';
+      }
+      // 两队都已选且未完赛：管理员可点击录入
+      if (homeTeamId && awayTeamId) {
+        if (canEdit) {
+          return '<div class="fc-score done" onclick="window._editingMatchId=\'' + m.id + '\';showEnterCupMatchModal12(\'' + cup12Id + '\')">VS</div>';
+        }
+        return '<div class="fc-score">VS</div>';
+      }
+      return '<div class="fc-score">VS</div>';
     }
 
-    return '<div class="c12-match' + (done ? ' done' : '') + '" data-id="' + mId + '" data-round="' + round + '" data-slot="' + slot + '" style="top:' + top + 'px"' + editAttr + '>' +
-      '<div class="c12-id">' + matchCode(round, slot) + '</div>' +
-      homeRow +
-      awayRow +
-    '</div>';
+    var cls = 'fc-match' + (done ? ' has-result' : '');
+    return '<div class="' + cls + '" data-id="' + mId + '" data-round="' + round + '" data-slot="' + slot + '" style="top:' + top + 'px">'
+      + '<div class="fc-id">' + matchCode(round, slot) + '</div>'
+      + rTeam(homeTeamId, hw)
+      + rScore()
+      + rTeam(awayTeamId, aw)
+      + '</div>';
   }
 
   // ── layout constants ──
@@ -3136,7 +3198,7 @@ function renderCup12Bracket(cup12Id, targetContainer) {
     // mouse drag pan
     var dragging = false, startX, startY, startTx, startTy;
     vport.addEventListener('mousedown', function(e) {
-      if (e.target.closest('.c12-match') || e.target.closest('.c12-sel')) return; // don't drag on match cards or dropdowns
+      if (e.target.closest('.fc-match') || e.target.closest('.fc-sel') || e.target.closest('.c12-match') || e.target.closest('.c12-sel')) return; // don't drag on match cards or dropdowns
       dragging = true; startX = e.clientX; startY = e.clientY; startTx = tx; startTy = ty;
       cv.classList.add('dragging');
     });
@@ -3152,7 +3214,7 @@ function renderCup12Bracket(cup12Id, targetContainer) {
 
     // double click to fit
     vport.addEventListener('dblclick', function(e) {
-      if (e.target.closest('.c12-match')) return;
+      if (e.target.closest('.fc-match') || e.target.closest('.c12-match')) return;
       fitToView();
     });
 
@@ -3271,16 +3333,21 @@ function showEnterCupMatchModal12(cup12Id) {
   if (!match) { showToast('未找到比赛'); return; }
   var cupName = { championsCup12: '冠军杯12强', leagueCup12: '联盟杯12强', associationCup12: '协会杯12强' };
   var roundName = { 0: '预赛', 1: '¼决赛', 2: '半决赛', 3: '决赛', 4: '冠军' };
+  // 获取球队名称
+  var homeTeam = match.homeTeam ? sd.teams.find(function(t){return t.id===match.homeTeam;}) : null;
+  var awayTeam = match.awayTeam ? sd.teams.find(function(t){return t.id===match.awayTeam;}) : null;
+  var homeName = homeTeam ? homeTeam.name : '主队';
+  var awayName = awayTeam ? awayTeam.name : '客队';
   var md = '<div style="display:flex;flex-direction:column;gap:12px;padding:4px;">';
   md += '<div style="text-align:center;font-weight:bold;color:' + (accentColor || '#228B22') + ';margin-bottom:4px;">' + (cupName[cup12Id] || cup12Id) + ' · ' + (roundName[match.round] || ('第' + match.round + '轮')) + '</div>';
   md += '<div style="display:flex;align-items:center;gap:8px;">';
-  md += '<div style="flex:1;text-align:right;font-size:13px;">' + (match.homeName || '主队') + '</div>';
+  md += '<div style="flex:1;text-align:right;font-size:13px;">' + homeName + '</div>';
   md += '<div style="display:flex;gap:6px;align-items:center;">';
   md += '<input id="m12h" type="number" min="0" value="' + (match.homeScore !== undefined ? match.homeScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:4px;border:1px solid #ddd;border-radius:6px;font-size:14px;">';
   md += '<span style="color:#999;">:</span>';
   md += '<input id="m12a" type="number" min="0" value="' + (match.awayScore !== undefined ? match.awayScore : '') + '" placeholder="-" style="width:48px;text-align:center;padding:4px;border:1px solid #ddd;border-radius:6px;font-size:14px;">';
   md += '</div>';
-  md += '<div style="flex:1;font-size:13px;">' + (match.awayName || '客队') + '</div>';
+  md += '<div style="flex:1;font-size:13px;">' + awayName + '</div>';
   md += '</div>';
   md += '<div style="text-align:center;margin-top:4px;">';
   md += '<button onclick="submitCupMatchResult12(\'' + cup12Id + '\');" style="background:' + (accentColor || '#228B22') + ';color:white;border:none;padding:8px 24px;border-radius:20px;font-size:13px;cursor:pointer;">保存</button>';
@@ -3299,6 +3366,7 @@ function submitCupMatchResult12(cup12Id) {
   if (!match) return;
   match.homeScore = homeScore;
   match.awayScore = awayScore;
+  match.status = 'completed';
   saveState();
   closeModal();
   renderCup12Bracket(cup12Id);
@@ -3317,9 +3385,10 @@ window._c12SelectTeam = function(cup12Id, round, slot, field, teamId) {
   if (!match) return;
   match[field] = teamId || null;
   if (!teamId) {
-    // 清空球队时也清空比分
+    // 清空球队时也清空比分和状态
     match.homeScore = undefined;
     match.awayScore = undefined;
+    match.status = undefined;
   }
   saveState();
   renderCup12Bracket(cup12Id);
