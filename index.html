@@ -34,7 +34,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.360'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.361'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -603,7 +603,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 360 };
+const APP_VERSION = { major: 1, minor: 0, patch: 361 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -2839,14 +2839,17 @@ function renderCup12Bracket(cup12Id, targetContainer) {
 
   // 哪些位置需要下拉选队：A01-A04全部, A05主场, A06客场, A07客场, A08主场
   function needSelect(round, slot, field) {
-    if (round === 0) return true;  // 预赛：主客都可选
-    if (round === 1) {
-      if (slot === 0 && field === 'home') return true;   // A05主场
-      if (slot === 1 && field === 'away') return true;   // A06客场
-      if (slot === 2 && field === 'away') return true;   // A07客场
-      if (slot === 3 && field === 'home') return true;   // A08主场
-    }
-    return false;
+    var r;
+    if (round === 0) { r = true; }  // 预赛：主客都可选
+    else if (round === 1) {
+      if (slot === 0 && field === 'home') r = true;   // A05主场（超管选）
+      else if (slot === 1 && field === 'away') r = true;   // A06客场（超管选）
+      else if (slot === 2 && field === 'away') r = true;   // A07客场（超管选）
+      else if (slot === 3 && field === 'home') r = true;   // A08主场（超管选）
+      else r = false;
+    } else { r = false; }
+    console.log('[needSelect] round=' + round + ' slot=' + slot + ' field=' + field + ' cup=' + cup12Id + ' → ' + r);
+    return r;
   }
 
   // 胜者晋级映射：round_slot → { round, slot, field }
@@ -2922,6 +2925,7 @@ function renderCup12Bracket(cup12Id, targetContainer) {
 
   // 自动晋级：根据已有比分，填充下一轮球队
   function propagateWinners() {
+    console.log('[propagateWinners] 开始, cup=' + cup12Id);
     Object.keys(winnerMap).forEach(function(key) {
       var parts = key.split('_');
       var round = parseInt(parts[0]), slot = parseInt(parts[1]);
@@ -2929,8 +2933,12 @@ function renderCup12Bracket(cup12Id, targetContainer) {
       if (w === null) return;
       var dest = winnerMap[key];
       var nm = gM(dest.r, dest.s);
+      console.log('[propagateWinners] key=' + key + ' winner=' + w + ' → dest round=' + dest.r + ' slot=' + dest.s + ' field=' + dest.f + ' current=' + (nm ? nm[dest.f] : 'null') + ' match=' + (nm ? nm.id : 'null'));
       if (nm && nm[dest.f] !== w) {
         nm[dest.f] = w;
+        console.log('[propagateWinners] ✅ 已写入');
+      } else {
+        console.log('[propagateWinners] ⏭️ 跳过（值相同或无目标）');
       }
     });
   }
