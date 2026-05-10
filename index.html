@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.365'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.366'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -621,7 +621,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 365 };
+const APP_VERSION = { major: 1, minor: 0, patch: 366 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -633,7 +633,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.357', date: '2026-05-10', items: ['🐛 12强比分即时更新：gM 和 teamInfo 函数每次都从 getCurrentSeasonData() 获取最新数据'] },
+  { v: '1.0.365', date: '2026-05-11', items: ['🔧 终极修复SW缓存死锁：SW改为最小passthrough模式，不缓存任何文件', '🔧 页面加载时强制清理旧SW缓存', '🔧 修复CHANGELOG未更新导致底部版本号显示错误的问题'] },
   { v: '1.0.356', date: '2026-05-10', items: ['🐛 12强选队即时更新：完全采用足总杯模式，新增 getCup12AvailableTeams 函数，移除 requestAnimationFrame 延迟'] },
   { v: '1.0.355', date: '2026-05-10', items: ['🐛 12强选队即时更新：teamSelectHtml 直接从 getCurrentSeasonData() 获取最新数据'] },
   { v: '1.0.354', date: '2026-05-10', items: ['🐛 12强选队即时更新：使用 requestAnimationFrame 确保下拉菜单立即刷新'] },
