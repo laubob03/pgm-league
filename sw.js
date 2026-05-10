@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pgm-league-v363';
+const CACHE_NAME = 'pgm-league-v364';
 
 // ★ v1.0.363: 不再预缓存 index.html，避免 install 时抓到 CDN 旧版形成死锁
 const urlsToCache = [

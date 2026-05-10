@@ -6,6 +6,24 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <link rel="icon" type="image/png" sizes="192x192" href="unpackage/res/icons/192x192.png">
+  <!-- ★ v1.0.364: 强制清理 SW 缓存 — 无条件注销旧 SW 并清空所有 cache，只执行一次 -->
+  <script>
+  !function(){
+    var _fc = sessionStorage.getItem('pgm_force_clean');
+    if (!_fc) {
+      sessionStorage.setItem('pgm_force_clean', '1');
+      var tasks = [];
+      if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+      if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
+      Promise.all(tasks).then(function(){
+        location.replace(location.href.split('?')[0].split('#')[0] + '?_fc=' + Date.now() + location.hash);
+      });
+      return; // 阻止后续脚本执行，等 reload
+    } else {
+      sessionStorage.removeItem('pgm_force_clean');
+    }
+  }();
+  </script>
   <!-- 顶部版本检查：检测到新版本时弹出提示框，用户确认后才升级 -->
   <script>
   !function(){
@@ -34,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.363'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.364'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -603,7 +621,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 363 };
+const APP_VERSION = { major: 1, minor: 0, patch: 364 };
 
 const APP_AUTHOR = 'J.K';
 
