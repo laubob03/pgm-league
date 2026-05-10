@@ -1,6 +1,7 @@
-const CACHE_NAME = 'pgm-league-v362';
+const CACHE_NAME = 'pgm-league-v363';
+
+// ★ v1.0.363: 不再预缓存 index.html，避免 install 时抓到 CDN 旧版形成死锁
 const urlsToCache = [
-  './index.html',
   './manifest.json'
 ];
 
@@ -22,9 +23,8 @@ self.addEventListener('activate', event => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('message', event => {
@@ -41,11 +41,19 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // ★ v1.0.363: 关键文件用全新 URL 构造请求 → CDN 零缓存，不走 304
   if (url.includes('sw.js') || url.includes('version.json') || url.endsWith('index.html') || url.endsWith('/')) {
+    var base = url.split('?')[0];
+    var bustedUrl = base + (base.indexOf('?') > -1 ? '&' : '?') + '_noc=' + Date.now();
     event.respondWith(
-      fetch(event.request, { cache: 'no-store' })
-        .then(response => response)
-        .catch(() => caches.match(event.request))
+      fetch(new Request(bustedUrl, {
+        method: 'GET',
+        headers: event.request.headers,
+        mode: 'same-origin',
+        credentials: 'same-origin'
+      }))
+      .then(function(response) { return response; })
+      .catch(function() { return caches.match(event.request); })
     );
     return;
   }
