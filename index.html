@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.366'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.367'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -621,7 +621,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 366 };
+const APP_VERSION = { major: 1, minor: 0, patch: 367 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -633,7 +633,8 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.365', date: '2026-05-11', items: ['🔧 终极修复SW缓存死锁：SW改为最小passthrough模式，不缓存任何文件', '🔧 页面加载时强制清理旧SW缓存', '🔧 修复CHANGELOG未更新导致底部版本号显示错误的问题'] },
+  { v: '1.0.367', date: '2026-05-11', items: ['🔧 版本号显示改用APP_VERSION而非CHANGELOG[0].v，防止CHANGELOG未更新时版本号卡住'] },
+  { v: '1.0.366', date: '2026-05-11', items: ['🔧 修复CHANGELOG未更新导致底部版本号显示错误的问题'] },
   { v: '1.0.356', date: '2026-05-10', items: ['🐛 12强选队即时更新：完全采用足总杯模式，新增 getCup12AvailableTeams 函数，移除 requestAnimationFrame 延迟'] },
   { v: '1.0.355', date: '2026-05-10', items: ['🐛 12强选队即时更新：teamSelectHtml 直接从 getCurrentSeasonData() 获取最新数据'] },
   { v: '1.0.354', date: '2026-05-10', items: ['🐛 12强选队即时更新：使用 requestAnimationFrame 确保下拉菜单立即刷新'] },
@@ -10422,11 +10423,11 @@ document.querySelectorAll('.league-chip').forEach(chip => {
 document.getElementById("sidebarLoginBtn").onclick = () => showLoginModal();
 document.getElementById('btnLogout').onclick = () => logout();
 document.getElementById('aboutBtn').onclick = () => showAboutModal();
-document.getElementById('aboutVersion').textContent = 'v' + CHANGELOG[0].v + ' By Pgm联赛—J.K';
-document.getElementById('footerVersion').textContent = 'v' + CHANGELOG[0].v + ' By Pgm联赛—J.K';
+document.getElementById('aboutVersion').textContent = getAppVersion() + ' By Pgm联赛—J.K';
+document.getElementById('footerVersion').textContent = getAppVersion() + ' By Pgm联赛—J.K';
 document.getElementById('aboutDate').textContent = APP_BUILD_DATE;
 // 侧边栏底部显示最新版本更新提示
-document.getElementById('changelogHint').innerHTML = '<span style="font-size:10px;color:#1a7a2e;cursor:pointer" onclick="showChangelogModal()">📋 v' + CHANGELOG[0].v + ' 更新 →</span>';
+document.getElementById('changelogHint').innerHTML = '<span style="font-size:10px;color:#1a7a2e;cursor:pointer" onclick="showChangelogModal()">📋 ' + getAppVersion() + ' 更新 →</span>';
 // 录入比赛按钮已移至赛程页面内
 document.getElementById('btnAdminImport').onclick = () => showAdminImportModal();
 document.getElementById('btnCupManage').onclick = () => showCupManageModal();
