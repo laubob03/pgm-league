@@ -1,5 +1,5 @@
 // v1.0.365: 终极修复 �?最简 SW，不缓存任何东西，安装即清除所有旧缓存
-const CACHE_NAME = 'pgm-league-v368';
+const CACHE_NAME = 'pgm-league-v371';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
