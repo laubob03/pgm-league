@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.367'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.368'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -621,7 +621,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 367 };
+const APP_VERSION = { major: 1, minor: 0, patch: 368 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -633,6 +633,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.368', date: '2026-05-12', items: ['🐛 修复advanceCup12Winner使用slot%2判断主客场导致与winnerMap矛盾，A01胜者被错误写入A05主场而非客场', '🧹 渲染前自动清除旧版advanceCup12Winner污染的数据', '♻️ winnerMap提取为全局CUP12_WINNER_MAP，advanceCup12Winner和renderCup12Bracket共用'] },
   { v: '1.0.367', date: '2026-05-11', items: ['🔧 版本号显示改用APP_VERSION而非CHANGELOG[0].v，防止CHANGELOG未更新时版本号卡住'] },
   { v: '1.0.366', date: '2026-05-11', items: ['🔧 修复CHANGELOG未更新导致底部版本号显示错误的问题'] },
   { v: '1.0.356', date: '2026-05-10', items: ['🐛 12强选队即时更新：完全采用足总杯模式，新增 getCup12AvailableTeams 函数，移除 requestAnimationFrame 延迟'] },
@@ -2676,6 +2677,21 @@ function getCup12AvailableTeams(cup12Id) {
   return teams.filter(function(t) { return !usedIds[t.id]; });
 }
 
+// ========== 12强杯赛胜者晋级映射（全局，advanceCup12Winner 和 renderCup12Bracket 共用） ==========
+var CUP12_WINNER_MAP = {
+  '0_0': { r: 1, s: 0, f: 'awayTeam' },  // A01胜 → A05客场
+  '0_1': { r: 1, s: 1, f: 'homeTeam' },  // A02胜 → A06主场
+  '0_2': { r: 1, s: 2, f: 'homeTeam' },  // A03胜 → A07主场
+  '0_3': { r: 1, s: 3, f: 'awayTeam' },  // A04胜 → A08客场
+  '1_0': { r: 2, s: 0, f: 'homeTeam' },  // A05胜 → A09主场
+  '1_1': { r: 2, s: 0, f: 'awayTeam' },  // A06胜 → A09客场
+  '1_2': { r: 2, s: 1, f: 'homeTeam' },  // A07胜 → A10主场
+  '1_3': { r: 2, s: 1, f: 'awayTeam' },  // A08胜 → A10客场
+  '2_0': { r: 3, s: 0, f: 'homeTeam' },  // A09胜 → A11主场
+  '2_1': { r: 3, s: 0, f: 'awayTeam' },  // A10胜 → A11客场
+  '3_0': { r: 4, s: 0, f: 'homeTeam' },  // A11胜 → 冠军
+};
+
 // ========== 12强杯赛8强对阵图渲染（DOM+SVG连接线） ==========
 function renderCup12Bracket(cup12Id, targetContainer) {
   var cupName = { championsCup12: '冠军杯12强', leagueCup12: '联盟杯12强', associationCup12: '协会杯12强' };
@@ -2878,20 +2894,8 @@ function renderCup12Bracket(cup12Id, targetContainer) {
     return r;
   }
 
-  // 胜者晋级映射：round_slot → { round, slot, field }
-  var winnerMap = {
-    '0_0': { r: 1, s: 0, f: 'awayTeam' },  // A01胜 → A05客场
-    '0_1': { r: 1, s: 1, f: 'homeTeam' },  // A02胜 → A06主场
-    '0_2': { r: 1, s: 2, f: 'homeTeam' },  // A03胜 → A07主场
-    '0_3': { r: 1, s: 3, f: 'awayTeam' },  // A04胜 → A08客场
-    '1_0': { r: 2, s: 0, f: 'homeTeam' },  // A05胜 → A09主场
-    '1_1': { r: 2, s: 0, f: 'awayTeam' },  // A06胜 → A09客场
-    '1_2': { r: 2, s: 1, f: 'homeTeam' },  // A07胜 → A10主场
-    '1_3': { r: 2, s: 1, f: 'awayTeam' },  // A08胜 → A10客场
-    '2_0': { r: 3, s: 0, f: 'homeTeam' },  // A09胜 → A11主场
-    '2_1': { r: 3, s: 0, f: 'awayTeam' },  // A10胜 → A11客场
-    '3_0': { r: 4, s: 0, f: 'homeTeam' },  // A11胜 → 冠军
-  };
+  // 胜者晋级映射：使用全局 CUP12_WINNER_MAP
+  var winnerMap = CUP12_WINNER_MAP;
 
   // 获取胜者teamId
   // 预赛(round=0, A01-A04): 第一场有胜负直接晋级；平局后主客场互换重赛，第二场定胜负
@@ -3028,6 +3032,35 @@ function renderCup12Bracket(cup12Id, targetContainer) {
 
   // 渲染前自动填充胜者晋级
   propagateWinners();
+
+  // ★ v1.0.368: 修复旧版 advanceCup12Winner(slot%2) 错误写入的数据
+  // 对每场比赛，winnerMap 只指定了一个字段的来源（homeTeam 或 awayTeam），
+  // 另一个字段如果是某条 winnerMap 的值，说明是被旧代码错误写入的，需要清除
+  var wValues = {};  // 收集 winnerMap 写入的所有 {round_slot_field: teamId}
+  Object.keys(winnerMap).forEach(function(key) {
+    var w = getWinner(parseInt(key.split('_')[0]), parseInt(key.split('_')[1]));
+    if (w) wValues[winnerMap[key].r + '_' + winnerMap[key].s + '_' + winnerMap[key].f] = w;
+  });
+  // 对每个比赛，检查 homeTeam/awayTeam 是否不应该存在
+  var allMatches = (cup && cup.matches) ? cup.matches : [];
+  allMatches.forEach(function(m) {
+    ['homeTeam', 'awayTeam'].forEach(function(f) {
+      var mapKey = m.round + '_' + m.slot + '_' + f;
+      if (!wValues[mapKey] && m[f]) {
+        // 这个字段不由 winnerMap 管理（即需要手动选队或应待定），
+        // 但如果它的值和某个 winnerMap 写入的值相同，说明是被旧代码污染的
+        var isPolluted = Object.values(wValues).indexOf(m[f]) >= 0;
+        if (isPolluted) {
+          // 进一步确认：这个位置是否允许手动选队
+          if (!needSelect(m.round, m.slot, f === 'homeTeam' ? 'home' : 'away')) {
+            // 不允许手动选队且不由 winnerMap 管理 → 应该为空 → 清除
+            console.log('[cleanup] 清除污染数据: match ' + m.id + '.' + f + ' = ' + m[f] + ' (旧版advanceCup12Winner错误写入)');
+            m[f] = null;
+          }
+        }
+      }
+    });
+  });
 
   // ── single match card ──
   function rMatch(round, slot, extraTop) {
@@ -3912,14 +3945,14 @@ function submitCupMatchResult12() {
 
 // 12强杯赛胜者晋级
 function advanceCup12Winner(cup, winnerId, currentRound, currentSlot, sourceMatchId) {
-  var nextRound = currentRound + 1;
-  var nextSlot = Math.floor(currentSlot / 2);
-  var isHome = currentSlot % 2 === 0;
-  
-  var nextMatch = cup.matches.find(function(m){return m.round===nextRound&&m.slot===nextSlot;});
+  // ★ v1.0.368: 使用 CUP12_WINNER_MAP 替代 slot%2 逻辑
+  // 旧逻辑 slot%2===0 → homeTeam 是错误的（与 winnerMap 矛盾）
+  var key = currentRound + '_' + currentSlot;
+  var dest = CUP12_WINNER_MAP[key];
+  if (!dest) return;  // 决赛冠军无需晋级
+  var nextMatch = cup.matches.find(function(m){return m.round===dest.r&&m.slot===dest.s;});
   if (nextMatch) {
-    if (isHome) nextMatch.homeTeam = winnerId;
-    else nextMatch.awayTeam = winnerId;
+    nextMatch[dest.f] = winnerId;
   }
 }
 
