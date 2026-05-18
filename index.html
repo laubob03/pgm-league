@@ -621,7 +621,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 373 };
+const APP_VERSION = { major: 1, minor: 0, patch: 374 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -633,6 +633,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.374', date: '2026-05-18', items: ['📝 足总杯录入界面与赛程图一致：低级别球队显示在上方'] },
   { v: '1.0.373', date: '2026-05-18', items: ['📝 足总杯赛程图低级别球队默认显示在上方（主场位置）'] },
   { v: '1.0.372', date: '2026-05-18', items: ['📝 足总杯赛程图显示球队联赛级别（乙级/甲级/超级）'] },
   { v: '1.0.371', date: '2026-05-12', items: ['📝 仅12强对阵图决赛列标题冠名为杯赛名称（如"冠军杯决赛"），恢复足总杯赛程图'] },
@@ -4054,23 +4055,37 @@ function showEnterCupMatchModal(matchId, cupId) {
   const homeTeam = state.teams.find(t => t.id === match.homeTeam);
   const awayTeam = state.teams.find(t => t.id === match.awayTeam);
   if (!homeTeam || !awayTeam) return;
+  // 足总杯：低级别球队显示在上方（与赛程图一致）
+  let displayHomeTeam = homeTeam, displayAwayTeam = awayTeam;
+  let isSwapped = false;
+  if (cupId === 'faCup') {
+    const homePriority = getLeagueLevelPriority(homeTeam);
+    const awayPriority = getLeagueLevelPriority(awayTeam);
+    if (awayPriority < homePriority) {
+      displayHomeTeam = awayTeam;
+      displayAwayTeam = homeTeam;
+      isSwapped = true;
+    }
+  }
   const isEdit = match.status === 'completed';
-  const homePlayers = [...homeTeam.players].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
-  const awayPlayers = [...awayTeam.players].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+  const homePlayers = [...displayHomeTeam.players].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+  const awayPlayers = [...displayAwayTeam.players].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
   const getGoalCount = (pid, teamId) => { if (!match.scorers) return 0; return match.scorers.filter(s => s.playerId === pid && s.teamId === teamId).length; };
   const getAssistCount = (pid, teamId) => { if (!match.assists) return 0; return match.assists.filter(a => a.playerId === pid && a.teamId === teamId).length; };
-  const homeGoalsHtml = homePlayers.map(p => '<div class="pr"><span class="pn">' + p.name + '</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="' + p.id + '" data-goal="home" value="' + getGoalCount(p.id, match.homeTeam) + '" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>').join('');
-  const homeAssistsHtml = homePlayers.map(p => '<div class="pr"><span class="pn">' + p.name + '</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="' + p.id + '" data-ast="home" value="' + getAssistCount(p.id, match.homeTeam) + '" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>').join('');
-  const awayGoalsHtml = awayPlayers.map(p => '<div class="pr"><span class="pn">' + p.name + '</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="' + p.id + '" data-goal="away" value="' + getGoalCount(p.id, match.awayTeam) + '" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>').join('');
-  const awayAssistsHtml = awayPlayers.map(p => '<div class="pr"><span class="pn">' + p.name + '</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="' + p.id + '" data-ast="away" value="' + getAssistCount(p.id, match.awayTeam) + '" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>').join('');
+  const homeGoalsHtml = homePlayers.map(p => '<div class="pr"><span class="pn">' + p.name + '</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="' + p.id + '" data-goal="home" value="' + getGoalCount(p.id, displayHomeTeam.id) + '" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>').join('');
+  const homeAssistsHtml = homePlayers.map(p => '<div class="pr"><span class="pn">' + p.name + '</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="' + p.id + '" data-ast="home" value="' + getAssistCount(p.id, displayHomeTeam.id) + '" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>').join('');
+  const awayGoalsHtml = awayPlayers.map(p => '<div class="pr"><span class="pn">' + p.name + '</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="' + p.id + '" data-goal="away" value="' + getGoalCount(p.id, displayAwayTeam.id) + '" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>').join('');
+  const awayAssistsHtml = awayPlayers.map(p => '<div class="pr"><span class="pn">' + p.name + '</span><div class="pc"><button type="button" class="bm" onclick="adjInp(this,-1)">−</button><input type="number" class="pv" data-pid="' + p.id + '" data-ast="away" value="' + getAssistCount(p.id, displayAwayTeam.id) + '" readonly><button type="button" class="bp" onclick="adjInp(this,1)">+</button></div></div>').join('');
   const motmId = match.motm || '';
   const homeMotmHtml = homePlayers.map(p => '<div class="mr' + (motmId === p.id ? ' selected' : '') + '" onclick="selMotm(this,\'' + p.id + '\')"><span>' + p.name + '</span></div>').join('');
   const awayMotmHtml = awayPlayers.map(p => '<div class="mr' + (motmId === p.id ? ' selected' : '') + '" onclick="selMotm(this,\'' + p.id + '\')"><span>' + p.name + '</span></div>').join('');
+  // 存储显示顺序映射，用于提交时还原
+  window._cupDisplaySwap = isSwapped ? { home: match.awayTeam, away: match.homeTeam } : null;
   const style = '<style>.pr{display:flex;align-items:center;padding:3px 8px;border-bottom:1px solid #f0f0f0;transition:all .2s ease}.pr:last-child{border-bottom:none}.pr:hover{background:rgba(255,183,77,0.1);border:1.5px solid #FFB74D;box-shadow:0 2px 8px rgba(255,152,0,0.15);transform:scale(1.02);border-radius:8px}.pr.has-val{background:linear-gradient(90deg,#86efac 0%,#bbf7d0 30%,#fff 80%);border-left:3px solid #059669;box-shadow:0 1px 6px rgba(5,150,105,0.12)}.pr.has-val:hover{background:linear-gradient(90deg,#4ade80 0%,#86efac 30%,#bbf7d0 80%)}.pc{display:flex;align-items:center;gap:3px;flex-shrink:0;margin-left:auto}.bm,.bp{width:26px;height:26px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;transition:all .12s;box-shadow:0 1px 3px rgba(0,0,0,0.08)}.bm{background:#fff;color:#888;border:1.5px solid #ddd}.bm:hover{background:#fee;border-color:#f44;color:#f44}.bm:active{transform:scale(.92)}.bp{background:#228B22;color:#fff;border:none}.bp:hover{background:#FF6D00;box-shadow:0 2px 8px rgba(255,109,0,0.5)}.bp:active{transform:scale(.92)}.pr.has-val .bp{background:#FF6B00;border:2px solid #E65100;box-shadow:0 0 8px rgba(255,107,0,0.5)}.pr.has-val .bp:hover{background:#E65100}.pv{width:32px;height:30px;text-align:center;font-size:14px;font-weight:700;border:1.5px solid #ddd;border-radius:6px;padding:0;background:#fafafa;color:#333;font-variant-numeric:tabular-nums;-moz-appearance:textfield;outline:none}.pr.has-val .pv{border-color:#198754;background:#198754;color:#fff;font-size:17px;font-weight:800;box-shadow:0 2px 6px rgba(25,135,84,0.4);height:30px}.pn{flex:1;font-size:15px;font-weight:600;color:#333;padding-right:8px}.pr.has-val .pn{color:#14532d}.mtb{background:#fff;border:2px solid #ddd;border-radius:20px;padding:5px 10px;font-size:12px;cursor:pointer;transition:all .15s}.mtb.active{background:#228B22;border-color:#228B22;color:#fff}.mr{display:flex;align-items:center;padding:6px 8px;border-bottom:1px solid #eee;cursor:pointer;font-size:13px;transition:all .2s ease;min-width:0}.mr:last-child{border-bottom:none}.mr:hover{background:rgba(255,183,77,0.1);border:1.5px solid #FFB74D;box-shadow:0 2px 8px rgba(255,152,0,0.15);transform:scale(1.02);border-radius:8px}.mr.selected{background:transparent;color:#059669;font-weight:800;border-left:3px solid #059669;font-size:16px;text-shadow:0 0 1px rgba(5,150,105,0.3);box-shadow:none}.mr span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500}.mc{flex:1;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:8px;margin:0 2px;min-width:0}.mct{text-align:center;font-weight:700;font-size:13px;padding:5px;background:#228B22;color:#fff;border-radius:8px 8px 0 0;letter-spacing:.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}</style>';
   const header = '<div class="modal-header"><div class="modal-title">' + (isEdit ? '✏️ 修改比赛结果' : '✏️ 录入比赛结果') + '（' + (CUP_NAMES[cupId] || '杯赛') + '）</div><button class="modal-close" onclick="closeModal()">×</button></div>';
-  const score = '<div style="text-align:center;padding:8px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:8px"><span style="font-size:15px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + homeTeam.name + '</span><img src="' + getTeamLogo(homeTeam) + '" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><input type="number" id="cupHomeScore" value="' + (match.homeScore || 0) + '" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid #228B22;border-radius:4px">:<input type="number" id="cupAwayScore" value="' + (match.awayScore || 0) + '" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid #228B22;border-radius:4px"><img src="' + getTeamLogo(awayTeam) + '" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><span style="font-size:15px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + awayTeam.name + '</span></div>';
+  const score = '<div style="text-align:center;padding:8px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:8px"><span style="font-size:15px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + displayHomeTeam.name + '</span><img src="' + getTeamLogo(displayHomeTeam) + '" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><input type="number" id="cupHomeScore" value="' + (isSwapped ? (match.awayScore || 0) : (match.homeScore || 0)) + '" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid #228B22;border-radius:4px">:<input type="number" id="cupAwayScore" value="' + (isSwapped ? (match.homeScore || 0) : (match.awayScore || 0)) + '" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid #228B22;border-radius:4px"><img src="' + getTeamLogo(displayAwayTeam) + '" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><span style="font-size:15px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + displayAwayTeam.name + '</span></div>';
   const tabs = '<div style="display:flex;gap:2px;overflow-x:auto;padding:2px 0"><button type="button" class="mtb active" data-tab="hg">⚽ 主队进球</button><button type="button" class="mtb" data-tab="ha">👟 主队助攻</button><button type="button" class="mtb" data-tab="ag">⚽ 客队进球</button><button type="button" class="mtb" data-tab="aa">👟 客队助攻</button><button type="button" class="mtb" data-tab="motm">⭐ 最佳球员</button></div>';
-  const panels = '<div id="tab-hg" class="tp" style="max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + homeGoalsHtml + '</div><div id="tab-ha" class="tp" style="display:none;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + homeAssistsHtml + '</div><div id="tab-ag" class="tp" style="display:none;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + awayGoalsHtml + '</div><div id="tab-aa" class="tp" style="display:none;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + awayAssistsHtml + '</div><div id="tab-motm" class="tp" style="display:none"><div style="display:flex;gap:4px"><div class="mc"><div class="mct">' + homeTeam.name + '</div><div>' + homeMotmHtml + '</div></div><div class="mc"><div class="mct">' + awayTeam.name + '</div><div>' + awayMotmHtml + '</div></div></div><input type="hidden" id="cupMotm" value="' + motmId + '"></div>';
+  const panels = '<div id="tab-hg" class="tp" style="max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + homeGoalsHtml + '</div><div id="tab-ha" class="tp" style="display:none;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + homeAssistsHtml + '</div><div id="tab-ag" class="tp" style="display:none;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + awayGoalsHtml + '</div><div id="tab-aa" class="tp" style="display:none;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:4px">' + awayAssistsHtml + '</div><div id="tab-motm" class="tp" style="display:none"><div style="display:flex;gap:4px"><div class="mc"><div class="mct">' + displayHomeTeam.name + '</div><div>' + homeMotmHtml + '</div></div><div class="mc"><div class="mct">' + displayAwayTeam.name + '</div><div>' + awayMotmHtml + '</div></div></div><input type="hidden" id="cupMotm" value="' + motmId + '"></div>';
   const submitBtn = '<button type="button" class="btn btn-primary btn-full" style="margin-top:8px;padding:10px;font-size:14px" id="saveCupMatchBtn">' + (isEdit ? '更新比赛结果' : '保存比赛结果') + '</button>';
   showModal(style + header + score + '<form id="cupMatchForm">' + tabs + panels + submitBtn + '</form>');
   window.adjInp = function(btn, d) {
@@ -4100,9 +4115,15 @@ function submitCupMatchResult(matchId, cupId) {
   if (!cup) { showToast('杯赛数据未找到'); return; }
   const match = cup.matches.find(m => m.id === matchId);
   if (!match) { showToast('比赛未找到'); return; }
-  const homeScore = parseInt(document.getElementById('cupHomeScore').value) || 0;
-  const awayScore = parseInt(document.getElementById('cupAwayScore').value) || 0;
+  let homeScore = parseInt(document.getElementById('cupHomeScore').value) || 0;
+  let awayScore = parseInt(document.getElementById('cupAwayScore').value) || 0;
   const motmId = document.getElementById('cupMotm').value;
+  // 足总杯：如果显示时交换了顺序，提交时需要还原
+  if (cupId === 'faCup' && window._cupDisplaySwap) {
+    const tmp = homeScore;
+    homeScore = awayScore;
+    awayScore = tmp;
+  }
   const homeTeam = state.teams.find(t => t.id === match.homeTeam);
   const awayTeam = state.teams.find(t => t.id === match.awayTeam);
   if (!homeTeam || !awayTeam) { showToast('球队未找到'); return; }
@@ -4132,11 +4153,20 @@ function submitCupMatchResult(matchId, cupId) {
   match.scorers = [];
   match.assists = [];
   match.motm = motmId || null;
+  // 确定显示映射关系（用于足总杯交换显示顺序时正确存储数据）
+  const displayToActualTeamId = {};
+  if (cupId === 'faCup' && window._cupDisplaySwap) {
+    displayToActualTeamId[window._cupDisplaySwap.home] = match.homeTeam;
+    displayToActualTeamId[window._cupDisplaySwap.away] = match.awayTeam;
+  } else {
+    displayToActualTeamId[match.homeTeam] = match.homeTeam;
+    displayToActualTeamId[match.awayTeam] = match.awayTeam;
+  }
   const cupInvolvedPlayers = new Set();
-  document.querySelectorAll('[data-goal="home"]').forEach(inp => { const g = parseInt(inp.value) || 0; if (g > 0) { const p = homeTeam.players.find(x => x.id === inp.dataset.pid); if (p) { p.goals = (p.goals || 0) + g; cupInvolvedPlayers.add(p.id); for (let i = 0; i < g; i++) match.scorers.push({ playerId: inp.dataset.pid, teamId: match.homeTeam, minute: null }); } } });
-  document.querySelectorAll('[data-goal="away"]').forEach(inp => { const g = parseInt(inp.value) || 0; if (g > 0) { const p = awayTeam.players.find(x => x.id === inp.dataset.pid); if (p) { p.goals = (p.goals || 0) + g; cupInvolvedPlayers.add(p.id); for (let i = 0; i < g; i++) match.scorers.push({ playerId: inp.dataset.pid, teamId: match.awayTeam, minute: null }); } } });
-  document.querySelectorAll('[data-ast="home"]').forEach(inp => { const a = parseInt(inp.value) || 0; if (a > 0) { const p = homeTeam.players.find(x => x.id === inp.dataset.pid); if (p) { p.assists = (p.assists || 0) + a; cupInvolvedPlayers.add(p.id); for (let i = 0; i < a; i++) match.assists.push({ playerId: inp.dataset.pid, teamId: match.homeTeam }); } } });
-  document.querySelectorAll('[data-ast="away"]').forEach(inp => { const a = parseInt(inp.value) || 0; if (a > 0) { const p = awayTeam.players.find(x => x.id === inp.dataset.pid); if (p) { p.assists = (p.assists || 0) + a; cupInvolvedPlayers.add(p.id); for (let i = 0; i < a; i++) match.assists.push({ playerId: inp.dataset.pid, teamId: match.awayTeam }); } } });
+  document.querySelectorAll('[data-goal="home"]').forEach(inp => { const g = parseInt(inp.value) || 0; if (g > 0) { const displayTeamId = inp.dataset.pid; const actualTeamId = displayToActualTeamId[displayTeamId] || match.homeTeam; const p = state.teams.find(t => t.id === actualTeamId)?.players.find(x => x.id === displayTeamId); if (p) { p.goals = (p.goals || 0) + g; cupInvolvedPlayers.add(p.id); for (let i = 0; i < g; i++) match.scorers.push({ playerId: displayTeamId, teamId: actualTeamId, minute: null }); } } });
+  document.querySelectorAll('[data-goal="away"]').forEach(inp => { const g = parseInt(inp.value) || 0; if (g > 0) { const displayTeamId = inp.dataset.pid; const actualTeamId = displayToActualTeamId[displayTeamId] || match.awayTeam; const p = state.teams.find(t => t.id === actualTeamId)?.players.find(x => x.id === displayTeamId); if (p) { p.goals = (p.goals || 0) + g; cupInvolvedPlayers.add(p.id); for (let i = 0; i < g; i++) match.scorers.push({ playerId: displayTeamId, teamId: actualTeamId, minute: null }); } } });
+  document.querySelectorAll('[data-ast="home"]').forEach(inp => { const a = parseInt(inp.value) || 0; if (a > 0) { const displayTeamId = inp.dataset.pid; const actualTeamId = displayToActualTeamId[displayTeamId] || match.homeTeam; const p = state.teams.find(t => t.id === actualTeamId)?.players.find(x => x.id === displayTeamId); if (p) { p.assists = (p.assists || 0) + a; cupInvolvedPlayers.add(p.id); for (let i = 0; i < a; i++) match.assists.push({ playerId: displayTeamId, teamId: actualTeamId }); } } });
+  document.querySelectorAll('[data-ast="away"]').forEach(inp => { const a = parseInt(inp.value) || 0; if (a > 0) { const displayTeamId = inp.dataset.pid; const actualTeamId = displayToActualTeamId[displayTeamId] || match.awayTeam; const p = state.teams.find(t => t.id === actualTeamId)?.players.find(x => x.id === displayTeamId); if (p) { p.assists = (p.assists || 0) + a; cupInvolvedPlayers.add(p.id); for (let i = 0; i < a; i++) match.assists.push({ playerId: displayTeamId, teamId: actualTeamId }); } } });
   // 统一为每个参与进球/助攻的球员 +1 gamesPlayed（而不是按进球数/助攻数累加）
   cupInvolvedPlayers.forEach(pid => {
     const p = [...homeTeam.players, ...awayTeam.players].find(x => x.id === pid);
