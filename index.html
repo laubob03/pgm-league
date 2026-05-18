@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.372'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.373'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -621,7 +621,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 372 };
+const APP_VERSION = { major: 1, minor: 0, patch: 373 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -633,6 +633,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.373', date: '2026-05-18', items: ['📝 足总杯赛程图低级别球队默认显示在上方（主场位置）'] },
   { v: '1.0.372', date: '2026-05-18', items: ['📝 足总杯赛程图显示球队联赛级别（乙级/甲级/超级）'] },
   { v: '1.0.371', date: '2026-05-12', items: ['📝 仅12强对阵图决赛列标题冠名为杯赛名称（如"冠军杯决赛"），恢复足总杯赛程图'] },
   { v: '1.0.368', date: '2026-05-12', items: ['🐛 修复advanceCup12Winner使用slot%2判断主客场导致与winnerMap矛盾'] },
@@ -2006,6 +2007,15 @@ function renderFaCupBracket(cupId) {
     return '';
   }
 
+  // 获取联赛级别优先级（数字越小级别越低：乙级=0，甲级=1，超级=2）
+  function getLeagueLevelPriority(teamObj) {
+    if (!teamObj || !teamObj.league) return 999;
+    if (teamObj.league === 'yiEast' || teamObj.league === 'yiWest') return 0; // 乙级
+    if (teamObj.league === 'jiaEast' || teamObj.league === 'jiaWest') return 1; // 甲级
+    if (teamObj.league === 'super') return 2; // 超级
+    return 999;
+  }
+
   // 渲染单个球队行（含下拉或显示名称）
   function rTeamSelect(match, field, teamId, isWin) {
     var teamObj = (teamId && teamId !== 'TBD') ? sd.teams.find(function(t){return t.id===teamId;}) : null;
@@ -2120,10 +2130,20 @@ function renderFaCupBracket(cupId) {
     var style = top !== undefined ? 'top:' + top + 'px' : '';
     // 重赛待进行时点击卡片进入重赛录入（超管或足总杯数据员）
     var clickAttr = (replayPending && canEnterCup) ? ' onclick="showEnterCupMatchModal(\'' + replay.id + '\',\'faCup\')"' : '';
+    // 获取两队对象用于判断级别
+    var homeTeamObj = (m.homeTeam && m.homeTeam !== 'TBD') ? sd.teams.find(function(t){return t.id===m.homeTeam;}) : null;
+    var awayTeamObj = (m.awayTeam && m.awayTeam !== 'TBD') ? sd.teams.find(function(t){return t.id===m.awayTeam;}) : null;
+    // 判断是否需要交换显示：客队级别低于主队时，低级别显示在上方
+    var homePriority = getLeagueLevelPriority(homeTeamObj);
+    var awayPriority = getLeagueLevelPriority(awayTeamObj);
+    var swapDisplay = (homePriority > awayPriority); // 主队级别数字大（级别高），客队数字小（级别低），则交换
+    // 根据交换决定显示顺序和对应的高亮状态
+    var firstTeam = swapDisplay ? { field: 'away', teamId: m.awayTeam, isWin: aw } : { field: 'home', teamId: m.homeTeam, isWin: hw };
+    var secondTeam = swapDisplay ? { field: 'home', teamId: m.homeTeam, isWin: hw } : { field: 'away', teamId: m.awayTeam, isWin: aw };
     return '<div class="' + cls + '" data-id="' + m.id + '"' + (style ? ' style="' + style + '"' : '') + clickAttr + '>'
       + idLabel
       + (replayPending && canEnterCup ? '<div style="text-align:center;font-size:10px;color:#f5a623;font-weight:700;margin-bottom:2px">\uD83D\uDD04 重赛待进行（点击录入）</div>' : '')
-      + rTeamSelect(m, 'home', m.homeTeam, hw) + rScore(m) + rTeamSelect(m, 'away', m.awayTeam, aw)
+      + rTeamSelect(m, firstTeam.field, firstTeam.teamId, firstTeam.isWin) + rScore(m) + rTeamSelect(m, secondTeam.field, secondTeam.teamId, secondTeam.isWin)
       + '</div>';
   }
 
