@@ -621,7 +621,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 376 };
+const APP_VERSION = { major: 1, minor: 0, patch: 377 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -633,6 +633,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.377', date: '2026-05-24', items: ['🏁 转会管理新增"中期转会结束并上传"按钮，超管可强制立即执行所有待生效转会'] },
   { v: '1.0.376', date: '2026-05-18', items: ['🐛 足总杯重赛录入界面：主客场显示顺序调整，与原场视角保持一致'] },
   { v: '1.0.375', date: '2026-05-18', items: ['🐛 修复足总杯点击VS无法进入录入界面的问题（getLeagueLevelPriority未定义）'] },
   { v: '1.0.374', date: '2026-05-18', items: ['📝 足总杯录入界面与赛程图一致：低级别球队显示在上方'] },
@@ -9545,11 +9546,33 @@ function renderTransferManage() {
     <div style="font-size:12px;color:#888;margin-bottom:8px;line-height:1.6">
       支持指定轮次生效或立即转会。<span style="color:#2196F3">同联赛</span>转会数据继续累加，<span style="color:#FF9800">跨联赛</span>转会原数据保留、新数据从零开始。
     </div>
-    <div style="font-size:13px;font-weight:600;color:#333;margin-bottom:6px">📋 待生效转会（${pending.length}）</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <div style="font-size:13px;font-weight:600;color:#333">📋 待生效转会（${pending.length}）</div>
+      ${pending.length > 0 && isAdmin ? `<button onclick="finalizeMidSeasonTransfers()" style="background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;font-weight:600;white-space:nowrap">🏁 中期转会结束并上传</button>` : ''}
+    </div>
     ${pendingHtml}
     ${processedHtml}
     ${addTransferBtn}
   `;
+}
+
+// 中期转会结束：强制执行所有待生效转会并上传云端
+function finalizeMidSeasonTransfers() {
+  const pending = (state.pendingTransfers || []).filter(t => t.status === 'pending');
+  if (!pending.length) { showToast('没有待生效转会'); return; }
+  if (!confirm(`确定要结束中期转会？\n将立即执行所有 ${pending.length} 条待生效转会，此操作不可撤销！`)) return;
+  let count = 0;
+  pending.forEach(transfer => {
+    executeTransfer(transfer);
+    transfer.status = 'processed';
+    transfer.processedAt = new Date().toISOString();
+    transfer.effectiveRound = 0; // 标记为立即生效（已执行）
+    count++;
+  });
+  saveState();
+  showToast(`✅ 已执行 ${count} 条转会，正在上传...`);
+  if (typeof syncUpload === 'function') syncUpload();
+  renderTransferManage();
 }
 
 // 兼容旧调用：showTransferModal 仍然弹出弹窗（超管从其他入口使用）

@@ -1,5 +1,5 @@
-// v1.0.365: 终极修复 �?最简 SW，不缓存任何东西，安装即清除所有旧缓存
-const CACHE_NAME = 'pgm-league-v376';
+﻿// v1.0.365: 缁堟瀬淇 锟?鏈€绠€ SW锛屼笉缂撳瓨浠讳綍涓滆タ锛屽畨瑁呭嵆娓呴櫎鎵€鏈夋棫缂撳瓨
+const CACHE_NAME = 'pgm-league-v377';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -13,7 +13,7 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // 所有请求直接走网络，不做任何缓�?  event.respondWith(
+  // 鎵€鏈夎姹傜洿鎺ヨ蛋缃戠粶锛屼笉鍋氫换浣曠紦锟?  event.respondWith(
     fetch(event.request).catch(() => new Response('Offline', { status: 503 }))
   );
 });
