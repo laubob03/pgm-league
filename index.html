@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.378'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.379'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -621,7 +621,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 378 };
+const APP_VERSION = { major: 1, minor: 0, patch: 379 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -633,7 +633,8 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.378', date: '2026-05-24', items: ['📤 已转会球员不再显示在原球队活跃名单，转出球员改为可折叠区域，数据保留不影响统计'] },
+  { v: '1.0.379', date: '2026-06-01', items: ['📤 已转出球员完全不显示在原球队，只显示在新球队'] },
+  { v: '1.0.378', date: '2026-05-24', items: ['📤 已转会球员不再显示在原球队活跃名单，数据保留不影响统计'] },
   { v: '1.0.377', date: '2026-05-24', items: ['🏁 转会管理新增"中期转会结束并上传"按钮，超管可强制立即执行所有待生效转会'] },
   { v: '1.0.376', date: '2026-05-18', items: ['🐛 足总杯重赛录入界面：主客场显示顺序调整，与原场视角保持一致'] },
   { v: '1.0.375', date: '2026-05-18', items: ['🐛 修复足总杯点击VS无法进入录入界面的问题（getLeagueLevelPriority未定义）'] },
@@ -6946,19 +6947,18 @@ function showTeamDetail(teamId) {
       default:
         sorted = [...team.players].sort((a, b) => (a.number || 0) - (b.number || 0));
     }
-    // 分离：活跃球员 / 已转出 / 新加盟
+    // 分离：活跃球员 / 新加盟（已转出球员完全不显示）
     const active = sorted.filter(p => !p.transferredOut && !p.isTransferIn);
-    const transferredOut = sorted.filter(p => p.transferredOut);
     const transferIn = sorted.filter(p => p.isTransferIn && !p.transferredOut);
 
     const renderRow = (p) => {
       const feeTag = p.transferFee > 0 ? `<span style="font-size:9px;color:#FF9800;margin-left:3px" title="转会费${p.transferFee}M">${p.transferFee}M</span>` : '';
-      const transferOutTag = p.transferredOut ? `<span style="font-size:9px;color:#f44336;background:#fce4ec;padding:0 4px;border-radius:3px;margin-left:3px">已转出→${p.transferredOutTo || '?'}</span>` : '';
+      // transferOutTag removed — transferredOut players completely hidden
       const transferInTag = p.isTransferIn ? `<span style="font-size:9px;color:#2196F3;background:#e3f2fd;padding:0 4px;border-radius:3px;margin-left:3px">新加盟←${p.transferredInFrom || '?'}</span>` : '';
       const pendingTr = (state.pendingTransfers || []).find(pt => pt.status === 'pending' && pt.playerUid == p.uid);
       const pendingTransferTag = pendingTr ? `<span style="font-size:9px;color:#FF9800;background:#FFF3E0;padding:0 4px;border-radius:3px;margin-left:3px">即将→${pendingTr.toTeamName}</span>` : '';
-      const nameExtra = feeTag + transferOutTag + transferInTag + pendingTransferTag;
-      return `<div class="player-row"${p.transferredOut ? ' style="opacity:0.5"' : ''}>
+      const nameExtra = feeTag + transferInTag + pendingTransferTag;
+      return `<div class="player-row">
         <span class="player-num">${p.number}</span>
         <span class="player-nm"><span class="player-expand" onclick="event.stopPropagation();togglePlayerSeasonDetail(this,'${p.uid}')">${p.name}</span>${nameExtra}</span>
         <span class="player-st">⚽${p.goals || 0} 👟${p.assists || 0} ⭐${p.motmCount || 0}</span>
@@ -6969,9 +6969,7 @@ function showTeamDetail(teamId) {
     if (transferIn.length > 0) {
       html += `<div style="font-size:10px;color:#2196F3;padding:4px 8px;background:#e3f2fd;border-radius:4px;margin-top:4px;font-weight:600">📥 新加盟球员（${transferIn.length}）</div>` + transferIn.map(renderRow).join('');
     }
-    if (transferredOut.length > 0) {
-      html += `<details style="margin-top:4px"><summary style="font-size:10px;color:#f44336;padding:4px 8px;background:#fce4ec;border-radius:4px;font-weight:600;cursor:pointer;outline:none;list-style:none">📤 已转出球员（${transferredOut.length}）▶ 点击展开</summary><div style="padding-left:4px">${transferredOut.map(renderRow).join('')}</div></details>`;
-    }
+    // transferredOut players completely hidden from original team
     return html;
   };
 
