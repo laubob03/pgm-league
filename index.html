@@ -621,7 +621,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 377 };
+const APP_VERSION = { major: 1, minor: 0, patch: 378 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -633,6 +633,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.378', date: '2026-05-24', items: ['📤 已转会球员不再显示在原球队活跃名单，转出球员改为可折叠区域，数据保留不影响统计'] },
   { v: '1.0.377', date: '2026-05-24', items: ['🏁 转会管理新增"中期转会结束并上传"按钮，超管可强制立即执行所有待生效转会'] },
   { v: '1.0.376', date: '2026-05-18', items: ['🐛 足总杯重赛录入界面：主客场显示顺序调整，与原场视角保持一致'] },
   { v: '1.0.375', date: '2026-05-18', items: ['🐛 修复足总杯点击VS无法进入录入界面的问题（getLeagueLevelPriority未定义）'] },
@@ -4954,7 +4955,7 @@ function renderTeams() {
   let html = '<div class="team-list">';
   teams.forEach(t => {
     // 按球员姓名首字升序排列
-    const sortedPlayers = [...t.players].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+    const sortedPlayers = [...t.players].filter(p => !p.transferredOut).sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
     const playersLines = sortedPlayers.map(p => `<span class="player-expand" onclick="event.stopPropagation();togglePlayerSeasonDetail(this,'${p.uid}')">${p.name}</span>（${p.uid}）`).join('<br>');
 
     const assistantStr = t.assistantCoaches && t.assistantCoaches.length > 0 ? '、' + t.assistantCoaches.join('、') : '';
@@ -4970,7 +4971,7 @@ function renderTeams() {
         </div>
         <div class="team-players">
           <div class="player-names">${playersLines || '暂无球员'}</div>
-          <div class="player-summary">共 ${t.players.length} 名球员</div>
+          <div class="player-summary">共 ${t.players.filter(p => !p.transferredOut).length} 名球员</div>
         </div>
       </div>
     `;
@@ -5946,7 +5947,7 @@ function doPlayerSearch(query) {
     limitedTeams.forEach(team => {
       const leagueName = LEAGUE_NAMES[team.league] || '';
       const logo = getTeamLogo(team);
-      const playerCount = team.players ? team.players.length : 0;
+      const playerCount = team.players ? team.players.filter(p => !p.transferredOut).length : 0;
       html += `<div onclick="closeModal();setTimeout(()=>{showTeamDetail('${team.id}')},200)" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .15s" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
         <img src="${logo}" style="width:32px;height:32px;object-fit:contain;border-radius:6px;flex-shrink:0" onerror="this.style.display='none'">
         <div style="flex:1;min-width:0">
@@ -6948,7 +6949,7 @@ function showTeamDetail(teamId) {
     // 分离：活跃球员 / 已转出 / 新加盟
     const active = sorted.filter(p => !p.transferredOut && !p.isTransferIn);
     const transferredOut = sorted.filter(p => p.transferredOut);
-    const transferIn = sorted.filter(p => p.isTransferIn);
+    const transferIn = sorted.filter(p => p.isTransferIn && !p.transferredOut);
 
     const renderRow = (p) => {
       const feeTag = p.transferFee > 0 ? `<span style="font-size:9px;color:#FF9800;margin-left:3px" title="转会费${p.transferFee}M">${p.transferFee}M</span>` : '';
@@ -6969,7 +6970,7 @@ function showTeamDetail(teamId) {
       html += `<div style="font-size:10px;color:#2196F3;padding:4px 8px;background:#e3f2fd;border-radius:4px;margin-top:4px;font-weight:600">📥 新加盟球员（${transferIn.length}）</div>` + transferIn.map(renderRow).join('');
     }
     if (transferredOut.length > 0) {
-      html += `<div style="font-size:10px;color:#f44336;padding:4px 8px;background:#fce4ec;border-radius:4px;margin-top:4px;font-weight:600">📤 已转出球员（${transferredOut.length}）</div>` + transferredOut.map(renderRow).join('');
+      html += `<details style="margin-top:4px"><summary style="font-size:10px;color:#f44336;padding:4px 8px;background:#fce4ec;border-radius:4px;font-weight:600;cursor:pointer;outline:none;list-style:none">📤 已转出球员（${transferredOut.length}）▶ 点击展开</summary><div style="padding-left:4px">${transferredOut.map(renderRow).join('')}</div></details>`;
     }
     return html;
   };
@@ -7114,7 +7115,7 @@ function showTeamDetail(teamId) {
       <div id="teamTabContent_player" style="display:none;overflow:hidden;flex:1;min-height:0;flex-direction:column">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;flex-shrink:0">
           <button class="data-tab active" id="dataTab_total" onclick="switchPlayerSubTab('total','${teamId}')">📊 总榜</button>
-          <button class="data-tab" id="dataTab_league" onclick="switchPlayerSubTab('league','${teamId}')">👥 联赛（${team.players.length}人）</button>
+          <button class="data-tab" id="dataTab_league" onclick="switchPlayerSubTab('league','${teamId}')">👥 联赛（${team.players.filter(p => !p.transferredOut).length}人）</button>
           ${(() => { let _c = ''; const _cupOrder = ['faCup','championsCup','leagueCup','associationCup']; _cupOrder.forEach(_cid => { const _cup = sd.cups && sd.cups[_cid]; const _inCup = _cup && ((_cup.teams && _cup.teams.includes(teamId)) || (_cup.matches && _cup.matches.some(m => m.homeTeam === teamId || m.awayTeam === teamId))); if (_inCup) { _c += "<button class='data-tab' id='dataTab_cup_" + _cid + "' onclick='switchPlayerSubTab(&#39;cup_" + _cid + "&#39;,&#39;" + teamId + "&#39;)'>🏆 " + (CUP_NAMES[_cid]||_cid).replace('🏆 ','') + '</button>'; } }); return _c; })()}
         </div>
         <div id="teamPlayersList" style="overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch"></div>
