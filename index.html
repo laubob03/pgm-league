@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.379'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.380'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -621,7 +621,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 379 };
+const APP_VERSION = { major: 1, minor: 0, patch: 380 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -633,7 +633,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.379', date: '2026-06-01', items: ['📤 已转出球员完全不显示在原球队，只显示在新球队'] },
+  { v: '1.0.380', date: '2026-06-01', items: ['📤 修复：总榜/联赛/杯赛Tab仍显示已转出球员（switchPlayerSubTab三处playerStats未过滤）'] },
   { v: '1.0.378', date: '2026-05-24', items: ['📤 已转会球员不再显示在原球队活跃名单，数据保留不影响统计'] },
   { v: '1.0.377', date: '2026-05-24', items: ['🏁 转会管理新增"中期转会结束并上传"按钮，超管可强制立即执行所有待生效转会'] },
   { v: '1.0.376', date: '2026-05-18', items: ['🐛 足总杯重赛录入界面：主客场显示顺序调整，与原场视角保持一致'] },
@@ -7235,7 +7235,7 @@ function showTeamDetail(teamId) {
     if (subTab === 'total') {
       // ★ 总榜：联赛 + 所有杯赛数据汇总
       const playerStats = {};
-      t.players.forEach(p => { playerStats[p.id] = { ...p, goals: 0, assists: 0, motmCount: 0 }; });
+      t.players.filter(p => !p.transferredOut).forEach(p => { playerStats[p.id] = { ...p, goals: 0, assists: 0, motmCount: 0 }; });
 
       // 汇总联赛数据
       (sd.matches || []).filter(m => m.status === 'completed' && (m.homeTeam === teamId || m.awayTeam === teamId)).forEach(m => {
@@ -7286,7 +7286,7 @@ function showTeamDetail(teamId) {
     } else if (subTab === 'league') {
       // 联赛球员（含进球/助攻/MVP实时计算）
       const playerStats = {};
-      t.players.forEach(p => { playerStats[p.id] = { ...p, goals: 0, assists: 0, motmCount: 0 }; });
+      t.players.filter(p => !p.transferredOut).forEach(p => { playerStats[p.id] = { ...p, goals: 0, assists: 0, motmCount: 0 }; });
       // 从 state.matches（即 sd.matches）中过滤该球队的联赛已完成比赛
       (sd.matches || []).filter(m => m.status === 'completed' && (m.homeTeam === teamId || m.awayTeam === teamId)).forEach(m => {
         if (m.scorers) m.scorers.filter(s => s.teamId === teamId && playerStats[s.playerId]).forEach(s => playerStats[s.playerId].goals++);
@@ -7319,7 +7319,7 @@ function showTeamDetail(teamId) {
       const cupId = subTab.replace('cup_', '');
       const cupShortName = (CUP_NAMES[cupId] || '杯赛').replace('🏆 ', '');
       const playerStats = {};
-      t.players.forEach(p => { playerStats[p.id] = { ...p, goals: 0, assists: 0, motmCount: 0 }; });
+      t.players.filter(p => !p.transferredOut).forEach(p => { playerStats[p.id] = { ...p, goals: 0, assists: 0, motmCount: 0 }; });
       if (sd.cups && sd.cups[cupId]) {
         const cup = sd.cups[cupId];
         if (cup.matches) {
