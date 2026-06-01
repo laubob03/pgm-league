@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.387'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.388'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -626,7 +626,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 387 };
+const APP_VERSION = { major: 1, minor: 0, patch: 388 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -638,6 +638,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.388', date: '2026-06-01', items: ['🐛 修复：syncPlayersFromDB排除已解约至公海球员，防止反复注入', '🐛 修复：syncPlayersFromDB排除已完成转出球员，防止回退'] },
   { v: '1.0.387', date: '2026-06-01', items: ['🔄 新增syncPlayersFromDB()合并机制：PLAYERS_DB新增球员自动同步到现有state，不破坏比赛数据', '🐛 修复：解约球员后自动跳转到球员Tab以显示更新结果'] },
   { v: '1.0.386', date: '2026-06-01', items: ['📋 新增8名球员到7支球队：Fricio Caicedo, Alexis Ciria, Akpe Victory, Adem Avdić, Carlos Díez, julien yanda, Kevin Lomónaco, José Rafael Escorcia De La Cruz'] },
   { v: '1.0.385', date: '2026-06-01', items: ['📋 新增18名球员到15支球队（脚本批量添加）'] },
@@ -1501,8 +1502,12 @@ function syncPlayersFromDB() {
     // 获取state中已有的uid集合
     const existingUids = new Set(team.players.map(p => String(p.uid)));
     
-    // 找出PLAYERS_DB中有但state中没有的球员
-    const missing = dbPlayers.filter(p => !existingUids.has(String(p.uid)));
+    // 获取已解约到公海和已转出球员的uid（防止反复注入）
+    const openSeaUids = new Set((state.openSeaPlayers || []).map(p => String(p.uid)));
+    const transferredUids = new Set((state.pendingTransfers || []).filter(t => t.status === 'completed' && t.fromTeamId === team.id).map(t => String(t.playerUid)));
+    
+    // 找出PLAYERS_DB中有但state中没有的球员（排除已解约和已转出）
+    const missing = dbPlayers.filter(p => !existingUids.has(String(p.uid)) && !openSeaUids.has(String(p.uid)) && !transferredUids.has(String(p.uid)));
     
     if (missing.length > 0) {
       // 计算下一个可用号码
