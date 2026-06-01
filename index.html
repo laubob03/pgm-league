@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.382'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.383'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -545,6 +545,7 @@
     <div class="transfer-tabs-wrap">
       <button class="transfer-tab-btn active" id="transferTabMarket" onclick="switchTransferTab('market')" style="background:#1b5e20;color:#fff;font-weight:600">🤝 转会市场</button>
       <button class="transfer-tab-btn" id="transferTabManage" onclick="switchTransferTab('manage')">🔄 转会管理</button>
+      <button class="transfer-tab-btn" id="transferTabOpenSea" onclick="switchTransferTab('opensea')">🌊 公海球员</button>
     </div>
     <!-- 转会管理区域 -->
     <div class="card" id="transferManageCard" style="display:none">
@@ -553,6 +554,10 @@
     <!-- 转会市场 -->
     <div class="card" id="transferMarketCard">
       <div id="transferContent"></div>
+    </div>
+    <!-- 公海球员区域 -->
+    <div class="card" id="transferOpenSeaCard" style="display:none">
+      <div id="transferOpenSeaContent"></div>
     </div>
   </div>
 </main>
@@ -621,7 +626,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 382 };
+const APP_VERSION = { major: 1, minor: 0, patch: 383 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -633,15 +638,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测球员uid重复，对比原始人数与unique人数'] },
-  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测球员uid重复，对比unique count与raw count'] },
-  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid、对比原始vs唯一球员数'] },
-  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测重复uid球员'] },
-  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测球员uid重复，对比unique count和raw count'] },
-  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加球员uid重复检测，诊断Marseille等队人数异常'] },
-  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测重复uid球员'] },
-  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid、对比原始/去重后人数'] },
-  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测重复uid球员'] },
+  { v: '1.0.383', date: '2026-06-01', items: ['🌊 新增公海球员功能：球员详情页超管可解约球员至公海', '转会页面新增公海球员TAB，展示所有解约球员', '超管可从公海签约球员至任意球队'] },
   { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测球员uid重复'] },
   { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加联赛Tab详细诊断日志：检测重复uid'] },
   { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测球员uid重复，对比原始人数与unique人数'] },
@@ -7189,6 +7186,7 @@ function showTeamDetail(teamId) {
           <button class="data-tab active" id="dataTab_total" onclick="switchPlayerSubTab('total','${teamId}')">📊 总榜</button>
           <button class="data-tab" id="dataTab_league" onclick="switchPlayerSubTab('league','${teamId}')">👥 联赛（${team.players.filter(p => !p.transferredOut).length}人）</button>
           ${(() => { let _c = ''; const _cupOrder = ['faCup','championsCup','leagueCup','associationCup']; _cupOrder.forEach(_cid => { const _cup = sd.cups && sd.cups[_cid]; const _inCup = _cup && ((_cup.teams && _cup.teams.includes(teamId)) || (_cup.matches && _cup.matches.some(m => m.homeTeam === teamId || m.awayTeam === teamId))); if (_inCup) { _c += "<button class='data-tab' id='dataTab_cup_" + _cid + "' onclick='switchPlayerSubTab(&#39;cup_" + _cid + "&#39;,&#39;" + teamId + "&#39;)'>🏆 " + (CUP_NAMES[_cid]||_cid).replace('🏆 ','') + '</button>'; } }); return _c; })()}
+          ${isAdmin ? `<button class="data-tab" id="dataTab_release" onclick="switchPlayerSubTab('release','${teamId}')" style="border-color:#f44336;color:#f44336">🌊 解约至公海</button>` : ''}
         </div>
         <div id="teamPlayersList" style="overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch"></div>
       </div>
@@ -7485,6 +7483,32 @@ function showTeamDetail(teamId) {
             <div>• 历史赛季数据不受影响</div>
           </div>
         </div>`;
+    } else if (subTab === 'release') {
+      // 解约至公海（仅超管可见）
+      const activePlayers = t.players.filter(p => !p.transferredOut && !p.isTransferIn);
+      const playersOptions = activePlayers.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN')).map(p =>
+        `<option value="${p.uid}" data-name="${p.name}">${p.name} #${p.number} (${p.position})</option>`
+      ).join('');
+      list.innerHTML = `
+        <div style="padding:8px 4px">
+          <div style="font-size:12px;color:#f44336;margin-bottom:10px;font-weight:600">🌊 将球员从 <b>${t.name}</b> 解约至公海</div>
+          <div style="margin-bottom:8px">
+            <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">选择球员</label>
+            <select id="releasePlayerUid" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:8px;font-size:13px">${playersOptions}</select>
+          </div>
+          <div style="margin-bottom:8px">
+            <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">解约原因（可选）</label>
+            <input type="text" id="releaseReason" placeholder="如：合同到期、双方协商解约等" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:8px;font-size:13px">
+          </div>
+          <button class="btn btn-primary" style="width:100%;background:#f44336" onclick="releasePlayerToOpenSea('${teamId}')">⚠️ 确认解约</button>
+          <div style="margin-top:10px;padding:8px 10px;background:#FFEBEE;border:1px solid #FFCDD2;border-radius:8px;font-size:11px;color:#C62828;line-height:1.6">
+            <div style="font-weight:600;margin-bottom:4px">⚠️ 解约须知</div>
+            <div>• 解约后球员将进入<b>公海球员池</b>，所有球队可见</div>
+            <div>• 解约球员的历史数据将被保留</div>
+            <div>• 其他球队可通过转会市场签约该球员</div>
+            <div>• <b>此操作不可撤销</b>，请谨慎操作</div>
+          </div>
+        </div>`;
     }
   };
 
@@ -7623,6 +7647,49 @@ function showTeamDetail(teamId) {
     showToast('转会已' + (isImmediate ? '完成' : '添加') + '：' + player.name + ' → ' + toTeam.name);
     // 刷新球队详情
     showTeamDetail(fromTeamId);
+  };
+
+  // 解约球员至公海
+  window.releasePlayerToOpenSea = (teamId) => {
+    if (!state.currentUser || !state.currentUser.isSuperAdmin) {
+      showToast('仅超级管理员可操作');
+      return;
+    }
+    const playerUid = document.getElementById('releasePlayerUid').value;
+    const reason = document.getElementById('releaseReason').value.trim();
+    if (!playerUid) { showToast('请选择球员'); return; }
+
+    const sd = getCurrentSeasonData();
+    const team = sd.teams.find(t => t.id === teamId);
+    if (!team) { showToast('球队不存在'); return; }
+
+    const playerIdx = team.players.findIndex(p => p.uid == playerUid);
+    if (playerIdx < 0) { showToast('球员不存在'); return; }
+    const player = team.players[playerIdx];
+
+    if (!confirm(`⚠️ 确认解约：${player.name}（${team.name} #${player.number}）？\n\n解约后该球员将进入公海球员池，所有球队可见。`)) return;
+
+    // 创建公海球员记录
+    const openSeaPlayer = {
+      ...player,
+      releasedFromTeamId: teamId,
+      releasedFromTeamName: team.name,
+      releasedAt: new Date().toISOString(),
+      releaseReason: reason || '双方协商解约',
+      isInOpenSea: true
+    };
+
+    // 从原球队移除
+    team.players.splice(playerIdx, 1);
+
+    // 添加到公海
+    if (!state.openSeaPlayers) state.openSeaPlayers = [];
+    state.openSeaPlayers.push(openSeaPlayer);
+
+    saveState();
+    showToast(`🌊 ${player.name} 已解约至公海`);
+    // 刷新球队详情
+    showTeamDetail(teamId);
   };
 }
 
@@ -9530,23 +9597,52 @@ function executeTransfer(transfer) {
 function switchTransferTab(tab) {
   const manageCard = document.getElementById('transferManageCard');
   const marketCard = document.getElementById('transferMarketCard');
+  const openSeaCard = document.getElementById('transferOpenSeaCard');
   const tabManage = document.getElementById('transferTabManage');
   const tabMarket = document.getElementById('transferTabMarket');
+  const tabOpenSea = document.getElementById('transferTabOpenSea');
+  
+  // 重置所有tab样式
+  [tabManage, tabMarket, tabOpenSea].forEach(t => {
+    if (t) {
+      t.classList.remove('active');
+      t.style.background = 'transparent';
+      t.style.color = '#222';
+      t.style.fontWeight = '500';
+    }
+  });
+  
+  // 隐藏所有卡片
+  if (manageCard) manageCard.style.display = 'none';
+  if (marketCard) marketCard.style.display = 'none';
+  if (openSeaCard) openSeaCard.style.display = 'none';
+  
   if (tab === 'manage') {
-    manageCard.style.display = '';
-    marketCard.style.display = 'none';
-    tabManage.classList.add('active');
-    tabManage.style.background = '#d0d0d0'; tabManage.style.color = '#222'; tabManage.style.fontWeight = '600';
-    tabMarket.classList.remove('active');
-    tabMarket.style.background = 'transparent'; tabMarket.style.color = '#222'; tabMarket.style.fontWeight = '500';
+    if (manageCard) manageCard.style.display = '';
+    if (tabManage) {
+      tabManage.classList.add('active');
+      tabManage.style.background = '#d0d0d0';
+      tabManage.style.color = '#222';
+      tabManage.style.fontWeight = '600';
+    }
     renderTransferManage();
+  } else if (tab === 'opensea') {
+    if (openSeaCard) openSeaCard.style.display = '';
+    if (tabOpenSea) {
+      tabOpenSea.classList.add('active');
+      tabOpenSea.style.background = '#d0d0d0';
+      tabOpenSea.style.color = '#222';
+      tabOpenSea.style.fontWeight = '600';
+    }
+    renderTransferOpenSea();
   } else {
-    manageCard.style.display = 'none';
-    marketCard.style.display = '';
-    tabManage.classList.remove('active');
-    tabManage.style.background = 'transparent'; tabManage.style.color = '#222'; tabManage.style.fontWeight = '500';
-    tabMarket.classList.add('active');
-    tabMarket.style.background = '#d0d0d0'; tabMarket.style.color = '#222'; tabMarket.style.fontWeight = '600';
+    if (marketCard) marketCard.style.display = '';
+    if (tabMarket) {
+      tabMarket.classList.add('active');
+      tabMarket.style.background = '#d0d0d0';
+      tabMarket.style.color = '#222';
+      tabMarket.style.fontWeight = '600';
+    }
     renderTransferMarket();
   }
 }
@@ -9659,6 +9755,163 @@ function finalizeMidSeasonTransfers() {
   showToast(`✅ 已执行 ${count} 条转会，正在上传...`);
   if (typeof syncUpload === 'function') syncUpload();
   renderTransferManage();
+}
+
+// 渲染公海球员列表
+function renderTransferOpenSea() {
+  const container = document.getElementById('transferOpenSeaContent');
+  if (!container) return;
+
+  const openSeaPlayers = state.openSeaPlayers || [];
+  const isAdmin = state.currentUser && state.currentUser.isSuperAdmin;
+
+  if (openSeaPlayers.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:40px 20px;color:#999">
+        <div style="font-size:48px;margin-bottom:12px">🌊</div>
+        <div style="font-size:14px">暂无公海球员</div>
+        <div style="font-size:12px;color:#bbb;margin-top:8px">解约的球员将显示在这里</div>
+      </div>`;
+    return;
+  }
+
+  // 按解约时间倒序排列
+  const sortedPlayers = [...openSeaPlayers].sort((a, b) => new Date(b.releasedAt) - new Date(a.releasedAt));
+
+  const playersHtml = sortedPlayers.map(p => {
+    const releaseDate = new Date(p.releasedAt).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
+    const statsHtml = `
+      <div style="display:flex;gap:8px;font-size:11px;color:#666;margin-top:4px">
+        <span>⚽${p.goals || 0}</span>
+        <span>👟${p.assists || 0}</span>
+        <span>⭐${p.motmCount || 0}</span>
+        <span style="color:#999">| ${p.position || '未知位置'}</span>
+      </div>`;
+    
+    const actionBtn = isAdmin ? `
+      <button onclick="signPlayerFromOpenSea('${p.uid}')" style="background:#228B22;color:#fff;border:none;border-radius:4px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap">签约</button>
+    ` : '';
+
+    return `
+      <div style="display:flex;align-items:center;padding:10px 12px;border-bottom:1px solid #f0f0f0;gap:10px">
+        <div style="width:32px;height:32px;background:#f44336;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0">${p.number || '?'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:14px;font-weight:600">${p.name}</span>
+            <span style="font-size:10px;color:#f44336;background:#FFEBEE;padding:1px 5px;border-radius:3px">已解约</span>
+          </div>
+          <div style="font-size:11px;color:#888">原球队：${p.releasedFromTeamName || '未知'} | 解约日期：${releaseDate}</div>
+          ${statsHtml}
+          ${p.releaseReason ? `<div style="font-size:10px;color:#999;margin-top:2px">原因：${p.releaseReason}</div>` : ''}
+        </div>
+        ${actionBtn}
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 12px 8px;border-bottom:1px solid #eee">
+      <div style="font-size:13px;font-weight:600;color:#333">🌊 公海球员（${openSeaPlayers.length}）</div>
+      ${isAdmin ? '<div style="font-size:11px;color:#666">点击"签约"可将球员转入球队</div>' : ''}
+    </div>
+    ${playersHtml}
+  `;
+}
+
+// 从公海签约球员
+function signPlayerFromOpenSea(playerUid) {
+  if (!state.currentUser || !state.currentUser.isSuperAdmin) {
+    showToast('仅超级管理员可操作');
+    return;
+  }
+
+  const player = (state.openSeaPlayers || []).find(p => p.uid == playerUid);
+  if (!player) { showToast('球员不存在'); return; }
+
+  // 构建球队选项
+  const teamOptions = state.teams.sort((a, b) => (a.name||'').localeCompare(b.name||'')).map(t => 
+    `<option value="${t.id}">${t.name}（${LEAGUE_NAMES[t.league]}）</option>`
+  ).join('');
+
+  const content = `
+    <div class="modal-header">
+      <div class="modal-title">📝 签约球员</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div style="padding:12px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:12px;background:#f5f5f5;border-radius:8px">
+        <div style="width:40px;height:40px;background:#f44336;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600">${player.number || '?'}</div>
+        <div>
+          <div style="font-size:16px;font-weight:600">${player.name}</div>
+          <div style="font-size:12px;color:#666">${player.position || '未知位置'} | 原${player.releasedFromTeamName || '未知'}</div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">签约球队</label>
+        <select id="signTargetTeam" class="form-input" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px">
+          <option value="">请选择球队</option>
+          ${teamOptions}
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">新号码</label>
+        <input type="number" id="signNewNumber" class="form-input" value="${player.number || ''}" min="1" max="99" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" style="flex:1;background:#228B22" onclick="confirmSignFromOpenSea('${playerUid}')">确认签约</button>
+        <button class="btn btn-secondary" style="flex:1" onclick="closeModal()">取消</button>
+      </div>
+    </div>
+  `;
+  showModal(content);
+}
+
+// 确认从公海签约
+function confirmSignFromOpenSea(playerUid) {
+  const targetTeamId = document.getElementById('signTargetTeam').value;
+  const newNumber = parseInt(document.getElementById('signNewNumber').value) || 0;
+
+  if (!targetTeamId) { showToast('请选择签约球队'); return; }
+  if (!newNumber || newNumber < 1 || newNumber > 99) { showToast('请输入有效的号码（1-99）'); return; }
+
+  const playerIdx = (state.openSeaPlayers || []).findIndex(p => p.uid == playerUid);
+  if (playerIdx < 0) { showToast('球员不存在'); return; }
+
+  const player = state.openSeaPlayers[playerIdx];
+  const targetTeam = state.teams.find(t => t.id === targetTeamId);
+  if (!targetTeam) { showToast('球队不存在'); return; }
+
+  // 检查号码是否已被占用
+  const existingPlayer = targetTeam.players.find(p => p.number === newNumber);
+  if (existingPlayer) {
+    if (!confirm(`号码 ${newNumber} 已被 ${existingPlayer.name} 占用，是否强制更换其号码？`)) return;
+    existingPlayer.number = 0; // 临时标记为无号码
+  }
+
+  // 从公海移除
+  state.openSeaPlayers.splice(playerIdx, 1);
+
+  // 创建新球员记录（保留历史数据）
+  const newPlayer = {
+    ...player,
+    id: 'p' + targetTeamId + '_' + player.uid,
+    number: newNumber,
+    isTransferIn: true,
+    transferredInFrom: '公海（原' + (player.releasedFromTeamName || '未知') + '）',
+    transferDate: new Date().toLocaleDateString('zh-CN'),
+    isInOpenSea: false,
+    releasedFromTeamId: undefined,
+    releasedFromTeamName: undefined,
+    releasedAt: undefined,
+    releaseReason: undefined
+  };
+
+  // 添加到新球队
+  targetTeam.players.push(newPlayer);
+
+  saveState();
+  showToast(`✅ ${player.name} 已签约至 ${targetTeam.name}`);
+  closeModal();
+  renderTransferOpenSea();
 }
 
 // 兼容旧调用：showTransferModal 仍然弹出弹窗（超管从其他入口使用）
