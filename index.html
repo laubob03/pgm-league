@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.384'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.385'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -626,7 +626,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 384 };
+const APP_VERSION = { major: 1, minor: 0, patch: 385 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -638,6 +638,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.385', date: '2026-06-01', items: ['📋 新增18名球员到15支球队（脚本批量添加）'] },
   { v: '1.0.384', date: '2026-06-01', items: ['🐛 修复 showTeamDetail 函数中 isAdmin 未定义的错误'] },
   { v: '1.0.383', date: '2026-06-01', items: ['🌊 新增公海球员功能：球员详情页超管可解约球员至公海', '转会页面新增公海球员TAB，展示所有解约球员', '超管可从公海签约球员至任意球队'] },
   { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测球员uid重复'] },
