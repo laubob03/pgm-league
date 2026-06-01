@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.386'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.387'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -626,7 +626,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 386 };
+const APP_VERSION = { major: 1, minor: 0, patch: 387 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -638,6 +638,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.387', date: '2026-06-01', items: ['🔄 新增syncPlayersFromDB()合并机制：PLAYERS_DB新增球员自动同步到现有state，不破坏比赛数据', '🐛 修复：解约球员后自动跳转到球员Tab以显示更新结果'] },
   { v: '1.0.386', date: '2026-06-01', items: ['📋 新增8名球员到7支球队：Fricio Caicedo, Alexis Ciria, Akpe Victory, Adem Avdić, Carlos Díez, julien yanda, Kevin Lomónaco, José Rafael Escorcia De La Cruz'] },
   { v: '1.0.385', date: '2026-06-01', items: ['📋 新增18名球员到15支球队（脚本批量添加）'] },
   { v: '1.0.384', date: '2026-06-01', items: ['🐛 修复 showTeamDetail 函数中 isAdmin 未定义的错误'] },
@@ -1484,6 +1485,51 @@ function recalculateAllPlayerStats(sd) {
         });
       });
     });
+  }
+}
+
+// ============ PLAYER SYNC ============
+// 将PLAYERS_DB中新增的球员安全合并到现有state，不破坏比赛数据/转会记录
+function syncPlayersFromDB() {
+  if (!state.teams || state.teams.length < 60) { console.log('[SYNC] Skip: state.teams not ready'); return; }
+  let totalSynced = 0;
+  
+  for (const team of state.teams) {
+    const dbPlayers = PLAYERS_DB[team.name];
+    if (!dbPlayers || dbPlayers.length === 0) continue;
+    
+    // 获取state中已有的uid集合
+    const existingUids = new Set(team.players.map(p => String(p.uid)));
+    
+    // 找出PLAYERS_DB中有但state中没有的球员
+    const missing = dbPlayers.filter(p => !existingUids.has(String(p.uid)));
+    
+    if (missing.length > 0) {
+      // 计算下一个可用号码
+      const maxNum = Math.max.apply(null, [0].concat(team.players.map(function(p) { return p.number || 0; })));
+      
+      missing.forEach(function(p, idx) {
+        team.players.push({
+          id: team.id + '_' + p.uid,
+          uid: p.uid,
+          name: p.name,
+          number: maxNum + idx + 1,
+          position: 'FW',
+          age: p.age || 18.0,
+          releaseClause: p.releaseClause || 0,
+          goals: 0, assists: 0, rating: 0, gamesPlayed: 0, motmCount: 0
+        });
+      });
+      totalSynced += missing.length;
+      console.log('[SYNC] ' + team.name + ': +' + missing.length + ' players (' + missing.map(function(p) { return p.name; }).join(', ') + ')');
+    }
+  }
+  
+  if (totalSynced > 0) {
+    console.log('[SYNC] Total: ' + totalSynced + ' new players synced from PLAYERS_DB');
+    saveState();
+  } else {
+    console.log('[SYNC] All PLAYERS_DB players already in state, nothing to sync');
   }
 }
 
@@ -7694,8 +7740,9 @@ function showTeamDetail(teamId) {
 
     saveState();
     showToast(`🌊 ${player.name} 已解约至公海`);
-    // 刷新球队详情
+    // 刷新球队详情并自动切到球员Tab
     showTeamDetail(teamId);
+    switchTeamTab('player', teamId);
   };
 }
 
@@ -10960,6 +11007,7 @@ document.getElementById('modalOverlay').onclick = (e) => {
   } catch(e) { /* 网络异常忽略 */ }
   // 正常初始化
   loadState();
+  syncPlayersFromDB(); // 合并PLAYERS_DB新增球员到现有state
   // 从URL hash恢复状态（如果有）
   restoreFromUrlHash();
   updateSidebar();
