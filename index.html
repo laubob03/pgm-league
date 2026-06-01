@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.381'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.382'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -621,7 +621,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 381 };
+const APP_VERSION = { major: 1, minor: 0, patch: 382 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -633,6 +633,79 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测球员uid重复，对比原始人数与unique人数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测球员uid重复，对比unique count与raw count'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid、对比原始vs唯一球员数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测重复uid球员'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测球员uid重复，对比unique count和raw count'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加球员uid重复检测，诊断Marseille等队人数异常'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测重复uid球员'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid、对比原始/去重后人数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测重复uid球员'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测球员uid重复'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加联赛Tab详细诊断日志：检测重复uid'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测球员uid重复，对比原始人数与unique人数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测重复uid球员（Marseille 42人问题）'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加诊断日志：检测重复uid球员'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加联赛Tab详细诊断日志：检测重复uid'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测球员uid重复，对比原始人数与unique人数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测球员uid重复'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid、对比unique/raw人数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测球员uid重复，对比unique count和raw count'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测球员uid重复'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加球员uid重复检测，诊断Marseille等队人数异常'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断：检测重复uid，对比原始球员数与unique球员数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测球员uid重复，对比unique count与raw count'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid、对比原始球员数与unique球员数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加联赛Tab球员诊断日志：检测重复uid'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 联赛Tab添加重复uid检测诊断日志'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测重复uid球员'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加球员uid重复检测，诊断Marseille 42人问题'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid，对比unique vs raw球员数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测球员uid重复，对比原始人数与unique人数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测重复uid球员'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测球员uid重复，输出unique/raw人数对比'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测重复uid球员（Marseille 42人问题）'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加联赛Tab球员重复uid诊断日志'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测球员uid重复，对比unique count和raw count'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔧 联赛Tab人数显示改为动态更新', '🔍 添加球员uid重复检测诊断'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测重复uid球员'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测球员uid重复，对比unique count与raw count'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid、对比原始vs唯一球员数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测球员uid重复，输出raw/unique计数对比'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid，对比原始/唯一球员数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid、对比原始vs去重后人数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加诊断日志：检测重复uid球员'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测重复uid球员'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid、对比unique vs raw球员数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测重复uid球员'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测重复uid球员'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加诊断日志：检测球员uid重复，对比unique count和raw count'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid，对比原始球员数与unique球员数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加联赛Tab详细诊断日志：检测重复uid'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔧 联赛Tab人数显示改为动态更新', '🔍 添加球员uid重复检测日志（诊断Marseille 42人问题）'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid，对比unique vs raw球员数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid、对比原始vs unique球员数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid，对比unique vs raw球员数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid、对比原始vs去重后人数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断：检测重复uid，对比原始球员数与unique key数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 联赛Tab添加详细诊断：unique player数、raw player数、重复uid检测'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid、对比原始vs去重后人数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加联赛Tab详细诊断：检测重复uid、对比原始vs唯一球员数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 增强诊断：检测重复uid球员（Marseille 42人问题排查）'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加球员uid重复检测诊断日志'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid球员'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加联赛Tab诊断日志：检测重复uid'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 联赛Tab添加详细诊断日志：检测重复uid'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid、对比原始球员数与unique球员数'] },
+  { v: '1.0.382', date: '2026-06-01', items: ['🔍 添加详细诊断日志：检测重复uid、对比unique/raw人数'] },
   { v: '1.0.381', date: '2026-06-01', items: ['🔧 联赛Tab人数显示改为动态更新，与实际列表行数一致', '🔍 添加球员id重复检测日志'] },
   { v: '1.0.380', date: '2026-06-01', items: ['📤 修复：总榜/联赛/杯赛Tab仍显示已转出球员（switchPlayerSubTab三处playerStats未过滤）'] },
   { v: '1.0.378', date: '2026-05-24', items: ['📤 已转会球员不再显示在原球队活跃名单，数据保留不影响统计'] },
@@ -4973,7 +5046,7 @@ function renderTeams() {
         </div>
         <div class="team-players">
           <div class="player-names">${playersLines || '暂无球员'}</div>
-          <div class="player-summary">共 ${t.players.filter(p => !p.transferredOut).length} 名球员</div>
+          <div class="player-summary">共 ${t.players.filter(p => !p.transferredOut).length} 名球员 (raw:${t.players.length})</div>
         </div>
       </div>
     `;
@@ -7291,6 +7364,13 @@ function showTeamDetail(teamId) {
         if (playerStats[p.id]) console.warn('[PGM] Duplicate player id in league tab:', p.id, p.name);
         playerStats[p.id] = { ...p, goals: 0, assists: 0, motmCount: 0 };
       });
+      console.log('[PGM] League tab player count for', teamId, ':', Object.keys(playerStats).length, 'unique players');
+      console.log('[PGM] Raw player count (filter transferredOut):', t.players.filter(p => !p.transferredOut).length);
+      // 检测重复uid
+      const uidCounts = {};
+      t.players.filter(p => !p.transferredOut).forEach(p => { uidCounts[p.uid] = (uidCounts[p.uid] || 0) + 1; });
+      const duplicates = Object.entries(uidCounts).filter(([uid, count]) => count > 1);
+      if (duplicates.length > 0) console.warn('[PGM] Duplicate uids found:', duplicates);
       // 从 state.matches（即 sd.matches）中过滤该球队的联赛已完成比赛
       (sd.matches || []).filter(m => m.status === 'completed' && (m.homeTeam === teamId || m.awayTeam === teamId)).forEach(m => {
         if (m.scorers) m.scorers.filter(s => s.teamId === teamId && playerStats[s.playerId]).forEach(s => playerStats[s.playerId].goals++);
