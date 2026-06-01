@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.380'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.381'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -621,7 +621,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 380 };
+const APP_VERSION = { major: 1, minor: 0, patch: 381 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -633,6 +633,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.381', date: '2026-06-01', items: ['🔧 联赛Tab人数显示改为动态更新，与实际列表行数一致', '🔍 添加球员id重复检测日志'] },
   { v: '1.0.380', date: '2026-06-01', items: ['📤 修复：总榜/联赛/杯赛Tab仍显示已转出球员（switchPlayerSubTab三处playerStats未过滤）'] },
   { v: '1.0.378', date: '2026-05-24', items: ['📤 已转会球员不再显示在原球队活跃名单，数据保留不影响统计'] },
   { v: '1.0.377', date: '2026-05-24', items: ['🏁 转会管理新增"中期转会结束并上传"按钮，超管可强制立即执行所有待生效转会'] },
@@ -7286,7 +7287,10 @@ function showTeamDetail(teamId) {
     } else if (subTab === 'league') {
       // 联赛球员（含进球/助攻/MVP实时计算）
       const playerStats = {};
-      t.players.filter(p => !p.transferredOut).forEach(p => { playerStats[p.id] = { ...p, goals: 0, assists: 0, motmCount: 0 }; });
+      t.players.filter(p => !p.transferredOut).forEach(p => {
+        if (playerStats[p.id]) console.warn('[PGM] Duplicate player id in league tab:', p.id, p.name);
+        playerStats[p.id] = { ...p, goals: 0, assists: 0, motmCount: 0 };
+      });
       // 从 state.matches（即 sd.matches）中过滤该球队的联赛已完成比赛
       (sd.matches || []).filter(m => m.status === 'completed' && (m.homeTeam === teamId || m.awayTeam === teamId)).forEach(m => {
         if (m.scorers) m.scorers.filter(s => s.teamId === teamId && playerStats[s.playerId]).forEach(s => playerStats[s.playerId].goals++);
@@ -7302,6 +7306,9 @@ function showTeamDetail(teamId) {
         }
       });
       const players = Object.values(playerStats);
+      // 同步更新联赛Tab按钮上的人数显示
+      const leagueBtn = document.getElementById('dataTab_league');
+      if (leagueBtn) leagueBtn.textContent = `👥 联赛（${players.length}人）`;
       list.innerHTML = `
         <div class="sort-btns">
           <button class="sort-btn active" onclick="sortLeaguePlayers('number')">号码</button>
