@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.390'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.391'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -626,7 +626,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 390 };
+const APP_VERSION = { major: 1, minor: 0, patch: 391 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -638,7 +638,8 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.390', date: '2026-06-03', items: ['🐛 修复：syncPlayersFromDB清理逻辑status匹配从completed扩展为processed/completed', '🐛 新增：跨队PLAYERS_DB检测——uid在别队PLAYERS_DB出现的球员自动从当前队移除', '📋 数据修正：Conor Gallagher从Marseille移至Fulham'] },
+  { v: '1.0.391', date: '2026-06-03', items: ['🔥 紧急回滚：v1.0.390跨队检测因PLAYERS_DB不同步导致转会球员被错误移除'] },
+  { v: '1.0.390', date: '2026-06-03', items: ['🐛 修复：syncPlayersFromDB清理逻辑status匹配从completed扩展为processed/completed', '⚠ 已回滚：跨队PLAYERS_DB检测（v1.0.391）', '📋 数据修正：Conor Gallagher从Marseille移至Fulham'] },
   { v: '1.0.389', date: '2026-06-03', items: ['🐛 修复：syncPlayersFromDB增加主动清理——从球队中移除已在公海或已转出的球员（清除v1.0.387脏数据）'] },
   { v: '1.0.388', date: '2026-06-01', items: ['🐛 修复：syncPlayersFromDB排除已解约至公海球员，防止反复注入', '🐛 修复：syncPlayersFromDB排除已完成转出球员，防止回退'] },
   { v: '1.0.387', date: '2026-06-01', items: ['🔄 新增syncPlayersFromDB()合并机制：PLAYERS_DB新增球员自动同步到现有state，不破坏比赛数据', '🐛 修复：解约球员后自动跳转到球员Tab以显示更新结果'] },
@@ -1541,12 +1542,6 @@ function syncPlayersFromDB() {
   // 主动清理：从所有球队中移除已在公海或已完成转出的球员
   const allOpenSeaUids = new Set((state.openSeaPlayers || []).map(p => String(p.uid)));
   const allTransferredUids = new Set((state.pendingTransfers || []).filter(t => t.status === 'processed' || t.status === 'completed').map(t => String(t.playerUid)));
-  // 构建 PLAYERS_DB 反向索引：uid → 所属队名
-  const dbTeamByUid = {};
-  for (const [teamName, dbPlayers] of Object.entries(PLAYERS_DB)) {
-    if (!Array.isArray(dbPlayers)) continue;
-    for (const p of dbPlayers) { dbTeamByUid[String(p.uid)] = teamName; }
-  }
   let totalCleaned = 0;
 
   for (const team of state.teams) {
@@ -1555,9 +1550,6 @@ function syncPlayersFromDB() {
       const uid = String(p.uid);
       if (allOpenSeaUids.has(uid)) { console.log('[CLEAN] Removed ' + p.name + ' from ' + team.name + ' (in openSea)'); return false; }
       if (allTransferredUids.has(uid)) { console.log('[CLEAN] Removed ' + p.name + ' from ' + team.name + ' (transferred out)'); return false; }
-      // 跨队检测：uid在PLAYERS_DB中属于别的队 → 已转会
-      const dbTeam = dbTeamByUid[uid];
-      if (dbTeam && dbTeam !== team.name) { console.log('[CLEAN] Removed ' + p.name + ' from ' + team.name + ' (PLAYERS_DB now under ' + dbTeam + ')'); return false; }
       return true;
     });
     if (team.players.length < beforeCount) totalCleaned += (beforeCount - team.players.length);
