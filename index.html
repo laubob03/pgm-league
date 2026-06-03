@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.392'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.393'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -626,7 +626,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 392 };
+const APP_VERSION = { major: 1, minor: 0, patch: 393 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -638,6 +638,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.393', date: '2026-06-03', items: ['🔄 新增replayTransfers()—基于120条转会记录重建球员归属+同步PLAYERS_DB'] },
   { v: '1.0.392', date: '2026-06-03', items: ['🔥 紧急：移除allTransferredUids清理——导致转会球员循环清空', '🐛 sync阶段transferredUids同时匹配processed/completed'] },
   { v: '1.0.391', date: '2026-06-03', items: ['🔥 紧急回滚：v1.0.390跨队检测因PLAYERS_DB不同步导致转会球员被错误移除'] },
   { v: '1.0.390', date: '2026-06-03', items: ['🐛 修复：syncPlayersFromDB清理逻辑status匹配从completed扩展为processed/completed', '⚠ 已回滚：跨队PLAYERS_DB检测（v1.0.391）', '📋 数据修正：Conor Gallagher从Marseille移至Fulham'] },
@@ -1559,6 +1560,112 @@ function syncPlayersFromDB() {
   }
 
   if (totalSynced > 0 || totalCleaned > 0) {
+    saveState();
+  }
+}
+
+// ============ REPLAY TRANSFERS ============
+// 从 pendingTransfers 记录重建转会状态 + 同步 PLAYERS_DB
+function replayTransfers() {
+  const processed = (state.pendingTransfers || []).filter(function(t) { return t.status === 'processed'; });
+  if (!processed.length) { console.log('[REPLAY] No processed transfers'); return; }
+
+  var totalSame = 0;
+  var totalCross = 0;
+
+  for (var i = 0; i < processed.length; i++) {
+    var transfer = processed[i];
+    var fromTeam = state.teams.find(function(t) { return t.id === transfer.fromTeamId; });
+    var toTeam = state.teams.find(function(t) { return t.id === transfer.toTeamId; });
+    if (!fromTeam || !toTeam) continue;
+
+    // 已在新队 → 跳过
+    var inDest = toTeam.players.find(function(p) { return p.uid == transfer.playerUid; });
+    if (inDest) continue;
+
+    // 查找原队球员
+    var srcIdx = fromTeam.players.findIndex(function(p) { return p.uid == transfer.playerUid; });
+    var player;
+    if (srcIdx < 0) {
+      // 原队也没有 → 从 PLAYERS_DB 重建
+      var dbEntry = (PLAYERS_DB[transfer.fromTeamName] || []).find(function(p) { return p.uid == transfer.playerUid; });
+      if (!dbEntry) continue;
+      player = {
+        id: fromTeam.id + '_' + dbEntry.uid,
+        uid: dbEntry.uid,
+        name: dbEntry.name,
+        number: dbEntry.number || 99,
+        position: 'FW',
+        age: dbEntry.age || 18,
+        goals: 0, assists: 0, rating: 0, gamesPlayed: 0, motmCount: 0
+      };
+      fromTeam.players.push(player);
+      console.log('[REPLAY] Recreated ' + player.name + ' from PLAYERS_DB in ' + fromTeam.name);
+    } else {
+      player = fromTeam.players[srcIdx];
+    }
+
+    // 如果是跨联赛且已标记转出，清除标记后重新处理
+    delete player.transferredOut;
+    delete player.transferredOutTo;
+    delete player.transferredOutAtRound;
+
+    var sameLeague = fromTeam.league === toTeam.league;
+    var fee = transfer.transferFee || 0;
+    var transferDate = transfer.transferDate || new Date().toLocaleDateString('zh-CN');
+
+    if (sameLeague) {
+      // 同联赛：直接移动
+      var moveIdx = fromTeam.players.indexOf(player);
+      if (moveIdx >= 0) fromTeam.players.splice(moveIdx, 1);
+      player.id = 'p' + toTeam.id + '_' + player.uid;
+      player.transferFee = fee;
+      player.transferFrom = transfer.fromTeamName;
+      player.transferDate = transferDate;
+      toTeam.players.push(player);
+      totalSame++;
+    } else {
+      // 跨联赛：标记转出 + 创建新球员
+      player.transferredOut = true;
+      player.transferredOutTo = transfer.toTeamName;
+      player.transferredOutAtRound = transfer.effectiveRound || '\u7acb\u5373';
+      player.transferFrom = transfer.fromTeamName;
+      player.transferDate = transferDate;
+      var newPlayer = {
+        id: 'p' + toTeam.id + '_' + player.uid,
+        uid: player.uid,
+        name: player.name,
+        position: player.position,
+        age: player.age,
+        number: player.number,
+        goals: 0, assists: 0, gamesPlayed: 0, motmCount: 0,
+        isTransferIn: true,
+        transferredInFrom: transfer.fromTeamName,
+        transferredInAtRound: transfer.effectiveRound || '\u7acb\u5373',
+        transferFee: fee,
+        transferFrom: transfer.fromTeamName,
+        transferDate: transferDate
+      };
+      toTeam.players.push(newPlayer);
+      totalCross++;
+    }
+
+    // 同步 PLAYERS_DB：从原队移到新队
+    var dbFrom = PLAYERS_DB[transfer.fromTeamName];
+    var dbTo = PLAYERS_DB[transfer.toTeamName];
+    if (dbFrom && dbTo) {
+      var dbIdx = dbFrom.findIndex(function(p) { return p.uid == transfer.playerUid; });
+      if (dbIdx >= 0) {
+        var dbP = dbFrom.splice(dbIdx, 1)[0];
+        if (!dbTo.find(function(p) { return p.uid == transfer.playerUid; })) {
+          dbTo.push(dbP);
+        }
+      }
+    }
+  }
+
+  if (totalSame > 0 || totalCross > 0) {
+    console.log('[REPLAY] Same-league: ' + totalSame + ', Cross-league: ' + totalCross);
     saveState();
   }
 }
@@ -11038,6 +11145,7 @@ document.getElementById('modalOverlay').onclick = (e) => {
   // 正常初始化
   loadState();
   syncPlayersFromDB(); // 合并PLAYERS_DB新增球员到现有state
+  replayTransfers(); // 根据转会记录重建球员归属+同步PLAYERS_DB
   // 从URL hash恢复状态（如果有）
   restoreFromUrlHash();
   updateSidebar();
