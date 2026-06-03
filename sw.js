@@ -1,5 +1,5 @@
-// v1.0.389: Service Worker - no cache, clear all old caches
-const CACHE_NAME = 'pgm-league-v389';
+// v1.0.390: Service Worker - no cache, clear all old caches
+const CACHE_NAME = 'pgm-league-v390';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
