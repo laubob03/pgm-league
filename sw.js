@@ -1,5 +1,5 @@
-// v1.0.399
-const CACHE_NAME = 'pgm-league-v399';
+// v1.0.400
+const CACHE_NAME = 'pgm-league-v400';
 
 self.addEventListener('install', event => {
   self.skipWaiting();

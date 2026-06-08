@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.399'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.400'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -626,7 +626,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 399 };
+const APP_VERSION = { major: 1, minor: 0, patch: 400 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -638,6 +638,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.400', date: '2026-06-08', items: ['🐛 足总杯赛程图比分显示修复：低级别球队交换到上方时，比分也跟随交换（上方球队比分在前）'] },
   { v: '1.0.399', date: '2026-06-06', items: ['➕ Atl. Tucuman 新增 Emiliano Buendía (67201783)'] },
   { v: '1.0.398', date: '2026-06-06', items: ['💰 第三批批量更新244名球员违约金（共1410条）', '🔧 修复正则替换重复拼接bug'] },
   { v: '1.0.397', date: '2026-06-06', items: ['➕ 新增9名缺失球员到PLAYERS_DB'] },
@@ -2344,17 +2345,21 @@ function renderFaCupBracket(cupId) {
     return cup.matches.find(function(m) { return m.originalMatchId === matchId; });
   }
 
-  function rScore(m) {
+  function rScore(m, swapDisplay) {
     if (m.status === 'completed') {
-      var scoreText = m.homeScore + ' - ' + m.awayScore;
-      // 平局时查找重赛比分
+      var scoreText = swapDisplay ? (m.awayScore + ' - ' + m.homeScore) : (m.homeScore + ' - ' + m.awayScore);
+      // 平局时查找重赛比分（重赛主客互换，需根据交换状态匹配显示顺序）
       var isDraw = m.homeScore === m.awayScore;
       if (isDraw) {
         var replay = getReplay(cup, m.id);
         if (replay && replay.status === 'completed') {
-          var replayHomeScore = replay.awayScore;
-          var replayAwayScore = replay.homeScore;
-          scoreText += '（' + replayHomeScore + '-' + replayAwayScore + '）';
+          // 重赛主客互换: replay.homeTeam=原客场, replay.awayTeam=原主场
+          // 显示顺序始终与上方球队匹配
+          if (swapDisplay) {
+            scoreText += '（' + replay.homeScore + '-' + replay.awayScore + '）';
+          } else {
+            scoreText += '（' + replay.awayScore + '-' + replay.homeScore + '）';
+          }
         }
       }
       // 超管或足总杯数据员可点击录入
@@ -2412,7 +2417,7 @@ function renderFaCupBracket(cupId) {
     return '<div class="' + cls + '" data-id="' + m.id + '"' + (style ? ' style="' + style + '"' : '') + clickAttr + '>'
       + idLabel
       + (replayPending && canEnterCup ? '<div style="text-align:center;font-size:10px;color:#f5a623;font-weight:700;margin-bottom:2px">\uD83D\uDD04 重赛待进行（点击录入）</div>' : '')
-      + rTeamSelect(m, firstTeam.field, firstTeam.teamId, firstTeam.isWin) + rScore(m) + rTeamSelect(m, secondTeam.field, secondTeam.teamId, secondTeam.isWin)
+      + rTeamSelect(m, firstTeam.field, firstTeam.teamId, firstTeam.isWin) + rScore(m, swapDisplay) + rTeamSelect(m, secondTeam.field, secondTeam.teamId, secondTeam.isWin)
       + '</div>';
   }
 
