@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.400'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.401'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -626,7 +626,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 400 };
+const APP_VERSION = { major: 1, minor: 0, patch: 401 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -638,6 +638,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.401', date: '2026-06-14', items: ['🐛 足总杯重赛录入界面：移除强制换回原场视角逻辑，重赛主场互换直接展示（原客场→主队在上方）'] },
   { v: '1.0.400', date: '2026-06-08', items: ['🐛 足总杯赛程图比分显示修复：低级别球队交换到上方时，比分也跟随交换（上方球队比分在前）'] },
   { v: '1.0.399', date: '2026-06-06', items: ['➕ Atl. Tucuman 新增 Emiliano Buendía (67201783)'] },
   { v: '1.0.398', date: '2026-06-06', items: ['💰 第三批批量更新244名球员违约金（共1410条）', '🔧 修复正则替换重复拼接bug'] },
@@ -4347,15 +4348,8 @@ function showEnterCupMatchModal(matchId, cupId) {
       displayAwayTeam = homeTeam;
       isSwapped = true;
     }
-    // 重赛特殊处理：重赛数据已经主客互换，录入时需要再换回来（从原场主队视角显示）
-    if (match.isReplay) {
-      // 重赛时，数据库中 homeTeam/awayTeam 已经互换
-      // 但用户期望看到的是"原场主队"在上，所以需要再交换一次
-      const temp = displayHomeTeam;
-      displayHomeTeam = displayAwayTeam;
-      displayAwayTeam = temp;
-      isSwapped = !isSwapped; // 切换交换状态
-    }
+    // ★ v1.0.401: 重赛录入界面不再强行换回原场视角，直接展示重赛数据的主客场互换效果
+    // 重赛数据中 homeTeam/awayTeam 已互换（原客场→主队，原主场→客队），与赛程图低级别在上方的规则叠加即可
   }
   const isEdit = match.status === 'completed';
   const homePlayers = [...displayHomeTeam.players].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
