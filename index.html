@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.404'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.405'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -626,7 +626,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 404 };
+const APP_VERSION = { major: 1, minor: 0, patch: 405 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -638,6 +638,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.405', date: '2026-06-27', items: ['🐛 杯赛赛程先按奖杯分组再按轮次排序，12强排在对应杯赛后面'] },
   { v: '1.0.404', date: '2026-06-27', items: ['🐛 次回合比分改为主客队不交换、仅分数互换显示'] },
   { v: '1.0.403', date: '2026-06-27', items: ['🐛 球队详情杯赛Tab：12强1/4决赛/半决赛现在正确显示两场比赛'] },
   { v: '1.0.402', date: '2026-06-27', items: ['🐛 球队详情页杯赛Tab：12强杯赛(冠军杯/联盟杯/协会杯)赛程现在正确显示'] },
@@ -7279,7 +7280,13 @@ function showTeamDetail(teamId) {
         });
       }
     });
-    cupEntries.sort((a, b) => (a.round || 0) - (b.round || 0));
+    const cupOrder = Object.keys(CUP_NAMES);
+    cupEntries.sort((a, b) => {
+      const ca = cupOrder.indexOf(a.cupId);
+      const cb = cupOrder.indexOf(b.cupId);
+      if (ca !== cb) return ca - cb;
+      return (a.round || 0) - (b.round || 0);
+    });
     if (cupEntries.length > 0) {
       cupMatchesHtml = cupEntries.map(m => {
         const opponent = m.homeTeam === teamId ? sd.teams.find(t => t.id === m.awayTeam) : sd.teams.find(t => t.id === m.homeTeam);
