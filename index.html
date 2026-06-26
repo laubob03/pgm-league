@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.408'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.409'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -626,7 +626,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 408 };
+const APP_VERSION = { major: 1, minor: 0, patch: 409 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -638,6 +638,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.409', date: '2026-06-27', items: ['🎨 足总杯轮次标签配色独立区分：赛前紫底、赛后蓝底'] },
   { v: '1.0.408', date: '2026-06-27', items: ['🐛 球队详情页12强预赛仅首场打平才展开次回合条目'] },
   { v: '1.0.407', date: '2026-06-27', items: ['🐛 积分榜12强次回合比分统一按对阵卡上方在前显示'] },
   { v: '1.0.406', date: '2026-06-27', items: ['🐛 积分榜12强预赛次回合比分：更正为leg2主队在前、客队在后'] },
@@ -7331,7 +7332,7 @@ function showTeamDetail(teamId) {
         const awayTeamId = isHome ? (opponent ? opponent.id : '') : teamId;
         const cupMatchRowBg = isCompleted ? 'background:#f0fff0' : 'background:#fffbf0';
         const cupMatchRowBorder = isCompleted ? 'border-left:3px solid #4caf50' : 'border-left:3px solid #ff9800';
-        const cupRoundClass = isCompleted ? 'tm-round done' : 'tm-round pending';
+        const cupRoundClass = isCompleted ? 'tm-round done' + (m.cupId === 'faCup' ? ' facup' : '') : 'tm-round pending' + (m.cupId === 'faCup' ? ' facup' : '');
         const cup12RoundNames = { 0: '预赛', 1: '1/4决赛', 2: '半决赛', 3: '决赛', 4: '冠军赛' };
         const cupRoundLabel = (isCup12 && cup12RoundNames[m.round]) ? cup12RoundNames[m.round] : ('第' + (m.round || '?') + '轮');
         return `
@@ -7369,6 +7370,8 @@ function showTeamDetail(teamId) {
       .tm-round{font-size:10px;font-weight:700;padding:2px 6px;border-radius:12px;display:inline-block;white-space:nowrap}
       .tm-round.done{background:#e8f5e9;color:#2e7d32}
       .tm-round.pending{background:#fff3e0;color:#e65100}
+      .tm-round.done.facup{background:#e3f2fd;color:#0d47a1}
+      .tm-round.pending.facup{background:#ede7f6;color:#4527a0}
       .tm-round.mixed{background:#f5f5f5;color:#555}
       .tm-teams{display:flex;align-items:center;gap:4px}
       .tm-team{display:flex;align-items:center;gap:2px;flex:1;font-size:13px;font-weight:500;min-width:0}
