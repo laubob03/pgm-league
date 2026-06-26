@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.401'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.402'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -626,7 +626,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 401 };
+const APP_VERSION = { major: 1, minor: 0, patch: 402 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -638,6 +638,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.402', date: '2026-06-27', items: ['🐛 球队详情页杯赛Tab：12强杯赛(冠军杯/联盟杯/协会杯)赛程现在正确显示'] },
   { v: '1.0.401', date: '2026-06-14', items: ['🐛 足总杯重赛录入界面：移除强制换回原场视角逻辑，重赛主场互换直接展示（原客场→主队在上方）'] },
   { v: '1.0.400', date: '2026-06-08', items: ['🐛 足总杯赛程图比分显示修复：低级别球队交换到上方时，比分也跟随交换（上方球队比分在前）'] },
   { v: '1.0.399', date: '2026-06-06', items: ['➕ Atl. Tucuman 新增 Emiliano Buendía (67201783)'] },
@@ -872,7 +873,7 @@ function getAppVersion() { return `v${APP_VERSION.major}.${APP_VERSION.minor}.${
 const LEAGUE_NAMES = {
   super: '超级联赛', jiaEast: '甲级-东区', jiaWest: '甲级-西区', yiEast: '乙级-东区', yiWest: '乙级-西区'
 };
-const CUP_NAMES = { championsCup: '🏆 冠军杯', leagueCup: '🏆 联盟杯', associationCup: '🏆 协会杯', faCup: '🏆 足总杯' };
+const CUP_NAMES = { championsCup: '🏆 冠军杯', leagueCup: '🏆 联盟杯', associationCup: '🏆 协会杯', faCup: '🏆 足总杯', championsCup12: '🏆 冠军杯12强', leagueCup12: '🏆 联盟杯12强', associationCup12: '🏆 协会杯12强' };
 
 // 球队名称 → 球队UID 映射（唯一识别码）
 const TEAM_UID_MAP = {
@@ -7292,16 +7293,20 @@ function showTeamDetail(teamId) {
           ? `<div style="font-size:9px;color:#666;line-height:1.2">${cupTeamGoals ? '⚽' + cupTeamGoals : ''}${cupTeamGoals && cupTeamAssists ? ' ' : ''}${cupTeamAssists ? '👟' + cupTeamAssists : ''}${cupTeamMotmStr ? (cupTeamGoals || cupTeamAssists ? ' ' : '') + '<span style="color:#f5a623">⭐' + cupTeamMotmStr + '</span>' : ''}</div>` : '';
         const canEnterMatch = !viewingSeasonId && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === m.cupId) || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'league' && (sd.teams.find(t => t.id === m.homeTeam) || {}).league === state.currentUser.league)) && !isCompleted;
         const canEditScore = !viewingSeasonId && state.currentUser && (state.currentUser.isSuperAdmin || (state.currentUser.isDataRecorder && state.currentUser.recorderType === 'cup' && state.currentUser.cupId === m.cupId)) && isCompleted;
-        const enterAttr = (canEnterMatch || canEditScore) ? `onclick="if(event.target.closest('.player-expand'))return;closeModal();setTimeout(()=>showEnterCupMatchModal('${m.id}','${m.cupId}'),100)" style="cursor:pointer"` : '';
+        const isCup12 = m.cupId === 'championsCup12' || m.cupId === 'leagueCup12' || m.cupId === 'associationCup12';
+        const enterModalFn = isCup12 ? 'showEnterCupMatchModal12' : 'showEnterCupMatchModal';
+        const enterAttr = (canEnterMatch || canEditScore) ? `onclick="if(event.target.closest('.player-expand'))return;closeModal();setTimeout(()=>${enterModalFn}('${m.id}','${m.cupId}'),100)" style="cursor:pointer"` : '';
         const homeTeamId = isHome ? teamId : (opponent ? opponent.id : '');
         const awayTeamId = isHome ? (opponent ? opponent.id : '') : teamId;
         const cupMatchRowBg = isCompleted ? 'background:#f0fff0' : 'background:#fffbf0';
         const cupMatchRowBorder = isCompleted ? 'border-left:3px solid #4caf50' : 'border-left:3px solid #ff9800';
         const cupRoundClass = isCompleted ? 'tm-round done' : 'tm-round pending';
+        const cup12RoundNames = { 0: '预赛', 1: '1/4决赛', 2: '半决赛', 3: '决赛', 4: '冠军赛' };
+        const cupRoundLabel = (isCup12 && cup12RoundNames[m.round]) ? cup12RoundNames[m.round] : ('第' + (m.round || '?') + '轮');
         return `
         <div class="team-match-row" ${enterAttr} style="${cupMatchRowBg};${cupMatchRowBorder}">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
-            <div class="${cupRoundClass}">${isCompleted ? '✓ ' : '○ '}${m.isReplay ? '🔄 重赛 ' : (isCompleted ? '' : '待定　')}${m.cupName} 第${m.round}轮</div>
+            <div class="${cupRoundClass}">${isCompleted ? '✓ ' : '○ '}${m.isReplay ? '🔄 重赛 ' : (isCompleted ? '' : '待定　')}${m.cupName} ${cupRoundLabel}</div>
             <div style="font-size:9px;color:#999">${isHome ? '主场' : '客场'}</div>
           </div>
           <div class="tm-teams">
