@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.402'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.403'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -626,7 +626,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 402 };
+const APP_VERSION = { major: 1, minor: 0, patch: 403 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -638,6 +638,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.403', date: '2026-06-27', items: ['🐛 球队详情杯赛Tab：12强1/4决赛/半决赛现在正确显示两场比赛'] },
   { v: '1.0.402', date: '2026-06-27', items: ['🐛 球队详情页杯赛Tab：12强杯赛(冠军杯/联盟杯/协会杯)赛程现在正确显示'] },
   { v: '1.0.401', date: '2026-06-14', items: ['🐛 足总杯重赛录入界面：移除强制换回原场视角逻辑，重赛主场互换直接展示（原客场→主队在上方）'] },
   { v: '1.0.400', date: '2026-06-08', items: ['🐛 足总杯赛程图比分显示修复：低级别球队交换到上方时，比分也跟随交换（上方球队比分在前）'] },
@@ -7254,6 +7255,25 @@ function showTeamDetail(teamId) {
         cup.matches.forEach(m => {
           if (m.homeTeam === teamId || m.awayTeam === teamId) {
             cupEntries.push({ ...m, cupId, cupName: CUP_NAMES[cupId] });
+            // 12强杯赛双回合：如果round 0-3且有双方球队，展开第二场条目
+            const isCup12 = cupId === 'championsCup12' || cupId === 'leagueCup12' || cupId === 'associationCup12';
+            if (isCup12 && m.round >= 0 && m.round <= 3 && m.homeTeam && m.awayTeam) {
+              const lg2 = m.leg2 || {};
+              cupEntries.push({
+                cupId, cupName: CUP_NAMES[cupId],
+                id: m.id,
+                round: m.round,
+                homeTeam: m.awayTeam,
+                awayTeam: m.homeTeam,
+                homeScore: lg2.homeScore,
+                awayScore: lg2.awayScore,
+                status: lg2.status,
+                scorers: lg2.scorers || [],
+                assists: lg2.assists || [],
+                motm: lg2.motm || '',
+                isLeg2: true
+              });
+            }
           }
         });
       }
@@ -7306,7 +7326,7 @@ function showTeamDetail(teamId) {
         return `
         <div class="team-match-row" ${enterAttr} style="${cupMatchRowBg};${cupMatchRowBorder}">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
-            <div class="${cupRoundClass}">${isCompleted ? '✓ ' : '○ '}${m.isReplay ? '🔄 重赛 ' : (isCompleted ? '' : '待定　')}${m.cupName} ${cupRoundLabel}</div>
+            <div class="${cupRoundClass}">${isCompleted ? '✓ ' : '○ '}${m.isLeg2 ? '🔄 ' : ''}${m.isReplay ? '🔄 重赛 ' : (isCompleted ? '' : '待定　')}${m.cupName} ${cupRoundLabel}${m.isLeg2 ? ' (第二场)' : ''}</div>
             <div style="font-size:9px;color:#999">${isHome ? '主场' : '客场'}</div>
           </div>
           <div class="tm-teams">
