@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.406'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.407'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -626,7 +626,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 406 };
+const APP_VERSION = { major: 1, minor: 0, patch: 407 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -638,6 +638,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.407', date: '2026-06-27', items: ['🐛 积分榜12强次回合比分统一按对阵卡上方在前显示'] },
   { v: '1.0.406', date: '2026-06-27', items: ['🐛 积分榜12强预赛次回合比分：更正为leg2主队在前、客队在后'] },
   { v: '1.0.405', date: '2026-06-27', items: ['🐛 杯赛赛程先按奖杯分组再按轮次排序，12强排在对应杯赛后面'] },
   { v: '1.0.404', date: '2026-06-27', items: ['🐛 次回合比分改为主客队不交换、仅分数互换显示'] },
@@ -3495,8 +3496,8 @@ function renderCup12Bracket(cup12Id, targetContainer) {
           
           // 第一场平局且第二场已赛
           if (leg1Draw && leg2Done) {
-            // 第二场主客场互换，显示时按 leg2 主队在前、客队在后
-            var leg2Text = (m.leg2.homeScore !== undefined ? m.leg2.homeScore : '-') + '-' + (m.leg2.awayScore !== undefined ? m.leg2.awayScore : '-');
+            // 第二场主客场互换，显示时按对阵卡上方球队在前（原主=leg2客）
+            var leg2Text = (m.leg2.awayScore !== undefined ? m.leg2.awayScore : '-') + '-' + (m.leg2.homeScore !== undefined ? m.leg2.homeScore : '-');
             scoreHtml += '<div style="color:#ff9800;font-size:9px;margin:1px 0">↓主客场互换↓</div>';
             scoreHtml += '<div style="color:#666">第二场 ' + leg2Text + '</div>';
           }
@@ -3521,7 +3522,7 @@ function renderCup12Bracket(cup12Id, targetContainer) {
       
       if (leg1Done || leg2Done) {
         var leg1Text = (m.homeScore !== undefined ? m.homeScore : '-') + '-' + (m.awayScore !== undefined ? m.awayScore : '-');
-        var leg2Text = m.leg2 ? ((m.leg2.homeScore !== undefined ? m.leg2.homeScore : '-') + '-' + (m.leg2.awayScore !== undefined ? m.leg2.awayScore : '-')) : '-/-';
+        var leg2Text = m.leg2 ? ((m.leg2.awayScore !== undefined ? m.leg2.awayScore : '-') + '-' + (m.leg2.homeScore !== undefined ? m.leg2.homeScore : '-')) : '-/-';
         
         // 计算总比分
         var homeTotal = '', awayTotal = '';
