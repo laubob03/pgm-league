@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.410'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.411'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -596,7 +596,7 @@
       <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:10px">
         <a href="https://fm-arena.com/" target="_blank" rel="noopener" class="sidebar-link">🎯 下神阵站：fm-arena.com</a>
         <a href="http://47.102.222.247:8787/" target="_blank" rel="noopener" class="sidebar-link">🦁 狮驼岭CA：47.102.222.247:8787</a>
-        <a href="http://81.70.199.249:8080/" target="_blank" rel="noopener" class="sidebar-link">🔍 CA查询：81.70.199.249:8080</a>
+        <a href="http://81.70.199.249:8080/" target="_blank" rel="noopener" class="sidebar-link">🔍 搜塞网：81.70.199.249:8080</a>
         <a href="https://www.sofascore.com/" target="_blank" rel="noopener" class="sidebar-link">📊 即时比分：sofascore.com</a>
         <a href="https://www.transfermarkt.com/" target="_blank" rel="noopener" class="sidebar-link">💶 德国转会：transfermarkt.com</a>
         <a href="https://www.dongqiudi.com/" target="_blank" rel="noopener" class="sidebar-link">⚽ 懂球帝网：dongqiudi.com</a>
@@ -627,7 +627,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 410 };
+const APP_VERSION = { major: 1, minor: 0, patch: 411 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -639,6 +639,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.411', date: '2026-06-27', items: ['📝 侧边栏CA查询→搜塞网'] },
   { v: '1.0.410', date: '2026-06-27', items: ['➕ 侧边栏工具新增狮驼岭CA链接'] },
   { v: '1.0.409', date: '2026-06-27', items: ['🎨 足总杯轮次标签配色独立区分：赛前紫底、赛后蓝底'] },
   { v: '1.0.408', date: '2026-06-27', items: ['🐛 球队详情页12强预赛仅首场打平才展开次回合条目'] },
