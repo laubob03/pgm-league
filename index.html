@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.415'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.416'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -628,7 +628,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 415 };
+const APP_VERSION = { major: 1, minor: 0, patch: 416 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -640,6 +640,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.416', date: '2026-06-30', items: ['🔒 仅超管可导出数据，关闭其他角色导出按钮'] },
   { v: '1.0.415', date: '2026-06-27', items: ['📝 官方CA→骚傲官方CA'] },
   { v: '1.0.414', date: '2026-06-27', items: ['📝 即时比分→Sofascore官网'] },
   { v: '1.0.413', date: '2026-06-27', items: ['➕ 侧边栏新增官方CA链接'] },
@@ -9367,10 +9368,7 @@ function showSyncModal() {
             <div class="import-section-title" style="color:#9C27B0;">📁 本地备份 / 导入</div>
             <div class="import-desc">通过 JSON 文件在本地备份或导入数据</div>
             <div style="display:flex;gap:8px;">
-              <button class="btn btn-primary" style="flex:1;background:#9C27B0;" onclick="exportDataToFile()">
-                📤 导出为文件
-              </button>
-              <button class="btn btn-primary" style="flex:1;background:#9C27B0;" onclick="document.getElementById('importFileInput2').click()">
+              <button class="btn btn-primary" style="width:100%;background:#9C27B0;" onclick="document.getElementById('importFileInput2').click()">
                 📥 从文件导入
               </button>
             </div>
@@ -9447,10 +9445,7 @@ function showSyncModal() {
           <div class="import-section-title" style="color:#9C27B0;">📁 本地备份 / 导入</div>
           <div class="import-desc">通过 JSON 文件在本地备份或导入数据，防止数据丢失</div>
           <div style="display:flex;gap:8px;">
-            <button class="btn btn-primary" style="flex:1;background:#9C27B0;" onclick="exportDataToFile()">
-              📤 导出为文件
-            </button>
-            <button class="btn btn-primary" style="flex:1;background:#9C27B0;" onclick="document.getElementById('importFileInput3').click()">
+            <button class="btn btn-primary" style="width:100%;background:#9C27B0;" onclick="document.getElementById('importFileInput3').click()">
               📥 从文件导入
             </button>
           </div>
@@ -9519,10 +9514,7 @@ function showSyncModal() {
           <div class="import-section-title" style="color:#9C27B0;">📁 本地备份 / 导入</div>
           <div class="import-desc">通过 JSON 文件在本地备份或导入数据，防止数据丢失</div>
           <div style="display:flex;gap:8px;">
-            <button class="btn btn-primary" style="flex:1;background:#9C27B0;" onclick="exportDataToFile()">
-              📤 导出为文件
-            </button>
-            <button class="btn btn-primary" style="flex:1;background:#9C27B0;" onclick="document.getElementById('importFileInput4').click()">
+            <button class="btn btn-primary" style="width:100%;background:#9C27B0;" onclick="document.getElementById('importFileInput4').click()">
               📥 从文件导入
             </button>
           </div>
