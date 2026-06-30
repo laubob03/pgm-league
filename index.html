@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.416'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.417'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -574,7 +574,7 @@
     <button class="sidebar-item" id="btnAdminImport" style="display:none"><span class="sidebar-item-icon">⚙️</span>管理员导入</button>
     <button class="sidebar-item" id="btnCupManage" style="display:none"><span class="sidebar-item-icon">🏆</span>杯赛管理</button>
     <button class="sidebar-item" id="btnArchiveSeason" style="display:none"><span class="sidebar-item-icon">📦</span>归档赛季</button>
-    <button class="sidebar-item" id="btnLoginLogs" style="display:none"><span class="sidebar-item-icon">🔍</span>本站登录详情</button>
+    <button class="sidebar-item" id="btnLoginLogs" style="display:none"><span class="sidebar-item-icon">🔍</span>访问日志</button>
     <!-- 转会管理已移至顶部工具栏 -->
     <button class="sidebar-item" id="btnSyncCloud"><span class="sidebar-item-icon">☁️</span>数据同步</button>
     <button class="sidebar-item" id="sidebarLoginBtn"><span class="sidebar-item-icon">🔑</span>登录</button>
@@ -628,7 +628,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 416 };
+const APP_VERSION = { major: 1, minor: 0, patch: 417 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -640,6 +640,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.417', date: '2026-06-30', items: ['📝 登录记录→访问日志，浏览记录→登录记录'] },
   { v: '1.0.416', date: '2026-06-30', items: ['🔒 仅超管可导出数据，关闭其他角色导出按钮'] },
   { v: '1.0.415', date: '2026-06-27', items: ['📝 官方CA→骚傲官方CA'] },
   { v: '1.0.414', date: '2026-06-27', items: ['📝 即时比分→Sofascore官网'] },
@@ -8631,7 +8632,7 @@ async function showLoginLogsModal() {
     const isLogin = activeTab === 'login';
     const list = isLogin ? loginLogs : visitLogs;
     const rows = list.length === 0
-      ? `<div style="text-align:center;color:#999;padding:32px 0;font-size:14px">暂无${isLogin ? '登录' : '浏览'}记录</div>`
+      ? `<div style="text-align:center;color:#999;padding:32px 0;font-size:14px">暂无${isLogin ? '访问' : '登录'}记录</div>`
       : list.map(isLogin ? renderLoginRow : renderVisitRow).join('');
 
     const tabLoginBg = isLogin ? '#1B5E20' : '#e8f5e9';
@@ -8639,7 +8640,7 @@ async function showLoginLogsModal() {
     const tabVisitBg = !isLogin ? '#1B5E20' : '#e8f5e9';
     const tabVisitColor = !isLogin ? '#fff' : '#1B5E20';
     const tabCount = isLogin ? loginLogs.length : visitLogs.length;
-    const tabLabel = isLogin ? '登录记录' : '浏览记录';
+    const tabLabel = isLogin ? '访问日志' : '登录记录';
 
     return `
       <div style="padding:16px 16px 8px">
@@ -8648,8 +8649,8 @@ async function showLoginLogsModal() {
           <span style="font-size:12px;color:#888">${(loginSynced && isLogin) || (visitSynced && !isLogin) ? '☁️ Gist 已同步' : '📱 本地数据'}</span>
         </div>
         <div style="display:flex;gap:0;border-radius:10px;overflow:hidden;border:1.5px solid #1B5E20;margin-bottom:10px;">
-          <div onclick="switchTab('login')" style="flex:1;padding:8px 0;text-align:center;font-size:13px;font-weight:700;cursor:pointer;background:${tabLoginBg};color:${tabLoginColor};transition:all 0.2s">🔑 登录记录</div>
-          <div onclick="switchTab('visit')" style="flex:1;padding:8px 0;text-align:center;font-size:13px;font-weight:700;cursor:pointer;background:${tabVisitBg};color:${tabVisitColor};transition:all 0.2s">👁️ 浏览记录</div>
+          <div onclick="switchTab('login')" style="flex:1;padding:8px 0;text-align:center;font-size:13px;font-weight:700;cursor:pointer;background:${tabLoginBg};color:${tabLoginColor};transition:all 0.2s">🔑 访问日志</div>
+          <div onclick="switchTab('visit')" style="flex:1;padding:8px 0;text-align:center;font-size:13px;font-weight:700;cursor:pointer;background:${tabVisitBg};color:${tabVisitColor};transition:all 0.2s">👁️ 登录记录</div>
         </div>
         <div style="font-size:12px;color:#888">${tabLabel}：共 ${tabCount} 条</div>
       </div>
