@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -52,7 +52,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.418'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.419'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -628,7 +628,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 418 };
+const APP_VERSION = { major: 1, minor: 0, patch: 419 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -640,7 +640,8 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.418', date: '2026-06-30', items: ['📝 12强→季后赛（冠军杯/联盟杯/协会杯），颜色不变'] },
+    { v: '1.0.419', date: '2026-07-02', items: [' playoff score editing: manual switch between leg 1 and leg 2'] },
+  { v: '1.0.419', date: '2026-06-30', items: ['📝 12强→季后赛（冠军杯/联盟杯/协会杯），颜色不变'] },
   { v: '1.0.417', date: '2026-06-30', items: ['📝 登录记录→访问日志，浏览记录→登录记录'] },
   { v: '1.0.416', date: '2026-06-30', items: ['🔒 仅超管可导出数据，关闭其他角色导出按钮'] },
   { v: '1.0.415', date: '2026-06-27', items: ['📝 官方CA→骚傲官方CA'] },
@@ -3964,6 +3965,10 @@ function drawCup12Lines(cup12Id, accentColor) {
 }
 
 // 12强杯赛录入界面 - 与普通杯赛保持一致，支持完整球员统计
+function switchCup12Leg(leg) {
+  window._cup12EditLeg = leg;
+  showEnterCupMatchModal12();
+}
 function showEnterCupMatchModal12() {
   var matchId = window._editingMatchId;
   if (!matchId) { showToast('未设置比赛ID'); return; }
@@ -3988,12 +3993,16 @@ function showEnterCupMatchModal12() {
   
   // 判断当前录入哪一场（第一场或第二场）
   var editingLeg2 = false;
-  if (isTwoLegs && match.leg2 && match.leg2.status === 'completed') {
-    editingLeg2 = true;  // 第二场已赛，编辑模式
+  if (isTwoLegs && window._cup12EditLeg === 1) {
+    editingLeg2 = false;
+  } else if (isTwoLegs && window._cup12EditLeg === 2) {
+    editingLeg2 = true;
+  } else if (isTwoLegs && match.leg2 && match.leg2.status === 'completed') {
+    editingLeg2 = true;
   } else if (isTwoLegs && match.status === 'completed' && (!match.leg2 || match.leg2.status !== 'completed')) {
-    editingLeg2 = true;  // 第一场已赛，现在录入第二场
+    editingLeg2 = true;
   } else if (isPrelimDraw) {
-    editingLeg2 = true;  // 预赛第一场平局，现在录入第二场
+    editingLeg2 = true;
   }
   
   // 获取当前编辑的比赛数据
@@ -4037,7 +4046,7 @@ function showEnterCupMatchModal12() {
   
   var style = '<style>.pr{display:flex;align-items:center;padding:3px 8px;border-bottom:1px solid #f0f0f0;transition:all .2s ease}.pr:last-child{border-bottom:none}.pr:hover{background:rgba(255,183,77,0.1);border:1.5px solid #FFB74D;box-shadow:0 2px 8px rgba(255,152,0,0.15);transform:scale(1.02);border-radius:8px}.pr.has-val{background:linear-gradient(90deg,#86efac 0%,#bbf7d0 30%,#fff 80%);border-left:3px solid #059669;box-shadow:0 1px 6px rgba(5,150,105,0.12)}.pr.has-val:hover{background:linear-gradient(90deg,#4ade80 0%,#86efac 30%,#bbf7d0 80%)}.pc{display:flex;align-items:center;gap:3px;flex-shrink:0;margin-left:auto}.bm,.bp{width:26px;height:26px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;transition:all .12s;box-shadow:0 1px 3px rgba(0,0,0,0.08)}.bm{background:#fff;color:#888;border:1.5px solid #ddd}.bm:hover{background:#fee;border-color:#f44;color:#f44}.bm:active{transform:scale(.92)}.bp{background:#228B22;color:#fff;border:none}.bp:hover{background:#FF6D00;box-shadow:0 2px 8px rgba(255,109,0,0.5)}.bp:active{transform:scale(.92)}.pr.has-val .bp{background:#FF6B00;border:2px solid #E65100;box-shadow:0 0 8px rgba(255,107,0,0.5)}.pr.has-val .bp:hover{background:#E65100}.pv{width:32px;height:30px;text-align:center;font-size:14px;font-weight:700;border:1.5px solid #ddd;border-radius:6px;padding:0;background:#fafafa;color:#333;font-variant-numeric:tabular-nums;-moz-appearance:textfield;outline:none}.pr.has-val .pv{border-color:#198754;background:#198754;color:#fff;font-size:17px;font-weight:800;box-shadow:0 2px 6px rgba(25,135,84,0.4);height:30px}.pn{flex:1;font-size:15px;font-weight:600;color:#333;padding-right:8px}.pr.has-val .pn{color:#14532d}.mtb{background:#fff;border:2px solid #ddd;border-radius:20px;padding:5px 10px;font-size:12px;cursor:pointer;transition:all .15s}.mtb.active{background:#228B22;border-color:#228B22;color:#fff}.mr{display:flex;align-items:center;padding:6px 8px;border-bottom:1px solid #eee;cursor:pointer;font-size:13px;transition:all .2s ease;min-width:0}.mr:last-child{border-bottom:none}.mr:hover{background:rgba(255,183,77,0.1);border:1.5px solid #FFB74D;box-shadow:0 2px 8px rgba(255,152,0,0.15);transform:scale(1.02);border-radius:8px}.mr.selected{background:transparent;color:#059669;font-weight:800;border-left:3px solid #059669;font-size:16px;text-shadow:0 0 1px rgba(5,150,105,0.3);box-shadow:none}.mr span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500}.mc{flex:1;max-height:70vh;overflow-y:auto;border:1px solid #ddd;border-radius:8px;margin:0 2px;min-width:0}.mct{text-align:center;font-weight:700;font-size:13px;padding:5px;background:#228B22;color:#fff;border-radius:8px 8px 0 0;letter-spacing:.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}</style>';
   
-  var header = '<div class="modal-header"><div class="modal-title">' + (isEdit?'✏️ 修改':'✏️ 录入') + '比赛结果（' + (cupName[cup12Id]||cup12Id) + ' · ' + (roundName[match.round]||('第'+match.round+'轮')) + '）</div><button class="modal-close" onclick="closeModal()">×</button></div>';
+  var header = '<div class="modal-header"><div class="modal-title">' + (isEdit?'✏️ 修改':'✏️ 录入') + '比赛结果（' + (cupName[cup12Id]||cup12Id) + ' · ' + (roundName[match.round]||('第'+match.round+'轮')) + '）</div><button class="modal-close" onclick="closeModal()">×</button></div> + ' + (isTwoLegs ? '<div style="display:flex;gap:4px;margin:8px 0;"><button onclick="switchCup12Leg(1)" style="padding:4px 12px;border-radius:4px;font-size:12px;border:1px solid #ccc;background:' + (!editingLeg2 ? accentClr : '#fff') + ';color:' + (!editingLeg2 ? '#fff' : '#333') + '">第一场</button><button onclick="switchCup12Leg(2)" style="padding:4px 12px;border-radius:4px;font-size:12px;border:1px solid #ccc;background:' + (editingLeg2 ? accentClr : '#fff') + ';color:' + (editingLeg2 ? '#fff' : '#333') + '">第二场(互换)</button></div>' : '') + ';
   
   var score = '<div style="text-align:center;padding:8px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:8px"><span style="font-size:13px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + currentHomeTeam.name + '</span><img src="' + getTeamLogo(currentHomeTeam) + '" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><input type="number" id="cupHomeScore" value="' + (currentMatch.homeScore||0) + '" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid ' + accentClr + ';border-radius:4px">:<input type="number" id="cupAwayScore" value="' + (currentMatch.awayScore||0) + '" style="width:40px;text-align:center;font-size:16px;font-weight:700;margin:0 2px;padding:4px;border:2px solid ' + accentClr + ';border-radius:4px"><img src="' + getTeamLogo(currentAwayTeam) + '" style="width:24px;height:24px;vertical-align:middle" onerror="this.style.display=\'none\'"><span style="font-size:13px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + currentAwayTeam.name + '</span></div>';
   
