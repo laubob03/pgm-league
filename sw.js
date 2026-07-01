@@ -1,5 +1,6 @@
-// v1.0.418
+// v1.0.419
 const CACHE_NAME = 'pgm-league-v419';
+const REQUIRED_VERSION = '1.0.419';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -9,11 +10,37 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(names => Promise.all(names.map(n => caches.delete(n))))
       .then(() => self.clients.claim())
+      .then(() => self.clients.matchAll().then(clients => {
+        clients.forEach(c => c.postMessage({ type: 'FORCE_RELOAD' }));
+      }))
   );
 });
 
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    fetch(event.request).catch(() => new Response('Offline', { status: 503 }))
-  );
+  // Network-first for HTML, cache-first for static assets
+  if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
+    event.respondWith(
+      fetch(event.request).then(response => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+        return response;
+      }).catch(() => caches.match(event.request).then(r => r || new Response('Offline', { status: 503 })))
+    );
+  } else {
+    event.respondWith(
+      caches.match(event.request).then(cached => {
+        return cached || fetch(event.request).then(response => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          return response;
+        }).catch(() => cached);
+      })
+    );
+  }
 });
