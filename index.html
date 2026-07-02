@@ -5220,7 +5220,7 @@ function renderStandings() {
     const promotionClass = i < topPromotionCount ? 'promotion-bg' : (i >= standings.length - 2 ? 'relegation-bg' : '');
     html += `<tr class="${promotionClass}">`;
     html += `<td class="rank">${i + 1}</td>`;
-    html += `<td class="team-cell"><img src="${getTeamLogo(s.team)}" style="width:24px;height:24px;object-fit:contain;border-radius:4px" onerror="this.style.display='none'"><span class="team-name-clickable" onclick="showTeamDetail('${s.team.id}')">${s.team.name}${i===0?' <span class="champion-badge"><span class="champion-trophy">🏆</span><span class="champion-text">冠军</span></span>':'}</span></td>`;
+    html += `<td class="team-cell"><img src="${getTeamLogo(s.team)}" style="width:24px;height:24px;object-fit:contain;border-radius:4px" onerror="this.style.display='none'"><span class="team-name-clickable" onclick="showTeamDetail('${s.team.id}')">${s.team.name}` + (i===0 ? ' <span class="champion-badge"><span class="champion-trophy">🏆</span><span class="champion-text">冠军</span></span>' : '') + `</span></td>`;
     html += `<td>${s.played}</td><td>${s.won}</td><td>${s.draw}</td><td>${s.lost}</td>`;
     html += `<td>${s.gf}</td><td>${s.ga}</td><td>${s.gf - s.ga}</td><td><strong>${s.points}</strong></td>`;
     html += '</tr>';
