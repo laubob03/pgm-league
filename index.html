@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.423';
+    var _curVer = '1.0.424';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -53,7 +53,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.423'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.424'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -629,7 +629,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 423 };
+const APP_VERSION = { major: 1, minor: 0, patch: 424 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -641,6 +641,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+    {v:'1.0.424', t:'积分榜超级/甲东/甲西第9、10名增加降级附加赛标签'},
     {v:'1.0.423', t:'积分榜第1名球队名后增加冠军徽章（🏆+金色渐变+抖动+光晕动画）'},
     {v:'1.0.422', t:'playoff final column rename'},
     {v:'1.0.420', t:'GitHub Pages重建触发'},
@@ -5220,7 +5221,7 @@ function renderStandings() {
     const promotionClass = i < topPromotionCount ? 'promotion-bg' : (i >= standings.length - 2 ? 'relegation-bg' : '');
     html += `<tr class="${promotionClass}">`;
     html += `<td class="rank">${i + 1}</td>`;
-    html += `<td class="team-cell"><img src="${getTeamLogo(s.team)}" style="width:24px;height:24px;object-fit:contain;border-radius:4px" onerror="this.style.display='none'"><span class="team-name-clickable" onclick="showTeamDetail('${s.team.id}')">${s.team.name}` + (i===0 ? ' <span class="champion-badge"><span class="champion-trophy">🏆</span><span class="champion-text">冠军</span></span>' : '') + `</span></td>`;
+    html += `<td class="team-cell"><img src="${getTeamLogo(s.team)}" style="width:24px;height:24px;object-fit:contain;border-radius:4px" onerror="this.style.display='none'"><span class="team-name-clickable" onclick="showTeamDetail('${s.team.id}')">${s.team.name}` + (i===0 ? ' <span class="champion-badge"><span class="champion-trophy">🏆</span><span class="champion-text">冠军</span></span>' : '') + ((i===8||i===9) && (league==='super'||league==='jiaEast'||league==='jiaWest') ? ' <span class="relegation-badge"><span class="relegation-icon">⚠️</span><span class="relegation-text">降级附加赛</span></span>' : '') + `</span></td>`;
     html += `<td>${s.played}</td><td>${s.won}</td><td>${s.draw}</td><td>${s.lost}</td>`;
     html += `<td>${s.gf}</td><td>${s.ga}</td><td>${s.gf - s.ga}</td><td><strong>${s.points}</strong></td>`;
     html += '</tr>';
@@ -9149,6 +9150,28 @@ function showAdminImportModal() {
     @keyframes champion-shimmer {
       0% { background-position: 0% center; }
       100% { background-position: 200% center; }
+    }
+    /* 降级附加赛徽章 */
+    .relegation-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      margin-left: 4px;
+      animation: relegation-pulse 1.5s ease-in-out infinite;
+    }
+    .relegation-icon {
+      font-size: 12px;
+    }
+    .relegation-text {
+      font-size: 10px;
+      font-weight: 700;
+      color: #e53935;
+      text-shadow: 0 0 4px rgba(229,57,53,0.4);
+      letter-spacing: 0.5px;
+    }
+    @keyframes relegation-pulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
     }</style>
   `;
   showModal(content);
