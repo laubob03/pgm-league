@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.422';
+    var _curVer = '1.0.423';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -53,7 +53,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.422'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.423'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -629,7 +629,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 422 };
+const APP_VERSION = { major: 1, minor: 0, patch: 423 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -641,6 +641,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+    {v:'1.0.423', t:'积分榜第1名球队名后增加冠军徽章（🏆+金色渐变+抖动+光晕动画）'},
     {v:'1.0.422', t:'playoff final column rename'},
     {v:'1.0.420', t:'GitHub Pages重建触发'},
     { v: '1.0.419', date: '2026-07-02', items: [' playoff score editing: manual switch between leg 1 and leg 2'] },
@@ -5219,7 +5220,7 @@ function renderStandings() {
     const promotionClass = i < topPromotionCount ? 'promotion-bg' : (i >= standings.length - 2 ? 'relegation-bg' : '');
     html += `<tr class="${promotionClass}">`;
     html += `<td class="rank">${i + 1}</td>`;
-    html += `<td class="team-cell"><img src="${getTeamLogo(s.team)}" style="width:24px;height:24px;object-fit:contain;border-radius:4px" onerror="this.style.display='none'"><span class="team-name-clickable" onclick="showTeamDetail('${s.team.id}')">${s.team.name}</span></td>`;
+    html += `<td class="team-cell"><img src="${getTeamLogo(s.team)}" style="width:24px;height:24px;object-fit:contain;border-radius:4px" onerror="this.style.display='none'"><span class="team-name-clickable" onclick="showTeamDetail('${s.team.id}')">${s.team.name}${i===0?' <span class="champion-badge"><span class="champion-trophy">🏆</span><span class="champion-text">冠军</span></span>':'}</span></td>`;
     html += `<td>${s.played}</td><td>${s.won}</td><td>${s.draw}</td><td>${s.lost}</td>`;
     html += `<td>${s.gf}</td><td>${s.ga}</td><td>${s.gf - s.ga}</td><td><strong>${s.points}</strong></td>`;
     html += '</tr>';
@@ -9110,7 +9111,45 @@ function showAdminImportModal() {
       .format-code{font-size:10px;font-family:monospace;background:#fff;padding:8px;border-radius:4px;overflow-x:auto;white-space:pre-wrap;margin:0}
       .format-tips{font-size:10px;color:#228B22;margin-top:4px}
       .btn-danger{background:#f44336;color:#fff}
-    </style>
+        /* 积分榜冠军徽章 */
+    .champion-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      margin-left: 4px;
+      animation: champion-glow 2s ease-in-out infinite;
+    }
+    .champion-trophy {
+      display: inline-block;
+      font-size: 14px;
+      animation: champion-bounce 0.8s ease-in-out infinite;
+    }
+    .champion-text {
+      font-size: 11px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #FFD700 0%, #FFA000 40%, #FFD700 70%, #FF8F00 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: champion-shimmer 2s linear infinite;
+      text-shadow: none;
+      letter-spacing: 0.5px;
+    }
+    @keyframes champion-glow {
+      0%, 100% { filter: drop-shadow(0 0 3px rgba(255,215,0,0.5)); }
+      50% { filter: drop-shadow(0 0 8px rgba(255,215,0,0.9)); }
+    }
+    @keyframes champion-bounce {
+      0%, 100% { transform: translateY(0) scale(1); }
+      30% { transform: translateY(-3px) scale(1.15); }
+      50% { transform: translateY(0) scale(1); }
+      70% { transform: translateY(-2px) scale(1.08); }
+    }
+    @keyframes champion-shimmer {
+      0% { background-position: 0% center; }
+      100% { background-position: 200% center; }
+    }</style>
   `;
   showModal(content);
 }
