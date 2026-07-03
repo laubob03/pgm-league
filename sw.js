@@ -1,6 +1,6 @@
-// v1.0.419
-const CACHE_NAME = 'pgm-league-v424';
-const REQUIRED_VERSION = '1.0.419';
+// v1.0.425
+const CACHE_NAME = 'pgm-league-v425';
+const REQUIRED_VERSION = '1.0.425';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -10,9 +10,6 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(names => Promise.all(names.map(n => caches.delete(n))))
       .then(() => self.clients.claim())
-      .then(() => self.clients.matchAll().then(clients => {
-        clients.forEach(c => c.postMessage({ type: 'FORCE_RELOAD' }));
-      }))
   );
 });
 
