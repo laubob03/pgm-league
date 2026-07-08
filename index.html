@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.427';
+    var _curVer = '1.0.430';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -53,7 +53,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.427'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.430'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -629,7 +629,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 427 };
+const APP_VERSION = { major: 1, minor: 0, patch: 430 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -642,6 +642,7 @@ const APP_BUILD_DATE = '2026-05-02';
 // ============ CHANGELOG ============
 const CHANGELOG = [
     {v:'1.0.427', t:'修复SW拦截Gist请求导致云端同步失败：raw fail'},
+    {v:'1.0.430', t:'12强季后赛决赛改为单场定胜负（仅决赛，不含庆祝动画）'},
     {v:'1.0.426', t:'网页标题改为「PGM足球经理联赛 by J.K」'},
     {v:'1.0.425', t:'修复页面无限刷新问题：SW更新与force-clean循环'},
     {v:'1.0.424', t:'积分榜超级/甲东/甲西第9、10名增加降级附加赛标签'},
@@ -3076,7 +3077,7 @@ function renderCup12Bracket(cup12Id, targetContainer) {
         { id: cup12Id + '_R2S0', round: 2, slot: 0, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined, leg2: { homeScore: undefined, awayScore: undefined, status: undefined } },
         { id: cup12Id + '_R2S1', round: 2, slot: 1, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined, leg2: { homeScore: undefined, awayScore: undefined, status: undefined } },
         // 决赛 1场 round=3, slot=0 (两回合制)
-        { id: cup12Id + '_R3S0', round: 3, slot: 0, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined, leg2: { homeScore: undefined, awayScore: undefined, status: undefined } },
+        { id: cup12Id + '_R3S0', round: 3, slot: 0, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
         // 冠军赛 1场 round=4, slot=0 (单场)
         { id: cup12Id + '_R4S0', round: 4, slot: 0, homeTeam: null, awayTeam: null, homeScore: undefined, awayScore: undefined },
       ];
@@ -3262,7 +3263,17 @@ function renderCup12Bracket(cup12Id, targetContainer) {
       return null;
     }
     
-    // 其他轮次：两回合制
+    // 决赛（round=3）：单场定胜负
+    if (round === 3) {
+      if (m.status !== 'completed') return null;
+      if (m.homeScore > m.awayScore) return m.homeTeam;
+      if (m.awayScore > m.homeScore) return m.awayTeam;
+      if (m.penalty && m.penalty.homeScore > m.penalty.awayScore) return m.homeTeam;
+      if (m.penalty && m.penalty.awayScore > m.penalty.homeScore) return m.awayTeam;
+      return null;
+    }
+    
+    // 1/4决赛、半决赛：两回合制
     // 需要两场比赛都完成
     if (!m.leg2) return null;
     var leg1Done = m.status === 'completed';
@@ -3412,7 +3423,7 @@ function renderCup12Bracket(cup12Id, targetContainer) {
     // 判断已完赛和胜负（支持单回合/两回合制）
     // 预赛：单场比赛完成即完赛
     // 其他轮次：两场比赛都完成才算完赛
-    var isSingleLeg = round === 0 || round === 4; // 预赛和冠军赛是单场
+    var isSingleLeg = round === 0 || round === 3 || round === 4; // 预赛、决赛、冠军赛是单场
     var leg1Done = m && m.status === 'completed';
     var leg2Done = m && m.leg2 && m.leg2.status === 'completed';
     var done = isSingleLeg ? leg1Done : (leg1Done && leg2Done);
@@ -3538,10 +3549,25 @@ function renderCup12Bracket(cup12Id, targetContainer) {
         return '<div class="fc-score">VS</div>';
       }
       
-      // ¼决赛、半决赛、决赛：两回合制
+      // 决赛（round=3）：单场定胜负
+      if (round === 3) {
+        if (leg1Done) {
+          var scoreText = (m.homeScore !== undefined ? m.homeScore : '-') + ' - ' + (m.awayScore !== undefined ? m.awayScore : '-');
+          if (m.penalty && (m.homeScore === m.awayScore)) {
+            scoreText += '<br><span style="font-size:9px;color:#ff9800">点球 ' + m.penalty.homeScore + '-' + m.penalty.awayScore + '</span>';
+          }
+          return '<div class="fc-score done" ' + clickHandler + ' style="' + cursorStyle + '">' + scoreText + '</div>';
+        }
+        if (homeTeamId && awayTeamId && canEdit) {
+          return '<div class="fc-score done" style="background:linear-gradient(135deg,#4DB6AC 0%,#26A69A 100%);color:#fff;border-radius:6px;padding:4px 0;margin:2px 4px;font-size:11px;letter-spacing:1px;box-shadow:0 1px 4px rgba(38,166,154,0.3);' + cursorStyle + '" ' + clickHandler + '>VS</div>';
+        }
+        return '<div class="fc-score">VS</div>';
+      }
+      
+      // 1/4决赛、半决赛：两回合制
       var leg1Done = m.status === 'completed';
       var leg2Done = m.leg2 && m.leg2.status === 'completed';
-      
+            
       if (leg1Done || leg2Done) {
         var leg1Text = (m.homeScore !== undefined ? m.homeScore : '-') + '-' + (m.awayScore !== undefined ? m.awayScore : '-');
         var leg2Text = m.leg2 ? ((m.leg2.awayScore !== undefined ? m.leg2.awayScore : '-') + '-' + (m.leg2.homeScore !== undefined ? m.leg2.homeScore : '-')) : '-/-';
@@ -3996,7 +4022,7 @@ function showEnterCupMatchModal12() {
   var awayTeam = sd.teams.find(function(t){return t.id===match.awayTeam;});
   if (!homeTeam || !awayTeam) { showToast('球队数据未找到'); return; }
   
-  var isTwoLegs = match.round >= 1 && match.round <= 3;
+  var isTwoLegs = match.round >= 1 && match.round <= 2;
   var isPrelimDraw = match.round === 0 && match.status === 'completed' && match.homeScore === match.awayScore;
   
   // 判断当前录入哪一场（第一场或第二场）
