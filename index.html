@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.426';
+    var _curVer = '1.0.427';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -53,7 +53,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.426'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.427'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -629,7 +629,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 426 };
+const APP_VERSION = { major: 1, minor: 0, patch: 427 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -641,6 +641,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+    {v:'1.0.427', t:'修复SW拦截Gist请求导致云端同步失败：raw fail'},
     {v:'1.0.426', t:'网页标题改为「PGM足球经理联赛 by J.K」'},
     {v:'1.0.425', t:'修复页面无限刷新问题：SW更新与force-clean循环'},
     {v:'1.0.424', t:'积分榜超级/甲东/甲西第9、10名增加降级附加赛标签'},

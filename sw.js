@@ -1,6 +1,6 @@
-// v1.0.426
-const CACHE_NAME = 'pgm-league-v426';
-const REQUIRED_VERSION = '1.0.426';
+// v1.0.427
+const CACHE_NAME = 'pgm-league-v427';
+const REQUIRED_VERSION = '1.0.427';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -20,6 +20,11 @@ self.addEventListener('message', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // ★ v1.0.427: 不拦截 GitHub API / Gist raw 请求，防止 SW 缓存导致云端同步失败
+  const url = event.request.url;
+  if (url.includes('api.github.com') || url.includes('gist.githubusercontent.com')) {
+    return; // 放行，不经过 SW
+  }
   // Network-first for HTML, cache-first for static assets
   if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
     event.respondWith(
