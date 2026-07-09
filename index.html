@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.431';
+    var _curVer = '1.0.432';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -53,7 +53,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.431'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.432'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -629,7 +629,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 431 };
+const APP_VERSION = { major: 1, minor: 0, patch: 432 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -643,6 +643,8 @@ const APP_BUILD_DATE = '2026-05-02';
 const CHANGELOG = [
     {v:'1.0.427', t:'修复SW拦截Gist请求导致云端同步失败：raw fail'},
     {v:'1.0.430', t:'12强季后赛决赛改为单场定胜负（仅决赛，不含庆祝动画）'},
+    {v:'1.0.431', t:'修复决赛比分不显示：leg1Done变量提升到round===3块之前'},
+    {v:'1.0.432', t:'修复云端同步失败(raw URL 429)：fetchRaw走gistFetch加auth header'},
     {v:'1.0.431', t:'修复决赛比分不显示：leg1Done变量提升到round===3块之前'},
     {v:'1.0.426', t:'网页标题改为「PGM足球经理联赛 by J.K」'},
     {v:'1.0.425', t:'修复页面无限刷新问题：SW更新与force-clean循环'},
@@ -10641,7 +10643,7 @@ async function recorderUpload() {
               const fetchRaw = async (fileObj) => {
                 if (!fileObj) return null;
                 if (fileObj.truncated || !fileObj.content) {
-                  if (fileObj.raw_url) { const r = await fetch(fileObj.raw_url); return r.ok ? JSON.parse(await r.text()) : null; }
+                  if (fileObj.raw_url) { const r = await gistFetch(fileObj.raw_url); return r.ok ? JSON.parse(await r.text()) : null; }
                   return null;
                 }
                 return JSON.parse(fileObj.content);
@@ -11053,7 +11055,7 @@ async function syncDownload() {
       if (dataFile.truncated || !dataFile.content) {
         if (!dataFile.raw_url) throw new Error('云端数据文件过大且无raw_url，请联系管理员');
         showToast('数据较大，正在获取完整内容...');
-        const rawResp = await fetch(dataFile.raw_url);
+        const rawResp = await gistFetch(dataFile.raw_url);
         if (!rawResp.ok) throw new Error('获取完整数据失败 ' + rawResp.status);
         content = await rawResp.text();
       } else {
