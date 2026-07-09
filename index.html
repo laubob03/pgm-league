@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.432';
+    var _curVer = '1.0.433';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -53,7 +53,7 @@
       } else {
       var needUpgrade=false
       try{
-      var myV=0;try{var parts2='1.0.432'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var myV=0;try{var parts2='1.0.433'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
       var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
       var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
       if(myV<minV) needUpgrade=true
@@ -629,7 +629,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 432 };
+const APP_VERSION = { major: 1, minor: 0, patch: 433 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -645,6 +645,7 @@ const CHANGELOG = [
     {v:'1.0.430', t:'12强季后赛决赛改为单场定胜负（仅决赛，不含庆祝动画）'},
     {v:'1.0.431', t:'修复决赛比分不显示：leg1Done变量提升到round===3块之前'},
     {v:'1.0.432', t:'修复云端同步失败(raw URL 429)：fetchRaw走gistFetch加auth header'},
+    {v:'1.0.433', t:'榜单合并12强季后赛数据：协会杯季后赛等杯赛球员进球/助攻/MOTM统计到榜单'},
     {v:'1.0.431', t:'修复决赛比分不显示：leg1Done变量提升到round===3块之前'},
     {v:'1.0.426', t:'网页标题改为「PGM足球经理联赛 by J.K」'},
     {v:'1.0.425', t:'修复页面无限刷新问题：SW更新与force-clean循环'},
@@ -5546,6 +5547,21 @@ function renderStats() {
       if (type === 'goals') players = getCupTopScorers(20, effectiveLeague);
       else if (type === 'assists') players = getCupTopAssists(20, effectiveLeague);
       else if (type === 'motm') players = getCupTopMotm(20, effectiveLeague);
+      // 12强季后赛：合并季后赛数据到主杯赛榜单
+      if (showCup12Name) {
+        let cup12Players;
+        if (type === 'goals') cup12Players = getCupTopScorers(200, league);
+        else if (type === 'assists') cup12Players = getCupTopAssists(200, league);
+        else if (type === 'motm') cup12Players = getCupTopMotm(200, league);
+        const mergeKey = type === 'goals' ? 'goals' : type === 'assists' ? 'assists' : 'motmCount';
+        const pm = {};
+        players.forEach(p => { pm[p.id] = p; });
+        cup12Players.forEach(p => {
+          if (pm[p.id]) { pm[p.id].goals += p.goals || 0; pm[p.id].assists += p.assists || 0; pm[p.id].motmCount += p.motmCount || 0; }
+          else { pm[p.id] = p; }
+        });
+        players = Object.values(pm).sort((a, b) => b[mergeKey] - a[mergeKey]).slice(0, 20);
+      }
     } else {
       if (type === 'goals') players = getTopScorers(20, effectiveLeague);
       else if (type === 'assists') players = getTopAssists(20, effectiveLeague);
