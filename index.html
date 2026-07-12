@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.444';
+    var _curVer = '1.0.445';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -330,7 +330,7 @@
     .season-selector::-webkit-scrollbar{display:none}
     .season-chip{background:rgba(255,255,255,0.15);border:none;color:rgba(255,255,255,0.8);padding:5px 14px;border-radius:14px;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer;transition:all 0.2s}
     .season-chip.active{background:white;color:#228B22}
-    .season-select{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.9);padding:5px 10px;border-radius:14px;font-size:12px;font-weight:600;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;min-width:130px;text-align:center}
+    .season-select{background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.4);color:rgba(255,255,255,0.95);padding:4px 8px;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;min-width:110px;text-align:center;margin-right:10px;vertical-align:middle}
     .season-archive-tag{background:#FFD700;color:#333;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;margin-left:8px}
     .archive-notice{text-align:center;padding:8px;background:#FFF3E0;color:#E65100;font-size:13px;font-weight:600;border-radius:0}
     .nav-season-info{white-space:nowrap}
@@ -445,6 +445,7 @@
   <div class="nav-right">
     <button class="nav-search-btn" id="navSearchBtn" onclick="showPlayerSearch()">🔍</button>
     <div class="nav-right-info">
+      <div class="season-selector" id="seasonSelector"></div>
       <span class="nav-season-info" id="navSeasonInfo"></span>
       <span class="nav-clock" id="navClock"></span>
       <span class="nav-cloud-info" id="navCloudInfo" style="display:none"></span>
@@ -454,7 +455,7 @@
   </div>
 </nav>
 
-<div class="season-selector" id="seasonSelector"></div>
+
 <div class="archive-notice" id="archiveNotice" style="display:none"></div>
 
 <main class="main-content">
@@ -630,7 +631,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 444 };
+const APP_VERSION = { major: 1, minor: 0, patch: 445 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -654,6 +655,7 @@ const CHANGELOG = [
     {v:'1.0.431', t:'修复决赛比分不显示：leg1Done变量提升到round===3块之前'},
     {v:'1.0.432', t:'修复云端同步失败(raw URL 429)：fetchRaw走gistFetch加auth header'},
     {v:'1.0.444', t:'赛季切换器改为下拉菜单；seasons独立备份修复'},
+    {v:'1.0.445', t:'赛季切换下拉菜单移入导航栏内部、PGM联赛-届字样上方'},
     {v:'1.0.442', t:'新增Sunderland球员Tomás Leandro Aranda（UID 2000324081）'},
     {v:'1.0.433', t:'榜单合并12强季后赛数据：协会杯季后赛等杯赛球员进球/助攻/MOTM统计到榜单'},
     {v:'1.0.431', t:'修复决赛比分不显示：leg1Done变量提升到round===3块之前'},
@@ -1324,7 +1326,7 @@ function renderSeasonSelector() {
     container.style.display = 'none';
     return;
   }
-  container.style.display = 'flex';
+  container.style.display = 'inline-flex';
 
   const isViewingArchived = viewingSeasonId !== null;
   let html = '<select class="season-select" onchange="switchSeason(this.value === \'current\' ? null : Number(this.value))">';
