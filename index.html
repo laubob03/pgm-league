@@ -11382,7 +11382,21 @@ document.getElementById('modalOverlay').onclick = (e) => {
   loadState();
   syncPlayersFromDB(); // 合并PLAYERS_DB新增球员到现有state
   replayTransfers(); // 根据转会记录重建球员归属+同步PLAYERS_DB
-  dedupePlayers(); // 清理球员重复（uid全局唯一，删除转会产生的幽灵副本）
+  
+  // === 强制清理：删除 Tottenham 中的 Leif Davis (uid 29175587) ===
+  (function() {
+    if (state.teams) {
+      state.teams.forEach(function(team) {
+        if (team.name === 'Tottenham' && team.players) {
+          var before = team.players.length;
+          team.players = team.players.filter(function(p) { return String(p.uid) !== '29175587'; });
+          if (team.players.length < before) { console.log('[INIT-KILL] Removed Leif Davis from Tottenham'); saveState(); }
+        }
+      });
+    }
+  })();
+  // === 强制清理结束 ===
+
   // 从URL hash恢复状态（如果有）
   restoreFromUrlHash();
   updateSidebar();
