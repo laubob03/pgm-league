@@ -7350,7 +7350,7 @@ function showTeamDetail(teamId) {
         sorted = [...team.players].sort((a, b) => (a.number || 0) - (b.number || 0));
     }
     // 分离：活跃球员 / 新加盟（已转出球员完全不显示）
-    const active = sorted.filter(p => !p.transferredOut && !p.isTransferIn);
+    const active = sorted.filter(p => !p.transferredOut);
     const transferIn = sorted.filter(p => p.isTransferIn && !p.transferredOut);
 
     const renderRow = (p) => {
@@ -7847,7 +7847,7 @@ function showTeamDetail(teamId) {
         </div>`;
     } else if (subTab === 'release') {
       // 解约至公海（仅超管可见）
-      const activePlayers = t.players.filter(p => !p.transferredOut && !p.isTransferIn);
+      const activePlayers = t.players.filter(p => !p.transferredOut);
       const playersOptions = activePlayers.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN')).map(p =>
         `<option value="${p.uid}" data-name="${p.name}">${p.name} #${p.number} (${p.position})</option>`
       ).join('');
