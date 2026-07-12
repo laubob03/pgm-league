@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.434';
+    var _curVer = '1.0.435';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -629,7 +629,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 434 };
+const APP_VERSION = { major: 1, minor: 0, patch: 435 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -641,6 +641,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  {v:'v1.0.435',d:'2026-07-12',c:'修复球员uid重复：同一球员出现在多队（转会后syncPlayersFromDB误加回原队），新增dedupePlayers全局去重+全局已存在校验'},
   {v:'v1.0.434',d:'2026-07-09',c:'修复榜单页直接点杯赛按钮不合并12强季后赛数据的bug'},
     {v:'1.0.427', t:'修复SW拦截Gist请求导致云端同步失败：raw fail'},
     {v:'1.0.430', t:'12强季后赛决赛改为单场定胜负（仅决赛，不含庆祝动画）'},
@@ -1542,6 +1543,10 @@ function syncPlayersFromDB() {
   if (!state.teams || state.teams.length < 60) { console.log('[SYNC] Skip: state.teams not ready'); return; }
   let totalSynced = 0;
   
+  // 全局已存在uid（防止已转会到他队的球员被加回原队，导致uid重复）
+  const globalUids = new Set();
+  state.teams.forEach(t => (t.players || []).forEach(p => globalUids.add(String(p.uid))));
+
   for (const team of state.teams) {
     const dbPlayers = PLAYERS_DB[team.name];
     if (!dbPlayers || dbPlayers.length === 0) continue;
@@ -1554,7 +1559,7 @@ function syncPlayersFromDB() {
     const transferredUids = new Set((state.pendingTransfers || []).filter(t => (t.status === 'processed' || t.status === 'completed') && t.fromTeamId === team.id).map(t => String(t.playerUid)));
     
     // 找出PLAYERS_DB中有但state中没有的球员（排除已解约和已转出）
-    const missing = dbPlayers.filter(p => !existingUids.has(String(p.uid)) && !openSeaUids.has(String(p.uid)) && !transferredUids.has(String(p.uid)));
+    const missing = dbPlayers.filter(p => !existingUids.has(String(p.uid)) && !openSeaUids.has(String(p.uid)) && !transferredUids.has(String(p.uid)) && !globalUids.has(String(p.uid)));
     
     if (missing.length > 0) {
       // 计算下一个可用号码
@@ -1711,6 +1716,51 @@ function replayTransfers() {
     saveState();
   }
 }
+
+// 清理球员重复：保证 uid 全局唯一（只在一个球队出现）
+// 逻辑：
+//  - 合法跨联赛转会（一队 transferredOut + 另一队 isTransferIn）：双方都保留
+//  - 其他重复：有转会标记(transferFrom/isTransferIn/transferredOut)的副本优先保留，删无标记的幽灵副本
+//  - 全部无标记或全部有标记：保留 PLAYERS_DB 归属队的，删其他
+function dedupePlayers() {
+  if (!state.teams || state.teams.length === 0) return 0;
+  const uidMap = {};
+  state.teams.forEach(team => {
+    (team.players || []).forEach(player => {
+      const uid = String(player.uid);
+      if (!uidMap[uid]) uidMap[uid] = [];
+      uidMap[uid].push({ team, player });
+    });
+  });
+  let removed = 0;
+  Object.keys(uidMap).forEach(uid => {
+    const copies = uidMap[uid];
+    if (copies.length <= 1) return;
+    const hasTransferredOut = copies.some(c => c.player.transferredOut);
+    const hasIsTransferIn = copies.some(c => c.player.isTransferIn);
+    if (hasTransferredOut && hasIsTransferIn) return; // 合法跨联赛，全保留
+    const hasTransferFlag = c => c.player.transferFrom || c.player.isTransferIn || c.player.transferredOut;
+    const transferCopies = copies.filter(hasTransferFlag);
+    const normalCopies = copies.filter(c => !hasTransferFlag(c));
+    if (transferCopies.length > 0 && normalCopies.length > 0) {
+      normalCopies.forEach(c => {
+        const idx = c.team.players.indexOf(c.player);
+        if (idx >= 0) { c.team.players.splice(idx, 1); removed++; console.log('[DEDUPE] Removed ' + c.player.name + ' from ' + c.team.name + ' (dup, no transfer flag)'); }
+      });
+    } else {
+      const ownerTeam = Object.keys(PLAYERS_DB).find(tn => (PLAYERS_DB[tn] || []).some(p => String(p.uid) === uid));
+      copies.forEach(c => {
+        if (c.team.name !== ownerTeam) {
+          const idx = c.team.players.indexOf(c.player);
+          if (idx >= 0) { c.team.players.splice(idx, 1); removed++; console.log('[DEDUPE] Removed ' + c.player.name + ' from ' + c.team.name + ' (dup, owner=' + ownerTeam + ')'); }
+        }
+      });
+    }
+  });
+  if (removed > 0) { console.log('[DEDUPE] Total removed: ' + removed); saveState(); }
+  return removed;
+}
+
 
 // ============ INIT DATA ============
 function initData() {
@@ -11318,6 +11368,7 @@ document.getElementById('modalOverlay').onclick = (e) => {
   loadState();
   syncPlayersFromDB(); // 合并PLAYERS_DB新增球员到现有state
   replayTransfers(); // 根据转会记录重建球员归属+同步PLAYERS_DB
+  dedupePlayers(); // 清理球员重复（uid全局唯一，删除转会产生的幽灵副本）
   // 从URL hash恢复状态（如果有）
   restoreFromUrlHash();
   updateSidebar();
