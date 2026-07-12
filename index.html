@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.448';
+    var _curVer = '1.0.449';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -631,7 +631,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 448 };
+const APP_VERSION = { major: 1, minor: 0, patch: 449 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -659,6 +659,7 @@ const CHANGELOG = [
     {v:'1.0.446', t:'修复下拉菜单顺序：下拉菜单现置于PGM联赛-届字样右侧；移除season-selector容器CSS隐藏'},
     {v:'1.0.447', t:'隐藏navSeasonInfo文字，下拉菜单为唯一赛季切换入口'},
     {v:'1.0.448', t:'修复CSS display:none隐藏下拉菜单；navSeasonInfo加!important'},
+    {v:'1.0.449', t:'下拉菜单选项文字从"第X届"改为"PGM-X赛季"'},
     {v:'1.0.442', t:'新增Sunderland球员Tomás Leandro Aranda（UID 2000324081）'},
     {v:'1.0.433', t:'榜单合并12强季后赛数据：协会杯季后赛等杯赛球员进球/助攻/MOTM统计到榜单'},
     {v:'1.0.431', t:'修复决赛比分不显示：leg1Done变量提升到round===3块之前'},
@@ -1333,9 +1334,9 @@ function renderSeasonSelector() {
 
   const isViewingArchived = viewingSeasonId !== null;
   let html = '<select class="season-select" onchange="switchSeason(this.value === \'current\' ? null : Number(this.value))">';
-  html += '<option value="current"' + (!isViewingArchived ? ' selected' : '') + '>第' + currentId + '届 (当前)</option>';
+  html += '<option value="current"' + (!isViewingArchived ? ' selected' : '') + '>PGM-' + currentId + '赛季</option>';
   seasonIds.forEach(sid => {
-    html += '<option value="' + sid + '"' + (viewingSeasonId === sid ? ' selected' : '') + '>第' + sid + '届</option>';
+    html += '<option value="' + sid + '"' + (viewingSeasonId === sid ? ' selected' : '') + '>PGM-' + sid + '赛季</option>';
   });
   html += '</select>';
   container.innerHTML = html;
