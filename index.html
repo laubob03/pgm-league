@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.445';
+    var _curVer = '1.0.446';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -445,8 +445,8 @@
   <div class="nav-right">
     <button class="nav-search-btn" id="navSearchBtn" onclick="showPlayerSearch()">🔍</button>
     <div class="nav-right-info">
-      <div class="season-selector" id="seasonSelector"></div>
       <span class="nav-season-info" id="navSeasonInfo"></span>
+      <div class="season-selector" id="seasonSelector" style="display:inline-flex;align-items:center;gap:6px"></div>
       <span class="nav-clock" id="navClock"></span>
       <span class="nav-cloud-info" id="navCloudInfo" style="display:none"></span>
     </div>
@@ -631,7 +631,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 445 };
+const APP_VERSION = { major: 1, minor: 0, patch: 446 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -656,6 +656,7 @@ const CHANGELOG = [
     {v:'1.0.432', t:'修复云端同步失败(raw URL 429)：fetchRaw走gistFetch加auth header'},
     {v:'1.0.444', t:'赛季切换器改为下拉菜单；seasons独立备份修复'},
     {v:'1.0.445', t:'赛季切换下拉菜单移入导航栏内部、PGM联赛-届字样上方'},
+    {v:'1.0.446', t:'修复下拉菜单顺序：下拉菜单现置于PGM联赛-届字样右侧；移除season-selector容器CSS隐藏'},
     {v:'1.0.442', t:'新增Sunderland球员Tomás Leandro Aranda（UID 2000324081）'},
     {v:'1.0.433', t:'榜单合并12强季后赛数据：协会杯季后赛等杯赛球员进球/助攻/MOTM统计到榜单'},
     {v:'1.0.431', t:'修复决赛比分不显示：leg1Done变量提升到round===3块之前'},

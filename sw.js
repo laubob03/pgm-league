@@ -1,4 +1,4 @@
-// v1.0.445
+﻿// v1.0.445
 const CACHE_NAME = 'pgm-league-v445';
 const REQUIRED_VERSION = '1.0.445';
 
@@ -20,10 +20,10 @@ self.addEventListener('message', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // ★ v1.0.427: 不拦截 GitHub API / Gist raw 请求，防止 SW 缓存导致云端同步失败
+  // 鈽?v1.0.427: 涓嶆嫤鎴?GitHub API / Gist raw 璇锋眰锛岄槻姝?SW 缂撳瓨瀵艰嚧浜戠鍚屾澶辫触
   const url = event.request.url;
   if (url.includes('api.github.com') || url.includes('gist.githubusercontent.com')) {
-    return; // 放行，不经过 SW
+    return; // 鏀捐锛屼笉缁忚繃 SW
   }
   // Network-first for HTML, cache-first for static assets
   if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
