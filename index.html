@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.439';
+    var _curVer = '1.0.440';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -629,7 +629,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 439 };
+const APP_VERSION = { major: 1, minor: 0, patch: 440 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -641,6 +641,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  {v:'v1.0.440',d:'2026-07-12',c:'double-kill Leif Davis from Tottenham: init+autoSync'},
   {v:'v1.0.439',d:'2026-07-12',c:'强制删除Tottenham的Leif Davis(uid 29175587)，不管云端或dedupe状态'},
   {v:'v1.0.438',d:'2026-07-12',c:'修复dedupePlayers跨联赛误判：仅归属队副本transferredOut=true才跳过，否则删非归属队幽灵'},
   {v:'v1.0.437',d:'2026-07-12',c:'autoSyncFromCloud云端覆盖后再跑dedupePlayers，防止云端旧重复数据覆盖本地清理结果(Leif Davis仍残留在Tottenham)'},
