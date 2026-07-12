@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.442';
+    var _curVer = '1.0.443';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -629,7 +629,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 442 };
+const APP_VERSION = { major: 1, minor: 0, patch: 443 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -652,6 +652,7 @@ const CHANGELOG = [
     {v:'1.0.430', t:'12强季后赛决赛改为单场定胜负（仅决赛，不含庆祝动画）'},
     {v:'1.0.431', t:'修复决赛比分不显示：leg1Done变量提升到round===3块之前'},
     {v:'1.0.432', t:'修复云端同步失败(raw URL 429)：fetchRaw走gistFetch加auth header'},
+    {v:'1.0.443', t:'修复赛季归档数据被initData()覆盖的问题：seasons独立备份'},
     {v:'1.0.442', t:'新增Sunderland球员Tomás Leandro Aranda（UID 2000324081）'},
     {v:'1.0.433', t:'榜单合并12强季后赛数据：协会杯季后赛等杯赛球员进球/助攻/MOTM统计到榜单'},
     {v:'1.0.431', t:'修复决赛比分不显示：leg1Done变量提升到round===3块之前'},
@@ -1266,6 +1267,8 @@ function archiveCurrentSeason() {
 
   if (!state.seasons) state.seasons = {};
   state.seasons[sid] = archive;
+  // 额外备份赛季归档数据，防止 initData() 覆盖 state 后丢失
+  localStorage.setItem('pgm_football_seasons_archive', safeStringify(state.seasons));
 
   // 开始新赛季
   const newSeasonId = sid + 1;
@@ -1472,6 +1475,11 @@ function loadState() {
     }
   } else {
     initData();
+  }
+  // 兼容：若 state.seasons 为空但独立备份有数据，则恢复
+  const archivedSeasons = localStorage.getItem('pgm_football_seasons_archive');
+  if (archivedSeasons && (!state.seasons || Object.keys(state.seasons).length === 0)) {
+    try { state.seasons = JSON.parse(archivedSeasons); saveState(); } catch(e) {}
   }
 }
 
@@ -1846,6 +1854,11 @@ function initData() {
   state.matches = generateAllMatches();
   state.pendingTransfers = [];
   state.transferMarket = [];
+  // 恢复赛季归档数据（initData 会重置 seasons，这里从独立备份恢复）
+  const archivedSeasons = localStorage.getItem('pgm_football_seasons_archive');
+  if (archivedSeasons) {
+    try { state.seasons = JSON.parse(archivedSeasons); } catch(e) {}
+  }
   saveState();
 }
 
