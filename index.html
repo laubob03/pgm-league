@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.437';
+    var _curVer = '1.0.438';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -629,7 +629,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 437 };
+const APP_VERSION = { major: 1, minor: 0, patch: 438 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -641,6 +641,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  {v:'v1.0.438',d:'2026-07-12',c:'修复dedupePlayers跨联赛误判：仅归属队副本transferredOut=true才跳过，否则删非归属队幽灵'},
   {v:'v1.0.437',d:'2026-07-12',c:'autoSyncFromCloud云端覆盖后再跑dedupePlayers，防止云端旧重复数据覆盖本地清理结果(Leif Davis仍残留在Tottenham)'},
   {v:'v1.0.436',d:'2026-07-12',c:'修正dedupePlayers优先级：以PLAYERS_DB归属队为权威(保留Liverpool删除Tottenham幽灵副本)；replayTransfers增加inFrom守卫防止清理后回环重建'},
   {v:'v1.0.435',d:'2026-07-12',c:'修复球员uid重复：同一球员出现在多队（转会后syncPlayersFromDB误加回原队），新增dedupePlayers全局去重+全局已存在校验'},
@@ -1740,12 +1741,15 @@ function dedupePlayers() {
   Object.keys(uidMap).forEach(uid => {
     const copies = uidMap[uid];
     if (copies.length <= 1) return;
-    // 合法跨联赛转会：原队 transferredOut + 新队 isTransferIn，双方都保留
-    const hasTransferredOut = copies.some(c => c.player.transferredOut);
-    const hasIsTransferIn = copies.some(c => c.player.isTransferIn);
-    if (hasTransferredOut && hasIsTransferIn) return;
-    // 其余重复：以 PLAYERS_DB 归属队为权威（球员初始归属），删除非归属队的副本
+    // 以 PLAYERS_DB 归属队为权威（球员初始归属）
     const ownerTeam = Object.keys(PLAYERS_DB).find(tn => (PLAYERS_DB[tn] || []).some(p => String(p.uid) === uid));
+    if (!ownerTeam) return; // PLAYERS_DB 中找不到，跳过（不冒然删除）
+    // 检查归属队副本是否有 transferredOut 标记
+    const ownerCopy = copies.find(c => c.team.name === ownerTeam);
+    const ownerHasTransferredOut = ownerCopy && ownerCopy.player.transferredOut;
+    // 仅当归属队副本确实标记为已转出（合法跨联赛转会）时，才保留非归属队副本
+    if (ownerHasTransferredOut) return;
+    // 否则：归属队副本未转出，所有非归属队副本都是幽灵，删除
     copies.forEach(c => {
       if (c.team.name !== ownerTeam) {
         const idx = c.team.players.indexOf(c.player);
