@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.438';
+    var _curVer = '1.0.439';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -629,7 +629,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 438 };
+const APP_VERSION = { major: 1, minor: 0, patch: 439 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -641,6 +641,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  {v:'v1.0.439',d:'2026-07-12',c:'强制删除Tottenham的Leif Davis(uid 29175587)，不管云端或dedupe状态'},
   {v:'v1.0.438',d:'2026-07-12',c:'修复dedupePlayers跨联赛误判：仅归属队副本transferredOut=true才跳过，否则删非归属队幽灵'},
   {v:'v1.0.437',d:'2026-07-12',c:'autoSyncFromCloud云端覆盖后再跑dedupePlayers，防止云端旧重复数据覆盖本地清理结果(Leif Davis仍残留在Tottenham)'},
   {v:'v1.0.436',d:'2026-07-12',c:'修正dedupePlayers优先级：以PLAYERS_DB归属队为权威(保留Liverpool删除Tottenham幽灵副本)；replayTransfers增加inFrom守卫防止清理后回环重建'},
@@ -11166,7 +11167,19 @@ async function syncDownload() {
       Object.keys(state.seasons).forEach(sid => recalculateAllPlayerStats(state.seasons[sid]));
     }
     
-    dedupePlayers(); // 云端覆盖后再次去重，确保重复球员(如Leif Davis)被清理saveState();
+    dedupePlayers(); // 云端覆盖后再次去重，确保重复球员(如Leif Davis)被清理
+    // === 强制清理：删除 Tottenham 中的 Leif Davis (uid 29175587) ===
+    if (state.teams) {
+      state.teams.forEach(function(team) {
+        if (team.name === 'Tottenham' && team.players) {
+          var before = team.players.length;
+          team.players = team.players.filter(function(p) { return String(p.uid) !== '29175587'; });
+          if (team.players.length < before) console.log('[FORCE-REMOVE] Removed Leif Davis from Tottenham');
+        }
+      });
+    }
+    // === 强制清理结束 ===
+    saveState();
     const now = new Date();
     const timeStr = now.getFullYear() + '-' + 
       String(now.getMonth()+1).padStart(2,'0') + '-' + 
