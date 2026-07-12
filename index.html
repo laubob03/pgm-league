@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.436';
+    var _curVer = '1.0.437';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -629,7 +629,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 436 };
+const APP_VERSION = { major: 1, minor: 0, patch: 437 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -641,6 +641,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  {v:'v1.0.437',d:'2026-07-12',c:'autoSyncFromCloud云端覆盖后再跑dedupePlayers，防止云端旧重复数据覆盖本地清理结果(Leif Davis仍残留在Tottenham)'},
   {v:'v1.0.436',d:'2026-07-12',c:'修正dedupePlayers优先级：以PLAYERS_DB归属队为权威(保留Liverpool删除Tottenham幽灵副本)；replayTransfers增加inFrom守卫防止清理后回环重建'},
   {v:'v1.0.435',d:'2026-07-12',c:'修复球员uid重复：同一球员出现在多队（转会后syncPlayersFromDB误加回原队），新增dedupePlayers全局去重+全局已存在校验'},
   {v:'v1.0.434',d:'2026-07-09',c:'修复榜单页直接点杯赛按钮不合并12强季后赛数据的bug'},
@@ -11160,7 +11161,8 @@ async function syncDownload() {
     if (state.seasons) {
       Object.keys(state.seasons).forEach(sid => recalculateAllPlayerStats(state.seasons[sid]));
     }
-    saveState();
+    
+    dedupePlayers(); // 云端覆盖后再次去重，确保重复球员(如Leif Davis)被清理saveState();
     const now = new Date();
     const timeStr = now.getFullYear() + '-' + 
       String(now.getMonth()+1).padStart(2,'0') + '-' + 
