@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.449';
+    var _curVer = '1.0.451';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -166,6 +166,7 @@
 .team-name-clickable{font-weight:500;font-size:12px;cursor:pointer;color:var(--primary);text-decoration:underline;text-decoration-color:transparent;transition:all 0.2s}
 .team-name-clickable:hover{text-decoration-color:var(--primary)}
     .promotion-bg{background:rgba(76,175,80,0.15)!important}
+    .promotion-playoff-bg{background:rgba(30,136,229,0.15)!important}
     .relegation-bg{background:rgba(244,67,54,0.15)!important}
     .team-list{display:grid;gap:4px}
     .team-item{background:white;border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
@@ -468,6 +469,7 @@
         <button class="league-chip active" data-league="super">超级</button>
         <button class="league-chip" data-league="jiaEast">甲东</button>
         <button class="league-chip" data-league="jiaWest">甲西</button>
+        <button class="league-chip" data-league="jiaAll">甲级全队</button>
         <button class="league-chip" data-league="yiEast">乙东</button>
         <button class="league-chip" data-league="yiWest">乙西</button>
         <button class="league-chip cup-chip" data-cup="championsCup">🏆冠军杯</button>
@@ -490,6 +492,7 @@
         <button class="league-chip active" data-league="super">超级</button>
         <button class="league-chip" data-league="jiaEast">甲东</button>
         <button class="league-chip" data-league="jiaWest">甲西</button>
+        <button class="league-chip" data-league="jiaAll">甲级全队</button>
         <button class="league-chip" data-league="yiEast">乙东</button>
         <button class="league-chip" data-league="yiWest">乙西</button>
       </div>
@@ -505,6 +508,7 @@
         <button class="league-chip active" data-league="super">超级</button>
         <button class="league-chip" data-league="jiaEast">甲东</button>
         <button class="league-chip" data-league="jiaWest">甲西</button>
+        <button class="league-chip" data-league="jiaAll">甲级全队</button>
         <button class="league-chip" data-league="yiEast">乙东</button>
         <button class="league-chip" data-league="yiWest">乙西</button>
         <button class="league-chip cup-chip" data-cup="championsCup">🏆冠军杯</button>
@@ -524,6 +528,7 @@
         <button class="league-chip active" data-league="super">超级</button>
         <button class="league-chip" data-league="jiaEast">甲东</button>
         <button class="league-chip" data-league="jiaWest">甲西</button>
+        <button class="league-chip" data-league="jiaAll">甲级全队</button>
         <button class="league-chip" data-league="yiEast">乙东</button>
         <button class="league-chip" data-league="yiWest">乙西</button>
         <button class="league-chip cup-chip" data-cup="championsCup">🏆冠军杯</button>
@@ -631,7 +636,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 449 };
+const APP_VERSION = { major: 1, minor: 0, patch: 451 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -643,6 +648,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  {v:'v1.0.451',d:'2026-07-13',c:'新增甲级全队TAB（甲东+甲西共36队）；超级12队更新阵容（去Barcelona/Liverpool/River，增Fulham/Hamburger SV/Wrexham）'},
   {v:'v1.0.440',d:'2026-07-12',c:'double-kill Leif Davis from Tottenham: init+autoSync'},
   {v:'v1.0.439',d:'2026-07-12',c:'强制删除Tottenham的Leif Davis(uid 29175587)，不管云端或dedupe状态'},
   {v:'v1.0.438',d:'2026-07-12',c:'修复dedupePlayers跨联赛误判：仅归属队副本transferredOut=true才跳过，否则删非归属队幽灵'},
@@ -659,6 +665,7 @@ const CHANGELOG = [
     {v:'1.0.446', t:'修复下拉菜单顺序：下拉菜单现置于PGM联赛-届字样右侧；移除season-selector容器CSS隐藏'},
     {v:'1.0.447', t:'隐藏navSeasonInfo文字，下拉菜单为唯一赛季切换入口'},
     {v:'1.0.448', t:'修复CSS display:none隐藏下拉菜单；navSeasonInfo加!important'},
+    {v:'1.0.450', t:'升降级规则重构：超级前3名识别色、甲东/甲西第2-3名升级附加赛(蓝色)、乙东/乙西第3-6名升级附加赛(蓝色)、新增promotion-playoff-bg样式'},
     {v:'1.0.449', t:'下拉菜单选项文字从"第X届"改为"PGM-X赛季"'},
     {v:'1.0.442', t:'新增Sunderland球员Tomás Leandro Aranda（UID 2000324081）'},
     {v:'1.0.433', t:'榜单合并12强季后赛数据：协会杯季后赛等杯赛球员进球/助攻/MOTM统计到榜单'},
@@ -919,7 +926,7 @@ function getAppVersion() { return `v${APP_VERSION.major}.${APP_VERSION.minor}.${
 
 // ============ DATA ============
 const LEAGUE_NAMES = {
-  super: '超级联赛', jiaEast: '甲级-东区', jiaWest: '甲级-西区', yiEast: '乙级-东区', yiWest: '乙级-西区'
+  super: '超级联赛', jiaEast: '甲级-东区', jiaWest: '甲级-西区', jiaAll: '甲级全队', yiEast: '乙级-东区', yiWest: '乙级-西区'
 };
 const CUP_NAMES = { championsCup: '🏆 冠军杯', leagueCup: '🏆 联盟杯', associationCup: '🏆 协会杯', faCup: '🏆 足总杯', championsCup12: '🏆 冠军杯季后赛', leagueCup12: '🏆 联盟杯季后赛', associationCup12: '🏆 协会杯季后赛' };
 
@@ -970,7 +977,7 @@ const POSITION_NAMES = { GK: '门将', DF: '后卫', MF: '中场', FW: '前锋' 
 
 
 const TEAM_NAMES = {
-  super: ['A. Bilbao','Arsenal','Aston Villa','Barcelona','Benfica','FC Bayern','Juventus','Man City','Palmeiras','Paris SG','River','Wrexham'],
+  super: ['A. Bilbao','Arsenal','Aston Villa','Benfica','FC Bayern','Fulham','Hamburger SV','Lazio','Man City','Palmeiras','Paris SG','Wrexham'],
   jiaEast: ['1860 Munchen','Aberdeen','AS Roma','Atl. Tucuman','Dortmund','Fulham','Hertha BSC','Liverpool','Marseille','Monaco','Newcastle','Nottingham Forest'],
   jiaWest: ['Ajax','Brighton','Chelsea','Everton','Fiorentina','Frankfurt','Genk','Hamburger SV','Lazio','Leicester','RC Lens','Schalke'],
   yiEast: ['A. Madrid','Asante Kotoko','Como','FC Porto','Leverkusen','Oriental Dragon','R. Madrid','Stuttgart','Sunderland','Tottenham','青岛海神','上海申花'],
@@ -5284,7 +5291,10 @@ function renderStandings() {
     return;
   }
 
-  const teams = sd.teams.filter(t => t.league === league);
+  // 甲级全队：显示甲东+甲西所有球队
+  const teams = league === 'jiaAll'
+    ? sd.teams.filter(t => t.league === 'jiaEast' || t.league === 'jiaWest')
+    : sd.teams.filter(t => t.league === league);
   let standings = calculateStandings(teams, sd);
 
   // Get sort params from state or use defaults
@@ -5326,9 +5336,19 @@ function renderStandings() {
   html += '</tr></thead><tbody>';
 
   standings.forEach((s, i) => {
-    const isTop1Promotion = (league === 'jiaEast' || league === 'jiaWest');
-    const topPromotionCount = isTop1Promotion ? 1 : 2;
-    const promotionClass = i < topPromotionCount ? 'promotion-bg' : (i >= standings.length - 2 ? 'relegation-bg' : '');
+    // 升级/附加赛规则
+    // 超级：前3名底色（识别）；甲东/甲西：第2-3名底色→升级附加赛；乙东/乙西：第3-6名底色→升级附加赛
+    let promotionClass = '';
+    if (league === 'super') {
+      if (i < 3) promotionClass = 'promotion-bg';
+    } else if (league === 'jiaEast' || league === 'jiaWest') {
+      if (i === 0) promotionClass = 'promotion-bg';
+      else if (i >= 1 && i <= 2) promotionClass = 'promotion-playoff-bg';
+    } else if (league === 'yiEast' || league === 'yiWest') {
+      if (i >= 2 && i <= 5) promotionClass = 'promotion-playoff-bg';
+    }
+    // 降级规则不变：末2名直接降级
+    if (i >= standings.length - 2) promotionClass = 'relegation-bg';
     html += `<tr class="${promotionClass}">`;
     html += `<td class="rank">${i + 1}</td>`;
     html += `<td class="team-cell"><img src="${getTeamLogo(s.team)}" style="width:24px;height:24px;object-fit:contain;border-radius:4px" onerror="this.style.display='none'"><span class="team-name-clickable" onclick="showTeamDetail('${s.team.id}')">${s.team.name}` + (i===0 ? ' <span class="champion-badge"><span class="champion-trophy">🏆</span><span class="champion-text">冠军</span></span>' : '') + ((i===8||i===9) && (league==='super'||league==='jiaEast'||league==='jiaWest') ? ' <span class="relegation-badge"><span class="relegation-icon">⚠️</span><span class="relegation-text">降级附加赛</span></span>' : '') + `</span></td>`;
@@ -5356,7 +5376,9 @@ function renderTeams() {
   const league = state.currentLeague;
   const sd = getCurrentSeasonData();
 
-  const teams = sd.teams.filter(t => t.league === league);
+  const teams = league === 'jiaAll'
+    ? sd.teams.filter(t => t.league === 'jiaEast' || t.league === 'jiaWest')
+    : sd.teams.filter(t => t.league === league);
 
   let html = '<div class="team-list">';
   teams.forEach(t => {
@@ -5410,7 +5432,9 @@ function renderSchedule() {
   let matches = [...sd.matches];
   matches = matches.filter(m => {
     const homeTeam = sd.teams.find(t => t.id === m.homeTeam);
-    return homeTeam && homeTeam.league === league;
+    if (!homeTeam) return false;
+    if (league === 'jiaAll') return homeTeam.league === 'jiaEast' || homeTeam.league === 'jiaWest';
+    return homeTeam.league === league;
   });
   
   const rounds = {};
@@ -8985,7 +9009,7 @@ function restoreFromUrlHash() {
   
   // 恢复联赛/杯赛
   if (parts[1]) {
-    const validLeagues = ['super', 'jiaEast', 'jiaWest', 'yiEast', 'yiWest', 'championsCup', 'leagueCup', 'associationCup', 'faCup'];
+    const validLeagues = ['super', 'jiaEast', 'jiaWest', 'jiaAll', 'yiEast', 'yiWest', 'championsCup', 'leagueCup', 'associationCup', 'faCup'];
     if (validLeagues.includes(parts[1])) {
       state.currentLeague = parts[1];
     }
