@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.457';
+    var _curVer = '1.0.458';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -638,7 +638,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 457 };
+const APP_VERSION = { major: 1, minor: 0, patch: 458 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -650,7 +650,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  {v:'v1.0.457',d:'2026-07-13',c:'63赛季升降级球队名单更新+修复super保留字解析问题'},{v:'v1.0.457',d:'2026-07-13',c:'新增乙级全队TAB（乙东+乙西共24队汇总视图）；63赛季球队数据经initData填充'},
+  {v:'v1.0.458',d:'2026-07-13',c:'修复归档后新赛季球队数据为空问题（initData调用缺失）'},{v:'v1.0.458',d:'2026-07-13',c:'63赛季升降级球队名单更新+修复super保留字解析问题'},{v:'v1.0.458',d:'2026-07-13',c:'新增乙级全队TAB（乙东+乙西共24队汇总视图）；63赛季球队数据经initData填充'},
   {v:'v1.0.453',d:'2026-07-13',c:'修复甲级全队按钮63赛季不显示（CSS覆盖JS display:empty）'},
   {v:'v1.0.452',d:'2026-07-13',c:'甲级全队TAB仅在63赛季显示，62赛季默认隐藏'},
   {v:'v1.0.451',d:'2026-07-13',c:'新增甲级全队TAB（甲东+甲西共36队）；超级12队更新阵容（去Barcelona/Liverpool/River，增Fulham/Hamburger SV/Wrexham）'},
@@ -1292,13 +1292,11 @@ function archiveCurrentSeason() {
   // 开始新赛季
   const newSeasonId = sid + 1;
   state.currentSeasonId = newSeasonId;
-  state.teams = [];
-  state.matches = [];
-  state.standings = {};
   state.cups = { championsCup: { teams: [], matches: [] }, leagueCup: { teams: [], matches: [] }, associationCup: { teams: [], matches: [] }, faCup: { teams: [], matches: [] } };
   viewingSeasonId = null;
 
-  saveState();
+  // 填充新赛季球队数据（initData 内部会调用 saveState）
+  initData();
   closeModal();
   updateSidebar();
   renderSeasonSelector();
