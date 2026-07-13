@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.452';
+    var _curVer = '1.0.453';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -637,7 +637,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 452 };
+const APP_VERSION = { major: 1, minor: 0, patch: 453 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -649,6 +649,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  {v:'v1.0.453',d:'2026-07-13',c:'修复甲级全队按钮63赛季不显示（CSS覆盖JS display:empty）'},
   {v:'v1.0.452',d:'2026-07-13',c:'甲级全队TAB仅在63赛季显示，62赛季默认隐藏'},
   {v:'v1.0.451',d:'2026-07-13',c:'新增甲级全队TAB（甲东+甲西共36队）；超级12队更新阵容（去Barcelona/Liverpool/River，增Fulham/Hamburger SV/Wrexham）'},
   {v:'v1.0.440',d:'2026-07-12',c:'double-kill Leif Davis from Tottenham: init+autoSync'},
@@ -1362,7 +1363,7 @@ function switchSeason(sid) {
 function updateJiaAllVisibility() {
   const isSeason63 = (viewingSeasonId === null && (state.currentSeasonId || 62) >= 63) || (viewingSeasonId !== null && viewingSeasonId >= 63);
   document.querySelectorAll('.jiaAll-btn').forEach(btn => {
-    btn.style.display = isSeason63 ? '' : 'none';
+    btn.style.display = isSeason63 ? 'inline-flex' : 'none';
   });
 }
 
