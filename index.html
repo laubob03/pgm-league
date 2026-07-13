@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.463';
+    var _curVer = '1.0.462';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -638,7 +638,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 463 };
+const APP_VERSION = { major: 1, minor: 0, patch: 462 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -650,7 +650,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  {v:'v1.0.463',d:'2026-07-14',c:'全部"违约金"标签改为"CA"显示'},{v:'v1.0.463',d:'2026-07-14',c:'乙级24队球员名单更新（63赛季），全60队齐'},{v:'v1.0.463',d:'2026-07-14',c:'甲级24队球员名单更新（63赛季）'},{v:'v1.0.463',d:'2026-07-14',c:'超级联赛12队球员名单更新（63赛季）'},{v:'v1.0.463',d:'2026-07-13',c:'62赛季球员名单迁移到63赛季（自动迁移函数）'},{v:'v1.0.463',d:'2026-07-13',c:'修复归档后新赛季球队数据为空问题（initData调用缺失）'},{v:'v1.0.463',d:'2026-07-13',c:'63赛季升降级球队名单更新+修复super保留字解析问题'},{v:'v1.0.463',d:'2026-07-13',c:'新增乙级全队TAB（乙东+乙西共24队汇总视图）；63赛季球队数据经initData填充'},
+  {v:'v1.0.462',d:'2026-07-14',c:'乙级24队球员名单更新（63赛季），全60队齐'},{v:'v1.0.462',d:'2026-07-14',c:'甲级24队球员名单更新（63赛季）'},{v:'v1.0.462',d:'2026-07-14',c:'超级联赛12队球员名单更新（63赛季）'},{v:'v1.0.462',d:'2026-07-13',c:'62赛季球员名单迁移到63赛季（自动迁移函数）'},{v:'v1.0.462',d:'2026-07-13',c:'修复归档后新赛季球队数据为空问题（initData调用缺失）'},{v:'v1.0.462',d:'2026-07-13',c:'63赛季升降级球队名单更新+修复super保留字解析问题'},{v:'v1.0.462',d:'2026-07-13',c:'新增乙级全队TAB（乙东+乙西共24队汇总视图）；63赛季球队数据经initData填充'},
   {v:'v1.0.453',d:'2026-07-13',c:'修复甲级全队按钮63赛季不显示（CSS覆盖JS display:empty）'},
   {v:'v1.0.452',d:'2026-07-13',c:'甲级全队TAB仅在63赛季显示，62赛季默认隐藏'},
   {v:'v1.0.451',d:'2026-07-13',c:'新增甲级全队TAB（甲东+甲西共36队）；超级12队更新阵容（去Barcelona/Liverpool/River，增Fulham/Hamburger SV/Wrexham）'},
@@ -702,10 +702,10 @@ const CHANGELOG = [
   { v: '1.0.401', date: '2026-06-14', items: ['🐛 足总杯重赛录入界面：移除强制换回原场视角逻辑，重赛主场互换直接展示（原客场→主队在上方）'] },
   { v: '1.0.400', date: '2026-06-08', items: ['🐛 足总杯赛程图比分显示修复：低级别球队交换到上方时，比分也跟随交换（上方球队比分在前）'] },
   { v: '1.0.399', date: '2026-06-06', items: ['➕ Atl. Tucuman 新增 Emiliano Buendía (67201783)'] },
-  { v: '1.0.398', date: '2026-06-06', items: ['💰 第三批批量更新244名球员CA（共1410条）', '🔧 修复正则替换重复拼接bug'] },
+  { v: '1.0.398', date: '2026-06-06', items: ['💰 第三批批量更新244名球员违约金（共1410条）', '🔧 修复正则替换重复拼接bug'] },
   { v: '1.0.397', date: '2026-06-06', items: ['➕ 新增9名缺失球员到PLAYERS_DB'] },
-  { v: '1.0.396', date: '2026-06-06', items: ['💰 第二批批量更新211名球员CA'] },
-  { v: '1.0.395', date: '2026-06-06', items: ['💰 批量更新137名球员CA（PLAYERS_DB）'] },
+  { v: '1.0.396', date: '2026-06-06', items: ['💰 第二批批量更新211名球员违约金'] },
+  { v: '1.0.395', date: '2026-06-06', items: ['💰 批量更新137名球员违约金（PLAYERS_DB）'] },
   { v: '1.0.394', date: '2026-06-03', items: ['➕ Chelsea新增 Mohamed Belloumi (2000184286)'] },
   { v: '1.0.393', date: '2026-06-03', items: ['🔄 新增replayTransfers()—基于120条转会记录重建球员归属+同步PLAYERS_DB'] },
   { v: '1.0.392', date: '2026-06-03', items: ['🔥 紧急：移除allTransferredUids清理——导致转会球员循环清空', '🐛 sync阶段transferredUids同时匹配processed/completed'] },
@@ -871,14 +871,14 @@ const CHANGELOG = [
   { v: '1.0.224', date: '2026-04-25', items: ['📱 修复手机登录弹窗按钮被虚拟键盘遮挡：modal 改为 overflow-y:auto 支持滚动，使用 dvh 动态视口高度'] },
   { v: '1.0.223', date: '2026-04-25', items: ['🐛 修复出价其他用户看不到（根因）：autoSyncFromCloud 中 304 和主Gist未更新的 early return 跳过了 autoSyncTransferGist，导致转会数据从不同步'] },
   { v: '1.0.222', date: '2026-04-25', items: ['🐛 修复出价其他用户看不到：移除 autoSyncTransferGist 时间跳过逻辑，每次刷新都强制下载转会数据', '🐛 autoCloudUpload 增加诊断输出和 PATCH 响应验证，便于排查同步问题', '🐛 sw.js 对 version.json 强制 no-store'] },
-  { v: '1.0.216', date: '2026-04-24', items: ['🎨 转会页面：移除"当前最高价"标签，出价记录最高价改暗红色', '🎨 "预计成交"改为成交倒计时（时/分/秒实时更新），<1h红色/<6h橙色/>6h紫色', '🎨 CA/PA、底价、CA统一浅灰底色', '🎨 最高出价金额暗红色+14px，其他出价与时间戳同色', '🗑️ 移除主教练"上传云端"按钮（出价/挂牌已自动上传）'] },
+  { v: '1.0.216', date: '2026-04-24', items: ['🎨 转会页面：移除"当前最高价"标签，出价记录最高价改暗红色', '🎨 "预计成交"改为成交倒计时（时/分/秒实时更新），<1h红色/<6h橙色/>6h紫色', '🎨 CA/PA、底价、违约金统一浅灰底色', '🎨 最高出价金额暗红色+14px，其他出价与时间戳同色', '🗑️ 移除主教练"上传云端"按钮（出价/挂牌已自动上传）'] },
   { v: '1.0.215', date: '2026-04-24', items: ['🐛 修复出价后其他用户看不到：TRANSFER_GIST_ID 改为硬编码固定值，防止每个浏览器创建各自的 Gist 导致数据分散', '🐛 修复 updated_at 精确匹配误判：改为时间戳比较（<=），避免毫秒差异导致跳过下载', '🐛 autoCloudUpload 上传后更新 pgm_transfer_gist_updated_at 缓存', '🗑️ 清理旧的动态 TRANSFER_GIST_ID 缓存'] },
   { v: '1.0.214', date: '2026-04-24', items: ['🐛 修复刷新页面不自动下载云端数据：移除 ETag/If-None-Match 缓存（代理/CDN 环境下 304 误判导致跳过下载）', '🐛 修复时间戳比较：字符串拼接改为 Date 时间戳比较，避免时区/格式问题', '⚡ 使用内置 Token 请求 GitHub API（限流从60→5000次/小时），防止频繁刷新被限流', '⚡ fetch 添加 cache:no-store 防止浏览器缓存返回过期数据', '🔔 同步失败不再静默，首次使用时弹 Toast 提醒用户'] },
   { v: '1.0.213', date: '2026-04-24', items: ['🐛 修复其他用户看不到出价记录（TRANSFER_GIST_ID未写入state，主数据同步丢失）'] },
   { v: '1.0.211', date: '2026-04-24', items: ['🐛 修复教练出价/挂牌后未自动上传云端（Token链缺少RECORDER_BUILTIN_TOKEN）'] },
   { v: '1.0.210', date: '2026-04-24', items: ['💰 主教练出价不限次数，可连续加价直到成交'] },
   { v: '1.0.209', date: '2026-04-24', items: ['⚡ ETag条件请求：日常打开零流量（99KB→0KB）', '📦 Gist拆多文件上传：teams/matches/other分片+全量兼容', '🗜️ JSON minify：上传体积缩减74KB'] },
-  { v: '1.0.208', date: '2026-04-23', items: ['⚡ 转会市场数据分离为独立Gist，教练操作同步从几百KB降至几KB', '🛡️ 智能合并：云端+本地转会数据取并集，防止并发操作数据丢失'] },  { v: '1.0.207', date: '2026-04-23', items: ['🔐 主教练权限调整：移除录入比赛、转会球员、摘牌权限，仅保留挂牌/出价', '☁️ 出价和挂牌后自动同步云端（静默上传，无需手动操作）'] },  { v: '1.0.206', date: '2026-04-23', items: ['🐛 修复主教练登录后点击球员名字无法进入详情页（canTransfer 用 const 声明但教练分支重新赋值导致 TypeError 崩溃）'] },  { v: '1.0.205', date: '2026-04-23', items: ['⏰ 转会成交规则：24h冷却期+晚间竞价窗口（19:01-21:00/21:01-23:00循环）', '💰 出价金额不再受CA上限限制，达CA可自动触发成交', '🕐 挂牌时间和出价时间显示精确时间戳（如2026-4-23 20:34）', '📋 到队规则：第13轮前成交→第13轮到队，第13轮后成交→全部录完立刻到队'] },  { v: '1.0.202', date: '2026-04-21', items: ['📋 球员详情杯赛数据按杯赛名分别显示（足总杯/冠军杯/联盟杯/协会杯），替代笼统"杯赛"标签'] },  { v: '1.0.201', date: '2026-04-21', items: ['🎨 底部版本号与侧边栏统一（共用CHANGELOG），版本号后加 By Pgm联赛—J.K'] },  { v: '1.0.200', date: '2026-04-21', items: ['🎨 足总杯赛程图增加球队队徽：已完赛/未完赛/管理员选择均显示队徽'] },  { v: '1.0.199', date: '2026-04-21', items: ['🎨 删除足总杯赛程图顶部标题行和缩放按钮'] },  { v: '1.0.198', date: '2026-04-21', items: ['📱 足总杯赛程图增加移动端触摸手势：双指捏合缩放、单指拖拽平移、双击重置'] },  { v: '1.0.197', date: '2026-04-21', items: ['🐛 删除 rTeamSelect 函数末尾重复代码（多余return+花括号），修复 renderFaCupBracket 被提前关闭导致全页面点击无响应'] },  { v: '1.0.196', date: '2026-04-21', items: ['🐛 回滚zoom缩放为scale+font-smoothing抗锯齿，修复点击无响应'] },  { v: '1.0.194', date: '2026-04-21', items: ['🐛 修复普通用户足总杯赛程图点击无响应'] },  { v: '1.0.193', date: '2026-04-21', items: ['🎨 足总杯赛程图：普通用户也用 select 样式显示球队，与管理员视觉一致'] },  { v: '1.0.192', date: '2026-04-21', items: ['🎨 足总杯赛程图：未完赛球队显示效果管理员与普通用户统一'] },  { v: '1.0.191', date: '2026-04-21', items: ['🎨 修复足总杯赛程图缩放时文字模糊：scale 改为 zoom'] },  { v: '1.0.190', date: '2026-04-21', items: ['🎨 足总杯赛程图未比赛卡片视觉增强：去掉模糊/虚淡效果'] },  { v: '1.0.189', date: '2026-04-21', items: ['🎨 足总杯赛程图联赛底色加深：超级深红、甲级深绿、乙级深灰（白色文字）'] },  { v: '1.0.130', date: '2026-04-20', items: ['🔄 转会系统统一：侧边栏和球队详情页转会共用 pending 系统，逻辑完全一致', '🔄 转会增加生效方式选择：指定轮次生效 / 立即转会', '🔄 转会增加转会费输入（侧边栏和球队详情页均支持）', '👤 球员详情页增加即将转会信息：新球队、到队时间、转会费', '🎨 球员列表增加即将转会标签（橙色标签显示目标球队）'] },  { v: '1.0.173', date: '2026-04-20', items: ['🎨 球队详情页轮次标题单独一行显示，对阵信息更完整'] },  { v: '1.0.172', date: '2026-04-20', items: ['🎨 加大球队详情页队徽：16px → 18px'] },  { v: '1.0.171', date: '2026-04-20', items: ['📱 优化球队详情页手机端显示：缩小队徽、紧凑间距、队名截断、比分区域优化'] },  { v: '1.0.170', date: '2026-04-20', items: ['🐛 修复球队详情页队徽位置：主队队徽在右，客队队徽在左（对称布局）'] },  { v: '1.0.169', date: '2026-04-20', items: ['🐛 修复球队详情页主队队名对齐问题（轮次标题移到内部后CSS选择器失效）'] },  { v: '1.0.168', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛芯片选中状态不更新的问题', '📋 新增杯赛与联赛同步规则文档'] },
+  { v: '1.0.208', date: '2026-04-23', items: ['⚡ 转会市场数据分离为独立Gist，教练操作同步从几百KB降至几KB', '🛡️ 智能合并：云端+本地转会数据取并集，防止并发操作数据丢失'] },  { v: '1.0.207', date: '2026-04-23', items: ['🔐 主教练权限调整：移除录入比赛、转会球员、摘牌权限，仅保留挂牌/出价', '☁️ 出价和挂牌后自动同步云端（静默上传，无需手动操作）'] },  { v: '1.0.206', date: '2026-04-23', items: ['🐛 修复主教练登录后点击球员名字无法进入详情页（canTransfer 用 const 声明但教练分支重新赋值导致 TypeError 崩溃）'] },  { v: '1.0.205', date: '2026-04-23', items: ['⏰ 转会成交规则：24h冷却期+晚间竞价窗口（19:01-21:00/21:01-23:00循环）', '💰 出价金额不再受违约金上限限制，达违约金可自动触发成交', '🕐 挂牌时间和出价时间显示精确时间戳（如2026-4-23 20:34）', '📋 到队规则：第13轮前成交→第13轮到队，第13轮后成交→全部录完立刻到队'] },  { v: '1.0.202', date: '2026-04-21', items: ['📋 球员详情杯赛数据按杯赛名分别显示（足总杯/冠军杯/联盟杯/协会杯），替代笼统"杯赛"标签'] },  { v: '1.0.201', date: '2026-04-21', items: ['🎨 底部版本号与侧边栏统一（共用CHANGELOG），版本号后加 By Pgm联赛—J.K'] },  { v: '1.0.200', date: '2026-04-21', items: ['🎨 足总杯赛程图增加球队队徽：已完赛/未完赛/管理员选择均显示队徽'] },  { v: '1.0.199', date: '2026-04-21', items: ['🎨 删除足总杯赛程图顶部标题行和缩放按钮'] },  { v: '1.0.198', date: '2026-04-21', items: ['📱 足总杯赛程图增加移动端触摸手势：双指捏合缩放、单指拖拽平移、双击重置'] },  { v: '1.0.197', date: '2026-04-21', items: ['🐛 删除 rTeamSelect 函数末尾重复代码（多余return+花括号），修复 renderFaCupBracket 被提前关闭导致全页面点击无响应'] },  { v: '1.0.196', date: '2026-04-21', items: ['🐛 回滚zoom缩放为scale+font-smoothing抗锯齿，修复点击无响应'] },  { v: '1.0.194', date: '2026-04-21', items: ['🐛 修复普通用户足总杯赛程图点击无响应'] },  { v: '1.0.193', date: '2026-04-21', items: ['🎨 足总杯赛程图：普通用户也用 select 样式显示球队，与管理员视觉一致'] },  { v: '1.0.192', date: '2026-04-21', items: ['🎨 足总杯赛程图：未完赛球队显示效果管理员与普通用户统一'] },  { v: '1.0.191', date: '2026-04-21', items: ['🎨 修复足总杯赛程图缩放时文字模糊：scale 改为 zoom'] },  { v: '1.0.190', date: '2026-04-21', items: ['🎨 足总杯赛程图未比赛卡片视觉增强：去掉模糊/虚淡效果'] },  { v: '1.0.189', date: '2026-04-21', items: ['🎨 足总杯赛程图联赛底色加深：超级深红、甲级深绿、乙级深灰（白色文字）'] },  { v: '1.0.130', date: '2026-04-20', items: ['🔄 转会系统统一：侧边栏和球队详情页转会共用 pending 系统，逻辑完全一致', '🔄 转会增加生效方式选择：指定轮次生效 / 立即转会', '🔄 转会增加转会费输入（侧边栏和球队详情页均支持）', '👤 球员详情页增加即将转会信息：新球队、到队时间、转会费', '🎨 球员列表增加即将转会标签（橙色标签显示目标球队）'] },  { v: '1.0.173', date: '2026-04-20', items: ['🎨 球队详情页轮次标题单独一行显示，对阵信息更完整'] },  { v: '1.0.172', date: '2026-04-20', items: ['🎨 加大球队详情页队徽：16px → 18px'] },  { v: '1.0.171', date: '2026-04-20', items: ['📱 优化球队详情页手机端显示：缩小队徽、紧凑间距、队名截断、比分区域优化'] },  { v: '1.0.170', date: '2026-04-20', items: ['🐛 修复球队详情页队徽位置：主队队徽在右，客队队徽在左（对称布局）'] },  { v: '1.0.169', date: '2026-04-20', items: ['🐛 修复球队详情页主队队名对齐问题（轮次标题移到内部后CSS选择器失效）'] },  { v: '1.0.168', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛芯片选中状态不更新的问题', '📋 新增杯赛与联赛同步规则文档'] },
   { v: '1.0.167', date: '2026-04-20', items: ['🎨 更新日志页面尺寸缩小、比例优化', '🎨 返回按钮重新设计（绿色渐变+阴影+hover放大）'] },
   { v: '1.0.166', date: '2026-04-20', items: ['🐛 修复刷新页面后联赛状态丢失的问题', '🔗 所有页面URL hash保存联赛状态'] },
   { v: '1.0.165', date: '2026-04-20', items: ['🎨 更新日志页面紧凑化', '⬅️ 添加圆形灰色返回按钮'] },
@@ -3512,7 +3512,7 @@ function initData() {
         name: p.name,
         number: idx + 1,
         position: idx < 4 ? (idx === 0 ? 'GK' : 'DF') : idx < 8 ? 'MF' : 'FW',  // Approximate positions
-        age: p.age || 0,releaseClause: p.releaseClause || 0,  // 年龄和CA(单位M)
+        age: p.age || 0,releaseClause: p.releaseClause || 0,  // 年龄和违约金(单位M)
         goals: 0,
         assists: 0,
         rating: 0,
@@ -7633,7 +7633,7 @@ function renderTransferMarket() {
     const listTeam = state.teams.find(t => t.id === listing.teamId);
     const listCoachName = listTeam ? listTeam.coach : listing.coachName;
 
-    // ★ 回查CA：listing可能缺少releaseClause字段（旧数据），从state.teams或PLAYERS_DB补查
+    // ★ 回查违约金：listing可能缺少releaseClause字段（旧数据），从state.teams或PLAYERS_DB补查
     let rcValue = listing.releaseClause;
     if (!rcValue || rcValue <= 0) {
       // 先从state.teams中查找
@@ -7664,10 +7664,10 @@ function renderTransferMarket() {
     // 中部：CA/PA + 价格信息
     html += `<div style="padding:10px 14px">`;
     html += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">`;
-    // ★ v1.0.215: CA/PA、底价、CA 统一浅灰底色
+    // ★ v1.0.215: CA/PA、底价、违约金 统一浅灰底色
     html += `<span style="font-size:12px;background:#f0f0f0;color:#555;padding:2px 8px;border-radius:4px;font-weight:600">CA/PA：${listing.ca}/${listing.pa}</span>`;
     html += `<span style="font-size:12px;background:#f0f0f0;color:#555;padding:2px 8px;border-radius:4px;font-weight:600">底价 ${listing.basePrice}M</span>`;
-    html += `<span style="font-size:12px;background:#f0f0f0;color:#555;padding:2px 8px;border-radius:4px;font-weight:600">CA ${rcValue > 0 ? rcValue + 'M' : '—'}</span>`;
+    html += `<span style="font-size:12px;background:#f0f0f0;color:#555;padding:2px 8px;border-radius:4px;font-weight:600">违约金 ${rcValue > 0 ? rcValue + 'M' : '—'}</span>`;
     // ★ v1.0.215: 移除"当前最高价"标签（出价记录里已有最高价暗红色标识）
     // 成交倒计时（醒目夸张设计）
     const deadline = getTransferDeadline(listing);
@@ -7754,7 +7754,7 @@ function renderTransferMarket() {
 
     // 出价按钮：仅主教练且非挂牌人可出价
     if (isLoggedIn && !isOwner && currentUser.isCoach) {
-      // 计算出价范围（成交金额不受CA限制）
+      // 计算出价范围（成交金额不受违约金限制）
       const isFirstBid = !listing.bids || listing.bids.length === 0;
       const minBid = isFirstBid ? listing.basePrice : (currentHighest + 1);
       const maxBid = isFirstBid ? 15 : currentHighest + 10;
@@ -8426,7 +8426,7 @@ function togglePlayerSeasonDetail(el, uid) {
 function buildPlayerSeasonDetailHtml(uid, name) {
   const stats = getPlayerCrossSeasonStats(uid, name);
 
-  // 获取当前球员的CA和年龄（先查 state 当前赛季，再回退 PLAYERS_DB）
+  // 获取当前球员的违约金和年龄（先查 state 当前赛季，再回退 PLAYERS_DB）
   let currentReleaseClause = 0;
   let currentPlayerAge = 0;
   // 始终从 state（当前赛季）查找，不受 viewingSeasonId 影响
@@ -8479,9 +8479,9 @@ function buildPlayerSeasonDetailHtml(uid, name) {
     }
   }
 
-  // 标题行：球员姓名 + 年龄 + CA + 转会按钮
+  // 标题行：球员姓名 + 年龄 + 违约金 + 转会按钮
   const clauseStr = currentReleaseClause > 0
-    ? `<span style="font-size:11px;color:#c62828;margin-left:8px;white-space:nowrap;background:#fce4ec;padding:1px 6px;border-radius:4px">CA ${currentReleaseClause}M</span>` : '';
+    ? `<span style="font-size:11px;color:#c62828;margin-left:8px;white-space:nowrap;background:#fce4ec;padding:1px 6px;border-radius:4px">违约金 ${currentReleaseClause}M</span>` : '';
   const ageStr = currentPlayerAge > 0
     ? `<span style="font-size:11px;color:#546e7a;margin-left:8px;white-space:nowrap;background:#eceff1;padding:1px 6px;border-radius:4px">${currentPlayerAge % 1 === 0 ? currentPlayerAge.toFixed(0) : currentPlayerAge}岁</span>` : '';
   const pendingTransfer = (state.pendingTransfers || []).find(pt => pt.status === 'pending' && pt.playerUid == uid);
@@ -8651,7 +8651,7 @@ function showListOnMarketModal(playerUid) {
         <img src="${getTeamLogo(team)}" style="width:32px;height:32px;object-fit:contain;border-radius:6px" onerror="this.style.display='none'">
         <div>
           <div style="font-size:14px;font-weight:700;color:#1a1a1a">${player.name}</div>
-          <div style="font-size:11px;color:#78909c">${team.name} · UID：${player.uid}${player.releaseClause > 0 ? ' · CA ' + player.releaseClause + 'M' : ''}</div>
+          <div style="font-size:11px;color:#78909c">${team.name} · UID：${player.uid}${player.releaseClause > 0 ? ' · 违约金 ' + player.releaseClause + 'M' : ''}</div>
         </div>
       </div>
       <div class="form-group">
@@ -8670,7 +8670,7 @@ function showListOnMarketModal(playerUid) {
         <b>📋 挂牌说明：</b><br>
         • 挂牌后其他教练可在"转会市场"页面出价<br>
         • 首次出价最高 15M，后续出价在当前最高价基础上 +1~10M<br>
-        • CA为 ${player.releaseClause || '—'}M，达到CA可直接成交
+        • 违约金为 ${player.releaseClause || '—'}M，达到违约金可直接成交
       </div>
       <button class="btn btn-primary btn-full" style="background:#FF6F00" onclick="submitListOnMarket('${playerUid}')">🏷️ 确认挂牌</button>
     </div>
@@ -10958,7 +10958,7 @@ function showAdminImportModal() {
   {"number": 9, "name": "前锋姓名", "position": "FW", "releaseClause": 10},
   ...
 ]</pre>
-          <div class="format-tips">💡 position可选：GK(门将) DF(后卫) MF(中场) FW(前锋)　releaseClause: CA(单位M)</div>
+          <div class="format-tips">💡 position可选：GK(门将) DF(后卫) MF(中场) FW(前锋)　releaseClause: 违约金(单位M)</div>
         </div>
         <textarea id="importPlayersJson" class="import-textarea" placeholder='粘贴JSON数据...'></textarea>
         <button class="btn btn-primary btn-full" onclick="importTeamPlayers()">导入球员名单</button>
