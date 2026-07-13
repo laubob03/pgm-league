@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.454';
+    var _curVer = '1.0.453';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -154,7 +154,6 @@
     .league-chip.cup-12-purple{background:linear-gradient(135deg,#f3e8ff,#ede0fa);border-color:#b39ddb;color:#4a148c}
     .league-chip.cup-12-purple.active{background:linear-gradient(135deg,#7e57c2,#5e35b1);border-color:#5e35b1;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.2)}
     .league-chip.jiaAll-btn{display:none}
-    .league-chip.yiAll-btn{display:none}
     .league-chip.cup-12-purple:hover:not(.active){background:linear-gradient(135deg,#ede0fa,#d1c4e9);border-color:#7e57c2}
     .standings-table{width:100%;border-collapse:collapse;font-size:13px}
     .standings-table th{background:#228B22;color:white;padding:8px 4px;text-align:center;font-weight:600;font-size:13px}
@@ -471,7 +470,7 @@
         <button class="league-chip active" data-league="super">超级</button>
         <button class="league-chip" data-league="jiaEast">甲东</button>
         <button class="league-chip" data-league="jiaWest">甲西</button>
-        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>`n        <button class="league-chip yiAll-btn" data-league="yiAll">乙级全队</button>
+        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>
         <button class="league-chip" data-league="yiEast">乙东</button>
         <button class="league-chip" data-league="yiWest">乙西</button>
         <button class="league-chip cup-chip" data-cup="championsCup">🏆冠军杯</button>
@@ -494,7 +493,7 @@
         <button class="league-chip active" data-league="super">超级</button>
         <button class="league-chip" data-league="jiaEast">甲东</button>
         <button class="league-chip" data-league="jiaWest">甲西</button>
-        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>`n        <button class="league-chip yiAll-btn" data-league="yiAll">乙级全队</button>
+        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>
         <button class="league-chip" data-league="yiEast">乙东</button>
         <button class="league-chip" data-league="yiWest">乙西</button>
       </div>
@@ -510,7 +509,7 @@
         <button class="league-chip active" data-league="super">超级</button>
         <button class="league-chip" data-league="jiaEast">甲东</button>
         <button class="league-chip" data-league="jiaWest">甲西</button>
-        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>`n        <button class="league-chip yiAll-btn" data-league="yiAll">乙级全队</button>
+        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>
         <button class="league-chip" data-league="yiEast">乙东</button>
         <button class="league-chip" data-league="yiWest">乙西</button>
         <button class="league-chip cup-chip" data-cup="championsCup">🏆冠军杯</button>
@@ -530,7 +529,7 @@
         <button class="league-chip active" data-league="super">超级</button>
         <button class="league-chip" data-league="jiaEast">甲东</button>
         <button class="league-chip" data-league="jiaWest">甲西</button>
-        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>`n        <button class="league-chip yiAll-btn" data-league="yiAll">乙级全队</button>
+        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>
         <button class="league-chip" data-league="yiEast">乙东</button>
         <button class="league-chip" data-league="yiWest">乙西</button>
         <button class="league-chip cup-chip" data-cup="championsCup">🏆冠军杯</button>
@@ -638,7 +637,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 454 };
+const APP_VERSION = { major: 1, minor: 0, patch: 453 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -650,7 +649,6 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  {v:'v1.0.454',d:'2026-07-13',c:'新增乙级全队TAB（乙东+乙西共24队汇总视图）；63赛季球队数据经initData填充'},
   {v:'v1.0.453',d:'2026-07-13',c:'修复甲级全队按钮63赛季不显示（CSS覆盖JS display:empty）'},
   {v:'v1.0.452',d:'2026-07-13',c:'甲级全队TAB仅在63赛季显示，62赛季默认隐藏'},
   {v:'v1.0.451',d:'2026-07-13',c:'新增甲级全队TAB（甲东+甲西共36队）；超级12队更新阵容（去Barcelona/Liverpool/River，增Fulham/Hamburger SV/Wrexham）'},
@@ -931,7 +929,7 @@ function getAppVersion() { return `v${APP_VERSION.major}.${APP_VERSION.minor}.${
 
 // ============ DATA ============
 const LEAGUE_NAMES = {
-  super: '超级联赛', jiaEast: '甲级-东区', jiaWest: '甲级-西区', jiaAll: '甲级全队', yiEast: '乙级-东区', yiWest: '乙级-西区', yiAll: '乙级全队'
+  super: '超级联赛', jiaEast: '甲级-东区', jiaWest: '甲级-西区', jiaAll: '甲级全队', yiEast: '乙级-东区', yiWest: '乙级-西区'
 };
 const CUP_NAMES = { championsCup: '🏆 冠军杯', leagueCup: '🏆 联盟杯', associationCup: '🏆 协会杯', faCup: '🏆 足总杯', championsCup12: '🏆 冠军杯季后赛', leagueCup12: '🏆 联盟杯季后赛', associationCup12: '🏆 协会杯季后赛' };
 
@@ -1358,7 +1356,6 @@ function switchSeason(sid) {
   viewingSeasonId = sid;
   renderSeasonSelector();
   updateJiaAllVisibility();
-  updateYiAllVisibility();
   render();
 }
 
@@ -1366,13 +1363,6 @@ function switchSeason(sid) {
 function updateJiaAllVisibility() {
   const isSeason63 = (viewingSeasonId === null && (state.currentSeasonId || 62) >= 63) || (viewingSeasonId !== null && viewingSeasonId >= 63);
   document.querySelectorAll('.jiaAll-btn').forEach(btn => {
-    btn.style.display = isSeason63 ? 'inline-flex' : 'none';
-  });
-}
-
-function updateYiAllVisibility() {
-  const isSeason63 = (viewingSeasonId === null && (state.currentSeasonId || 62) >= 63) || (viewingSeasonId !== null && viewingSeasonId >= 63);
-  document.querySelectorAll('.yiAll-btn').forEach(btn => {
     btn.style.display = isSeason63 ? 'inline-flex' : 'none';
   });
 }
@@ -5265,7 +5255,6 @@ function getFaCupAvailableTeams(cup) {
 function render() {
   renderSeasonSelector();
   updateJiaAllVisibility();
-  updateYiAllVisibility();
   // 导航栏赛季信息
   const navInfo = document.getElementById('navSeasonInfo');
   if (navInfo) {
@@ -5318,8 +5307,6 @@ function renderStandings() {
   // 甲级全队：显示甲东+甲西所有球队
   const teams = league === 'jiaAll'
     ? sd.teams.filter(t => t.league === 'jiaEast' || t.league === 'jiaWest')
-    : league === 'yiAll'
-    ? sd.teams.filter(t => t.league === 'yiEast' || t.league === 'yiWest')
     : sd.teams.filter(t => t.league === league);
   let standings = calculateStandings(teams, sd);
 
@@ -5404,8 +5391,6 @@ function renderTeams() {
 
   const teams = league === 'jiaAll'
     ? sd.teams.filter(t => t.league === 'jiaEast' || t.league === 'jiaWest')
-    : league === 'yiAll'
-    ? sd.teams.filter(t => t.league === 'yiEast' || t.league === 'yiWest')
     : sd.teams.filter(t => t.league === league);
 
   let html = '<div class="team-list">';
@@ -5462,7 +5447,6 @@ function renderSchedule() {
     const homeTeam = sd.teams.find(t => t.id === m.homeTeam);
     if (!homeTeam) return false;
     if (league === 'jiaAll') return homeTeam.league === 'jiaEast' || homeTeam.league === 'jiaWest';
-    if (league === 'yiAll') return homeTeam.league === 'yiEast' || homeTeam.league === 'yiWest';
     return homeTeam.league === league;
   });
   
@@ -9038,7 +9022,7 @@ function restoreFromUrlHash() {
   
   // 恢复联赛/杯赛
   if (parts[1]) {
-    const validLeagues = ['super', 'jiaEast', 'jiaWest', 'jiaAll', 'yiAll', 'yiEast', 'yiWest', 'championsCup', 'leagueCup', 'associationCup', 'faCup'];
+    const validLeagues = ['super', 'jiaEast', 'jiaWest', 'jiaAll', 'yiEast', 'yiWest', 'championsCup', 'leagueCup', 'associationCup', 'faCup'];
     if (validLeagues.includes(parts[1])) {
       state.currentLeague = parts[1];
     }
@@ -11416,7 +11400,6 @@ document.getElementById('btnAdminImport').onclick = () => showAdminImportModal()
 document.getElementById('btnCupManage').onclick = () => showCupManageModal();
 // 甲级全队TAB仅63赛季显示
 updateJiaAllVisibility();
-  updateYiAllVisibility();
 
 document.getElementById('btnArchiveSeason').onclick = () => showArchiveSeasonModal();
 document.getElementById('btnLoginLogs').onclick = () => showLoginLogsModal();
