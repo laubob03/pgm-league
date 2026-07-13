@@ -1,6 +1,6 @@
-// v1.0.466
-const CACHE_NAME = 'pgm-league-v466';
-const REQUIRED_VERSION = '1.0.466';
+// v1.0.467
+const CACHE_NAME = 'pgm-league-v467';
+const REQUIRED_VERSION = '1.0.467';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
