@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.467';
+    var _curVer = '1.0.468';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -471,7 +471,8 @@
         <button class="league-chip active" data-league="super">超级</button>
         <button class="league-chip" data-league="jiaEast">甲东</button>
         <button class="league-chip" data-league="jiaWest">甲西</button>
-        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>`n        <button class="league-chip yiAll-btn" data-league="yiAll">乙级全队</button>
+        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>
+        <button class="league-chip yiAll-btn" data-league="yiAll">乙级全队</button>
         <button class="league-chip" data-league="yiEast">乙东</button>
         <button class="league-chip" data-league="yiWest">乙西</button>
         <button class="league-chip cup-chip" data-cup="championsCup">🏆冠军杯</button>
@@ -494,7 +495,8 @@
         <button class="league-chip active" data-league="super">超级</button>
         <button class="league-chip" data-league="jiaEast">甲东</button>
         <button class="league-chip" data-league="jiaWest">甲西</button>
-        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>`n        <button class="league-chip yiAll-btn" data-league="yiAll">乙级全队</button>
+        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>
+        <button class="league-chip yiAll-btn" data-league="yiAll">乙级全队</button>
         <button class="league-chip" data-league="yiEast">乙东</button>
         <button class="league-chip" data-league="yiWest">乙西</button>
       </div>
@@ -510,7 +512,8 @@
         <button class="league-chip active" data-league="super">超级</button>
         <button class="league-chip" data-league="jiaEast">甲东</button>
         <button class="league-chip" data-league="jiaWest">甲西</button>
-        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>`n        <button class="league-chip yiAll-btn" data-league="yiAll">乙级全队</button>
+        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>
+        <button class="league-chip yiAll-btn" data-league="yiAll">乙级全队</button>
         <button class="league-chip" data-league="yiEast">乙东</button>
         <button class="league-chip" data-league="yiWest">乙西</button>
         <button class="league-chip cup-chip" data-cup="championsCup">🏆冠军杯</button>
@@ -530,7 +533,8 @@
         <button class="league-chip active" data-league="super">超级</button>
         <button class="league-chip" data-league="jiaEast">甲东</button>
         <button class="league-chip" data-league="jiaWest">甲西</button>
-        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>`n        <button class="league-chip yiAll-btn" data-league="yiAll">乙级全队</button>
+        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>
+        <button class="league-chip yiAll-btn" data-league="yiAll">乙级全队</button>
         <button class="league-chip" data-league="yiEast">乙东</button>
         <button class="league-chip" data-league="yiWest">乙西</button>
         <button class="league-chip cup-chip" data-cup="championsCup">🏆冠军杯</button>
@@ -638,7 +642,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 467 };
+const APP_VERSION = { major: 1, minor: 0, patch: 468 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -650,7 +654,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  {v:'v1.0.467',d:'2026-07-14',c:'云端同步后也清空转会记录，防止云端旧数据覆盖本地清空'},{v:'v1.0.467',d:'2026-07-14',c:'清空63赛季转入/转出球员记录'},{v:'v1.0.467',d:'2026-07-14',c:'检测state.teams与PLAYERS_DB球队名不匹配时自动initData重建'},{v:'v1.0.467',d:'2026-07-14',c:'SW改名为sw2.js破解缓存死锁+强制清理旧缓存'},{v:'v1.0.467',d:'2026-07-14',c:'syncPlayersFromDB改为覆盖模式，用PLAYERS_DB直接替换球队球员'},{v:'v1.0.467',d:'2026-07-14',c:'乙级24队球员名单更新（63赛季），全60队齐'},{v:'v1.0.467',d:'2026-07-14',c:'甲级24队球员名单更新（63赛季）'},{v:'v1.0.467',d:'2026-07-14',c:'超级联赛12队球员名单更新（63赛季）'},{v:'v1.0.467',d:'2026-07-13',c:'62赛季球员名单迁移到63赛季（自动迁移函数）'},{v:'v1.0.467',d:'2026-07-13',c:'修复归档后新赛季球队数据为空问题（initData调用缺失）'},{v:'v1.0.467',d:'2026-07-13',c:'63赛季升降级球队名单更新+修复super保留字解析问题'},{v:'v1.0.467',d:'2026-07-13',c:'新增乙级全队TAB（乙东+乙西共24队汇总视图）；63赛季球队数据经initData填充'},
+  {v:'v1.0.468',d:'2026-07-14',c:'修复HTML中`n字面量显示为换行符'},{v:'v1.0.468',d:'2026-07-14',c:'云端同步后也清空转会记录，防止云端旧数据覆盖本地清空'},{v:'v1.0.468',d:'2026-07-14',c:'清空63赛季转入/转出球员记录'},{v:'v1.0.468',d:'2026-07-14',c:'检测state.teams与PLAYERS_DB球队名不匹配时自动initData重建'},{v:'v1.0.468',d:'2026-07-14',c:'SW改名为sw2.js破解缓存死锁+强制清理旧缓存'},{v:'v1.0.468',d:'2026-07-14',c:'syncPlayersFromDB改为覆盖模式，用PLAYERS_DB直接替换球队球员'},{v:'v1.0.468',d:'2026-07-14',c:'乙级24队球员名单更新（63赛季），全60队齐'},{v:'v1.0.468',d:'2026-07-14',c:'甲级24队球员名单更新（63赛季）'},{v:'v1.0.468',d:'2026-07-14',c:'超级联赛12队球员名单更新（63赛季）'},{v:'v1.0.468',d:'2026-07-13',c:'62赛季球员名单迁移到63赛季（自动迁移函数）'},{v:'v1.0.468',d:'2026-07-13',c:'修复归档后新赛季球队数据为空问题（initData调用缺失）'},{v:'v1.0.468',d:'2026-07-13',c:'63赛季升降级球队名单更新+修复super保留字解析问题'},{v:'v1.0.468',d:'2026-07-13',c:'新增乙级全队TAB（乙东+乙西共24队汇总视图）；63赛季球队数据经initData填充'},
   {v:'v1.0.453',d:'2026-07-13',c:'修复甲级全队按钮63赛季不显示（CSS覆盖JS display:empty）'},
   {v:'v1.0.452',d:'2026-07-13',c:'甲级全队TAB仅在63赛季显示，62赛季默认隐藏'},
   {v:'v1.0.451',d:'2026-07-13',c:'新增甲级全队TAB（甲东+甲西共36队）；超级12队更新阵容（去Barcelona/Liverpool/River，增Fulham/Hamburger SV/Wrexham）'},
