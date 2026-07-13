@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.454';
+    var _curVer = '1.0.455';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -638,7 +638,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 454 };
+const APP_VERSION = { major: 1, minor: 0, patch: 455 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -650,6 +650,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  {v:'v1.0.455',d:'2026-07-13',c:'63赛季升降级球队名单更新：甲级全队/乙级全队按新赛季名单整理（甲东/甲西/乙东/乙西全部替换）'},
   {v:'v1.0.454',d:'2026-07-13',c:'新增乙级全队TAB（乙东+乙西共24队汇总视图）；63赛季球队数据经initData填充'},
   {v:'v1.0.453',d:'2026-07-13',c:'修复甲级全队按钮63赛季不显示（CSS覆盖JS display:empty）'},
   {v:'v1.0.452',d:'2026-07-13',c:'甲级全队TAB仅在63赛季显示，62赛季默认隐藏'},
@@ -983,10 +984,10 @@ const POSITION_NAMES = { GK: '门将', DF: '后卫', MF: '中场', FW: '前锋' 
 
 const TEAM_NAMES = {
   super: ['A. Bilbao','Arsenal','Aston Villa','Benfica','FC Bayern','Fulham','Hamburger SV','Lazio','Man City','Palmeiras','Paris SG','Wrexham'],
-  jiaEast: ['1860 Munchen','Aberdeen','AS Roma','Atl. Tucuman','Dortmund','Fulham','Hertha BSC','Liverpool','Marseille','Monaco','Newcastle','Nottingham Forest'],
-  jiaWest: ['Ajax','Brighton','Chelsea','Everton','Fiorentina','Frankfurt','Genk','Hamburger SV','Lazio','Leicester','RC Lens','Schalke'],
-  yiEast: ['A. Madrid','Asante Kotoko','Como','FC Porto','Leverkusen','Oriental Dragon','R. Madrid','Stuttgart','Sunderland','Tottenham','青岛海神','上海申花'],
-  yiWest: ['AC Milan','Atalanta','Celtic','FC Koln','Flamengo','Inter','Man Utd','Napoli','PSV','Sporting','West Ham','Wolfsburg']
+  jiaEast: ['1860 Munchen','Aberdeen','A. Madrid','Barcelona','Hertha BSC','Juventus','Liverpool','Marseille','Monaco','Nottingham Forest','River','Tottenham'],
+  jiaWest: ['Ajax','Atalanta','Brighton','Everton','Fiorentina','Flamengo','Frankfurt','Inter','Leicester','Napoli','RC Lens','Schalke'],
+  yiEast: ['AS Roma','Atl. Tucuman','Dortmund','Newcastle','Como','FC Porto','Leverkusen','Oriental Dragon','R. Madrid','Stuttgart','Sunderland','青岛海神'],
+  yiWest: ['AC Milan','Asante Kotoko','Celtic','Chelsea','FC Koln','Genk','Man Utd','PSV','Sporting','West Ham','Wolfsburg','上海申花']
 };
 
 // Team logos from Transfermarkt CDN
@@ -1948,9 +1949,7 @@ const LEAGUE_FIXTURES = {
     // 第22轮
     [{h:6,a:2},{h:9,a:0},{h:8,a:4},{h:3,a:7},{h:5,a:10},{h:1,a:11}]
   ],
-  jiaEast: [
-    // 第1轮
-    [{h:0,a:5},{h:1,a:3},{h:11,a:10},{h:7,a:8},{h:6,a:2},{h:4,a:9}],
+  jiaEast: ['1860 Munchen','Aberdeen','A. Madrid','Barcelona','Hertha BSC','Juventus','Liverpool','Marseille','Monaco','Nottingham Forest','River','Tottenham'],
     // 第2轮
     [{h:5,a:0},{h:3,a:1},{h:10,a:11},{h:8,a:7},{h:2,a:6},{h:9,a:4}],
     // 第3轮
@@ -1994,9 +1993,7 @@ const LEAGUE_FIXTURES = {
     // 第22轮
     [{h:1,a:0},{h:11,a:3},{h:7,a:10},{h:6,a:8},{h:4,a:2},{h:9,a:5}]
   ],
-  jiaWest: [
-    // 第1轮
-    [{h:1,a:9},{h:6,a:11},{h:7,a:0},{h:8,a:5},{h:3,a:4},{h:10,a:2}],
+  jiaWest: ['Ajax','Atalanta','Brighton','Everton','Fiorentina','Flamengo','Frankfurt','Inter','Leicester','Napoli','RC Lens','Schalke'],
     // 第2轮
     [{h:9,a:1},{h:11,a:6},{h:0,a:7},{h:5,a:8},{h:4,a:3},{h:2,a:10}],
     // 第3轮
@@ -2040,9 +2037,7 @@ const LEAGUE_FIXTURES = {
     // 第22轮
     [{h:6,a:1},{h:7,a:11},{h:8,a:0},{h:3,a:5},{h:10,a:4},{h:2,a:9}]
   ],
-yiEast: [
-    // 第1轮
-    [{h:4,a:6},{h:7,a:10},{h:0,a:1},{h:9,a:3},{h:5,a:8},{h:2,a:11}],
+yiEast: ['AS Roma','Atl. Tucuman','Dortmund','Newcastle','Como','FC Porto','Leverkusen','Oriental Dragon','R. Madrid','Stuttgart','Sunderland','青岛海神'],
     // 第2轮
     [{h:6,a:4},{h:10,a:7},{h:1,a:0},{h:3,a:9},{h:8,a:5},{h:11,a:2}],
     // 第3轮
@@ -2086,9 +2081,7 @@ yiEast: [
     // 第22轮
     [{h:7,a:4},{h:0,a:10},{h:9,a:1},{h:5,a:3},{h:2,a:8},{h:11,a:6}]
   ],
-yiWest: [
-    // 第1轮
-    [{h:11,a:10},{h:1,a:9},{h:7,a:8},{h:6,a:4},{h:3,a:5},{h:2,a:0}],
+yiWest: ['AC Milan','Asante Kotoko','Celtic','Chelsea','FC Koln','Genk','Man Utd','PSV','Sporting','West Ham','Wolfsburg','上海申花'],
     // 第2轮
     [{h:10,a:11},{h:9,a:1},{h:8,a:7},{h:4,a:6},{h:5,a:3},{h:0,a:2}],
     // 第3轮
