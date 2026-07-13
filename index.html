@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.462';
+    var _curVer = '1.0.463';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -638,7 +638,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 462 };
+const APP_VERSION = { major: 1, minor: 0, patch: 463 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -650,7 +650,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  {v:'v1.0.462',d:'2026-07-14',c:'乙级24队球员名单更新（63赛季），全60队齐'},{v:'v1.0.462',d:'2026-07-14',c:'甲级24队球员名单更新（63赛季）'},{v:'v1.0.462',d:'2026-07-14',c:'超级联赛12队球员名单更新（63赛季）'},{v:'v1.0.462',d:'2026-07-13',c:'62赛季球员名单迁移到63赛季（自动迁移函数）'},{v:'v1.0.462',d:'2026-07-13',c:'修复归档后新赛季球队数据为空问题（initData调用缺失）'},{v:'v1.0.462',d:'2026-07-13',c:'63赛季升降级球队名单更新+修复super保留字解析问题'},{v:'v1.0.462',d:'2026-07-13',c:'新增乙级全队TAB（乙东+乙西共24队汇总视图）；63赛季球队数据经initData填充'},
+  {v:'v1.0.463',d:'2026-07-14',c:'syncPlayersFromDB改为覆盖模式，用PLAYERS_DB直接替换球队球员'},{v:'v1.0.463',d:'2026-07-14',c:'乙级24队球员名单更新（63赛季），全60队齐'},{v:'v1.0.463',d:'2026-07-14',c:'甲级24队球员名单更新（63赛季）'},{v:'v1.0.463',d:'2026-07-14',c:'超级联赛12队球员名单更新（63赛季）'},{v:'v1.0.463',d:'2026-07-13',c:'62赛季球员名单迁移到63赛季（自动迁移函数）'},{v:'v1.0.463',d:'2026-07-13',c:'修复归档后新赛季球队数据为空问题（initData调用缺失）'},{v:'v1.0.463',d:'2026-07-13',c:'63赛季升降级球队名单更新+修复super保留字解析问题'},{v:'v1.0.463',d:'2026-07-13',c:'新增乙级全队TAB（乙东+乙西共24队汇总视图）；63赛季球队数据经initData填充'},
   {v:'v1.0.453',d:'2026-07-13',c:'修复甲级全队按钮63赛季不显示（CSS覆盖JS display:empty）'},
   {v:'v1.0.452',d:'2026-07-13',c:'甲级全队TAB仅在63赛季显示，62赛季默认隐藏'},
   {v:'v1.0.451',d:'2026-07-13',c:'新增甲级全队TAB（甲东+甲西共36队）；超级12队更新阵容（去Barcelona/Liverpool/River，增Fulham/Hamburger SV/Wrexham）'},
@@ -3277,57 +3277,48 @@ function recalculateAllPlayerStats(sd) {
 // 将PLAYERS_DB中新增的球员安全合并到现有state，不破坏比赛数据/转会记录
 function syncPlayersFromDB() {
   if (!state.teams || state.teams.length < 60) { console.log('[SYNC] Skip: state.teams not ready'); return; }
-  let totalSynced = 0;
-  
-  // 全局已存在uid（防止已转会到他队的球员被加回原队，导致uid重复）
-  const globalUids = new Set();
-  state.teams.forEach(t => (t.players || []).forEach(p => globalUids.add(String(p.uid))));
+  let totalReplaced = 0;
+  let totalRemoved = 0;
 
   for (const team of state.teams) {
     const dbPlayers = PLAYERS_DB[team.name];
     if (!dbPlayers || dbPlayers.length === 0) continue;
-    
-    // 获取state中已有的uid集合
-    const existingUids = new Set(team.players.map(p => String(p.uid)));
-    
-    // 获取已解约到公海和已转出球员的uid（防止反复注入）
-    const openSeaUids = new Set((state.openSeaPlayers || []).map(p => String(p.uid)));
-    const transferredUids = new Set((state.pendingTransfers || []).filter(t => (t.status === 'processed' || t.status === 'completed') && t.fromTeamId === team.id).map(t => String(t.playerUid)));
-    
-    // 找出PLAYERS_DB中有但state中没有的球员（排除已解约和已转出）
-    const missing = dbPlayers.filter(p => !existingUids.has(String(p.uid)) && !openSeaUids.has(String(p.uid)) && !transferredUids.has(String(p.uid)) && !globalUids.has(String(p.uid)));
-    
-    if (missing.length > 0) {
-      // 计算下一个可用号码
-      const maxNum = Math.max.apply(null, [0].concat(team.players.map(function(p) { return p.number || 0; })));
-      
-      missing.forEach(function(p, idx) {
-        team.players.push({
-          id: team.id + '_' + p.uid,
-          uid: p.uid,
-          name: p.name,
-          number: maxNum + idx + 1,
-          position: 'FW',
-          age: p.age || 18.0,
-          releaseClause: p.releaseClause || 0,
-          goals: 0, assists: 0, rating: 0, gamesPlayed: 0, motmCount: 0
-        });
-      });
-      totalSynced += missing.length;
-      console.log('[SYNC] ' + team.name + ': +' + missing.length + ' players (' + missing.map(function(p) { return p.name; }).join(', ') + ')');
+
+    // 保留旧球员的比赛统计数据（goals/assists/rating/gamesPlayed/motmCount）
+    const oldStats = {};
+    for (const p of (team.players || [])) {
+      oldStats[String(p.uid)] = {
+        goals: p.goals || 0, assists: p.assists || 0, rating: p.rating || 0,
+        gamesPlayed: p.gamesPlayed || 0, motmCount: p.motmCount || 0
+      };
     }
-  }
-  
-  if (totalSynced > 0) {
-    console.log('[SYNC] Total: ' + totalSynced + ' new players synced from PLAYERS_DB');
-  } else {
-    console.log('[SYNC] All PLAYERS_DB players already in state, nothing to sync');
+
+    const oldCount = (team.players || []).length;
+
+    // 直接用 PLAYERS_DB 覆盖球员列表
+    team.players = dbPlayers.map(function(p, idx) {
+      const uid = String(p.uid);
+      const stats = oldStats[uid] || { goals: 0, assists: 0, rating: 0, gamesPlayed: 0, motmCount: 0 };
+      return {
+        id: team.id + '_' + p.uid,
+        uid: p.uid,
+        name: p.name,
+        number: idx + 1,
+        position: 'FW',
+        age: p.age || 18.0,
+        releaseClause: p.releaseClause || 0,
+        goals: stats.goals, assists: stats.assists, rating: stats.rating,
+        gamesPlayed: stats.gamesPlayed, motmCount: stats.motmCount
+      };
+    });
+
+    totalReplaced += team.players.length;
+    totalRemoved += (oldCount - team.players.length);
+    console.log('[SYNC] ' + team.name + ': ' + oldCount + ' -> ' + team.players.length + ' players');
   }
 
-  // 主动清理：从所有球队中移除已在公海的球员（不触碰转会球员——转会由executeTransfer管理）
+  // 清理公海球员
   const allOpenSeaUids = new Set((state.openSeaPlayers || []).map(p => String(p.uid)));
-  let totalCleaned = 0;
-
   for (const team of state.teams) {
     const beforeCount = team.players.length;
     team.players = team.players.filter(p => {
@@ -3335,16 +3326,11 @@ function syncPlayersFromDB() {
       if (allOpenSeaUids.has(uid)) { console.log('[CLEAN] Removed ' + p.name + ' from ' + team.name + ' (in openSea)'); return false; }
       return true;
     });
-    if (team.players.length < beforeCount) totalCleaned += (beforeCount - team.players.length);
+    if (team.players.length < beforeCount) totalRemoved += (beforeCount - team.players.length);
   }
 
-  if (totalCleaned > 0) {
-    console.log('[CLEAN] Total: ' + totalCleaned + ' players removed (in openSea)');
-  }
-
-  if (totalSynced > 0 || totalCleaned > 0) {
-    saveState();
-  }
+  console.log('[SYNC] Total: ' + totalReplaced + ' players replaced, ' + totalRemoved + ' removed');
+  saveState();
 }
 
 // ============ REPLAY TRANSFERS ============
