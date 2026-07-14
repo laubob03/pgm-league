@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.473';
+    var _curVer = '1.0.474';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -642,7 +642,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 473 };
+const APP_VERSION = { major: 1, minor: 0, patch: 474 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -654,7 +654,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  {v:'v1.0.473',d:'2026-07-14',c:'Leeds正式启用本地671.webp队徽(文件已提交CDN)'},{v:'v1.0.473',d:'2026-07-14',c:'Leeds队徽改回富勒姆原图(631)，671推送遗漏未生效'},{v:'v1.0.473',d:'2026-07-14',c:'Leeds队徽更正为正确图(631→671)，沿用Fulham球员'},{v:'v1.0.473',d:'2026-07-14',c:'超级联赛球队Fulham重命名为Leeds(沿用Fulham球员与队徽631)'},{v:'v1.0.473',d:'2026-07-14',c:'Fulham队徽更正为真实Transfermarkt ID(654→631)'},{v:'v1.0.473',d:'2026-07-14',c:'修复HTML中`n字面量显示为换行符'},
+  {v:'v1.0.474',d:'2026-07-14',c:'全量更新63赛季60队主教练名单(清空助理教练，统一从COACH_ASSIGN读取)'},{v:'v1.0.474',d:'2026-07-14',c:'Leeds正式启用本地671.webp队徽(文件已提交CDN)'},{v:'v1.0.474',d:'2026-07-14',c:'Leeds队徽改回富勒姆原图(631)，671推送遗漏未生效'},{v:'v1.0.474',d:'2026-07-14',c:'Leeds队徽更正为正确图(631→671)，沿用Fulham球员'},{v:'v1.0.474',d:'2026-07-14',c:'超级联赛球队Fulham重命名为Leeds(沿用Fulham球员与队徽631)'},{v:'v1.0.474',d:'2026-07-14',c:'Fulham队徽更正为真实Transfermarkt ID(654→631)'},{v:'v1.0.474',d:'2026-07-14',c:'修复HTML中`n字面量显示为换行符'},
   {v:'v1.0.467',d:'2026-07-14',c:'云端同步后清空转会记录+清空63赛季转入/转出+球队名不匹配自动initData重建+SW缓存死锁修复+63赛季60队1746人全量更新'},
   {v:'v1.0.453',d:'2026-07-13',c:'修复甲级全队按钮63赛季不显示（CSS覆盖JS display:empty）'},
   {v:'v1.0.452',d:'2026-07-13',c:'甲级全队TAB仅在63赛季显示，62赛季默认隐藏'},
@@ -3207,6 +3207,22 @@ function loadState() {
   const archivedSeasons = localStorage.getItem('pgm_football_seasons_archive');
   if (archivedSeasons && (!state.seasons || Object.keys(state.seasons).length === 0)) {
     try { state.seasons = JSON.parse(archivedSeasons); saveState(); } catch(e) {}
+
+  // ★ v1.0.474: 主教练全量回填（覆盖线上旧数据，无需手动 initData）
+  if (typeof COACH_ASSIGN !== 'undefined' && state.teams) {
+    state.teams.forEach(t => {
+      if (COACH_ASSIGN[t.name] !== undefined) { t.coach = COACH_ASSIGN[t.name]; t.assistantCoaches = []; }
+    });
+    if (state.seasons) {
+      Object.keys(state.seasons).forEach(sid => {
+        const sd = state.seasons[sid];
+        if (sd && sd.teams) sd.teams.forEach(t => {
+          if (COACH_ASSIGN[t.name] !== undefined) { t.coach = COACH_ASSIGN[t.name]; t.assistantCoaches = []; }
+        });
+      });
+    }
+    saveState();
+  }
   }
 }
 
@@ -3487,6 +3503,69 @@ function dedupePlayers() {
 
 
 // ============ INIT DATA ============
+const COACH_ASSIGN = {
+  'A. Bilbao': '撒丁',
+  'Arsenal': 'base',
+  'Aston Villa': '小罗',
+  'Benfica': 'mK',
+  'FC Bayern': '长臂猿',
+  'Leeds': '达达',
+  'Hamburger SV': '鲁指导',
+  'Lazio': '紫霞狼',
+  'Man City': 'Hooverga',
+  'Palmeiras': 'King',
+  'Paris SG': '包子',
+  'Wrexham': 'bobo',
+  '1860 Munchen': '苟',
+  'Aberdeen': '布指导',
+  'A. Madrid': '咖啡',
+  'Barcelona': 'fzjjjjw',
+  'Hertha BSC': '小君',
+  'Juventus': '史丁比',
+  'Liverpool': '大力娃',
+  'Marseille': '小沃',
+  'Monaco': 'ShinYeefun',
+  'Nottingham Forest': '卡拉',
+  'River': 'fza166',
+  'Tottenham': 'J.K',
+  'Ajax': '老虎',
+  'Atalanta': '边缘的光',
+  'Brighton': '',
+  'Everton': '酱油',
+  'Fiorentina': '暗影',
+  'Flamengo': '骚傲',
+  'Frankfurt': 'Emanon',
+  'Inter': '开朗',
+  'Leicester': '小时光',
+  'Napoli': '可乐',
+  'RC Lens': '满意',
+  'Schalke': '狗不理包子',
+  'AS Roma': 'leeds25',
+  'Atl. Tucuman': 'HenryPang',
+  'Dortmund': '香克斯',
+  'Newcastle': '我和你拼了',
+  'Como': '胖虎',
+  'FC Porto': '三筒K',
+  'Leverkusen': 'Vanish',
+  'Oriental Dragon': '青蛙',
+  'R. Madrid': '恶魔',
+  'Stuttgart': '丁真',
+  'Sunderland': 'N德',
+  '青岛海神': '海神',
+  'AC Milan': '冰山',
+  'Asante Kotoko': '雅乐臣',
+  'Celtic': '斯潘',
+  'Chelsea': '奥亚尔',
+  'FC Koln': 'acmxtb',
+  'Genk': '男人',
+  'Man Utd': '书生',
+  'PSV': '大头',
+  'Sporting': '许轩',
+  'West Ham': '克瓜',
+  'Wolfsburg': 'Joshua King',
+  '上海申花': 'WT',
+};
+
 function initData() {
   state.teams = [];
   let teamId = 1;
@@ -3511,30 +3590,9 @@ function initData() {
         motmCount: 0
       }));
 
-      // 特殊球队教练配置
-      let coach = COACH_NAMES[i % COACH_NAMES.length];
-      let assistantCoaches = [];
-      if (teamName === 'Tottenham') {
-        coach = 'J.K';
-        assistantCoaches = ['TL'];
-      } else if (teamName === 'Wrexham') {
-        coach = 'Bobo';
-        assistantCoaches = [];
-      } else if (teamName === 'Aberdeen') {
-        coach = '苟';
-        assistantCoaches = ['曾总'];
-      } else if (teamName === 'Aston Villa') {
-        coach = '小罗';
-        assistantCoaches = [];
-      } else if (teamName === 'Barcelona') {
-        coach = '四嫂';
-        assistantCoaches = [];
-      } else {
-        const assistantCount = 1 + (teamId % 3);
-        for (let a = 0; a < assistantCount; a++) {
-          assistantCoaches.push(ASSISTANT_COACH_NAMES[(teamId * 3 + a) % ASSISTANT_COACH_NAMES.length]);
-        }
-      }
+      // v1.0.474: 主教练统一从 COACH_ASSIGN 读取，助理教练清空
+      const coach = COACH_ASSIGN[teamName] || '';
+      const assistantCoaches = [];
 
       state.teams.push({
         id: `t${teamId}`,
