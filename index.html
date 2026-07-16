@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.479';
+    var _curVer = '1.0.480';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -642,7 +642,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 479 };
+const APP_VERSION = { major: 1, minor: 0, patch: 480 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -654,7 +654,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  {v:'v1.0.479',d:'2026-07-16',c:'修复MOTM归属判断逻辑：赛程中最佳球员固定显示在客队侧+榜单MOTM不显示'},{v:'v1.0.479',d:'2026-07-16',c:'修复队名迁移(Brighton→La Coruna/FC Porto→FC Nurnberg/Fulham→Leeds)后旧localStorage队徽不显示'},{v:'v1.0.479',d:'2026-07-15',c:'FC Porto→FC Nurnberg(纽伦堡)队名/队徽/球员全量替换'},{v:'v1.0.479',d:'2026-07-15',c:'Brighton→La Coruna(拉科鲁尼亚)队名/队徽/球员全量替换'},{v:'v1.0.479',d:'2026-07-14',c:'修正Brighton主教练为7指导(原Briahton拼写已归正)'},{v:'v1.0.479',d:'2026-07-14',c:'全量更新63赛季60队主教练名单(清空助理教练，统一从COACH_ASSIGN读取)'},{v:'v1.0.479',d:'2026-07-14',c:'Leeds正式启用本地671.webp队徽(文件已提交CDN)'},{v:'v1.0.479',d:'2026-07-14',c:'Leeds队徽改回富勒姆原图(631)，671推送遗漏未生效'},{v:'v1.0.479',d:'2026-07-14',c:'Leeds队徽更正为正确图(631→671)，沿用Fulham球员'},{v:'v1.0.479',d:'2026-07-14',c:'超级联赛球队Fulham重命名为Leeds(沿用Fulham球员与队徽631)'},{v:'v1.0.479',d:'2026-07-14',c:'Fulham队徽更正为真实Transfermarkt ID(654→631)'},{v:'v1.0.479',d:'2026-07-14',c:'修复HTML中`n字面量显示为换行符'},
+  {v:'v1.0.480',d:'2026-07-16',c:'修复足总杯交换显示时scorers/assists的teamId存储错误导致榜单不显示进球/助攻'},{v:'v1.0.480',d:'2026-07-16',c:'修复MOTM归属判断逻辑：赛程中最佳球员固定显示在客队侧+榜单MOTM不显示'},{v:'v1.0.480',d:'2026-07-16',c:'修复队名迁移(Brighton→La Coruna/FC Porto→FC Nurnberg/Fulham→Leeds)后旧localStorage队徽不显示'},{v:'v1.0.480',d:'2026-07-15',c:'FC Porto→FC Nurnberg(纽伦堡)队名/队徽/球员全量替换'},{v:'v1.0.480',d:'2026-07-15',c:'Brighton→La Coruna(拉科鲁尼亚)队名/队徽/球员全量替换'},{v:'v1.0.480',d:'2026-07-14',c:'修正Brighton主教练为7指导(原Briahton拼写已归正)'},{v:'v1.0.480',d:'2026-07-14',c:'全量更新63赛季60队主教练名单(清空助理教练，统一从COACH_ASSIGN读取)'},{v:'v1.0.480',d:'2026-07-14',c:'Leeds正式启用本地671.webp队徽(文件已提交CDN)'},{v:'v1.0.480',d:'2026-07-14',c:'Leeds队徽改回富勒姆原图(631)，671推送遗漏未生效'},{v:'v1.0.480',d:'2026-07-14',c:'Leeds队徽更正为正确图(631→671)，沿用Fulham球员'},{v:'v1.0.480',d:'2026-07-14',c:'超级联赛球队Fulham重命名为Leeds(沿用Fulham球员与队徽631)'},{v:'v1.0.480',d:'2026-07-14',c:'Fulham队徽更正为真实Transfermarkt ID(654→631)'},{v:'v1.0.480',d:'2026-07-14',c:'修复HTML中`n字面量显示为换行符'},
   {v:'v1.0.467',d:'2026-07-14',c:'云端同步后清空转会记录+清空63赛季转入/转出+球队名不匹配自动initData重建+SW缓存死锁修复+63赛季60队1746人全量更新'},
   {v:'v1.0.453',d:'2026-07-13',c:'修复甲级全队按钮63赛季不显示（CSS覆盖JS display:empty）'},
   {v:'v1.0.452',d:'2026-07-13',c:'甲级全队TAB仅在63赛季显示，62赛季默认隐藏'},
@@ -3231,7 +3231,7 @@ function loadState() {
   if (archivedSeasons && (!state.seasons || Object.keys(state.seasons).length === 0)) {
     try { state.seasons = JSON.parse(archivedSeasons); saveState(); } catch(e) {}
 
-  // ★ v1.0.479: 主教练全量回填（覆盖线上旧数据，无需手动 initData）
+  // ★ v1.0.480: 主教练全量回填（覆盖线上旧数据，无需手动 initData）
   if (typeof COACH_ASSIGN !== 'undefined' && state.teams) {
     state.teams.forEach(t => {
       if (COACH_ASSIGN[t.name] !== undefined) { t.coach = COACH_ASSIGN[t.name]; t.assistantCoaches = []; }
@@ -3613,7 +3613,7 @@ function initData() {
         motmCount: 0
       }));
 
-      // v1.0.479: 主教练统一从 COACH_ASSIGN 读取，助理教练清空
+      // v1.0.480: 主教练统一从 COACH_ASSIGN 读取，助理教练清空
       const coach = COACH_ASSIGN[teamName] || '';
       const assistantCoaches = [];
 
@@ -6407,10 +6407,10 @@ function submitCupMatchResult(matchId, cupId) {
     displayToActualTeamId[match.awayTeam] = match.awayTeam;
   }
   const cupInvolvedPlayers = new Set();
-  document.querySelectorAll('[data-goal="home"]').forEach(inp => { const g = parseInt(inp.value) || 0; if (g > 0) { const displayTeamId = inp.dataset.pid; const actualTeamId = displayToActualTeamId[displayTeamId] || match.homeTeam; const p = state.teams.find(t => t.id === actualTeamId)?.players.find(x => x.id === displayTeamId); if (p) { p.goals = (p.goals || 0) + g; cupInvolvedPlayers.add(p.id); for (let i = 0; i < g; i++) match.scorers.push({ playerId: displayTeamId, teamId: actualTeamId, minute: null }); } } });
-  document.querySelectorAll('[data-goal="away"]').forEach(inp => { const g = parseInt(inp.value) || 0; if (g > 0) { const displayTeamId = inp.dataset.pid; const actualTeamId = displayToActualTeamId[displayTeamId] || match.awayTeam; const p = state.teams.find(t => t.id === actualTeamId)?.players.find(x => x.id === displayTeamId); if (p) { p.goals = (p.goals || 0) + g; cupInvolvedPlayers.add(p.id); for (let i = 0; i < g; i++) match.scorers.push({ playerId: displayTeamId, teamId: actualTeamId, minute: null }); } } });
-  document.querySelectorAll('[data-ast="home"]').forEach(inp => { const a = parseInt(inp.value) || 0; if (a > 0) { const displayTeamId = inp.dataset.pid; const actualTeamId = displayToActualTeamId[displayTeamId] || match.homeTeam; const p = state.teams.find(t => t.id === actualTeamId)?.players.find(x => x.id === displayTeamId); if (p) { p.assists = (p.assists || 0) + a; cupInvolvedPlayers.add(p.id); for (let i = 0; i < a; i++) match.assists.push({ playerId: displayTeamId, teamId: actualTeamId }); } } });
-  document.querySelectorAll('[data-ast="away"]').forEach(inp => { const a = parseInt(inp.value) || 0; if (a > 0) { const displayTeamId = inp.dataset.pid; const actualTeamId = displayToActualTeamId[displayTeamId] || match.awayTeam; const p = state.teams.find(t => t.id === actualTeamId)?.players.find(x => x.id === displayTeamId); if (p) { p.assists = (p.assists || 0) + a; cupInvolvedPlayers.add(p.id); for (let i = 0; i < a; i++) match.assists.push({ playerId: displayTeamId, teamId: actualTeamId }); } } });
+  document.querySelectorAll('[data-goal="home"]').forEach(inp => { const g = parseInt(inp.value) || 0; if (g > 0) { const pid = inp.dataset.pid; const ownerTeam = state.teams.find(t => t.players && t.players.find(x => x.id === pid)); const actualTeamId = ownerTeam ? ownerTeam.id : (displayToActualTeamId[displayHomeTeam.id] || match.homeTeam); const p = ownerTeam ? ownerTeam.players.find(x => x.id === pid) : null; if (p) { p.goals = (p.goals || 0) + g; cupInvolvedPlayers.add(p.id); for (let i = 0; i < g; i++) match.scorers.push({ playerId: pid, teamId: actualTeamId, minute: null }); } } });
+  document.querySelectorAll('[data-goal="away"]').forEach(inp => { const g = parseInt(inp.value) || 0; if (g > 0) { const pid = inp.dataset.pid; const ownerTeam = state.teams.find(t => t.players && t.players.find(x => x.id === pid)); const actualTeamId = ownerTeam ? ownerTeam.id : (displayToActualTeamId[displayAwayTeam.id] || match.awayTeam); const p = ownerTeam ? ownerTeam.players.find(x => x.id === pid) : null; if (p) { p.goals = (p.goals || 0) + g; cupInvolvedPlayers.add(p.id); for (let i = 0; i < g; i++) match.scorers.push({ playerId: pid, teamId: actualTeamId, minute: null }); } } });
+  document.querySelectorAll('[data-ast="home"]').forEach(inp => { const a = parseInt(inp.value) || 0; if (a > 0) { const pid = inp.dataset.pid; const ownerTeam = state.teams.find(t => t.players && t.players.find(x => x.id === pid)); const actualTeamId = ownerTeam ? ownerTeam.id : (displayToActualTeamId[displayHomeTeam.id] || match.homeTeam); const p = ownerTeam ? ownerTeam.players.find(x => x.id === pid) : null; if (p) { p.assists = (p.assists || 0) + a; cupInvolvedPlayers.add(p.id); for (let i = 0; i < a; i++) match.assists.push({ playerId: pid, teamId: actualTeamId }); } } });
+  document.querySelectorAll('[data-ast="away"]').forEach(inp => { const a = parseInt(inp.value) || 0; if (a > 0) { const pid = inp.dataset.pid; const ownerTeam = state.teams.find(t => t.players && t.players.find(x => x.id === pid)); const actualTeamId = ownerTeam ? ownerTeam.id : (displayToActualTeamId[displayAwayTeam.id] || match.awayTeam); const p = ownerTeam ? ownerTeam.players.find(x => x.id === pid) : null; if (p) { p.assists = (p.assists || 0) + a; cupInvolvedPlayers.add(p.id); for (let i = 0; i < a; i++) match.assists.push({ playerId: pid, teamId: actualTeamId }); } } });
   // 统一为每个参与进球/助攻的球员 +1 gamesPlayed（而不是按进球数/助攻数累加）
   cupInvolvedPlayers.forEach(pid => {
     const p = [...homeTeam.players, ...awayTeam.players].find(x => x.id === pid);
