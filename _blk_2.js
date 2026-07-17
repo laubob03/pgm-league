@@ -1,648 +1,6 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <link rel="icon" type="image/png" sizes="192x192" href="unpackage/res/icons/192x192.png">
-  <!-- ★ v1.0.364: 强制清理 SW 缓存 — 无条件注销旧 SW 并清空所有 cache，只执行一次 -->
-  <script>
-  !function(){
-    var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.484';
-    if (!_fc || _fc !== _curVer) {
-      sessionStorage.setItem('pgm_force_clean', _curVer);
-      var tasks = [];
-      if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
-      if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
-      Promise.all(tasks).then(function(){
-        location.replace(location.href.split('?')[0].split('#')[0] + '?_fc=' + Date.now() + location.hash);
-      });
-      return; // 阻止后续脚本执行，等 reload
-    } else {
-      // 标记已清理，保持标记避免循环刷新
-    }
-  }();
-  </script>
-  <!-- 顶部版本检查：检测到新版本时弹出提示框，用户确认后才升级 -->
-  <script>
-  !function(){
-    // v1.0.358: 修复12强杯赛 container 致命bug——_c12SelectTeam/submitCupMatchResult12 写入 scheduleContent 而非 standingsContent，导致选队/录入比分后对阵图不刷新；修复 submitCupMatchResult12 中 inp.datasetpid 笔误
-    var _upgraded = sessionStorage.getItem('pgm_upgraded');
-    if (_upgraded) {
-      // 上一次是升级跳转来的，清除 SW 缓存并移除标记
-      sessionStorage.removeItem('pgm_upgraded');
-      Promise.resolve().then(function(){
-        var tasks = [];
-        if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
-        if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
-        return Promise.all(tasks);
-      }).then(function(){
-        var baseUrl = location.href.split('?')[0].split('#')[0];
-        var newUrl = baseUrl + '?_v=' + Date.now();
-        location.replace(newUrl);
-      });
-      return;
-    }
-    fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
-      // 公告条
-      if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
-      // 🛡️ 防止升级后循环弹框：刚完成升级则跳过本次检查
-      if(sessionStorage.getItem('pgm_upgraded')==='1'){ sessionStorage.removeItem('pgm_upgraded')
-      } else {
-      var needUpgrade=false
-      try{
-      var myV=0;try{var parts2='1.0.433'.split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
-      var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
-      var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
-      if(myV<minV) needUpgrade=true
-      }catch(e){}
-      if(needUpgrade){
-          // 创建升级提示框
-          var overlay = document.createElement('div');
-          overlay.id = 'versionUpdateOverlay';
-          overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999998;display:flex;align-items:center;justify-content:center;';
-          overlay.innerHTML = '<div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);">' +
-            '<div style="font-size:52px;margin-bottom:12px;">🚀</div>' +
-            '<div style="font-size:20px;font-weight:bold;color:#1B5E20;margin-bottom:6px;">发现新版本</div>' +
-            '<div style="font-size:13px;color:#666;margin-bottom:20px;line-height:1.7;">' +
-              '当前版本：v' + parts2.join('.') + '<br>' +
-              '最新版本：<b style="color:#e91e63;">v' + d.minVersion + '</b><br>' +
-              '点击下方按钮更新到最新版本' +
-            '</div>' +
-            '<button id="btnUpdateNow" style="width:100%;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;padding:13px 0;border-radius:50px;font-size:15px;font-weight:bold;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 12px rgba(27,94,32,0.35);">🚀 立即更新</button>' +
-            '<button id="btnUpdateLater" style="width:100%;background:#f5f5f5;color:#999;border:none;padding:11px 0;border-radius:50px;font-size:14px;cursor:pointer;">稍后再说</button>' +
-          '</div>';
-          document.body.appendChild(overlay);
 
-          // 立即更新按钮
-          document.getElementById('btnUpdateNow').onclick = function(){
-            var btn = this;
-            btn.disabled = true;
-            btn.textContent = '⏳ 正在清理缓存...';
-            // 先标记升级状态
-            try { sessionStorage.setItem('pgm_upgraded', '1'); } catch(e){}
-            var tasks = [];
-            if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
-            if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
-            Promise.all(tasks).then(function(){
-              var baseUrl = location.href.split('?')[0].split('#')[0];
-              var newUrl = baseUrl + '?_v=' + Date.now();
-              location.replace(newUrl);
-            }).catch(function(){
-              var baseUrl = location.href.split('?')[0].split('#')[0];
-              var newUrl = baseUrl + '?_v=' + Date.now();
-              location.replace(newUrl);
-            });
-          };
-
-          // 稍后再说按钮
-          document.getElementById('btnUpdateLater').onclick = function(){
-            overlay.remove();
-          };
-        }
-      }
-    }).catch(function(){})
-  }();
-  </script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#1B5E20">
-  <meta name="mobile-web-app-capable" content="yes">
-  <title>PGM足球经理联赛 by J.K</title>
-  <link rel="manifest" href="manifest.json">
-  <style>
-    :root{--primary:#1B5E20;--primary-dark:#0D3311;--primary-light:#4CAF50;--accent:#FFD700;--bg:#F5F5F5;--card:#f5f5f5;--text:#212121;--text-secondary:#757575;--border:#E0E0E0;--promotion:#4CAF50;--relegation:#F44336}
-    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-    .header{position:fixed;bottom:0;left:0;right:0;z-index:99;padding:0;pointer-events:none}
-    .nav-search-btn{background:none;border:none;color:rgba(255,255,255,0.8);font-size:15px;cursor:pointer;padding:1px;transition:color 0.2s;line-height:1}
-    .nav-search-btn:hover{color:#fff}
-    .header-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
-    .header-tabs::-webkit-scrollbar{display:none}
-    .tab-btn{background:rgba(255,255,255,0.12);border:none;color:rgba(255,255,255,0.75);padding:6px 16px;border-radius:16px;font-size:14px;font-weight:500;white-space:nowrap;cursor:pointer;transition:all 0.2s}
-    .tab-btn.active{background:white;color:var(--primary);font-weight:600}
-    .main-content{margin-top:48px;padding:0 12px;padding-bottom:50px}
-    .page{display:none}
-    .page.active{display:block}
-    .card{background:var(--card);border-radius:12px;padding:0 16px 12px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
-    .card-title{font-size:16px;font-weight:700;color:var(--primary);margin-bottom:4px;display:flex;align-items:center;gap:8px;padding-top:16px}
-    .stats-tabs{display:flex;gap:4px;border-bottom:1px solid var(--border)}
-    #statsPage .card:first-child{padding-bottom:0}
-    #statsPage .card:last-child{padding-top:0}
-    .stats-tab{padding:6px 12px;font-size:13px;font-weight:600;color:var(--text-secondary);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .2s}
-    .stats-tab:hover{color:var(--primary)}
-    .stats-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
-    .league-selector{display:flex;flex-wrap:wrap;gap:4px;padding:4px 0}
-    .league-selector::-webkit-scrollbar{display:none}
-    #schedulePage .card-title{padding:0 16px 0}
-    #schedulePage .league-selector{padding:4px 12px 12px}
-    #schedulePage .schedule-scroll-area{max-height:calc(100vh - 200px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#ccc transparent}
-    #schedulePage .schedule-scroll-area::-webkit-scrollbar{width:4px}
-    #schedulePage .schedule-scroll-area::-webkit-scrollbar-thumb{background:#ccc;border-radius:2px}
-    .league-chip{background:white;border:2px solid var(--border);border-radius:20px;padding:4px 12px;font-size:13px;white-space:nowrap;cursor:pointer;transition:all 0.2s}
-    .league-chip.active{background:#228B22;border-color:#228B22;color:white}
-    .league-chip.cup-chip{background:white}
-    .league-chip.cup-chip.active{background:#228B22;border-color:#228B22;color:white}
-    .league-chip.cup-chip:hover:not(.active){background:#f5f5f5}
-    .league-chip.cup-12-gold{background:linear-gradient(135deg,#fff8e7,#fff3cd);border-color:#e6c878;color:#7a5c00}
-    .league-chip.cup-12-gold.active{background:linear-gradient(135deg,#f5c842,#e6a800);border-color:#e6a800;color:#3d2000;text-shadow:0 1px 2px rgba(255,255,255,0.3)}
-    .league-chip.cup-12-gold:hover:not(.active){background:linear-gradient(135deg,#fff3cd,#ffe99a);border-color:#d4a843}
-    .league-chip.cup-12-teal{background:linear-gradient(135deg,#e8faf5,#d0f5eb);border-color:#4db6ac;color:#00695c}
-    .league-chip.cup-12-teal.active{background:linear-gradient(135deg,#26a69a,#00897b);border-color:#00897b;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.15)}
-    .league-chip.cup-12-teal:hover:not(.active){background:linear-gradient(135deg,#d0f5eb,#80cbc4);border-color:#26a69a}
-    .league-chip.cup-12-purple{background:linear-gradient(135deg,#f3e8ff,#ede0fa);border-color:#b39ddb;color:#4a148c}
-    .league-chip.cup-12-purple.active{background:linear-gradient(135deg,#7e57c2,#5e35b1);border-color:#5e35b1;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.2)}
-    .league-chip.jiaAll-btn{display:none}
-    .league-chip.yiAll-btn{display:none}
-    .league-chip.cup-12-purple:hover:not(.active){background:linear-gradient(135deg,#ede0fa,#d1c4e9);border-color:#7e57c2}
-    .standings-table{width:100%;border-collapse:collapse;font-size:13px}
-    .standings-table th{background:#228B22;color:white;padding:8px 4px;text-align:center;font-weight:600;font-size:13px}
-    .standings-table th.sortable{cursor:pointer;user-select:none}
-    .standings-table th.sortable:hover{background:var(--primary-light)}
-    .standings-table td{padding:10px 4px;text-align:center;border-bottom:1px solid var(--border)}
-    .standings-table tr:nth-child(even){background:#f8f8f8}
-    .standings-table .rank{font-weight:700;width:24px}
-    .standings-table .team-cell{text-align:left;display:flex;align-items:center;gap:6px;min-width:90px}
-    .standings-table .team-name{font-weight:500;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.team-name-clickable{font-weight:500;font-size:12px;cursor:pointer;color:var(--primary);text-decoration:underline;text-decoration-color:transparent;transition:all 0.2s}
-.team-name-clickable:hover{text-decoration-color:var(--primary)}
-    .promotion-bg{background:rgba(76,175,80,0.15)!important}
-    .promotion-playoff-bg{background:rgba(30,136,229,0.15)!important}
-    .relegation-bg{background:rgba(244,67,54,0.15)!important}
-    .team-list{display:grid;gap:4px}
-    .team-item{background:white;border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
-    .team-item:active{transform:scale(0.98);background:#f0f0f0}
-    .team-item-logo,.match-team-logo{width:32px;height:32px;object-fit:contain;border-radius:8px}
-    .team-item-info{flex:1}
-    .team-item-name{font-weight:600;font-size:15px;margin-bottom:2px}
-    .team-item-coach{font-size:12px;color:var(--text-secondary)}
-    .team-league-tag{font-size:10px;font-weight:500;background:var(--primary);color:white;padding:2px 6px;border-radius:10px;margin-left:6px}
-    .team-item-arrow{color:var(--text-secondary);font-size:18px;transition:transform 0.2s;display:inline-block}
-.team-card{background:white;border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.06)}
-.team-card .team-item{border-radius:0;box-shadow:none}
-.team-players{display:none;padding:0 14px 14px;background:#fafafa}
-.player-names{font-size:13px;line-height:1.8;color:var(--text)}
-.player-summary{font-size:11px;color:var(--text-secondary);margin-top:10px;text-align:center}
-    .match-round-title{font-size:14px;font-weight:800;color:#fff;background:linear-gradient(135deg,#1B5E20,#2E7D32,#43A047);border:none;margin:16px 0 10px;padding:8px 16px;border-radius:20px;text-align:center;letter-spacing:1px;box-shadow:0 3px 10px rgba(27,94,32,0.3)}
-    .match-card{background:transparent;border-radius:0;padding:12px 0;margin:0;border-bottom:1px solid #f0f0f0}
-    .match-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:var(--text-secondary)}
-    .match-status{padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
-    .match-status.pending{background:#FFF3E0;color:#E65100}
-    .match-status.completed{background:#E8F5E9;color:#2E7D32}
-    .match-teams{display:flex;align-items:center;justify-content:space-between;gap:4px}
-    .match-team{display:flex;align-items:center;gap:6px;flex:1}
-    .match-team.away{flex-direction:row-reverse;text-align:right}
-    .match-team-logo{width:32px;height:32px;object-fit:contain;border-radius:8px}
-    .match-team-name{font-weight:600;font-size:14px;max-width:75px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#1d1d1f}
-.match-team-name-full{font-weight:700;font-size:13px;white-space:normal;text-align:center}
-    .match-score{display:flex;align-items:center;gap:4px;font-size:18px;font-weight:700;color:#1d1d1f;padding:0 10px;font-variant-numeric:tabular-nums}
-    .match-score .dash{color:var(--text-secondary);font-weight:400}
-    .match-actions{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:8px}
-    .btn{padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;border:none;cursor:pointer;transition:all 0.2s}
-    .btn-primary{background:var(--primary);color:white}
-    .btn-primary:active{background:var(--primary-dark)}
-    .btn-secondary{background:var(--border);color:var(--text)}
-    .btn-full{width:100%}
-    .btn-small{padding:6px 14px;font-size:12px}
-    .stats-table{width:100%;border-collapse:collapse;font-size:13px}
-    .stats-table th{background:#228B22;color:white;padding:7px 8px;text-align:left;font-weight:600;font-size:12px}
-    .stats-table th.sortable{cursor:pointer;user-select:none}
-    .stats-table th.sortable:hover{opacity:0.85}
-    .stats-table td{padding:5px 8px;border-bottom:1px solid var(--border)}
-    .stats-rank{font-weight:700;color:var(--primary);width:30px}
-    .gold-medal{color:#FFD700;font-weight:700}
-    .silver-medal{color:#C0C0C0;font-weight:700}
-    .bronze-medal{color:#CD7F32;font-weight:700}
-    .bottom-nav{position:fixed;top:0;left:0;right:0;background:#228B22;display:flex;justify-content:space-between;align-items:center;padding:3px 6px;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
-    .nav-tabs{display:flex;gap:2.5px;flex:1;justify-content:center}
-    .nav-right{display:flex;align-items:center;gap:3px;flex-shrink:0}
-    .nav-right-info{display:flex;flex-direction:column;align-items:flex-end;gap:0;line-height:1.3}
-    .nav-center{display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0 2.5px}
-    .nav-team-logo{width:24px;height:24px;object-fit:contain;border-radius:6px;transition:transform .15s;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.2))}
-    .nav-team-logo:hover{transform:scale(1.15)}
-    .nav-item{display:flex;flex-direction:column;align-items:center;gap:0;background:none;border:none;color:rgba(255,255,255,0.8);font-size:9px;cursor:pointer;padding:2px 4px;border-radius:6px;transition:all 0.2s;flex-shrink:0;line-height:1.2}
-    .nav-item.active{color:#fff;background:rgba(144,238,144,0.4);backdrop-filter:blur(4px)}
-    .nav-item-icon{font-size:14px}
-    .nav-cloud-btn{display:none;flex-direction:column;align-items:center;gap:0;background:none;border:none;color:rgba(255,255,255,0.75);padding:2px 5px;border-radius:6px;font-size:9px;font-weight:500;cursor:pointer;transition:all 0.25s;position:relative;line-height:1.2}
-    .nav-cloud-btn:hover{color:#fff;background:rgba(144,238,144,0.4)}
-    .nav-cloud-btn .cloud-icon{font-size:20px;animation:cloudFloat 2.5s ease-in-out infinite}
-    .nav-cloud-btn.uploading .cloud-icon{animation:cloudSpin 0.6s linear infinite}
-    @keyframes cloudFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
-    @keyframes cloudSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-    .cloud-upload-badge{position:absolute;top:2px;right:6px;width:6px;height:6px;background:#FFD700;border-radius:50%;animation:badgePulse 1.5s ease-in-out infinite}
-    @keyframes badgePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.5)}}
-    /* 登录按钮（未登录时替代☰） */
-    .nav-login-btn{background:linear-gradient(135deg,#FFD700 0%,#FFA000 100%);border:none;color:#1B5E20;font-size:12px;font-weight:700;padding:4px 10px;border-radius:16px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.2);transition:all 0.25s;letter-spacing:1px;white-space:nowrap;pointer-events:auto}
-    .nav-login-btn:hover{transform:scale(1.05);box-shadow:0 3px 12px rgba(0,0,0,0.3)}
-    .nav-login-btn:active{transform:scale(0.97)}
-    /* ☰ 菜单按钮（已登录时显示） */
-    .menu-btn{background:linear-gradient(135deg,#fff 0%,#e8e8e8 100%);border:none;color:#2E7D32;width:30px;height:30px;border-radius:50%;font-size:17px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.2);transition:all 0.25s;display:flex;align-items:center;justify-content:center;pointer-events:auto}
-    .menu-btn:hover{transform:scale(1.1);box-shadow:0 3px 14px rgba(0,0,0,0.3)}
-    .menu-btn:active{transform:scale(0.95)}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
-    .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:center;justify-content:center}
-    .modal-overlay.active{display:flex}
-    .modal{background:white;border-radius:16px;width:calc(100vw - 32px);max-width:calc(100vw - 32px);height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;overflow-y:auto;overflow-x:hidden;padding:16px;animation:slideDown 0.3s ease;display:flex;flex-direction:column}
-    @keyframes slideDown{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
-    .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-    .modal-title{font-size:18px;font-weight:700}
-    .modal-league{font-size:12px;font-weight:500;color:var(--text-secondary);margin-left:8px}
-    .coach-info{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-    .coach-main{font-weight:600;color:var(--text)}
-    .coach-assistant{color:var(--text-secondary);padding-left:16px;border-left:2px solid var(--border)}
-    .modal-close{background:none;border:none;font-size:24px;color:var(--text-secondary);cursor:pointer;padding:4px}
-    .form-group{margin-bottom:16px}
-    .form-label{display:block;font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:6px}
-
-    /* ========== 足总杯对阵图样式 (Apple 风格) ========== */
-    .bracket-wrapper{padding:12px 8px;max-height:calc(100vh - 200px);overflow-y:auto;-webkit-overflow-scrolling:touch}
-    .bracket-section{display:flex;flex-direction:column;gap:6px;padding:10px;background:linear-gradient(135deg,#fafbfc 0%,#f0f4f8 100%);border-radius:14px;border:1.5px solid #e2e8f0;position:relative;overflow:hidden}
-    .bracket-section::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
-    .bracket-section.q1::before{background:linear-gradient(90deg,#3B82F6,#60A5FA)}
-    .bracket-section.q2::before{background:linear-gradient(90deg,#F59E0B,#FBBF24)}
-    .bracket-section.q3::before{background:linear-gradient(90deg,#10B981,#34D399)}
-    .bracket-section.q4::before{background:linear-gradient(90deg,#EF4444,#F87171)}
-    .bracket-section.bracket-final::before{background:linear-gradient(90deg,#a855f7,#c084fc)}
-    .bracket-q-title{font-size:13px;font-weight:700;color:#1d1d1f;text-align:center;padding:6px 0 2px;letter-spacing:0.5px}
-    .bracket-round-title{font-size:11px;font-weight:700;color:#86868b;text-align:center;padding:4px 0 2px;text-transform:uppercase;letter-spacing:1px}
-    .bracket-row{display:flex;align-items:center;position:relative;padding:1px 0;min-height:36px}
-    .bracket-team{flex:none;display:flex;align-items:center;gap:4px;padding:3px 7px;border-radius:8px;font-size:11px;font-weight:500;white-space:nowrap;transition:all .15s;cursor:pointer;min-width:0;max-width:120px}
-    .bracket-team.home{text-align:right;justify-content:flex-end}
-    .bracket-team.away{text-align:left;justify-content:flex-start}
-    .bracket-team.tbd{color:#c7c7cc;font-style:italic}
-    .bracket-team.winner{font-weight:700;background:linear-gradient(135deg,rgba(34,197,94,0.08),rgba(34,197,94,0.04));border:1.5px solid rgba(34,197,94,0.35);color:#15803d}
-    .bracket-team.eliminated{opacity:0.42;text-decoration:line-through}
-    .bracket-team:hover:not(.tbd):not(.eliminated){transform:scale(1.03);box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-    .bracket-team-logo{width:18px;height:18px;object-fit:contain;border-radius:4px;flex-shrink:0}
-    .bracket-vs{flex:1;display:flex;align-items:center;justify-content:center;min-width:30px;font-size:10px;font-weight:700;color:#aeaeb2;padding:0 2px}
-    .bracket-score-box{display:inline-flex;align-items:center;gap:2px;padding:2px 6px;border-radius:6px;font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;min-width:40px;justify-content:center;cursor:pointer;transition:all .15s}
-    .bracket-score-box.pending{color:#d1d5db}
-    .bracket-score-box.completed{background:rgba(34,197,94,0.06);color:#15803d;border:1px solid rgba(34,197,94,0.18)}
-    .bracket-score-box.replay{background:rgba(245,166,35,0.06);color:#b45309;border:1px solid rgba(245,166,35,0.25)}
-    .bracket-score-box:hover{transform:scale(1.05);box-shadow:0 2px 6px rgba(0,0,0,0.08)}
-    .form-input:focus{outline:none;border-color:var(--primary)}
-    .form-select{width:100%;padding:12px;border:2px solid var(--border);border-radius:8px;font-size:15px;background:white}
-    .player-list{display:grid;gap:8px}
-    .player-item{display:flex;align-items:center;gap:12px;padding:6px;background:#f8f8f8;border-radius:6px}
-    .player-number{width:32px;height:32px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
-    .player-info{flex:1}
-    .player-name{font-weight:600;font-size:14px}
-    .player-position{font-size:11px;color:var(--text-secondary)}
-    .player-stats{font-size:11px;color:var(--text-secondary)}
-    .player-stats{display:flex;gap:12px;font-size:12px;color:var(--text-secondary)}
-    .sidebar-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:150;display:none}
-    .sidebar-overlay.active{display:block}
-    .sidebar{position:fixed;top:0;left:0;width:280px;height:100%;background:white;z-index:160;transform:translateX(-100%);transition:transform 0.3s ease;overflow-y:auto}
-    .sidebar.active{transform:translateX(0)}
-    .sidebar-header{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);color:white;padding:12px 20px}
-    .sidebar-title{font-size:18px;font-weight:700;margin-bottom:2px}
-    .sidebar-subtitle{font-size:12px;opacity:0.8}
-    .sidebar-user-id{font-size:11px;opacity:0.55;margin-top:3px;font-family:'SF Mono',Consolas,'Courier New',monospace;letter-spacing:0.5px;word-break:break-all}
-    .sidebar-menu{padding:12px 0}
-    .sidebar-link{display:block;font-size:13px;color:#555;text-decoration:none;padding:5px 10px;border-radius:8px;transition:all 0.2s;white-space:nowrap}
-    .sidebar-link:hover{background:#e8f5e9;color:#1a7a2e}
-    .sidebar-item{display:flex;align-items:center;gap:12px;padding:8px 20px;color:var(--text);font-size:15px;cursor:pointer;transition:background 0.2s;border:none;background:none;width:100%;text-align:left}
-    .sidebar-item:active{background:#f0f0f0}
-    .sidebar-item-icon{font-size:20px}
-    .sidebar-item.danger{color:var(--relegation)}
-    .login-container{max-width:360px;margin:40px auto;padding:20px}
-    .login-logo{text-align:center;margin-bottom:30px}
-    .login-logo-emoji{font-size:64px;margin-bottom:10px}
-    .login-logo-title{font-size:22px;font-weight:700;color:var(--primary)}
-    .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#323232;color:white;padding:12px 24px;border-radius:24px;font-size:14px;z-index:300;animation:fadeInUp 0.3s ease}
-    @keyframes fadeInUp{from{opacity:0;transform:translate(-50%,20px)}to{opacity:1;transform:translate(-50%,0)}}
-    .text-center{text-align:center}
-    .mb-8{margin-bottom:8px}
-    .mb-16{margin-bottom:16px}
-    .mt-16{margin-top:16px}
-    .flex{display:flex}
-    .gap-8{gap:8px}
-    .flex-1{flex:1}
-    .items-center{align-items:center}
-    .scorer-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)}
-    .scorer-row:last-child{border-bottom:none}
-    .scorer-minute{font-size:13px;font-weight:700;color:var(--primary);width:36px}
-    .scorer-name{flex:1;font-size:15px;font-weight:600}
-    .scorer-team{font-size:12px;color:var(--text-secondary);font-weight:500}
-    .cup-empty{text-align:center;padding:40px 20px;color:var(--text-secondary)}
-    .cup-empty-icon{font-size:48px;margin-bottom:12px}
-    .cup-match-item{display:flex;align-items:center;gap:6px;padding:6px 8px;background:#f8f8f8;border-radius:6px;margin-bottom:4px;font-size:12px}
-    .cup-match-item img{width:18px;height:18px;object-fit:contain}
-    .season-selector{gap:6px;overflow-x:auto;padding:0;background:transparent;scrollbar-width:none}
-    .season-selector::-webkit-scrollbar{display:none}
-    .season-chip{background:rgba(255,255,255,0.15);border:none;color:rgba(255,255,255,0.8);padding:5px 14px;border-radius:14px;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer;transition:all 0.2s}
-    .season-chip.active{background:white;color:#228B22}
-    .season-select{background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.4);color:rgba(255,255,255,0.95);padding:4px 8px;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;min-width:110px;text-align:center;margin-right:10px;vertical-align:middle}
-    .season-archive-tag{background:#FFD700;color:#333;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;margin-left:8px}
-    .archive-notice{text-align:center;padding:8px;background:#FFF3E0;color:#E65100;font-size:13px;font-weight:600;border-radius:0}
-    .nav-season-info{white-space:nowrap}
-    .nav-season-info .season-label{font-weight:700;color:rgba(255,255,255,0.95);font-size:12px}
-    .nav-season-info .season-credit{font-size:10px;color:rgba(255,255,255,0.5);font-style:italic}
-    .nav-clock{font-size:10px;color:rgba(255,255,255,0.6);font-variant-numeric:tabular-nums;letter-spacing:0.2px}
-    .nav-cloud-info{font-size:9px;color:rgba(255,255,255,0.45);white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis}
-    .player-expand{cursor:pointer;color:#1B5E20;border-bottom:1px dashed #1B5E20;transition:all 0.2s}
-    .player-expand:hover{color:#228B22;border-bottom-color:#228B22}
-    .player-expand-active{color:#228B22;border-bottom-style:solid}
-    .player-season-detail{background:#f0f7f0;border:1px solid #c8e6c9;border-radius:8px;margin:6px auto;padding:8px 10px;font-size:13px;animation:slideDown 0.2s ease;max-width:400px;width:100%;box-sizing:border-box}
-    @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-    .player-season-table{width:100%;border-collapse:collapse}
-    .player-season-table th{background:#e8f5e9;padding:4px 6px;font-weight:600;font-size:11px;text-align:center;white-space:nowrap;color:#2e7d32}
-    .player-season-table td{padding:3px 6px;text-align:center;border-bottom:1px solid #e8f5e9;white-space:nowrap}
-    .player-season-table .total-row td{border-top:2px solid #a5d6a7;border-bottom:none;background:#e8f5e9}
-    /* ===== 云端上传效果 ===== */
-    .cloud-success-overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);animation:overlayIn 0.3s ease}
-    @keyframes overlayIn{from{opacity:0}to{opacity:1}}
-    .cloud-success-box{text-align:center;animation:boomIn 0.5s cubic-bezier(0.17,0.67,0.29,1.5)}
-    @keyframes boomIn{0%{transform:scale(0);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
-    .cloud-success-emoji{font-size:80px;animation:emojiPop 0.6s cubic-bezier(0.17,0.67,0.29,1.5) 0.2s both}
-    @keyframes emojiPop{0%{transform:scale(0) rotate(-30deg);opacity:0}70%{transform:scale(1.3) rotate(10deg)}100%{transform:scale(1) rotate(0deg);opacity:1}}
-    .cloud-success-text{font-size:28px;font-weight:900;color:#fff;text-shadow:0 2px 20px rgba(34,139,34,0.8),0 0 40px rgba(255,215,0,0.6);margin-top:12px;animation:textGlow 0.8s ease 0.4s both}
-    @keyframes textGlow{0%{opacity:0;transform:translateY(20px)}50%{text-shadow:0 0 60px rgba(255,215,0,1)}100%{opacity:1;transform:translateY(0)}}
-    .cloud-success-sub{font-size:14px;color:rgba(255,255,255,0.8);margin-top:8px;animation:fadeIn 0.5s ease 0.6s both}
-    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-    .cloud-particle{position:fixed;z-index:10000;pointer-events:none;font-size:24px;animation:particleFly 1.2s ease-out forwards}
-    @keyframes particleFly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--px),var(--py)) scale(0.3) rotate(var(--pr))}}
-    /* 失败全屏效果 */
-    .cloud-fail-overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a0000 0%,#3a0000 50%,#1a0000 100%);animation:failBgPulse 0.8s ease}
-    @keyframes failBgPulse{0%{opacity:0}30%{opacity:1}50%{background:linear-gradient(135deg,#2a0000 0%,#5a0000 50%,#2a0000 100%)}70%{background:linear-gradient(135deg,#1a0000 0%,#3a0000 50%,#1a0000 100%)}100%{background:linear-gradient(135deg,#1a0000 0%,#3a0000 50%,#1a0000 100%)}}
-    .cloud-fail-icon{font-size:100px;animation:failShake 0.6s ease 0.3s both}
-    @keyframes failShake{0%{transform:scale(0)}30%{transform:scale(1.2) rotate(-5deg)}50%{transform:scale(1.1) rotate(5deg)}70%{transform:scale(1.05) rotate(-3deg)}100%{transform:scale(1) rotate(0deg)}}
-    .cloud-fail-text{font-size:36px;font-weight:900;color:#ff4444;text-shadow:0 0 30px rgba(255,0,0,0.8),0 0 60px rgba(255,0,0,0.4);animation:failTextIn 0.5s ease 0.5s both}
-    @keyframes failTextIn{0%{opacity:0;transform:scale(0.5)}60%{transform:scale(1.1)}100%{opacity:1;transform:scale(1)}}
-    .cloud-fail-reason{font-size:16px;color:#ff8888;margin-top:12px;max-width:80%;text-align:center;animation:fadeIn 0.5s ease 0.7s both}
-    .cloud-fail-close{margin-top:24px;padding:10px 32px;background:#ff4444;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;animation:fadeIn 0.5s ease 0.9s both;transition:all 0.2s}
-    .cloud-fail-close:hover{background:#ff6666;transform:scale(1.05)}
-    .cloud-fail-redline{position:fixed;z-index:10001;pointer-events:none;background:#ff0000;animation:redLine 0.8s ease-out forwards}
-    @keyframes redLine{0%{opacity:0.8;transform:scaleX(0)}50%{opacity:1;transform:scaleX(1)}100%{opacity:0;transform:scaleX(1)}}
-    @keyframes screenShake{0%,100%{transform:translate(0)}10%{transform:translate(-4px,2px)}20%{transform:translate(4px,-2px)}30%{transform:translate(-3px,3px)}40%{transform:translate(3px,-1px)}50%{transform:translate(-2px,2px)}60%{transform:translate(2px,-1px)}70%{transform:translate(-1px,1px)}80%{transform:translate(1px,-1px)}90%{transform:translate(-1px,0)}}
-    .transfer-tabs-wrap{display:flex;gap:0;padding:0 4px 10px;background:#e8e8e8;border-radius:20px;overflow:hidden;display:inline-flex}
-    .transfer-tab-btn{padding:7px 14px;border:none;background:transparent;color:#222;font-size:13px;cursor:pointer;font-weight:500;transition:all .25s;text-align:center;border-radius:18px}
-    .transfer-tab-btn.active{background:#d0d0d0;color:#222;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.1)}
-    .transfer-tab-btn:hover:not(.active){background:rgba(0,0,0,.04);color:#555}
-    /* === v1.0.294: 用户水印（水平居中，装饰醒目） === */
-    #userWatermark {
-      display: none;
-      justify-content: center;
-      padding: 4px 0 2px 0;
-      pointer-events: none;
-      user-select: none;
-    }
-    #userWatermark .wm-inner {
-      display: inline-flex;
-      align-items: center;
-      gap: 0;
-      border-radius: 28px;
-      padding: 5px 20px 5px 14px;
-      background: rgba(255,255,255,0.85);
-      border: 1px solid rgba(0,0,0,0.08);
-      box-shadow: 0 2px 12px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06);
-      backdrop-filter: blur(8px);
-    }
-    #userWatermark .wm-role {
-      display: inline-block;
-      padding: 3px 11px;
-      border-radius: 18px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      margin-right: 10px;
-      text-transform: uppercase;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-      color: #fff;
-    }
-    #userWatermark .wm-role.admin   { background: linear-gradient(135deg, #e74c3c, #c0392b); }
-    #userWatermark .wm-role.recorder { background: linear-gradient(135deg, #e67e22, #d35400); }
-    #userWatermark .wm-role.coach    { background: linear-gradient(135deg, #27ae60, #1e8449); }
-    #userWatermark .wm-name {
-      font-size: 12px;
-      font-weight: 500;
-      color: #333;
-    }
-    #userWatermark .wm-sep {
-      width: 1px;
-      height: 18px;
-      background: rgba(0,0,0,0.12);
-      margin: 0 10px 0 2px;
-    }
-  </style>
-</head>
-<body>
-
-
-<nav class="bottom-nav">
-  <div class="nav-tabs">
-    <button class="nav-item active" data-page="standings"><span class="nav-item-icon">🏆</span><span>积分榜</span></button>
-    <button class="nav-item" data-page="schedule"><span class="nav-item-icon">📅</span><span>赛程</span></button>
-    <button class="nav-item" data-page="stats"><span class="nav-item-icon">📊</span><span>榜单</span></button>
-    <button class="nav-item" data-page="transfer"><span class="nav-item-icon">🤝</span><span>转会</span></button>
-    <button class="nav-cloud-btn" id="navCloudBtn" onclick="handleMainCloudUpload()">
-      <span class="cloud-upload-badge"></span>
-      <span class="cloud-icon">☁️</span>
-      <span>云端</span>
-    </button>
-  </div>
-  <div class="nav-center">
-    <div id="navTeamLogo" style="display:none;cursor:pointer" onclick="goToMyTeam()"></div>
-  </div>
-  <div class="nav-right">
-    <button class="nav-search-btn" id="navSearchBtn" onclick="showPlayerSearch()">🔍</button>
-    <div class="nav-right-info">
-      <span class="nav-season-info" id="navSeasonInfo" style="display:none !important"></span>
-      <div class="season-selector" id="seasonSelector" style="display:inline-flex;align-items:center;gap:6px"></div>
-      <span class="nav-clock" id="navClock"></span>
-      <span class="nav-cloud-info" id="navCloudInfo" style="display:none"></span>
-    </div>
-    <button class="nav-login-btn" id="navLoginBtn" onclick="openSidebar()">登录</button>
-    <button class="menu-btn" id="menuBtn" style="display:none">☰</button>
-  </div>
-</nav>
-
-
-<div class="archive-notice" id="archiveNotice" style="display:none"></div>
-
-<main class="main-content">
-<div id="userWatermark" style="display:none"></div>
-  <!-- Standings Page -->
-  <div class="page active" id="standingsPage">
-    <div class="card">
-      <div class="card-title">🏆 积分榜</div>
-      <div class="league-selector" id="standingsLeagueSelector">
-        <button class="league-chip active" data-league="super">超级</button>
-        <button class="league-chip" data-league="jiaEast">甲东</button>
-        <button class="league-chip" data-league="jiaWest">甲西</button>
-        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>
-        <button class="league-chip yiAll-btn" data-league="yiAll">乙级全队</button>
-        <button class="league-chip" data-league="yiEast">乙东</button>
-        <button class="league-chip" data-league="yiWest">乙西</button>
-        <button class="league-chip cup-chip" data-cup="championsCup">🏆冠军杯</button>
-        <button class="league-chip cup-chip" data-cup="leagueCup">🏆联盟杯</button>
-        <button class="league-chip cup-chip" data-cup="associationCup">🏆协会杯</button>
-        <button class="league-chip cup-chip" data-cup="faCup">🏆足总杯</button>
-        <button class="league-chip cup-12-gold" data-cup="championsCup12">🏆冠军杯季后赛</button>
-        <button class="league-chip cup-12-teal" data-cup="leagueCup12">🏆联盟杯季后赛</button>
-        <button class="league-chip cup-12-purple" data-cup="associationCup12">🏆协会杯季后赛</button>
-      </div>
-      <div id="standingsContent"></div>
-    </div>
-  </div>
-
-  <!-- Teams Page -->
-  <div class="page" id="teamsPage">
-    <div class="card">
-      <div class="card-title">👥 球队列表</div>
-      <div class="league-selector" id="teamsLeagueSelector">
-        <button class="league-chip active" data-league="super">超级</button>
-        <button class="league-chip" data-league="jiaEast">甲东</button>
-        <button class="league-chip" data-league="jiaWest">甲西</button>
-        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>
-        <button class="league-chip yiAll-btn" data-league="yiAll">乙级全队</button>
-        <button class="league-chip" data-league="yiEast">乙东</button>
-        <button class="league-chip" data-league="yiWest">乙西</button>
-      </div>
-      <div id="teamsContent"></div>
-    </div>
-  </div>
-
-  <!-- Schedule Page -->
-  <div class="page" id="schedulePage">
-    <div class="card">
-      <div class="card-title">📅 赛程</div>
-      <div class="league-selector" id="scheduleLeagueSelector">
-        <button class="league-chip active" data-league="super">超级</button>
-        <button class="league-chip" data-league="jiaEast">甲东</button>
-        <button class="league-chip" data-league="jiaWest">甲西</button>
-        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>
-        <button class="league-chip yiAll-btn" data-league="yiAll">乙级全队</button>
-        <button class="league-chip" data-league="yiEast">乙东</button>
-        <button class="league-chip" data-league="yiWest">乙西</button>
-        <button class="league-chip cup-chip" data-cup="championsCup">🏆冠军杯</button>
-        <button class="league-chip cup-chip" data-cup="leagueCup">🏆联盟杯</button>
-        <button class="league-chip cup-chip" data-cup="associationCup">🏆协会杯</button>
-        <button class="league-chip cup-chip" data-cup="faCup">🏆足总杯</button>
-      </div>
-      <div id="scheduleContent"></div>
-    </div>
-  </div>
-
-  <!-- Stats Page -->
-  <div class="page" id="statsPage">
-    <div class="card">
-      <div class="card-title">📊 数据榜单</div>
-      <div class="league-selector" id="statsLeagueSelector">
-        <button class="league-chip active" data-league="super">超级</button>
-        <button class="league-chip" data-league="jiaEast">甲东</button>
-        <button class="league-chip" data-league="jiaWest">甲西</button>
-        <button class="league-chip jiaAll-btn" data-league="jiaAll">甲级全队</button>
-        <button class="league-chip yiAll-btn" data-league="yiAll">乙级全队</button>
-        <button class="league-chip" data-league="yiEast">乙东</button>
-        <button class="league-chip" data-league="yiWest">乙西</button>
-        <button class="league-chip cup-chip" data-cup="championsCup">🏆冠军杯</button>
-        <button class="league-chip cup-chip" data-cup="leagueCup">🏆联盟杯</button>
-        <button class="league-chip cup-chip" data-cup="associationCup">🏆协会杯</button>
-        <button class="league-chip cup-chip" data-cup="faCup">🏆足总杯</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="stats-tabs">
-        <button class="stats-tab active" data-tab="goals">⚽ 射手榜</button>
-        <button class="stats-tab" data-tab="assists">👟 助攻榜</button>
-        <button class="stats-tab" data-tab="motm">⭐ 最佳球员</button>
-      </div>
-      <div id="statsContent"></div>
-    </div>
-  </div>
-
-  <!-- Transfer Page -->
-  <div class="page" id="transferPage">
-    <!-- 转会页 Tab 切换 -->
-    <div class="transfer-tabs-wrap">
-      <button class="transfer-tab-btn active" id="transferTabMarket" onclick="switchTransferTab('market')" style="background:#1b5e20;color:#fff;font-weight:600">🤝 转会市场</button>
-      <button class="transfer-tab-btn" id="transferTabManage" onclick="switchTransferTab('manage')">🔄 转会管理</button>
-      <button class="transfer-tab-btn" id="transferTabOpenSea" onclick="switchTransferTab('opensea')">🌊 公海球员</button>
-    </div>
-    <!-- 转会管理区域 -->
-    <div class="card" id="transferManageCard" style="display:none">
-      <div id="transferManageContent"></div>
-    </div>
-    <!-- 转会市场 -->
-    <div class="card" id="transferMarketCard">
-      <div id="transferContent"></div>
-    </div>
-    <!-- 公海球员区域 -->
-    <div class="card" id="transferOpenSeaCard" style="display:none">
-      <div id="transferOpenSeaContent"></div>
-    </div>
-  </div>
-</main>
-
-<!-- Sidebar -->
-<div class="sidebar-overlay" id="sidebarOverlay"></div>
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-header">
-    <div class="sidebar-title" id="sidebarUserName">PGM足球经理</div>
-    <div class="sidebar-subtitle" id="sidebarUserRole">官方联赛</div>
-    <div class="sidebar-user-id" id="sidebarUserId" style="display:none"></div>
-  </div>
-  <div class="sidebar-menu">
-    <button class="sidebar-item" id="btnAdminImport" style="display:none"><span class="sidebar-item-icon">⚙️</span>管理员导入</button>
-    <button class="sidebar-item" id="btnCupManage" style="display:none"><span class="sidebar-item-icon">🏆</span>杯赛管理</button>
-    <button class="sidebar-item" id="btnArchiveSeason" style="display:none"><span class="sidebar-item-icon">📦</span>归档赛季</button>
-    <button class="sidebar-item" id="btnLoginLogs" style="display:none"><span class="sidebar-item-icon">🔍</span>访问日志</button>
-    <!-- 转会管理已移至顶部工具栏 -->
-    <button class="sidebar-item" id="btnSyncCloud"><span class="sidebar-item-icon">☁️</span>数据同步</button>
-    <button class="sidebar-item" id="sidebarLoginBtn"><span class="sidebar-item-icon">🔑</span>登录</button>
-    <button class="sidebar-item danger" id="btnLogout" style="display:none"><span class="sidebar-item-icon">🚪</span>退出登录</button>
-  </div>
-  <div class="sidebar-footer" id="sidebarAbout">
-    <div style="padding:8px 16px">
-      <!-- 社区 -->
-      <div style="border-top:1px solid #f0f0f0;padding-top:8px;margin-bottom:4px">
-      <div style="font-size:11px;color:#999;font-weight:600;letter-spacing:1px;margin-bottom:4px;padding-left:4px">⚽ PGM官方信息</div>
-      <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:10px">
-        <a href="https://www.playgm.cc/" target="_blank" rel="noopener" class="sidebar-link">🌐 联赛官网：playgm.cc</a>
-        <a href="https://www.playgm.games/" target="_blank" rel="noopener" class="sidebar-link">🎮 比赛官网：playgm.games</a>
-        <a href="http://123.57.246.29/" target="_blank" rel="noopener" class="sidebar-link">🌐 骚傲官方CA：123.57.246.29</a>
-        <div onclick="navigator.clipboard.writeText('50362211').then(()=>showToast('官方QQ群已复制'))" title="点击复制" class="sidebar-link" style="cursor:pointer">💬 官方QQ群：50362211</div>
-      </div>
-      <!-- 工具 -->
-      <div style="border-top:1px solid #f0f0f0;padding-top:8px;margin-bottom:4px">
-      <div style="font-size:11px;color:#999;font-weight:600;letter-spacing:1px;margin-bottom:4px;padding-left:4px">🛠️ 工具</div>
-      <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:10px">
-        <a href="https://fm-arena.com/" target="_blank" rel="noopener" class="sidebar-link">🎯 战术A站：fm-arena.com</a>
-        <a href="http://47.102.222.247:8787/" target="_blank" rel="noopener" class="sidebar-link">🦁 狮驼岭CA：47.102.222.247:8787</a>
-        <a href="http://81.70.199.249:8080/" target="_blank" rel="noopener" class="sidebar-link">🔍 搜塞网CA：81.70.199.249:8080</a>
-        <a href="https://www.sofascore.com/" target="_blank" rel="noopener" class="sidebar-link">📊 Sofascore官网：sofascore.com</a>
-        <a href="https://www.transfermarkt.com/" target="_blank" rel="noopener" class="sidebar-link">💶 德转官网：transfermarkt.com</a>
-        <a href="https://www.dongqiudi.com/" target="_blank" rel="noopener" class="sidebar-link">⚽ 懂球帝：dongqiudi.com</a>
-      </div>
-      <!-- 关于 -->
-      <div style="text-align:center;border-top:1px solid #f0f0f0;padding-top:10px;margin-top:6px">
-        <div style="font-size:14px;color:#666;cursor:pointer;font-weight:500;transition:color .2s" id="aboutBtn" onmouseover="this.style.color='#333'" onmouseout="this.style.color='#666'">ℹ️ 关于 PGM联赛</div>
-        <div style="font-size:10px;color:#bbb;margin-top:3px" id="aboutVersion"></div>
-        <div style="font-size:10px;color:#bbb;margin-top:2px" id="aboutDate"></div>
-        <div style="margin-top:4px" id="changelogHint"></div>
-      </div>
-    </div>
-  </div>
-</aside>
-
-<!-- Modal -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal" id="modalContent"></div>
-</div>
-
-<div class="toast" id="toast" style="display:none"></div>
-
-<div id="busuanzi_container" style="text-align:center;padding:6px 0;font-size:11px;color:#999">
-  本站总访问 <span id="busuanzi_site_pv"></span> 次，今日访问 <span id="busuanzi_today_pv"></span> 次 | <span id="footerVersion" style="color:#228B22"></span>
-</div>
-
-<script async src="https://busuanzi.xiaoying.org.cn/js"></script>
-
-<script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 485 };
+const APP_VERSION = { major: 1, minor: 0, patch: 455 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -654,11 +12,8 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
-  { v: '1.0.485', date: '2026-07-17', items: ['🐛 修复：autoSyncFromCloud云端数据覆盖后球员列表丢失新增球员（如Darwin Guagua）的问题——state=cloudData后追加syncPlayersFromDB()'] },
-
-  {v:'v1.0.485',d:'2026-07-17',c:'紧急修复sw2.js缓存v482死锁：升级CACHE_NAME强制清旧缓存（页面无响应根因）'},
-  {v:'v1.0.483',d:'2026-07-16',c:'球员详情/球队详情页显示CA与位置字段'},{v:'v1.0.483',d:'2026-07-16',c:'PLAYERS_DB支持position/ca字段(initData与syncPlayersFromDB读取)'},{v:'v1.0.483',d:'2026-07-16',c:'修复足总杯交换显示时scorers/assists的teamId存储错误导致榜单不显示进球/助攻'},{v:'v1.0.483',d:'2026-07-16',c:'修复MOTM归属判断逻辑：赛程中最佳球员固定显示在客队侧+榜单MOTM不显示'},{v:'v1.0.483',d:'2026-07-16',c:'修复队名迁移(Brighton→La Coruna/FC Porto→FC Nurnberg/Fulham→Leeds)后旧localStorage队徽不显示'},{v:'v1.0.483',d:'2026-07-15',c:'FC Porto→FC Nurnberg(纽伦堡)队名/队徽/球员全量替换'},{v:'v1.0.483',d:'2026-07-15',c:'Brighton→La Coruna(拉科鲁尼亚)队名/队徽/球员全量替换'},{v:'v1.0.483',d:'2026-07-14',c:'修正Brighton主教练为7指导(原Briahton拼写已归正)'},{v:'v1.0.483',d:'2026-07-14',c:'全量更新63赛季60队主教练名单(清空助理教练，统一从COACH_ASSIGN读取)'},{v:'v1.0.483',d:'2026-07-14',c:'Leeds正式启用本地671.webp队徽(文件已提交CDN)'},{v:'v1.0.483',d:'2026-07-14',c:'Leeds队徽改回富勒姆原图(631)，671推送遗漏未生效'},{v:'v1.0.483',d:'2026-07-14',c:'Leeds队徽更正为正确图(631→671)，沿用Fulham球员'},{v:'v1.0.483',d:'2026-07-14',c:'超级联赛球队Fulham重命名为Leeds(沿用Fulham球员与队徽631)'},{v:'v1.0.483',d:'2026-07-14',c:'Fulham队徽更正为真实Transfermarkt ID(654→631)'},{v:'v1.0.483',d:'2026-07-14',c:'修复HTML中`n字面量显示为换行符'},
-  {v:'v1.0.467',d:'2026-07-14',c:'云端同步后清空转会记录+清空63赛季转入/转出+球队名不匹配自动initData重建+SW缓存死锁修复+63赛季60队1746人全量更新'},
+  {v:'v1.0.455',d:'2026-07-13',c:'63赛季升降级球队名单更新：甲级全队/乙级全队按新赛季名单整理（甲东/甲西/乙东/乙西全部替换）'},
+  {v:'v1.0.454',d:'2026-07-13',c:'新增乙级全队TAB（乙东+乙西共24队汇总视图）；63赛季球队数据经initData填充'},
   {v:'v1.0.453',d:'2026-07-13',c:'修复甲级全队按钮63赛季不显示（CSS覆盖JS display:empty）'},
   {v:'v1.0.452',d:'2026-07-13',c:'甲级全队TAB仅在63赛季显示，62赛季默认隐藏'},
   {v:'v1.0.451',d:'2026-07-13',c:'新增甲级全队TAB（甲东+甲西共36队）；超级12队更新阵容（去Barcelona/Liverpool/River，增Fulham/Hamburger SV/Wrexham）'},
@@ -939,7 +294,7 @@ function getAppVersion() { return `v${APP_VERSION.major}.${APP_VERSION.minor}.${
 
 // ============ DATA ============
 const LEAGUE_NAMES = {
-  'super': '超级联赛', jiaEast: '甲级-东区', jiaWest: '甲级-西区', jiaAll: '甲级全队', yiEast: '乙级-东区', yiWest: '乙级-西区', yiAll: '乙级全队'
+  super: '超级联赛', jiaEast: '甲级-东区', jiaWest: '甲级-西区', jiaAll: '甲级全队', yiEast: '乙级-东区', yiWest: '乙级-西区', yiAll: '乙级全队'
 };
 const CUP_NAMES = { championsCup: '🏆 冠军杯', leagueCup: '🏆 联盟杯', associationCup: '🏆 协会杯', faCup: '🏆 足总杯', championsCup12: '🏆 冠军杯季后赛', leagueCup12: '🏆 联盟杯季后赛', associationCup12: '🏆 协会杯季后赛' };
 
@@ -949,13 +304,13 @@ const TEAM_UID_MAP = {
   'Benfica': 1487, 'FC Bayern': 915, 'Juventus': 1139, 'Man City': 679,
   'Palmeiras': 329, 'Paris SG': 868, 'River': 94, 'Wrexham': 741,
   '1860 Munchen': 955, 'Aberdeen': 1536, 'Ajax': 992, 'AS Roma': 1100,
-  'Atl. Tucuman': 102474, 'La Coruna': 2000252605, 'Chelsea': 630, 'Dortmund': 907,
-  'Everton': 650, 'Fiorentina': 1129, 'Frankfurt': 912, 'Leeds': 671,
+  'Atl. Tucuman': 102474, 'Brighton': 618, 'Chelsea': 630, 'Dortmund': 907,
+  'Everton': 650, 'Fiorentina': 1129, 'Frankfurt': 912, 'Fulham': 654,
   'Genk': 258, 'Hamburger SV': 947, 'Hertha BSC': 2247, 'Lazio': 1140,
   'Leicester': 673, 'Liverpool': 676, 'Marseille': 866, 'Monaco': 826,
   'Newcastle': 688, 'Nottingham Forest': 692, 'RC Lens': 871, 'Schalke': 920,
   'AC Milan': 1099, 'A. Madrid': 1687, 'Asante Kotoko': 801910, 'Atalanta': 1106,
-  'Celtic': 1569, 'Como': 1123, 'FC Koln': 916, 'FC Nurnberg': 899,
+  'Celtic': 1569, 'Como': 1123, 'FC Koln': 916, 'FC Porto': 1478,
   'Flamengo': 322, 'Inter': 1135, 'Leverkusen': 901, 'Man Utd': 680,
   'Napoli': 1150, 'Oriental Dragon': 83111757, 'PSV': 1028, 'R. Madrid': 1736,
   'Sporting': 1489, 'Stuttgart': 960, 'Sunderland': 722, 'Tottenham': 728,
@@ -985,15 +340,15 @@ const DATA_RECORDERS = {
   jfyidong:  { id: 'jfyidong',  name: '乙东积分',     league: 'yiEast',      type: 'league', cupId: null, role: 'stats', pwHash: '41010aee7434ee5bacb62ac70879f0d8a1c858a4a5f33016581b5c1df686f006' },
   jfyixi:    { id: 'jfyixi',    name: '乙西积分',     league: 'yiWest',      type: 'league', cupId: null, role: 'stats', pwHash: '88842acb29036501fcc098a888551f155754a33354359fccc338b1dadd4935c2' }
 };
-const LEAGUE_TEAM_COUNTS = { 'super': 12, jiaEast: 12, jiaWest: 12, yiEast: 12, yiWest: 12 };
+const LEAGUE_TEAM_COUNTS = { super: 12, jiaEast: 12, jiaWest: 12, yiEast: 12, yiWest: 12 };
 const POSITION_NAMES = { GK: '门将', DF: '后卫', MF: '中场', FW: '前锋' };
 
 
 const TEAM_NAMES = {
-  'super': ['A. Bilbao','Arsenal','Aston Villa','Benfica','FC Bayern','Leeds','Hamburger SV','Lazio','Man City','Palmeiras','Paris SG','Wrexham'],
+  super: ['A. Bilbao','Arsenal','Aston Villa','Benfica','FC Bayern','Fulham','Hamburger SV','Lazio','Man City','Palmeiras','Paris SG','Wrexham'],
   jiaEast: ['1860 Munchen','Aberdeen','A. Madrid','Barcelona','Hertha BSC','Juventus','Liverpool','Marseille','Monaco','Nottingham Forest','River','Tottenham'],
-  jiaWest: ['Ajax','Atalanta','La Coruna','Everton','Fiorentina','Flamengo','Frankfurt','Inter','Leicester','Napoli','RC Lens','Schalke'],
-  yiEast: ['AS Roma','Atl. Tucuman','Dortmund','Newcastle','Como','FC Nurnberg','Leverkusen','Oriental Dragon','R. Madrid','Stuttgart','Sunderland','青岛海神'],
+  jiaWest: ['Ajax','Atalanta','Brighton','Everton','Fiorentina','Flamengo','Frankfurt','Inter','Leicester','Napoli','RC Lens','Schalke'],
+  yiEast: ['AS Roma','Atl. Tucuman','Dortmund','Newcastle','Como','FC Porto','Leverkusen','Oriental Dragon','R. Madrid','Stuttgart','Sunderland','青岛海神'],
   yiWest: ['AC Milan','Asante Kotoko','Celtic','Chelsea','FC Koln','Genk','Man Utd','PSV','Sporting','West Ham','Wolfsburg','上海申花']
 };
 
@@ -1016,7 +371,7 @@ const TEAM_LOGOS = {
   'AS Roma': 'logos/1100.webp',
   'Atl. Tucuman': 'logos/102474.webp',
   'Dortmund': 'logos/907.webp',
-  'Leeds': 'logos/671.webp',
+  'Fulham': 'logos/654.webp',
   'Hertha BSC': 'logos/2247.webp',
   'Liverpool': 'logos/676.webp',
   'Marseille': 'logos/866.webp',
@@ -1025,7 +380,7 @@ const TEAM_LOGOS = {
   'Nottingham Forest': 'logos/692.webp',
 
   'Ajax': 'logos/992.webp',
-  'La Coruna': 'logos/2000252605.png',
+  'Brighton': 'logos/618.webp',
   'Chelsea': 'logos/630.webp',
   'Everton': 'logos/650.webp',
   'Fiorentina': 'logos/1129.webp',
@@ -1039,7 +394,7 @@ const TEAM_LOGOS = {
   'A. Madrid': 'logos/1687.webp',
   'Asante Kotoko': 'logos/801910.webp',
   'Como': 'logos/1123.webp',
-  'FC Nurnberg': 'logos/899.png',
+  'FC Porto': 'logos/1478.webp',
   'Leverkusen': 'logos/901.webp',
   'Oriental Dragon': 'logos/83111757.webp',
   'R. Madrid': 'logos/1736.webp',
@@ -1076,1880 +431,186 @@ const ASSISTANT_COACH_NAMES = ['陈明','陈东','陈静','陈文','陈晓','陈
 // 第62届PGM联赛球员数据库（UID唯一识别码）
 const PLAYERS_DB = {
   'A. Bilbao': [
-    {uid:67228634,name:'Achraf Hakimi',age:26,ca:176,clause:110},
-    {uid:2000134186,name:'Mikel Jauregizar',age:23,ca:153,clause:23},
-    {uid:2000160511,name:'Ousmane Diomande',age:23,ca:164,clause:88},
-    {uid:2000211219,name:'Samu Aghehowa',age:23,ca:157,clause:102},
-    {uid:2000179713,name:'Senny Mayulu',age:21,ca:144,clause:37},
-    {uid:29189400,name:'Brennan Johnson',age:25,ca:155,clause:16},
-    {uid:20041862,name:'Alphonso Davies',age:25,ca:170,clause:120},
-    {uid:2000182795,name:'Archie Gray',age:21,ca:170,clause:65},
-    {uid:67283140,name:'Filip Jorgensen',age:25,ca:169,clause:22},
-    {uid:67211695,name:'Theo Hernández',age:27,ca:150,clause:65},
-    {uid:29216094,name:'Festy Ebosele',age:25,ca:125,clause:5},
-    {uid:62182055,name:'Dusan Vlahovic',age:25,ca:153,clause:70},
-    {uid:2000034344,name:'Javi Guerra',age:24,ca:152,clause:12},
-    {uid:2000045005,name:'Noah Sadiki',age:22,ca:139,clause:25},
-    {uid:2000058232,name:'Chadi Riad',age:24,ca:143,clause:20},
-    {uid:2000061312,name:'Luca Koleosho',age:22,ca:148,clause:5},
-    {uid:2000031901,name:'Kevin',age:24,ca:154,clause:28},
-    {uid:91137260,name:'Jordan Torunarigha',age:27,ca:125,clause:1},
-    {uid:95034355,name:'Cameron Pring',age:27,ca:125,clause:2},
-    {uid:70097314,name:'Uğurcan Çakır',age:29,ca:135,clause:1},
-    {uid:45101691,name:'Daizen Maeda',age:27,ca:137,clause:8},
-    {uid:2000334636,name:'Mochizuki Henry Heroki',age:25,ca:130,clause:7},
-    {uid:85078880,name:'Lenglet',age:30,ca:145,clause:1},
-    {uid:2000171727,name:'Pedro',age:21,ca:129,clause:0},
-    {uid:2000293527,name:'Tyler Bindon',age:21,ca:123,clause:0},
-    {uid:2000297306,name:'Jofre Torrents',age:20,ca:122,clause:0},
-    {uid:2000483116,name:'Giovanni Baldini',age:17.5,ca:60,clause:0},
-    {uid:2000184284,name:'Mattia Mannini',age:20.5,ca:106,clause:0},
-    {uid:2000510837,name:'Yohann Obin',age:17.5,ca:70,clause:0},
-    {uid:2000294631,name:'Mbekezeli Mbokazi',age:19,ca:120,clause:0},
-    {uid:2000300328,name:'Harrison Bettoni',age:18,ca:89,clause:0},
-    {uid:2000491763,name:'Xavier Mandza',age:16,ca:70,clause:0}
+    {uid:67228634,name:'Achraf Hakimi',age:26.0,releaseClause:110},{uid:67200923,name:'Unai Simón',age:28.0,releaseClause:20},{uid:2000134186,name:'Mikel Jauregizar',age:22.0,releaseClause:23},{uid:2000160511,name:'Ousmane Diomande',age:22.0,releaseClause:88},{uid:2000211219,name:'Samu Aghehowa',age:22.0,releaseClause:102},{uid:2000179713,name:'Senny Mayulu',age:20.0,releaseClause:22},{uid:29189400,name:'Brennan Johnson',age:25.0,releaseClause:16},{uid:20041862,name:'Alphonso Davies',age:25.0,releaseClause:120},{uid:2000182795,name:'Archie Gray',age:20.0,releaseClause:65},{uid:67211695,name:'Theo Hernández',age:27.0,releaseClause:65},{uid:29216094,name:'Festy Ebosele',age:24.0,releaseClause:5},{uid:62182055,name:'Dusan Vlahovic',age:25.0,releaseClause:70},{uid:67231100,name:'Jorge de Frutos',age:28.0,releaseClause:3},{uid:67277830,name:'Julen Agirrezabala',age:25.0,releaseClause:2},{uid:85085378,name:'Aymeric Laporte',age:31.0,releaseClause:1},{uid:2000034344,name:'Javi Guerra',age:23.0,releaseClause:12},{uid:2000045005,name:'Noah Sadiki',age:21.0,releaseClause:25},{uid:2000058232,name:'Chadi Riad',age:23.0,releaseClause:15},{uid:2000061312,name:'Luca Koleosho',age:21.0,releaseClause:5},{uid:2000252303,name:'Kendry Páez',age:19.0,releaseClause:30},{uid:2000031901,name:'Kevin',age:23.0,releaseClause:28},{uid:91137260,name:'Jordan Torunarigha',age:27.0,releaseClause:1},{uid:76047347,name:'Sinisterra',age:26.0,releaseClause:8},{uid:95034355,name:'Cameron Pring',age:27.0,releaseClause:2},{uid:2000171727,name:'Pedro',age:20.0,releaseClause:0},{uid:2000297306,name:'Jofre Torrents',age:19.0,releaseClause:0},{uid:2000483116,name:'Giovanni Baldini',age:16.5,releaseClause:0},{uid:2000184284,name:'Mattia Mannini',age:19.5,releaseClause:0},{uid:2000510837,name:'Yohann Obin',age:16.5,releaseClause:0},{uid:2000293527,name:'Tyler Bindon',age:20.0,releaseClause:0}
   ],
   'Arsenal': [
-    {uid:28106491,name:'Declan Rice',age:26,ca:182,clause:123},
-    {uid:19242094,name:'Gabriel',age:28,ca:170,clause:130},
-    {uid:19351309,name:'Gabriel Martinelli',age:25,ca:170,clause:110},
-    {uid:28108035,name:'Reece James',age:25,ca:173,clause:70},
-    {uid:93070286,name:'Alexander Isak',age:25,ca:169,clause:180},
-    {uid:67287665,name:'Alex Baena',age:25,ca:170,clause:30},
-    {uid:2000083915,name:'Wesley',age:23,ca:155,clause:45},
-    {uid:43500755,name:'Giorgio Scalvini',age:23,ca:165,clause:80},
-    {uid:13136629,name:'Taiwo Awoniyi',age:27,ca:135,clause:4},
-    {uid:13181675,name:'Abdoulaye Faye',age:22,ca:118,clause:5},
-    {uid:54009099,name:'Łukasz Skorupski',age:34,ca:143,clause:4},
-    {uid:83169864,name:'Nuno Tavares',age:25,ca:143,clause:20},
-    {uid:83206392,name:'Samú',age:25,ca:145,clause:5},
-    {uid:84159608,name:'Albian Hajdari',age:24,ca:134,clause:14},
-    {uid:2000018781,name:'Simon Adingra',age:25,ca:141,clause:15},
-    {uid:2000047221,name:'Omari Hutchinson',age:23,ca:137,clause:15},
-    {uid:2000094715,name:'Guillaume Restes',age:22,ca:130,clause:15},
-    {uid:2000188897,name:'Dominik Prpic',age:23,ca:127,clause:5},
-    {uid:2000129012,name:'Jayden Addai',age:21,ca:125,clause:30},
-    {uid:28009441,name:'Kyle Walker',age:35,ca:143,clause:4},
-    {uid:2000032708,name:'Mamadou Sangaré',age:24.5,ca:136,clause:20},
-    {uid:86045976,name:'Pervis Estupinán',age:27,ca:142,clause:4},
-    {uid:2000180114,name:'Eguinaldo',age:21.5,ca:127,clause:5},
-    {uid:2000261761,name:'Trey Samuel-Ogunsuyi',age:20,ca:79,clause:0},
-    {uid:2000357640,name:'Alex Verón',age:18,ca:105,clause:0},
-    {uid:2000407507,name:'Andre Harriman-Annous',age:19,ca:86,clause:0},
-    {uid:2000444739,name:'Khensane',age:18,ca:82,clause:0},
-    {uid:2000457582,name:'Eba Bekir İş',age:18,ca:95,clause:0},
-    {uid:2000461292,name:'Roméo Garnier',age:18,ca:75,clause:0},
-    {uid:2000494587,name:'Carlos Macià',age:18,ca:114,clause:0},
-    {uid:2000476256,name:'Charles Robert Holland',age:17.5,ca:80,clause:0},
-    {uid:2000224404,name:'Dylan Lawlor',age:20.5,ca:112,clause:0}
+    {uid:19242094,name:'Gabriel',age:28.0,releaseClause:130},{uid:19351309,name:'Gabriel Martinelli',age:25.0,releaseClause:110},{uid:28108035,name:'Reece James',age:25.0,releaseClause:70},{uid:71113679,name:'Illia Zabarnyi',age:23.0,releaseClause:90},{uid:93070286,name:'Alexander Isak',age:25.0,releaseClause:180},{uid:28116386,name:'Anthony Gordon',age:25.0,releaseClause:100},{uid:67287665,name:'Alex Baena',age:25.0,releaseClause:30},{uid:13136629,name:'Taiwo Awoniyi',age:27.0,releaseClause:4},{uid:13181623,name:'Ismaël Pathé Ciss',age:31.0,releaseClause:1},{uid:13181675,name:'Abdoulaye Faye',age:21.0,releaseClause:5},{uid:29217603,name:'Archie Brown',age:24.0,releaseClause:4},{uid:54009099,name:'Łukasz Skorupski',age:34.0,releaseClause:4},{uid:83169864,name:'Nuno Tavares',age:25.0,releaseClause:20},{uid:83206392,name:'Samú',age:25.0,releaseClause:5},{uid:84159608,name:'Albian Hajdari',age:23.0,releaseClause:14},{uid:2000018781,name:'Simon Adingra',age:24.0,releaseClause:15},{uid:2000047221,name:'Omari Hutchinson',age:22.0,releaseClause:15},{uid:2000083915,name:'Wesley',age:22.0,releaseClause:45},{uid:2000094715,name:'Guillaume Restes',age:21.0,releaseClause:15},{uid:2000188897,name:'Dominik Prpic',age:22.0,releaseClause:5},{uid:2000129012,name:'Jayden Addai',age:20.0,releaseClause:30},{uid:28009441,name:'Kyle Walker',age:35.0,releaseClause:4},{uid:2000032708,name:'Mamadou Sangaré',age:23.5,releaseClause:20},{uid:2000261761,name:'Trey Samuel-Ogunsuyi',age:19.0,releaseClause:0},{uid:2000357640,name:'Alex Verón',age:17.0,releaseClause:0},{uid:2000407507,name:'Andre Harriman-Annous',age:18.0,releaseClause:0},{uid:2000444739,name:'Khensane',age:17.0,releaseClause:0},{uid:2000457582,name:'Eba Bekir İŞ',age:17.0,releaseClause:0},{uid:2000461292,name:'Roméo Garnier',age:17.0,releaseClause:0},{uid:2000494587,name:'Carlos Macià',age:17.0,releaseClause:0},{uid:2000180114,name:'Eguinaldo',age:20.5,releaseClause:5},{uid:2000476256,name:'Charles Robert Holland',age:16.5,releaseClause:0},{uid:2000224404,name:'Dylan Lawlor',age:19.5,releaseClause:0}
   ],
-  'Aston Villa': [
-    {uid:19242277,name:'Raphinha',age:28,ca:176,clause:133},
-    {uid:85140178,name:'Ousmane Dembélé',age:28,ca:186,clause:179},
-    {uid:78074594,name:'Federico Valverde',age:27,ca:175,clause:133},
-    {uid:37063644,name:'Jurrien Timber',age:25,ca:168,clause:69},
-    {uid:2000093091,name:'Nestory Irankunda',age:21,ca:160,clause:69},
-    {uid:29244869,name:'Kamaldeen Sulemana',age:25,ca:148,clause:25},
-    {uid:45116977,name:'Sano Kaishu',age:25,ca:140,clause:15},
-    {uid:48032338,name:'Ismael Bennacer',age:27,ca:146,clause:5},
-    {uid:49059205,name:'Bradley Locko',age:25,ca:145,clause:13},
-    {uid:93083839,name:'Isak Hien',age:26,ca:145,clause:24},
-    {uid:2000033033,name:'Joel Ordónez',age:23,ca:125,clause:34},
-    {uid:2000382044,name:'Ruan Pablo',age:19,ca:93,clause:9},
-    {uid:2000385385,name:'Gabriel Mec',age:19,ca:109,clause:29},
-    {uid:2000426283,name:'Mohamed Kader Meité',age:19,ca:115,clause:35},
-    {uid:2000447255,name:'Cardoso Varela',age:18,ca:97,clause:24},
-    {uid:28097980,name:'Fikayo Tomori',age:27,ca:147,clause:22},
-    {uid:2000101844,name:'robin risser',age:21,ca:131,clause:25},
-    {uid:93065006,name:'Gabriel Gudmundsson',age:26,ca:140,clause:4},
-    {uid:49060933,name:'Maxime Estève',age:25,ca:152,clause:25},
-    {uid:28090452,name:'Ola Aina',age:28,ca:143,clause:21},
-    {uid:53135726,name:'Thomas Olivier Amang A Kegueni',age:27,ca:110,clause:2},
-    {uid:2000290881,name:'Robinio Vaz',age:20,ca:143,clause:35},
-    {uid:2000338014,name:'Justin Lerma',age:19,ca:103,clause:11},
-    {uid:43155241,name:'Guglielmo Vicario',age:28,ca:144,clause:13},
-    {uid:2000289956,name:'Prosper Peter',age:19,ca:108,clause:0},
-    {uid:2000332383,name:'Alexander Staff',age:19,ca:87,clause:0},
-    {uid:2000368852,name:'Lucca Kiaba Mounganga Brughmans',age:19,ca:105,clause:0},
-    {uid:2000391038,name:'Jacob Ambaek',age:19,ca:112,clause:0},
-    {uid:2000451471,name:'Joél Jason Drakes-Thomas',age:18,ca:85,clause:0},
-    {uid:2000488891,name:'Nadson Juan',age:18,ca:94,clause:0},
-    {uid:2000490112,name:'Saïd Remadnia',age:17.5,ca:70,clause:0},
-    {uid:2000251829,name:'Genesis Kofi Koranteng Antwi',age:19,ca:100,clause:0},
-    {uid:2000360834,name:'Juan Cruz Meza',age:17.5,ca:95,clause:0}
+  'Aston Villa': [{uid:53135726,name:'Thomas Olivier Amang A Kegueni',age:0.0,releaseClause:2},
+    {uid:19242277,name:'Raphinha',age:28.0,releaseClause:133},{uid:85140178,name:'Ousmane Dembélé',age:28.0,releaseClause:179},{uid:37063644,name:'Jurrien Timber',age:25.0,releaseClause:69},{uid:95079228,name:'Alex Scott',age:22.0,releaseClause:49},{uid:2000093091,name:'Nestory Irankunda',age:20.0,releaseClause:69},{uid:14048328,name:'Juan Musso',age:31.0,releaseClause:9},{uid:29244869,name:'Kamaldeen Sulemana',age:24.0,releaseClause:25},{uid:45116977,name:'Sano Kaishu',age:25.0,releaseClause:15},{uid:48032338,name:'Ismael Bennacer',age:27.0,releaseClause:5},{uid:49059205,name:'Bradley Locko',age:24.0,releaseClause:13},{uid:93083839,name:'Isak Hien',age:26.0,releaseClause:24},{uid:2000033033,name:'Joel Ordónez',age:22.0,releaseClause:34},{uid:2000382044,name:'Ruan Pablo',age:18.0,releaseClause:9},{uid:2000385385,name:'Gabriel Mec',age:18.0,releaseClause:29},{uid:2000426283,name:'Mohamed Kader Meité',age:18.0,releaseClause:35},{uid:2000447255,name:'Cardoso Varela',age:17.0,releaseClause:24},{uid:28097980,name:'Fikayo Tomori',age:27.0,releaseClause:22},{uid:2000101844,name:'robin risser',age:20.0,releaseClause:25},{uid:93065006,name:'Gabriel Gudmundsson',age:26.0,releaseClause:4},{uid:49060933,name:'Maxime Estève',age:24.0,releaseClause:25},{uid:28090452,name:'Ola Aina',age:28.0,releaseClause:21},{uid:2000055184,name:'Bilal El Khannouss',age:22.0,releaseClause:25},{uid:2000289956,name:'Prosper Peter',age:18.0,releaseClause:0},{uid:2000290881,name:'Robinio Vaz',age:19.0,releaseClause:35},{uid:2000332383,name:'Alexander Staff',age:18.0,releaseClause:0},{uid:2000368852,name:'Lucca Kiaba Mounganga Brughmans',age:18.0,releaseClause:0},{uid:2000391038,name:'Jacob Ambaek',age:18.0,releaseClause:0},{uid:2000451471,name:'Joél Jason Drakes-Thomas',age:17.0,releaseClause:0},{uid:2000488891,name:'Nadson Juan',age:17.0,releaseClause:0},{uid:2000490112,name:'Saïd Remadnia',age:16.5,releaseClause:0},{uid:2000251829,name:'Genesis Kofi Koranteng Antwi',age:18.0,releaseClause:0},{uid:2000351894,name:'Mateus Mané',age:18.0,releaseClause:40},{uid:2000430443,name:'Fricio Caicedo',age:18.0,releaseClause:0}
+  ],
+  'Barcelona': [{uid:49038940,name:'Lucas Da Cunha',age:0.0,releaseClause:5},
+    {uid:49037900,name:'Wesley Fofana',age:25.0,releaseClause:80},{uid:86078360,name:'Moisés Caicedo',age:24.0,releaseClause:100},{uid:28126247,name:'Liam Delap',age:23.0,releaseClause:167},{uid:43143488,name:'Federico Dimarco',age:27.0,releaseClause:76},{uid:43424738,name:'Riccardo Calafiori',age:24.0,releaseClause:60},{uid:48036304,name:'Jules Koundé',age:26.0,releaseClause:60},{uid:67276230,name:'Nico Williams',age:23.0,releaseClause:60},{uid:29194724,name:'Antoine Semenyo',age:25.0,releaseClause:85},{uid:2000103330,name:'Can Uzun',age:20.0,releaseClause:65},{uid:16337326,name:'tarik muharemovic',age:23.0,releaseClause:35},{uid:35017428,name:'Marc-André ter Stegen',age:33.0,releaseClause:3},{uid:67011248,name:'David Soria',age:32.0,releaseClause:1},{uid:78060464,name:'José Giménez',age:30.0,releaseClause:2},{uid:2000090622,name:'Santiago Mouriño',age:24.0,releaseClause:25},{uid:2000094152,name:'Claudio Echeverri',age:20.0,releaseClause:24},{uid:2000193842,name:'Sindre Walle Egeli',age:20.0,releaseClause:15},{uid:2000193961,name:'Ibrahim Maza',age:20.0,releaseClause:65},{uid:2000158356,name:'Jair',age:21.0,releaseClause:15},{uid:2000126534,name:'Rodrigo Mendoza',age:21.0,releaseClause:29},{uid:2000299722,name:'Carlos Espi',age:20.0,releaseClause:60},{uid:2000333549,name:'Luca Reggiani',age:17.0,releaseClause:35},{uid:2000086175,name:'Kaiki Bruno da Silva',age:22.5,releaseClause:5},{uid:91157307,name:'Deniz Undav',age:29.0,releaseClause:5},{uid:2000210551,name:'William Gomes',age:20.0,releaseClause:30},{uid:2000273847,name:'Charalabos Kostoulas',age:19.0,releaseClause:20},{uid:2000338374,name:'Samuele Inácio',age:18.0,releaseClause:0},{uid:2000365946,name:'Raul Kumar',age:18.0,releaseClause:0},{uid:2000379943,name:'Matias Siltanen',age:19.0,releaseClause:7},{uid:2000407494,name:'Mateus Mide',age:17.5,releaseClause:0},{uid:2000258576,name:'Montrell Amare Culbreth',age:17.5,releaseClause:0},{uid:2000524865,name:'Mor Talla Ndiaye',age:17.0,releaseClause:0},{uid:2000349260,name:'Nathan Mbala',age:17.0,releaseClause:0},{uid:2000480666,name:'Kauê Furquim',age:16.0,releaseClause:0},{uid:2000476257,name:'Ibrahim Rabbaj',age:16.0,releaseClause:0},{uid:2000351894,name:'Mateus Mané',age:18.0,releaseClause:40},{uid:2000389019,name:'Alexis Ciria',age:18.0,releaseClause:0}
   ],
   'Benfica': [
-    {uid:29156522,name:'Ebere Eze',age:27,ca:155,clause:75},
-    {uid:43426047,name:'Destiny Udogie',age:24,ca:167,clause:90},
-    {uid:49056282,name:'Bradley Barcola',age:24,ca:169,clause:170},
-    {uid:2000015300,name:'Jamie Bynoe-Gittens',age:22,ca:168,clause:100},
-    {uid:83261140,name:'Francisco Conceicao',age:24,ca:162,clause:65},
-    {uid:2000051886,name:'Rafa Marín',age:25,ca:161,clause:33},
-    {uid:83243060,name:'Tomás Araújo',age:25,ca:155,clause:40},
-    {uid:71099053,name:'Andriy Lunin',age:26,ca:152,clause:15},
-    {uid:19375640,name:'André',age:25,ca:146,clause:18},
-    {uid:28106683,name:'Nathan Tella',age:26,ca:142,clause:4},
-    {uid:28127164,name:'Tyler Morton',age:24,ca:145,clause:18},
-    {uid:29123128,name:'Dominic Calvert-Lewin',age:28,ca:140,clause:30},
-    {uid:43424754,name:'Matteo Cancellieri',age:25,ca:135,clause:4},
-    {uid:49043189,name:'Georges Mikautadze',age:25,ca:151,clause:16},
-    {uid:49062699,name:'Andy Diouf',age:24,ca:134,clause:13},
-    {uid:83206395,name:'Francisco Moura',age:25,ca:135,clause:5},
-    {uid:91143491,name:'Nadiem Amiri',age:28,ca:149,clause:5},
-    {uid:91144914,name:'Kevin Danso',age:26,ca:145,clause:20},
-    {uid:91188349,name:'Noah Atubolu',age:25,ca:138,clause:10},
-    {uid:93127195,name:'Odilon Kossounou',age:25,ca:154,clause:35},
-    {uid:2000199219,name:'Goncalo Moreira',age:21,ca:112,clause:6},
-    {uid:2000385886,name:'Diego León',age:20,ca:101,clause:10}
+    {uid:29156522,name:'Ebere Eze',age:27.0,releaseClause:75},{uid:43426047,name:'Destiny Udogie',age:23.0,releaseClause:90},{uid:49056282,name:'Bradley Barcola',age:23.0,releaseClause:170},{uid:2000015300,name:'Jamie Bynoe-Gittens',age:21.0,releaseClause:100},{uid:83261140,name:'Francisco Conceicao',age:23.0,releaseClause:65},{uid:2000051886,name:'Rafa Marín',age:24.0,releaseClause:33},{uid:71099053,name:'Andriy Lunin',age:26.0,releaseClause:15},{uid:13174979,name:'Yves Bissouma',age:28.0,releaseClause:20},{uid:19375640,name:'André',age:24.0,releaseClause:18},{uid:28106683,name:'Nathan Tella',age:26.0,releaseClause:4},{uid:28127164,name:'Tyler Morton',age:23.0,releaseClause:18},{uid:29123128,name:'Dominic Calvert-Lewin',age:28.0,releaseClause:30},{uid:43424754,name:'Matteo Cancellieri',age:24.0,releaseClause:4},{uid:49043189,name:'Georges Mikautadze',age:25.0,releaseClause:16},{uid:49048365,name:'Tanguy Nianzou',age:24.0,releaseClause:2},{uid:49062699,name:'Andy Diouf',age:23.0,releaseClause:13},{uid:83206395,name:'Francisco Moura',age:25.0,releaseClause:5},{uid:83243060,name:'Tomás Araújo',age:24.0,releaseClause:40},{uid:91143491,name:'Nadiem Amiri',age:28.0,releaseClause:5},{uid:91144914,name:'Kevin Danso',age:26.0,releaseClause:20},{uid:91188349,name:'Noah Atubolu',age:24.0,releaseClause:10},{uid:93127195,name:'Odilon Kossounou',age:25.0,releaseClause:35},{uid:2000199219,name:'Goncalo Moreira',age:20.0,releaseClause:6},{uid:2000385886,name:'Diego León',age:19.0,releaseClause:10}
   ],
   'FC Bayern': [
-    {uid:92039023,name:'Joshua Kimmich',age:30,ca:178,clause:65},
-    {uid:16182894,name:'Dayot Upamecano',age:26,ca:165,clause:98},
-    {uid:37052843,name:'Denzel Dumfries',age:29,ca:158,clause:90},
-    {uid:14020367,name:'Emiliano Martínez',age:32,ca:157,clause:41},
-    {uid:67296654,name:'Alejandro Balde',age:23,ca:170,clause:106},
-    {uid:2000395112,name:'Pau Navarro',age:22,ca:156,clause:20},
-    {uid:28066083,name:'Serge Gnabry',age:30,ca:157,clause:20},
-    {uid:19270493,name:'Bremer',age:26,ca:162,clause:50},
-    {uid:2000014559,name:'Ernest Poku',age:23,ca:155,clause:20},
-    {uid:2000164850,name:'Ben Doak',age:21,ca:166,clause:46},
-    {uid:2000055284,name:'Angelo',age:22,ca:150,clause:10},
-    {uid:8718372,name:'Manuel Neuer',age:39,ca:145,clause:10},
-    {uid:16045721,name:'Marcel Sabitzer',age:31,ca:146,clause:4},
-    {uid:16147659,name:'Konrad Laimer',age:28,ca:153,clause:12},
-    {uid:28116305,name:'Folarin Balogun',age:25,ca:148,clause:20},
-    {uid:36096824,name:'Kostas Tsimikas',age:29,ca:144,clause:8},
-    {uid:55061470,name:'Nélson Semedo',age:31,ca:140,clause:5},
-    {uid:89063073,name:'Kim Min-Jae',age:28,ca:153,clause:55},
-    {uid:91104807,name:'Leon Goretzka',age:30,ca:153,clause:35},
-    {uid:91190673,name:'Josip Stanisic',age:25,ca:148,clause:15},
-    {uid:2000069643,name:'Mohamed Amoura',age:25,ca:146,clause:20},
-    {uid:49061868,name:'Elye Wahi',age:24,ca:150,clause:12},
-    {uid:29125191,name:'Dominic Solanke',age:27,ca:145,clause:5},
-    {uid:2000193585,name:'Aymen Sliti',age:21,ca:120,clause:0},
-    {uid:2000209904,name:'Bruno Ogbus',age:20,ca:123,clause:0},
-    {uid:2000396129,name:'Justin Clarke',age:17,ca:83,clause:0}
-  ],
-  'Leeds': [
-    {uid:28049320,name:'Harry Kane',age:32,ca:188,clause:100},
-    {uid:28122642,name:'Bukayo Saka',age:25,ca:188,clause:180},
-    {uid:49037900,name:'Wesley Fofana',age:25,ca:180,clause:80},
-    {uid:2000205927,name:'Jobe Bellingham',age:21,ca:146,clause:40},
-    {uid:29193659,name:'Jacob Ramsey',age:25,ca:165,clause:25},
-    {uid:37076092,name:'Noni Madueke',age:25,ca:165,clause:80},
-    {uid:2000189871,name:'Lewis Miley',age:21,ca:147,clause:40},
-    {uid:43425834,name:'Matteo Ruggeri',age:25,ca:157,clause:25},
-    {uid:92026209,name:'Hakan Calhanoglu',age:31,ca:162,clause:6},
-    {uid:18054004,name:'Leandro Trossard',age:30,ca:155,clause:11},
-    {uid:28094856,name:'Daniel James',age:27,ca:128,clause:7},
-    {uid:29217875,name:'Charlie Cresswell',age:24,ca:134,clause:20},
-    {uid:2000191846,name:'Jayden Danns',age:21,ca:121,clause:10},
-    {uid:2000276594,name:'Josh King',age:20,ca:141,clause:30},
-    {uid:69005372,name:'Roman Bürki',age:34,ca:132,clause:3},
-    {uid:28111079,name:'Calvin Bassey',age:25,ca:146,clause:15},
-    {uid:29074544,name:'Tyrone Mings',age:32,ca:143,clause:12},
-    {uid:28108036,name:'Conor Gallagher',age:25,ca:148,clause:12},
-    {uid:28111507,name:'Tyrick Mitchell',age:25,ca:145,clause:8},
-    {uid:28100123,name:'Aaron Wan-Bissaka',age:27,ca:138,clause:10},
-    {uid:2000147523,name:'Omari Kellyman',age:21,ca:123,clause:1},
-    {uid:67174729,name:'Adama Traoré',age:29,ca:135,clause:30},
-    {uid:35017377,name:'Oliver Baumann',age:35,ca:150,clause:9},
-    {uid:13174979,name:'Yves Bissouma',age:28,ca:142,clause:10},
-    {uid:2000273472,name:'Kiano Dyer',age:20,ca:97,clause:0},
-    {uid:2000303360,name:'Flávio Goncalves',age:20,ca:110,clause:0}
-  ],
-  'Hamburger SV': [
-    {uid:2000188173,name:'Assan Ouédraogo',age:21,ca:180,clause:70},
-    {uid:2000283271,name:'Ethan Nwaneri',age:20,ca:187,clause:105},
-    {uid:48037822,name:'Ibrahima Konaté',age:26,ca:158,clause:111},
-    {uid:49056280,name:'Malo Gusto',age:24,ca:163,clause:70},
-    {uid:2000195626,name:'Yankuba Minteh',age:23,ca:156,clause:70},
-    {uid:28121372,name:'Ian Maatsen',age:25,ca:160,clause:45},
-    {uid:19326796,name:'Ederson',age:26,ca:156,clause:38},
-    {uid:2000171034,name:'Aleksandar Pavlovic',age:23,ca:172,clause:60},
-    {uid:2000180822,name:'Brajan Gruda',age:23,ca:165,clause:35},
-    {uid:2000107089,name:'Matias Fernandez-Pardo',age:22,ca:156,clause:75},
-    {uid:37088234,name:'Emanuel Emegha',age:24,ca:153,clause:80},
-    {uid:76046285,name:'Luis Suárez',age:27,ca:153,clause:12},
-    {uid:2000126886,name:'Oscar Hojlund',age:22,ca:125,clause:1},
-    {uid:2000219701,name:'Kaua Elias',age:21,ca:125,clause:10},
-    {uid:91184334,name:'Maduka Okoye',age:25,ca:133,clause:2},
-    {uid:48037362,name:'Moussa Niakhaté',age:29,ca:139,clause:4},
-    {uid:2000253187,name:'Juan Rodríguez',age:22,ca:118,clause:5},
-    {uid:49053443,name:'Lorenz Assignon',age:25,ca:132,clause:1},
-    {uid:36078574,name:'Dimitrios Christos Giannoulis',age:29,ca:132,clause:1},
-    {uid:62191195,name:'Nikola Milenkovic',age:27,ca:146,clause:20},
-    {uid:2000111055,name:'Afonso Moreira',age:22,ca:128,clause:46},
-    {uid:16253898,name:'Patrick Wimmer',age:25,ca:136,clause:2},
-    {uid:29083750,name:'Nick Pope',age:33,ca:141,clause:2},
-    {uid:28100477,name:'Joe Rodon',age:27,ca:139,clause:0},
-    {uid:2000187477,name:'Tidiam Gomis',age:20,ca:122,clause:0},
-    {uid:2000276967,name:'Ethan Mbappé',age:20,ca:127,clause:0},
-    {uid:2000366140,name:'Leon Jakirovic',age:19,ca:101,clause:0},
-    {uid:2000503477,name:'Samba Konate',age:18,ca:86,clause:0},
-    {uid:2000454624,name:'Chris Irenee Ntamack Pondy',age:18.5,ca:85,clause:0},
-    {uid:2000290392,name:'Seny Koumbassa',age:19.5,ca:95,clause:0},
-    {uid:2000251805,name:'Adrian Adriano Lahdo',age:18,ca:107,clause:0},
-    {uid:2000278478,name:'Mohamadou Kanté',age:20,ca:111,clause:0}
-  ],
-  'Lazio': [
-    {uid:2000163799,name:'Nico Paz',age:22,ca:181,clause:130},
-    {uid:12087972,name:'Nicolas Jackson',age:25,ca:162,clause:85},
-    {uid:43298481,name:'Sandro Tonali',age:25,ca:167,clause:88},
-    {uid:64016316,name:'Jan Oblak',age:32,ca:165,clause:30},
-    {uid:85086031,name:'Adrien Rabiot',age:30,ca:157,clause:25},
-    {uid:11023165,name:'Amir Rrahmani',age:31,ca:155,clause:18},
-    {uid:43500130,name:'Diego Coppola',age:23,ca:162,clause:68},
-    {uid:2000228120,name:'Marc Guiu',age:21,ca:147,clause:41},
-    {uid:2000298715,name:'Mikey Moore',age:19,ca:135,clause:35},
-    {uid:28107919,name:'Reiss Nelson',age:25,ca:146,clause:11},
-    {uid:28121568,name:'Anthony Elanga',age:25,ca:145,clause:21},
-    {uid:29178504,name:'Djed Spence',age:25,ca:152,clause:38},
-    {uid:43017499,name:'Francesco Acerbi',age:37,ca:149,clause:6},
-    {uid:43125343,name:'Mattia Zaccagni',age:30,ca:152,clause:11},
-    {uid:48043484,name:'Pape Guèye',age:26,ca:147,clause:22},
-    {uid:49050736,name:'Adrien Truffert',age:25,ca:153,clause:17},
-    {uid:67212046,name:'Alfonso Pedraza',age:29,ca:140,clause:2},
-    {uid:83209468,name:'Goncalo Ramos',age:25,ca:152,clause:40},
-    {uid:2000011613,name:'Soumaila Coulibaly',age:23,ca:125,clause:12},
-    {uid:2000014080,name:'Rome-Jayden Owusu-Oduro',age:23,ca:126,clause:17},
-    {uid:45015318,name:'Gotoku Sakai',age:34,ca:132,clause:0},
-    {uid:13199286,name:'Nayef Aguerd',age:29,ca:142,clause:0},
-    {uid:2000350903,name:'Sean Steur',age:19,ca:137,clause:0},
-    {uid:2000404501,name:'Jaime Barroso',age:19,ca:90,clause:0}
-  ],
-  'Man City': [
-    {uid:18115012,name:'Roméo Lavia',age:23,ca:180,clause:90},
-    {uid:67217524,name:'Rodri',age:29,ca:180,clause:100},
-    {uid:7458500,name:'Lionel Messi',age:38,ca:172,clause:70},
-    {uid:18004457,name:'Kevin De Bruyne',age:34,ca:171,clause:40},
-    {uid:28108494,name:'Phil Foden',age:25,ca:169,clause:100},
-    {uid:29141828,name:'Ademola Lookman',age:27,ca:158,clause:46},
-    {uid:37063649,name:'Sven Botman',age:25,ca:156,clause:70},
-    {uid:55070299,name:'Rúben Dias',age:28,ca:168,clause:91},
-    {uid:83320124,name:'Mateus Fernandes',age:23,ca:146,clause:50},
-    {uid:2000098727,name:'Rico Lewis',age:22,ca:155,clause:30},
-    {uid:28116427,name:'Eric García',age:25,ca:155,clause:26},
-    {uid:2000101285,name:'Nico O\'Reilly',age:22,ca:163,clause:89},
-    {uid:43252073,name:'Gianluigi Donnarumma',age:26,ca:170,clause:70},
-    {uid:37025551,name:'Nathan Aké',age:30,ca:153,clause:20},
-    {uid:28116558,name:'Largie Ramazani',age:25,ca:152,clause:30},
-    {uid:34000647,name:'Olivier Giroud',age:38,ca:141,clause:5},
-    {uid:43295110,name:'Raoul Bellanova',age:25,ca:145,clause:30},
-    {uid:67245235,name:'Fran García',age:25,ca:145,clause:20},
-    {uid:98034601,name:'Denis Zakaria',age:28,ca:147,clause:30},
-    {uid:2000036812,name:'Callum Doyle',age:23,ca:144,clause:20},
-    {uid:2000112986,name:'Max Alleyne',age:22,ca:132,clause:15},
-    {uid:49045184,name:'Pierre Kalulu',age:25,ca:152,clause:30},
-    {uid:83297510,name:'Lukás Hornícek',age:25,ca:136,clause:12},
-    {uid:2000183134,name:'Ewen Jaouen',age:21,ca:110,clause:0},
-    {uid:2000185228,name:'Justin Oboavwoduo',age:20,ca:90,clause:0},
-    {uid:2000288733,name:'Mahamadou Sangare',age:20,ca:88,clause:0},
-    {uid:2000421810,name:'Bas Evers',age:18,ca:94,clause:0},
-    {uid:2000437952,name:'Tyrone Samba',age:19,ca:71,clause:0},
-    {uid:2000511340,name:'Floyd Samba',age:18,ca:76,clause:0},
-    {uid:2000511353,name:'Teddie Lamb',age:18,ca:75,clause:0},
-    {uid:2000368021,name:'Wojciech Mońka',age:19,ca:90,clause:0},
-    {uid:2000262414,name:'Paulo da Silva',age:18,ca:89,clause:0},
-    {uid:2000503806,name:'Iago Machado',age:17,ca:80,clause:0},
-    {uid:2000184227,name:'Lakyle Samuel',age:19,ca:90,clause:0}
-  ],
-  'Palmeiras': [
-    {uid:53095137,name:'Martin Odegaard',age:26,ca:176,clause:120},
-    {uid:2000256231,name:'Lamine Yamal',age:20,ca:194,clause:400},
-    {uid:18026122,name:'Thibaut Courtois',age:33,ca:181,clause:55},
-    {uid:2000221458,name:'Luís Guilherme',age:21,ca:179,clause:85},
-    {uid:2000104850,name:'Mathys Tel',age:22,ca:164,clause:60},
-    {uid:2000147056,name:'Tom Bischof',age:22,ca:154,clause:40},
-    {uid:28127161,name:'Jarell Quansah',age:24,ca:160,clause:65},
-    {uid:2000288527,name:'Said El Mala',age:20,ca:146,clause:80},
-    {uid:2000100253,name:'El Chadaille Bitshiabu',age:22,ca:160,clause:50},
-    {uid:12095226,name:'Amara Diouf',age:19,ca:97,clause:10},
-    {uid:13194648,name:'Joseph Paintsil',age:27,ca:129,clause:3},
-    {uid:37001813,name:'Marten de Roon',age:34,ca:149,clause:7},
-    {uid:37057982,name:'Teun Koopmeiners',age:27,ca:145,clause:7},
-    {uid:37084869,name:'Jayden Oosterwolde',age:25,ca:140,clause:25},
-    {uid:43036586,name:'Leonardo Spinazzola',age:32,ca:147,clause:5},
-    {uid:43093395,name:'Alessio Romagnoli',age:30,ca:148,clause:8},
-    {uid:43096538,name:'Manuel Lazzari',age:31,ca:136,clause:8},
-    {uid:58123343,name:'Nikita Khaikin',age:30,ca:138,clause:5},
-    {uid:85103818,name:'Ludovic Ajorque',age:31,ca:138,clause:4},
-    {uid:2000087434,name:'Isaac Babadi',age:22,ca:128,clause:4},
-    {uid:19273277,name:'Dodo',age:26,ca:145,clause:15},
-    {uid:37071180,name:'Quilindschy Hartman',age:25,ca:150,clause:10},
-    {uid:29186052,name:'Matt O\'Riley',age:25,ca:141,clause:4},
-    {uid:2000178997,name:'Simone Pafundi',age:21,ca:115,clause:0},
-    {uid:2000180882,name:'Paris Josua Brunner',age:21,ca:105,clause:0},
-    {uid:2000254107,name:'Kaye Furo',age:20,ca:110,clause:0},
-    {uid:2000274204,name:'Julian Hall',age:19,ca:94,clause:0},
-    {uid:2000311467,name:'Bright Ede',age:20,ca:88,clause:0}
-  ],
-  'Paris SG': [
-    {uid:83261910,name:'Nuno Mendes',age:25,ca:180,clause:150},
-    {uid:91193048,name:'Florian Wirtz',age:24,ca:188,clause:200},
-    {uid:24060473,name:'Josko Gvardiol',age:25,ca:180,clause:130},
-    {uid:653054,name:'Luka Modric',age:39,ca:166,clause:15},
-    {uid:28104124,name:'Trent Alexander-Arnold',age:26,ca:160,clause:55},
-    {uid:28121369,name:'Armando Broja',age:25,ca:160,clause:20},
-    {uid:2000375662,name:'Lennart Karl',age:19,ca:158,clause:140},
-    {uid:2000028320,name:'Alberto Moleiro',age:23,ca:165,clause:35},
-    {uid:29125343,name:'Scott McTominay',age:28,ca:165,clause:65},
-    {uid:19184436,name:'Joelinton',age:28,ca:156,clause:10},
-    {uid:27132703,name:'Morten Hjulmand',age:26,ca:150,clause:30},
-    {uid:67172040,name:'Ayeze Perez',age:31,ca:153,clause:5},
-    {uid:13160655,name:'Reinildo',age:31,ca:146,clause:4},
-    {uid:19409448,name:'Vanderson',age:25,ca:139,clause:6},
-    {uid:25055083,name:'Ladislav Krejčí',age:26,ca:142,clause:4},
-    {uid:28110176,name:'Nathan Trott',age:26,ca:120,clause:1},
-    {uid:29141827,name:'Ezri Konsa',age:27,ca:150,clause:10},
-    {uid:67030171,name:'David De Gea',age:34,ca:147,clause:20},
-    {uid:79024232,name:'Miguel Ángel Almirón Rejala',age:31,ca:136,clause:4},
-    {uid:92017376,name:'Pascal Gross',age:34,ca:153,clause:4},
-    {uid:43075156,name:'Giovanni Di Lorenzo',age:32,ca:154,clause:20},
-    {uid:91147345,name:'Robin Koch',age:29,ca:145,clause:4},
-    {uid:2000379470,name:'Taufik Seidu Zanzi Awudu',age:19,ca:90,clause:0},
-    {uid:2000406231,name:'Ilies Belmokhtar',age:19,ca:95,clause:0},
-    {uid:2000476255,name:'Reggie Spencer Walsh',age:18,ca:116,clause:0},
-    {uid:2000476261,name:'Mathis Maxime E. Eboué',age:18,ca:75,clause:0},
-    {uid:2000484547,name:'Yoann Becker',age:16.5,ca:70,clause:0}
-  ],
-  'Wrexham': [
-    {uid:2000115202,name:'Désiré Doué',age:22,ca:190,clause:273},
-    {uid:61089387,name:'Aaron Hickey',age:25,ca:165,clause:25},
-    {uid:2000023588,name:'Michael Kayode',age:23,ca:164,clause:65},
-    {uid:37065567,name:'Crysencio Summerville',age:25,ca:156,clause:43},
-    {uid:13211267,name:'Abdul Fatawu',age:23,ca:137,clause:50},
-    {uid:18105831,name:'Ismael Saibari',age:25,ca:151,clause:40},
-    {uid:49048468,name:'Chrislain Matsima',age:25,ca:142,clause:26},
-    {uid:92071481,name:'Finn Gilbert Dahmen',age:27,ca:140,clause:1},
-    {uid:2000019413,name:'Carlos Romero Serrano',age:25,ca:145,clause:25},
-    {uid:2000187717,name:'Tommy Watson',age:21,ca:127,clause:10},
-    {uid:2000304487,name:'Christantus Uche',age:24,ca:149,clause:15},
-    {uid:2000048682,name:'Medon Berisha',age:23,ca:124,clause:1},
-    {uid:2000426277,name:'Christian Kofane',age:21,ca:141,clause:75},
-    {uid:2000182279,name:'Alessandro Vogt',age:22,ca:120,clause:15},
-    {uid:37051305,name:'Arnaut Danjuma',age:28,ca:140,clause:6},
-    {uid:2000307785,name:'Ibrahima Ba',age:21.5,ca:118,clause:15},
-    {uid:2000075038,name:'Bernardo Fontes',age:23.5,ca:123,clause:10},
-    {uid:2000023527,name:'Issa Doumbia',age:21.5,ca:115,clause:30},
-    {uid:2000335906,name:'Yassir Zabiri',age:21.5,ca:130,clause:10},
-    {uid:2000288469,name:'Veljko Milosavljevic',age:20,ca:126,clause:25},
-    {uid:2000205277,name:'Ismaëlo Ganiou',age:21.5,ca:117,clause:35},
-    {uid:67211760,name:'Mikel Merino',age:29,ca:154,clause:7},
-    {uid:2000242422,name:'Alexey Batrakov',age:22,ca:138,clause:12},
-    {uid:2000293312,name:'Jesús Fortea',age:20,ca:104,clause:6},
-    {uid:2000277689,name:'Alysson Edward Franco da Rocha',age:20.5,ca:115,clause:0},
-    {uid:2000205568,name:'Alphadjo Cissè',age:20,ca:117,clause:0},
-    {uid:2000379558,name:'Tayo Subuloye',age:19,ca:80,clause:0},
-    {uid:2000410735,name:'Andrej Kostić',age:20,ca:111,clause:0},
-    {uid:2000506792,name:'Cruz Ibeh',age:16.5,ca:73,clause:0},
-    {uid:2000522407,name:'James Bogere',age:18,ca:88,clause:0},
-    {uid:2000462294,name:'Samuel Martinez',age:16.5,ca:75,clause:0},
-    {uid:2000170106,name:'jens hjerto-dahl',age:19.5,ca:115,clause:0},
-    {uid:2000503700,name:'Raphael Canut',age:16.5,ca:63,clause:0},
-    {uid:2000447622,name:'Akpe Victory',age:18.5,ca:88,clause:0},
-    {uid:2000432704,name:'Darwin Guagua',age:17,ca:100,clause:0}
-  ],
-  '1860 Munchen': [
-    {uid:2000210791,name:'Assane Diao',age:21,releaseClause:180},
-    {uid:59130638,name:'Khvicha Kvaratskhelia',age:25,releaseClause:173},
-    {uid:27164470,name:'Patrick Dorgu',age:22,releaseClause:158},
-    {uid:2000301027,name:'Ayden Heaven',age:20,releaseClause:165},
-    {uid:49038952,name:'Khephren Thuram',age:25,releaseClause:163},
-    {uid:28115831,name:'James Garner',age:25,releaseClause:163},
-    {uid:28112986,name:'Callum Hudson-Odoi',age:25,releaseClause:158},
-    {uid:2000218258,name:'Alvaro Rodríguez',age:22,releaseClause:155},
-    {uid:18107187,name:'Maarten Vandevoordt',age:25,releaseClause:132},
-    {uid:67277455,name:'Mario Gila',age:25,releaseClause:147},
-    {uid:2000100062,name:'Badredine Bouanani',age:22,releaseClause:128},
-    {uid:2000103798,name:'Chemsdine Talbi',age:22,releaseClause:143},
-    {uid:2000108691,name:'Lewis Hall',age:22,releaseClause:144},
-    {uid:2000115205,name:'Jeanuel Belocian',age:22,releaseClause:125},
-    {uid:2000221609,name:'Vitor Reis',age:21,releaseClause:124},
-    {uid:43500900,name:'Mohamed Alì Zoma',age:21.5,releaseClause:120},
-    {uid:67217491,name:'Andrei Raţiu',age:27,releaseClause:147},
-    {uid:62142830,name:'Vanja Milinkovic-Savic',age:28,releaseClause:146},
-    {uid:92065436,name:'Tim Kleindienst',age:30,releaseClause:148},
-    {uid:37055844,name:'Donyell Malen',age:26,releaseClause:148},
-    {uid:37052470,name:'Noussair Mazraoui',age:27,releaseClause:149},
-    {uid:2000261214,name:'Trey Nyoni',age:20,releaseClause:123},
-    {uid:55070285,name:'Joao Palhinha',age:30,releaseClause:150},
-    {uid:2000402904,name:'Jan Virgili',age:21,releaseClause:132},
-    {uid:2000336209,name:'Alessandro Longoni',age:19,releaseClause:86},
-    {uid:2000368894,name:'Jesse Bisiwu',age:19,releaseClause:95},
-    {uid:2000388083,name:'Kyllian Antonio',age:19,releaseClause:102},
-    {uid:2000449220,name:'August De Wannemacker',age:18,releaseClause:90},
-    {uid:2000497719,name:'Adil Hamdani',age:17.5,releaseClause:88},
-  ],
-  'Aberdeen': [
-    {uid:27160181,name:'Rasmus Hojlund',age:24,releaseClause:160},
-    {uid:28121564,name:'Mason Greenwood',age:25,releaseClause:167},
-    {uid:95079228,name:'Alex Scott',age:23,releaseClause:164},
-    {uid:37071197,name:'Ryan Gravenberch',age:25,releaseClause:169},
-    {uid:49041157,name:'Melvin Bard',age:25,releaseClause:155},
-    {uid:2000283274,name:'Myles Lewis-Skelly',age:20,releaseClause:169},
-    {uid:16337073,name:'Samson Baidoo',age:23,releaseClause:159},
-    {uid:37065620,name:'Brian Brobbey',age:25,releaseClause:137},
-    {uid:2000256110,name:'Shea Lacey',age:20,releaseClause:115},
-    {uid:2000379552,name:'Shim Mheuka',age:19,releaseClause:108},
-    {uid:2000288426,name:'Tiago Gabriel',age:22,releaseClause:125},
-    {uid:2000397286,name:'Arsene kouassi',age:22,releaseClause:123},
-    {uid:2000126470,name:'Víctor Muñoz',age:23,releaseClause:144},
-    {uid:36141838,name:'Giorgos Vagiannidis',age:25,releaseClause:127},
-    {uid:92079338,name:'Ridle Baku',age:27,releaseClause:145},
-    {uid:16191724,name:'nicolas seiwald',age:25,releaseClause:142},
-    {uid:27148020,name:'Mohamed Daramy',age:25,releaseClause:140},
-    {uid:2000102877,name:'Mike Penders',age:22,releaseClause:129},
-    {uid:2000070509,name:'Tjark Ernst',age:24,releaseClause:125},
-    {uid:2000288856,name:'Axel Tape',age:19,releaseClause:118},
-    {uid:2000330067,name:'Gaoussou Diakité',age:21,releaseClause:118},
-    {uid:2000339863,name:'Caleb Yirenkyi',age:21,releaseClause:136},
-    {uid:2000241471,name:'Juan Arizala',age:20.5,releaseClause:119},
-    {uid:2000381116,name:'Christ Inao Oulaï',age:20.5,releaseClause:130},
-    {uid:2000254841,name:'Cristian Orozco',age:18,releaseClause:83},
-    {uid:2000223178,name:'Emanuele Rao',age:20,releaseClause:96},
-    {uid:2000455095,name:'Xander Dierckx',age:16.5,releaseClause:75},
-    {uid:2000373378,name:'Adem Avdić',age:17.5,releaseClause:94},
-  ],
-  'Ajax': [
-    {uid:2000105654,name:'Jorrel Hato',age:21,releaseClause:180},
-    {uid:71101331,name:'Mykhaylo Mudryk',age:25,releaseClause:159},
-    {uid:55041623,name:'Joao Cancelo',age:31,releaseClause:150},
-    {uid:12095038,name:'Malick Yalcouyé',age:21,releaseClause:122},
-    {uid:18083611,name:'Dodi Lukébakio',age:27,releaseClause:143},
-    {uid:18101745,name:'Lois Openda',age:25,releaseClause:148},
-    {uid:29115800,name:'Joe Gomez',age:28,releaseClause:149},
-    {uid:37055842,name:'Noa Lang',age:26,releaseClause:144},
-    {uid:48037391,name:'Matteo Guendouzi',age:26,releaseClause:150},
-    {uid:48042432,name:'Timothy Weah',age:25,releaseClause:143},
-    {uid:72044918,name:'Tyler Adams',age:26,releaseClause:151},
-    {uid:83152910,name:'Galeno',age:27,releaseClause:145},
-    {uid:96085886,name:'Kamil Grabara',age:26,releaseClause:142},
-    {uid:2000107424,name:'Roger Fernandes',age:21,releaseClause:130},
-    {uid:2000162595,name:'Max Weiss',age:23,releaseClause:120},
-    {uid:2000162930,name:'Petar Sucic',age:23,releaseClause:148},
-    {uid:2000241002,name:'Niccolò Fortini',age:21,releaseClause:120},
-    {uid:91151156,name:'Vangelis Pavlidis',age:26,releaseClause:151},
-    {uid:85045409,name:'Raphael Guerreiro',age:31,releaseClause:150},
-    {uid:2000165624,name:'Zachary Athekame',age:22,releaseClause:121},
-    {uid:2000127926,name:'Thierno Barry',age:24,releaseClause:150},
-    {uid:2000400123,name:'Honest Ahanor',age:19,releaseClause:132},
-    {uid:83282675,name:'Alexsandro Ribeiro',age:25,releaseClause:144},
-    {uid:2000287960,name:'Joane Gadou',age:20,releaseClause:131},
-    {uid:2000378873,name:'Modou Kéba Cissé',age:21,releaseClause:109},
-    {uid:2000441701,name:'Prince Amoako',age:20,releaseClause:120},
-    {uid:2000464287,name:'Abubacarr Sedi Kinteh',age:20,releaseClause:115},
-    {uid:2000220860,name:'Matviy Ponomarenko',age:20,releaseClause:110},
-    {uid:2000426362,name:'Samba Coulibaly',age:18,releaseClause:72},
-    {uid:2000288511,name:'Ronan Kpakio',age:18.5,releaseClause:109},
-  ],
-  'A. Madrid': [
-    {uid:14183207,name:'Julián Alvarez',age:25,releaseClause:172},
-    {uid:37047745,name:'Frenkie de Jong',age:28,releaseClause:165},
-    {uid:37071126,name:'Tijjani Reijnders',age:27,releaseClause:158},
-    {uid:49056279,name:'Rayan Cherki',age:23,releaseClause:174},
-    {uid:83169226,name:'Diogo Costa',age:25,releaseClause:160},
-    {uid:37076335,name:'Jan Paul van Hecke',age:25,releaseClause:156},
-    {uid:43424738,name:'Riccardo Calafiori',age:25,releaseClause:169},
-    {uid:37060922,name:'Joshua Zirkzee',age:25,releaseClause:154},
-    {uid:29128536,name:'Ben Chilwell',age:28,releaseClause:142},
-    {uid:37050136,name:'Bijlow',age:27,releaseClause:144},
-    {uid:37060952,name:'Quinten Timber',age:25,releaseClause:146},
-    {uid:37064720,name:'Lutsharel Geertruida',age:25,releaseClause:142},
-    {uid:37073313,name:'Devyne Rensch',age:24,releaseClause:141},
-    {uid:2000138305,name:'Nobel Mendy',age:22,releaseClause:131},
-    {uid:2000144508,name:'Ezechiel Banzuzi',age:22,releaseClause:125},
-    {uid:78085068,name:'Ronald Araujo',age:26,releaseClause:150},
-    {uid:37055841,name:'Justin Kluivert',age:26,releaseClause:148},
-    {uid:2000017415,name:'Alessandro Circati',age:23,releaseClause:131},
-    {uid:2000402688,name:'Dro',age:19,releaseClause:123},
-    {uid:2000184619,name:'Tyrique George',age:21,releaseClause:116},
-    {uid:2000158496,name:'Jonathan Jesus',age:21.5,releaseClause:110},
-    {uid:37071145,name:'Mats Wieffer',age:25,releaseClause:144},
-    {uid:2000257577,name:'Ayodele Thomas',age:20,releaseClause:106},
-    {uid:2000310111,name:'Giacomo Koloto',age:19,releaseClause:97},
-    {uid:2000378966,name:'Wendeson Dell',age:19,releaseClause:95},
-    {uid:2000443913,name:'Zé Lucas',age:19,releaseClause:117},
-    {uid:2000460060,name:'Angelo Candido',age:18,releaseClause:77},
-    {uid:2000389904,name:'Tynan Thompson',age:18.5,releaseClause:81},
-    {uid:2000269819,name:'mathys detourbet',age:19.5,releaseClause:105},
-    {uid:2000205837,name:'Matteo Lavelli',age:19,releaseClause:88},
-  ],
-  'Atalanta': [
-    {uid:98028755,name:'Mohamed Salah',age:33,releaseClause:181},
-    {uid:2000202295,name:'Victor Froholdt',age:21,releaseClause:154},
-    {uid:67216396,name:'Fabián',age:29,releaseClause:160},
-    {uid:39060464,name:'Hákon Arnar Haraldsson',age:24,releaseClause:157},
-    {uid:93070271,name:'Viktor Gyokeres',age:27,releaseClause:153},
-    {uid:19351985,name:'Natan',age:25,releaseClause:152},
-    {uid:83169817,name:'Florentino Luís',age:25,releaseClause:140},
-    {uid:95080787,name:'Kialonda Gaspar',age:27,releaseClause:133},
-    {uid:2000012523,name:'Vinicius Augusto Tobias da Silva',age:23,releaseClause:128},
-    {uid:2000039995,name:'Antonín Kinsky',age:24,releaseClause:140},
-    {uid:2000146948,name:'Tom Rothe',age:22,releaseClause:137},
-    {uid:2000351877,name:'Guille Fernández',age:19,releaseClause:110},
-    {uid:27066387,name:'Andreas Christensen',age:29,releaseClause:152},
-    {uid:85120944,name:'Benjamin Pavard',age:29,releaseClause:149},
-    {uid:85140175,name:'Yoane Wissa',age:28,releaseClause:144},
-    {uid:43108998,name:'Andrea Compagno',age:29,releaseClause:135},
-    {uid:76047347,name:'Sinisterra',age:26,releaseClause:140},
-    {uid:91177332,name:'Jeff Chabot',age:27,releaseClause:142},
-    {uid:28109599,name:'Emile Smith Rowe',age:25,releaseClause:146},
-    {uid:85104424,name:'Kingsley Coman',age:29,releaseClause:150},
-    {uid:19030933,name:'Neto',age:36,releaseClause:130},
-    {uid:2000183396,name:'Ollie scarles',age:20.5,releaseClause:125},
-    {uid:2000186151,name:'Alex Tóth',age:20.5,releaseClause:116},
-    {uid:2000416938,name:'alex marchal',age:18.5,releaseClause:105},
-    {uid:2000332522,name:'Florian Hellstern',age:18.5,releaseClause:110},
-    {uid:2000529228,name:'Marco Company',age:16.5,releaseClause:84},
-    {uid:2000275655,name:'Adetokunbo Adewale Ayomide Oyekunle',age:18.5,releaseClause:100},
-    {uid:2000301241,name:'Mathys Angély',age:18.5,releaseClause:105},
-    {uid:2000221745,name:'Loun Srdanovic',age:18.5,releaseClause:107},
-    {uid:2000150158,name:'Jonathan Asp Jensen',age:19.5,releaseClause:117},
-  ],
-  'Barcelona': [
-    {uid:28124579,name:'Jamal Musiala',age:24,releaseClause:185},
-    {uid:43143488,name:'Federico Dimarco',age:27,releaseClause:162},
-    {uid:48036304,name:'Jules Koundé',age:26,releaseClause:160},
-    {uid:67276230,name:'Nico Williams',age:24,releaseClause:171},
-    {uid:2000103330,name:'Can Uzun',age:21,releaseClause:168},
-    {uid:2000193961,name:'Ibrahim Maza',age:21,releaseClause:145},
-    {uid:2000126534,name:'Rodrigo Mendoza',age:22,releaseClause:150},
-    {uid:2000030816,name:'Cristhian Mosquera',age:23,releaseClause:169},
-    {uid:83188780,name:'Matheus Nunes',age:26,releaseClause:157},
-    {uid:16337326,name:'tarik muharemovic',age:24,releaseClause:131},
-    {uid:67011248,name:'David Soria',age:32,releaseClause:142},
-    {uid:78060464,name:'José Giménez',age:30,releaseClause:147},
-    {uid:2000090622,name:'Santiago Mouriño',age:25,releaseClause:148},
-    {uid:2000094152,name:'Claudio Echeverri',age:21,releaseClause:123},
-    {uid:2000299722,name:'Carlos Espi',age:21,releaseClause:115},
-    {uid:2000333549,name:'Luca Reggiani',age:18,releaseClause:98},
-    {uid:2000086175,name:'Kaiki Bruno da Silva',age:23.5,releaseClause:128},
-    {uid:91157307,name:'Deniz Undav',age:29,releaseClause:154},
-    {uid:55070307,name:'Rúben Neves',age:28,releaseClause:150},
-    {uid:16184707,name:'Christoph Baumgartner',age:25,releaseClause:148},
-    {uid:2000273847,name:'Charalabos Kostoulas',age:20,releaseClause:125},
-    {uid:2000379943,name:'Matias Siltanen',age:20,releaseClause:113},
-    {uid:43140326,name:'Alex Meret',age:28,releaseClause:150},
-    {uid:18105815,name:'Arthur Theate',age:25,releaseClause:148},
-    {uid:2000338374,name:'Samuele Inácio',age:19,releaseClause:100},
-    {uid:2000365946,name:'Raul Kumar',age:19,releaseClause:99},
-    {uid:2000407494,name:'Mateus Mide',age:18.5,releaseClause:92},
-    {uid:2000258576,name:'Montrell Amare Culbreath',age:18.5,releaseClause:102},
-    {uid:2000524865,name:'Mor Talla Ndiaye',age:18,releaseClause:85},
-    {uid:2000480666,name:'Kauê Furquim',age:17,releaseClause:85},
-    {uid:2000476257,name:'Ibrahim Rabbaj',age:17,releaseClause:80},
-    {uid:2000408022,name:'Malcom Dacosta',age:17.5,releaseClause:60},
-    {uid:2000426366,name:'Aymen Assab',age:17.5,releaseClause:75},
-    {uid:2000389019,name:'Alexis Ciria',age:18.5,releaseClause:94},
-  ],
-  'La Coruna': [
-    {uid:2000120742,name:'Evan Ferguson',age:22,releaseClause:155},
-    {uid:735216,name:'Cristiano Ronaldo',age:40,releaseClause:155},
-    {uid:16199713,name:'Igor',age:27,releaseClause:139},
-    {uid:24025298,name:'Dominik Livakovic',age:30,releaseClause:135},
-    {uid:28112993,name:'Tariq Lamptey',age:25,releaseClause:134},
-    {uid:29036189,name:'Lewis Dunk',age:33,releaseClause:147},
-    {uid:52101143,name:'Andrew Moran',age:23,releaseClause:120},
-    {uid:2000036372,name:'Diego Gómez',age:24,releaseClause:137},
-    {uid:2000056845,name:'James Beadle',age:22,releaseClause:117},
-    {uid:2000124287,name:'Jack Hinshelwood',age:22,releaseClause:143},
-    {uid:2000227373,name:'Stefanos Tzimas',age:21,releaseClause:137},
-    {uid:18110473,name:'Maxim De Cuyper',age:25,releaseClause:136},
-    {uid:13182752,name:'Chidera Ejuke',age:27,releaseClause:137},
-    {uid:37060600,name:'Ferdi Kadioglu',age:25,releaseClause:145},
-    {uid:2000277534,name:'Abdoul Koné',age:21,releaseClause:108},
-    {uid:2000025485,name:'Habib Diarra',age:23,releaseClause:136},
-    {uid:28115798,name:'Oluwafisayo Faruq Dele-Bashiru',age:25,releaseClause:132},
-    {uid:2000202298,name:'Amin Chiakha',age:21,releaseClause:110},
-    {uid:96088106,name:'Przemysław Płacheta',age:27,releaseClause:115},
-    {uid:2000208868,name:'Jonathan De Irastorza',age:21,releaseClause:120},
-    {uid:2000218213,name:'Taylan Bulut',age:21,releaseClause:115},
-    {uid:85085378,name:'Aymeric Laporte',age:31,releaseClause:144},
-    {uid:49041006,name:'Evann Guessand',age:25,releaseClause:144},
-    {uid:67231100,name:'Jorge de Frutos',age:28,releaseClause:146},
-    {uid:29061164,name:'Dan Burn',age:33,releaseClause:144},
-    {uid:2000216807,name:'Mason Melia',age:19,releaseClause:96},
-    {uid:2000521120,name:'Edwin Josué Quintero Preciado',age:16,releaseClause:94},
-    {uid:2000521121,name:'Holger Jamil Quintero Preciado',age:16,releaseClause:90},
-    {uid:2000497883,name:'Hugo Fernández Muret',age:18,releaseClause:70},
-    {uid:2000460892,name:'Akol Akon',age:17,releaseClause:76},
-    {uid:2000299363,name:'Daniel Yáñez Barla',age:19,releaseClause:97},
-    {uid:2000447804,name:'Giovanni Emir Baroni',age:17,releaseClause:106},
-    {uid:2000529221,name:'Leo Lemaitre Lezcano',age:17,releaseClause:83},
-    {uid:2000276593,name:'Samuel Amissah',age:19,releaseClause:90},
-    {uid:2000384299,name:'José Antonio Morante Antúnez',age:19,releaseClause:90},
-  ],
-  'Everton': [
-    {uid:67293495,name:'Pedri',age:24,releaseClause:185},
-    {uid:83174762,name:'Vitinha',age:25,releaseClause:177},
-    {uid:67103537,name:'Isco',age:33,releaseClause:158},
-    {uid:28108033,name:'Marc Guéhi',age:25,releaseClause:165},
-    {uid:24048100,name:'Dani Olmo',age:27,releaseClause:161},
-    {uid:89056845,name:'Ferran Torres',age:25,releaseClause:159},
-    {uid:67220143,name:'Mikel Oyarzábal',age:28,releaseClause:155},
-    {uid:63013145,name:'Milan Škriniar',age:30,releaseClause:155},
-    {uid:19371902,name:'Danilo',age:25,releaseClause:135},
-    {uid:28005568,name:'Jordan Henderson',age:35,releaseClause:144},
-    {uid:29179807,name:'Jayden Bogle',age:25,releaseClause:138},
-    {uid:67153373,name:'Alex Moreno',age:32,releaseClause:142},
-    {uid:67245413,name:'Oscar Mingueza',age:26,releaseClause:148},
-    {uid:79027217,name:'Omar Alderete',age:28,releaseClause:150},
-    {uid:83320135,name:'António Silva',age:23,releaseClause:154},
-    {uid:2000160584,name:'Santiago Hidalgo',age:22,releaseClause:130},
-    {uid:2000190312,name:'Ethan Williams',age:21,releaseClause:107},
-    {uid:8826969,name:'Keylor Navas',age:38,releaseClause:148},
-    {uid:61043456,name:'Andrew Robertson',age:31,releaseClause:152},
-    {uid:2000263566,name:'Ryan Francisco',age:20,releaseClause:126},
-    {uid:67104772,name:'Íñigo Martínez',age:34,releaseClause:150},
-    {uid:83174759,name:'Fábio Vieira',age:25,releaseClause:140},
-    {uid:28067800,name:'Jack Grealish',age:29,releaseClause:150},
-    {uid:67277830,name:'Julen Agirrezabala',age:25,releaseClause:140},
-    {uid:2000375648,name:'Wisdom Okpako Mike',age:17,releaseClause:111},
-    {uid:2000273902,name:'André Luiz Santos Dias',age:20,releaseClause:117},
-  ],
-  'Fiorentina': [
-    {uid:62246208,name:'Benjamin Sesko',age:24,releaseClause:170},
-    {uid:91182849,name:'Lazar Samardzic',age:25,releaseClause:155},
-    {uid:43390774,name:'Samuele Ricci',age:25,releaseClause:152},
-    {uid:13194021,name:'Cheick Doucouré',age:25,releaseClause:139},
-    {uid:18097159,name:'Alexis Saelemaekers',age:26,releaseClause:149},
-    {uid:28094949,name:'Harry Wilson',age:28,releaseClause:144},
-    {uid:49040115,name:'Illan Meslier',age:25,releaseClause:124},
-    {uid:53110469,name:'Brice Wembangomo',age:28,releaseClause:114},
-    {uid:61098180,name:'Calvin Ramsay',age:24,releaseClause:113},
-    {uid:67271025,name:'Adrián Bernabé',age:25,releaseClause:136},
-    {uid:70118933,name:'Cenk Ozkacar',age:25,releaseClause:122},
-    {uid:83111338,name:'Gedson Fernandes',age:26,releaseClause:135},
-    {uid:83169004,name:'Zaidu Sanusi',age:28,releaseClause:125},
-    {uid:85051083,name:'Kalidou Koulibaly',age:34,releaseClause:150},
-    {uid:85145148,name:'Jonathan Ikoné',age:27,releaseClause:132},
-    {uid:86066843,name:'Moisés Ramírez',age:25,releaseClause:115},
-    {uid:92051583,name:'Timo Werner',age:29,releaseClause:130},
-    {uid:92102718,name:'Armel Bella-Kotchap',age:25,releaseClause:143},
-    {uid:2000080496,name:'Garang Kuol',age:22,releaseClause:116},
-    {uid:2000109338,name:'Deniz Gül',age:23,releaseClause:126},
-    {uid:2000153847,name:'Sani Suleiman',age:20,releaseClause:115},
-    {uid:2000177913,name:'Shaqueel van Persie',age:20,releaseClause:112},
-    {uid:2000258809,name:'Rafael Pinto Pedrosa',age:19,releaseClause:106},
-    {uid:2000259382,name:'Luca Erlein',age:20,releaseClause:106},
-    {uid:2000263996,name:'Riquelme Fillipi',age:20,releaseClause:97},
-    {uid:2000332528,name:'Mirza Ćatović',age:20,releaseClause:107},
-  ],
-  'Frankfurt': [
-    {uid:29221846,name:'Michael Olise',age:25,releaseClause:185},
-    {uid:2000032706,name:'Alvaro Carreras',age:24,releaseClause:160},
-    {uid:91208050,name:'Kevin Schade',age:25,releaseClause:159},
-    {uid:28054565,name:'Jordan Pickford',age:31,releaseClause:156},
-    {uid:98003821,name:'Granit Xhaka',age:32,releaseClause:160},
-    {uid:67288555,name:'Xavi Simons',age:24,releaseClause:170},
-    {uid:2000019708,name:'Hugo Larsson',age:23,releaseClause:158},
-    {uid:45095577,name:'Ritsu Doan',age:27,releaseClause:148},
-    {uid:84161623,name:'Aurèle Amenda',age:24,releaseClause:135},
-    {uid:96102946,name:'Jakub Kiwior',age:25,releaseClause:151},
-    {uid:2000045854,name:'Nnamdi Collins',age:23,releaseClause:141},
-    {uid:2000052135,name:'Abdallah Sima',age:25,releaseClause:132},
-    {uid:2000065824,name:'Mio Backhaus',age:23,releaseClause:125},
-    {uid:2000068585,name:'Nathaniel Brown',age:24,releaseClause:147},
-    {uid:2000096364,name:'Joaquin Panichelli',age:24,releaseClause:136},
-    {uid:2000178777,name:'Kosta Nedeljkovic',age:21,releaseClause:140},
-    {uid:2000307251,name:'Konstantinos Karetsas',age:19,releaseClause:118},
-    {uid:2000385891,name:'Alejandro Gomes Rodríguez',age:19,releaseClause:104},
-    {uid:2000097929,name:'Niccolò Pisilli',age:22,releaseClause:139},
-    {uid:2000186695,name:'Jan Ziółkowski',age:22,releaseClause:121},
-    {uid:2000102803,name:'Ayoube Amaimouni-Echghouyab',age:21.5,releaseClause:125},
-    {uid:19404391,name:'alisson santos',age:23,releaseClause:128},
-    {uid:2000212746,name:'Samir El Mourabet',age:20,releaseClause:122},
-    {uid:2000205299,name:'Rayan Fofana',age:21,releaseClause:114},
-    {uid:2000269260,name:'Matteo Cocchi',age:20,releaseClause:104},
-    {uid:2000289214,name:'Joël-Emmanuel Coulibaly',age:20,releaseClause:85},
-    {uid:2000267399,name:'Bendegúz Kovács',age:19,releaseClause:110},
-    {uid:2000180832,name:'Elias Baum',age:20,releaseClause:120},
-    {uid:2000380590,name:'Wesley Okoduwa',age:17.5,releaseClause:87},
-    {uid:2000258482,name:'Tom Atcheson',age:18.5,releaseClause:103},
-    {uid:2000490707,name:'Lyan Araújo',age:16.5,releaseClause:80},
-    {uid:2000347399,name:'Keita Kosugi',age:19.5,releaseClause:114},
-  ],
-  'Flamengo': [
-    {uid:2000263999,name:'Estêvao',age:20,releaseClause:200},
-    {uid:2000296497,name:'Pau Cubarsí',age:20,releaseClause:171},
-    {uid:67277675,name:'Joan García',age:25,releaseClause:168},
-    {uid:2000049413,name:'Gavi',age:22,releaseClause:170},
-    {uid:2000141742,name:'Fermín',age:24,releaseClause:170},
-    {uid:76049803,name:'Luis Díaz',age:28,releaseClause:168},
-    {uid:71113679,name:'Illia Zabarnyi',age:24,releaseClause:164},
-    {uid:2000058198,name:'Marc Casadó',age:23,releaseClause:157},
-    {uid:2000128974,name:'Eliezer Mayenda',age:22,releaseClause:148},
-    {uid:19258927,name:'Caio Henrique',age:28,releaseClause:138},
-    {uid:29156212,name:'Robert Sánchez',age:27,releaseClause:149},
-    {uid:2000009057,name:'Carlos Forbs',age:23,releaseClause:149},
-    {uid:2000141707,name:'Yarek Gasiorowski',age:22,releaseClause:129},
-    {uid:2000123587,name:'jeremy arevalo',age:22,releaseClause:118},
-    {uid:2000101061,name:'Gerard Martín',age:25,releaseClause:148},
-    {uid:2000351880,name:'Toni Fernández',age:19,releaseClause:110},
-    {uid:93085044,name:'Emil Holm',age:25,releaseClause:138},
-    {uid:85140415,name:'Issa Diop',age:28,releaseClause:129},
-    {uid:2000149882,name:'Ebenezer Akinsanmiro',age:22,releaseClause:122},
-    {uid:2000220048,name:'Chema Andrés',age:22,releaseClause:137},
-    {uid:2000229718,name:'Jon Martín',age:21,releaseClause:127},
-    {uid:28100239,name:'Tosin Adarabioyo',age:27,releaseClause:138},
-    {uid:28095341,name:'Pablo Maffeo',age:28,releaseClause:140},
-    {uid:28127875,name:'Carney Chukwuemeka',age:23,releaseClause:148},
-    {uid:2000210786,name:'Pablo García',age:21,releaseClause:125},
-    {uid:2000298787,name:'Xavi Espart',age:20,releaseClause:100},
-    {uid:2000370427,name:'Pedro Rodríguez',age:19,releaseClause:90},
-    {uid:2000472427,name:'Raúl Expósito',age:18,releaseClause:75},
-    {uid:2000297470,name:'Tomàs Marqués',age:19.5,releaseClause:105},
-    {uid:2000402287,name:'Hamza Abdelkarim',age:18.5,releaseClause:112},
-    {uid:2000475982,name:'João Gabriel Castro Santos',age:17.5,releaseClause:83},
-    {uid:2000103231,name:'Nikolaus Wurmbrand',age:20.5,releaseClause:116},
-    {uid:2000234010,name:'Patricio Pacífico',age:20,releaseClause:105},
-    {uid:2000399274,name:'Ugo Lamare El Kadmiri',age:18.5,releaseClause:80},
-  ],
-  'Hertha BSC': [
-    {uid:2000274379,name:'Geovany Quenda',age:20,releaseClause:177},
-    {uid:48030711,name:'André-Franck Zambo Anguissa',age:29,releaseClause:159},
-    {uid:2000381365,name:'Ayyoub Bouaddi',age:19,releaseClause:130},
-    {uid:2000088490,name:'Roony Bardghji',age:21,releaseClause:170},
-    {uid:12093353,name:'Karim Konaté',age:23,releaseClause:158},
-    {uid:2000101248,name:'Marc Pubill',age:24,releaseClause:159},
-    {uid:19342183,name:'Evanilson',age:25,releaseClause:147},
-    {uid:43617061,name:'Nicolò Bertola',age:24,releaseClause:138},
-    {uid:48032198,name:'Evan N\'Dicka',age:25,releaseClause:154},
-    {uid:48034615,name:'Nordi Mukiele',age:27,releaseClause:143},
-    {uid:55070264,name:'Nuno Santos',age:30,releaseClause:137},
-    {uid:63029157,name:'Dominik Greif',age:28,releaseClause:140},
-    {uid:76020280,name:'Johan Mojica',age:32,releaseClause:140},
-    {uid:78064881,name:'Mauro Arambarri',age:29,releaseClause:153},
-    {uid:2000102845,name:'Mika Godts',age:22,releaseClause:140},
-    {uid:2000113245,name:'Jean-Mattéo Bahoya',age:22,releaseClause:142},
-    {uid:2000129380,name:'Darío Osorio',age:23,releaseClause:122},
-    {uid:2000158335,name:'Matías Moreno',age:23,releaseClause:121},
-    {uid:2000166604,name:'Alexander Freeman',age:22,releaseClause:123},
-    {uid:2000257061,name:'Oskar Spiten-Nysæter',age:19,releaseClause:109},
-    {uid:43500245,name:'Giovanni Fabbian',age:24,releaseClause:134},
-    {uid:78090138,name:'Darwin Núnez',age:26,releaseClause:145},
-    {uid:35017428,name:'Marc-André ter Stegen',age:33,releaseClause:153},
-    {uid:2000217846,name:'César Palacios',age:21,releaseClause:123},
-    {uid:2000269520,name:'Aaron Bouwman',age:19,releaseClause:97},
-    {uid:2000279620,name:'Souleymane Sidibé',age:20,releaseClause:95},
-    {uid:2000288837,name:'Lazar Jovanovic',age:20,releaseClause:108},
-    {uid:2000299717,name:'Diego Aguado Facio',age:20,releaseClause:103},
-    {uid:2000328963,name:'Bogdan Popov',age:20,releaseClause:114},
-    {uid:2000352027,name:'Òscar Gistau',age:19,releaseClause:90},
-    {uid:2000412892,name:'Lushendry Martes',age:18,releaseClause:95},
-  ],
-  'Inter': [
-    {uid:14110660,name:'Lautaro Martínez',age:27,releaseClause:170},
-    {uid:43139595,name:'Nicolò Barella',age:28,releaseClause:162},
-    {uid:43252460,name:'Alessandro Bastoni',age:26,releaseClause:162},
-    {uid:28115996,name:'Morgan Rogers',age:25,releaseClause:170},
-    {uid:28126241,name:'Oscar Bobb',age:24,releaseClause:160},
-    {uid:55057659,name:'Ederson',age:31,releaseClause:160},
-    {uid:2000259904,name:'Giovanni Leoni',age:20,releaseClause:141},
-    {uid:19350649,name:'Carlos Augusto',age:26,releaseClause:147},
-    {uid:43391659,name:'Elia Caprile',age:25,releaseClause:140},
-    {uid:43617691,name:'Nicolò Savona',age:24,releaseClause:144},
-    {uid:49037684,name:'Oumar Solet',age:25,releaseClause:143},
-    {uid:67277845,name:'Borja Sainz',age:25,releaseClause:143},
-    {uid:2000024341,name:'Arthur Atta',age:24,releaseClause:147},
-    {uid:2000082098,name:'Alex Valle',age:23,releaseClause:152},
-    {uid:2000136198,name:'Marco Palestra',age:22,releaseClause:138},
-    {uid:2000273835,name:'Christos Mouzakitis',age:20,releaseClause:125},
-    {uid:2000288835,name:'Mihajlo Cvetkovic',age:20,releaseClause:115},
-    {uid:2000013430,name:'Pablo Felipe',age:23,releaseClause:136},
-    {uid:83320131,name:'Youssef Chermiti',age:22,releaseClause:124},
-    {uid:2000311773,name:'Noahkai Banks',age:20,releaseClause:122},
-    {uid:2000363430,name:'Juan Angulo',age:18.5,releaseClause:97},
-    {uid:2000191037,name:'Chupe',age:20.5,releaseClause:123},
-    {uid:91184426,name:'Angelo Stiller',age:25,releaseClause:150},
-    {uid:2000438795,name:'Saba Kharebashvili',age:18,releaseClause:110},
-    {uid:2000330855,name:'Kerim Alajbegovic',age:19,releaseClause:120},
-    {uid:2000388194,name:'Will Wright',age:19,releaseClause:79},
-    {uid:2000519166,name:'Maycon Cardozo',age:17.5,releaseClause:95},
-    {uid:2000451481,name:'Paul Mendy',age:18.5,releaseClause:71},
-    {uid:2000184216,name:'Nicolò Tresoldi',age:20.5,releaseClause:127},
+    {uid:92039023,name:'Joshua Kimmich',age:30.0,releaseClause:65},{uid:16182894,name:'Dayot Upamecano',age:26.0,releaseClause:70},{uid:18054004,name:'Leandro Trossard',age:30.0,releaseClause:20},{uid:37052843,name:'Denzel Dumfries',age:29.0,releaseClause:90},{uid:2000094252,name:'Beraldo',age:22.0,releaseClause:32},{uid:14020367,name:'Emiliano Martínez',age:32.0,releaseClause:41},{uid:67296654,name:'Alejandro Balde',age:22.0,releaseClause:106},{uid:2000395112,name:'Pau Navarro',age:21.0,releaseClause:20},{uid:28066083,name:'Serge Gnabry',age:30.0,releaseClause:20},{uid:19270493,name:'Bremer',age:26.0,releaseClause:50},{uid:2000014559,name:'Ernest Poku',age:22.0,releaseClause:20},{uid:2000055284,name:'Angelo',age:21.0,releaseClause:10},{uid:8718372,name:'Manuel Neuer',age:39.0,releaseClause:10},{uid:16045721,name:'Marcel Sabitzer',age:31.0,releaseClause:4},{uid:16147659,name:'Konrad Laimer',age:28.0,releaseClause:12},{uid:28116305,name:'Folarin Balogun',age:24.0,releaseClause:20},{uid:36096824,name:'Kostas Tsimikas',age:29.0,releaseClause:8},{uid:55061470,name:'Nélson Semedo',age:31.0,releaseClause:5},{uid:89063073,name:'Kim Min-Jae',age:28.0,releaseClause:55},{uid:91104807,name:'Leon Goretzka',age:30.0,releaseClause:35},{uid:91190673,name:'Josip Stanisic',age:25.0,releaseClause:15},{uid:2000069643,name:'Mohamed Amoura',age:25.0,releaseClause:20},{uid:2000193585,name:'Aymen Sliti',age:20.0,releaseClause:0},{uid:2000209904,name:'Bruno Ogbus',age:19.0,releaseClause:0},{uid:2000396129,name:'Justin Clarke',age:16.0,releaseClause:0}
   ],
   'Juventus': [
-    {uid:29179241,name:'Erling Haaland',age:25,releaseClause:184},
-    {uid:16279486,name:'Karim Adeyemi',age:25,releaseClause:160},
-    {uid:28127166,name:'Conor Bradley',age:24,releaseClause:165},
-    {uid:67295650,name:'Yeremy Pino',age:24,releaseClause:165},
-    {uid:86075795,name:'Willian Pacho',age:25,releaseClause:171},
-    {uid:2000053239,name:'Yaser Asprilla',age:23,releaseClause:149},
-    {uid:67276122,name:'Ansu Fati',age:24,releaseClause:134},
-    {uid:67276071,name:'Miguel Gutiérrez',age:25,releaseClause:152},
-    {uid:28126242,name:'James Trafford',age:24,releaseClause:154},
-    {uid:43500510,name:'Fabio Miretti',age:23,releaseClause:141},
-    {uid:67217522,name:'Pau Torres',age:28,releaseClause:149},
-    {uid:76050675,name:'Daniel Muñoz',age:29,releaseClause:147},
-    {uid:2000024428,name:'Radek Vítek',age:23,releaseClause:127},
-    {uid:2000058381,name:'Ngal\'Ayel Mukau',age:22,releaseClause:131},
-    {uid:2000108398,name:'Joaquin Seys',age:22,releaseClause:123},
-    {uid:2000116383,name:'Nathan Zeze',age:22,releaseClause:125},
-    {uid:2000143029,name:'Gonzalo',age:23,releaseClause:146},
-    {uid:2000164358,name:'Raphael Kofler',age:22,releaseClause:111},
-    {uid:2000045246,name:'Ruben van Bommel',age:22,releaseClause:138},
-    {uid:13196616,name:'Edmond Tapsoba',age:26,releaseClause:148},
-    {uid:2000282595,name:'Eivind Fauske Helland',age:22,releaseClause:123},
-    {uid:2000186389,name:'Edvin Austbø',age:22,releaseClause:122},
-    {uid:2000239998,name:'Keisuke Goto',age:22,releaseClause:120},
-    {uid:2000098012,name:'Aleksandar Stankovic',age:21,releaseClause:134},
-    {uid:2000291513,name:'Antonio Cordero',age:20,releaseClause:127},
-    {uid:2000176791,name:'Billy van Duijl',age:20,releaseClause:116},
-    {uid:2000181767,name:'Mats Rots',age:20,releaseClause:117},
-    {uid:2000403065,name:'Pedro Villar',age:18,releaseClause:85},
-    {uid:2000386356,name:'Adam Ayari',age:18,releaseClause:86},
-    {uid:2000314474,name:'Tobias van den Elshout',age:18.5,releaseClause:88},
-    {uid:2000198858,name:'Renato Marin',age:18.5,releaseClause:99},
+    {uid:29179241,name:'Erling Haaland',age:25.0,releaseClause:400},{uid:16279486,name:'Karim Adeyemi',age:24.0,releaseClause:127},{uid:28127166,name:'Conor Bradley',age:23.0,releaseClause:78},{uid:67295650,name:'Yeremy Pino',age:23.0,releaseClause:43},{uid:86075795,name:'Willian Pacho',age:24.0,releaseClause:115},{uid:2000053239,name:'Yaser Asprilla',age:22.0,releaseClause:13},{uid:67276122,name:'Ansu Fati',age:23.0,releaseClause:16},{uid:67276071,name:'Miguel Gutiérrez',age:25.0,releaseClause:63},{uid:28126242,name:'James Trafford',age:23.0,releaseClause:23},{uid:28127875,name:'Carney Chukwuemeka',age:22.0,releaseClause:23},{uid:43500510,name:'Fabio Miretti',age:22.0,releaseClause:6},{uid:67190888,name:'Aleix García',age:28.0,releaseClause:6},{uid:67217522,name:'Pau Torres',age:28.0,releaseClause:29},{uid:76050675,name:'Daniel Muñoz',age:29.0,releaseClause:13},{uid:2000024428,name:'Radek Vítek',age:22.0,releaseClause:9},{uid:2000058381,name:'Ngal\'Ayel Mukau',age:21.0,releaseClause:16},{uid:2000108398,name:'Joaquin Seys',age:21.0,releaseClause:13},{uid:2000116383,name:'Nathan Zeze',age:21.0,releaseClause:23},{uid:2000143029,name:'Gonzalo',age:22.0,releaseClause:26},{uid:2000164358,name:'Raphael Kofler',age:21.0,releaseClause:3},{uid:2000045246,name:'Ruben van Bommel',age:21.0,releaseClause:19},{uid:13196616,name:'Edmond Tapsoba',age:26.0,releaseClause:26},{uid:2000282595,name:'Eivind Fauske Helland',age:21.0,releaseClause:9},{uid:2000186389,name:'Edvin Austbø',age:21.0,releaseClause:6},{uid:2000239998,name:'Keisuke Goto',age:21.0,releaseClause:9},{uid:2000098012,name:'Aleksandar Stankovic',age:20.0,releaseClause:0},{uid:2000291513,name:'Antonio Cordero',age:19.0,releaseClause:0},{uid:2000176791,name:'Billy van Duijl',age:19.0,releaseClause:0},{uid:2000181767,name:'Mats Rots',age:19.0,releaseClause:0},{uid:2000403065,name:'Pedro Villar',age:17.0,releaseClause:0},{uid:2000426369,name:'Pierre Mounguengue',age:17.0,releaseClause:0},{uid:2000386356,name:'Adam Ayari',age:17.0,releaseClause:0}
   ],
-  'Leicester': [
-    {uid:49056243,name:'Eduardo Camavinga',age:24,releaseClause:175},
-    {uid:19306929,name:'Rodrygo',age:25,releaseClause:175},
-    {uid:98040383,name:'Gregor Kobel',age:27,releaseClause:162},
-    {uid:2000123482,name:'Murillo',age:25,releaseClause:162},
-    {uid:2000138516,name:'Paul Wanner',age:21,releaseClause:164},
-    {uid:2000166563,name:'Carlos Baleba',age:23,releaseClause:158},
-    {uid:37055843,name:'Matthijs de Ligt',age:25,releaseClause:155},
-    {uid:28113828,name:'Jeremie Frimpong',age:25,releaseClause:164},
-    {uid:25044451,name:'Tomás Chory',age:30,releaseClause:142},
-    {uid:28115792,name:'Neco Williams',age:25,releaseClause:144},
-    {uid:29175220,name:'Morgan Gibbs-White',age:25,releaseClause:150},
-    {uid:43094150,name:'Ivan Provedel',age:31,releaseClause:147},
-    {uid:43274977,name:'Moise Kean',age:25,releaseClause:149},
-    {uid:48042717,name:'Ibrahim Sangaré',age:27,releaseClause:147},
-    {uid:76023027,name:'Davinson Sánchez',age:29,releaseClause:150},
-    {uid:91184445,name:'Josha Vagnoman',age:25,releaseClause:145},
-    {uid:2000161829,name:'Breno Bidon',age:22,releaseClause:128},
-    {uid:2000239167,name:'Moise Bombito',age:25,releaseClause:134},
-    {uid:2000330773,name:'Yang Min-Hyuk',age:21,releaseClause:123},
-    {uid:2000416048,name:'Reigan Heskey',age:19,releaseClause:90},
-    {uid:67294055,name:'Sergi Cardona',age:26,releaseClause:146},
-    {uid:67291985,name:'Carlos Alvarez',age:23,releaseClause:135},
-    {uid:28106687,name:'Eddie Nketiah',age:26,releaseClause:138},
-    {uid:2000026194,name:'Lucas Hogsberg',age:21,releaseClause:133},
-    {uid:2000165742,name:'Christian McFarlane',age:20,releaseClause:93},
-    {uid:2000301767,name:'Buba Sangaré',age:19,releaseClause:117},
-    {uid:2000368737,name:'René Mitongo',age:19,releaseClause:92},
-    {uid:2000457463,name:'Sadriddin Hasanov',age:19,releaseClause:85},
+  'Man City': [
+    {uid:18115012,name:'Roméo Lavia',age:22.0,releaseClause:90},{uid:67217524,name:'Rodri',age:29.0,releaseClause:100},{uid:7458500,name:'Lionel Messi',age:38.0,releaseClause:70},{uid:18004457,name:'Kevin De Bruyne',age:34.0,releaseClause:40},{uid:28108494,name:'Phil Foden',age:25.0,releaseClause:100},{uid:29141828,name:'Ademola Lookman',age:27.0,releaseClause:46},{uid:37063649,name:'Sven Botman',age:25.0,releaseClause:70},{uid:55057659,name:'Ederson',age:31.0,releaseClause:20},{uid:55070299,name:'Rúben Dias',age:28.0,releaseClause:91},{uid:83320124,name:'Mateus Fernandes',age:22.0,releaseClause:50},{uid:2000098727,name:'Rico Lewis',age:21.0,releaseClause:30},{uid:28116427,name:'Eric García',age:25.0,releaseClause:26},{uid:2000101285,name:'Nico O\'Reilly',age:21.0,releaseClause:89},{uid:37025551,name:'Nathan Aké',age:30.0,releaseClause:20},{uid:24003746,name:'Ante Budimir',age:34.0,releaseClause:5},{uid:28116558,name:'Largie Ramazani',age:25.0,releaseClause:30},{uid:34000647,name:'Olivier Giroud',age:38.0,releaseClause:5},{uid:37065875,name:'Kjell Scherpen',age:25.0,releaseClause:10},{uid:43295110,name:'Raoul Bellanova',age:25.0,releaseClause:30},{uid:67245235,name:'Fran García',age:25.0,releaseClause:20},{uid:98034601,name:'Denis Zakaria',age:28.0,releaseClause:30},{uid:2000036812,name:'Callum Doyle',age:22.0,releaseClause:20},{uid:2000112986,name:'Max Alleyne',age:21.0,releaseClause:15},{uid:49045184,name:'Pierre Kalulu',age:25.0,releaseClause:30},{uid:2000183134,name:'Ewen Jaouen',age:20.0,releaseClause:0},{uid:2000185228,name:'Justin Oboavwoduo',age:19.0,releaseClause:0},{uid:2000288733,name:'Mahamadou Sangare',age:19.0,releaseClause:0},{uid:2000421810,name:'Bas Evers',age:17.0,releaseClause:0},{uid:2000437952,name:'Tyrone Samba',age:18.0,releaseClause:0},{uid:2000511340,name:'Floyd Samba',age:17.0,releaseClause:0},{uid:2000511353,name:'Teddie Lamb',age:17.0,releaseClause:0},{uid:2000368021,name:'Wojciech Mońka',age:18.0,releaseClause:0},{uid:2000262414,name:'Paulo da Silva',age:17.0,releaseClause:0},{uid:2000503806,name:'Iago Machado',age:16.0,releaseClause:0}
   ],
-  'Liverpool': [
-    {uid:85139014,name:'Kylian Mbappé',age:26,releaseClause:195},
-    {uid:49062667,name:'Hugo Ekitiké',age:25,releaseClause:174},
-    {uid:2000094886,name:'Jérémy Jacquet',age:22,releaseClause:151},
-    {uid:28115788,name:'Curtis Jones',age:25,releaseClause:159},
-    {uid:2000218544,name:'Rayan',age:20,releaseClause:145},
-    {uid:19217413,name:'Gérson',age:28,releaseClause:139},
-    {uid:19403484,name:'Luís Henrique',age:25,releaseClause:150},
-    {uid:29158244,name:'Lloyd Kelly',age:26,releaseClause:144},
-    {uid:29175587,name:'Leif Davis',age:25,releaseClause:133},
-    {uid:37084637,name:'Robin Gerardus Petrus Roefs',age:24,releaseClause:145},
-    {uid:48037291,name:'Axel Disasi',age:27,releaseClause:146},
-    {uid:48044574,name:'Moussa Diaby',age:26,releaseClause:145},
-    {uid:49038965,name:'Sacha Boey',age:25,releaseClause:145},
-    {uid:49048461,name:'Lucien Agoumé',age:25,releaseClause:148},
-    {uid:2000022887,name:'Cher Ndour',age:23,releaseClause:133},
-    {uid:2000104915,name:'Saël Kumbedi Nseke',age:22,releaseClause:125},
-    {uid:2000121585,name:'Filippo Mané',age:22,releaseClause:110},
-    {uid:2000138872,name:'Kassoum Ouattara',age:22,releaseClause:118},
-    {uid:2000180861,name:'Almugera Kabar',age:21,releaseClause:112},
-    {uid:2000123485,name:'GIOVANE',age:23,releaseClause:130},
-    {uid:2000221411,name:'Allan Andrade Elias',age:22,releaseClause:126},
-    {uid:37051440,name:'Danilho Doekhi',age:27,releaseClause:143},
-    {uid:19352610,name:'Rodrigo Muniz',age:25,releaseClause:136},
-    {uid:2000183492,name:'Meupiyou Menadjou',age:21,releaseClause:120},
-    {uid:2000268858,name:'Eduardo Felicíssimo',age:20,releaseClause:96},
-    {uid:2000273913,name:'Gui Negão',age:20,releaseClause:113},
-    {uid:2000293255,name:'Luca Meirelles',age:20,releaseClause:122},
-    {uid:2000297302,name:'Albert Navarro',age:20,releaseClause:102},
-    {uid:2000478239,name:'Simón Escobar',age:17,releaseClause:95},
-    {uid:2000290365,name:'Mathys Niflore',age:19,releaseClause:91},
-    {uid:2000277018,name:'Tomás Parmo',age:17.5,releaseClause:106},
-  ],
-  'Marseille': [
-    {uid:19058734,name:'Alisson',age:32,releaseClause:177},
-    {uid:28100266,name:'Marcus Rashford',age:27,releaseClause:156},
-    {uid:92023410,name:'Antonio Rüdiger',age:32,releaseClause:157},
-    {uid:18007344,name:'Romelu Lukaku',age:32,releaseClause:158},
-    {uid:2000051578,name:'Facundo Buonanotte',age:22,releaseClause:165},
-    {uid:89063107,name:'Iliman N\'Diaye',age:25,releaseClause:155},
-    {uid:91119700,name:'Jonathan Tah',age:29,releaseClause:158},
-    {uid:2000198043,name:'Tyler Dibling',age:21,releaseClause:144},
-    {uid:83111501,name:'Thierry Rendall Correia',age:26,releaseClause:137},
-    {uid:2000091511,name:'Lequincio Zeefuik',age:22,releaseClause:113},
-    {uid:2000098836,name:'Petar Ratkov',age:23,releaseClause:133},
-    {uid:2000229933,name:'Kjell Watjen',age:21,releaseClause:112},
-    {uid:19371031,name:'Joao Gomes',age:25,releaseClause:138},
-    {uid:91175517,name:'David Raum',age:27,releaseClause:152},
-    {uid:2000086472,name:'Kevin Kelsy',age:23,releaseClause:142},
-    {uid:28129089,name:'Yunus Musah',age:24,releaseClause:145},
-    {uid:72051563,name:'Chris Richards',age:25,releaseClause:147},
-    {uid:2000221925,name:'Rafiu Durosinmi',age:23.5,releaseClause:127},
-    {uid:2000085150,name:'Cole Campbell',age:21,releaseClause:118},
-    {uid:2000252303,name:'Kendry Páez',age:20,releaseClause:133},
-    {uid:37075765,name:'Milan van Ewijk',age:25,releaseClause:129},
-    {uid:2000140844,name:'David Ozoh',age:21,releaseClause:118},
-    {uid:2000241678,name:'Lorran',age:20,releaseClause:114},
-    {uid:2000104631,name:'Jakob Schöller',age:20.5,releaseClause:105},
-    {uid:2000433203,name:'Sherkhan Kalmurza',age:20,releaseClause:90},
-    {uid:2000480447,name:'Emmanuel Chukwu',age:20,releaseClause:100},
-    {uid:12094355,name:'Mamour N\'Diaye',age:20.5,releaseClause:110},
-    {uid:2000392430,name:'Godwill Kukonki',age:19,releaseClause:85},
-    {uid:2000261857,name:'Guido Della Rovere',age:19,releaseClause:96},
-    {uid:2000240974,name:'Farid Alfa-Ruprecht',age:20,releaseClause:110},
-    {uid:2000175453,name:'Jannik Schuster',age:19.5,releaseClause:96},
-  ],
-  'Monaco': [
-    {uid:49039004,name:'William Saliba',age:25,releaseClause:184},
-    {uid:2000220941,name:'Endrick',age:21,releaseClause:200},
-    {uid:14048343,name:'Rodrigo De Paul',age:31,releaseClause:156},
-    {uid:67260204,name:'Oihan Sancet',age:25,releaseClause:156},
-    {uid:28117372,name:'Nathan Collins',age:25,releaseClause:155},
-    {uid:14042683,name:'Joaquín Correa',age:30,releaseClause:130},
-    {uid:24016925,name:'Mateo Kovacic',age:31,releaseClause:151},
-    {uid:24047814,name:'Nikola Katic',age:28,releaseClause:126},
-    {uid:28066082,name:'Héctor Bellerín',age:30,releaseClause:139},
-    {uid:29110623,name:'Ollie Watkins',age:29,releaseClause:149},
-    {uid:35017438,name:'Mario Gotze',age:33,releaseClause:140},
-    {uid:37076465,name:'Denso Kasius',age:24,releaseClause:126},
-    {uid:53063430,name:'Alexander Sorloth',age:29,releaseClause:150},
-    {uid:67183918,name:'Alex Remiro',age:30,releaseClause:150},
-    {uid:67295761,name:'Mika Mármol',age:25,releaseClause:150},
-    {uid:76033272,name:'Wílmar Barrios',age:31,releaseClause:140},
-    {uid:18115008,name:'Samuel Kinduelu Mbangula',age:23,releaseClause:148},
-    {uid:71104595,name:'Vitaliy Mykolenko',age:26,releaseClause:134},
-    {uid:49045776,name:'Youssouf Fofana',age:26,releaseClause:150},
-    {uid:14048328,name:'Juan Musso',age:31,releaseClause:140},
-  ],
-  'Napoli': [
-    {uid:2000250907,name:'Ibrahim Osman',age:22,releaseClause:160},
-    {uid:29194724,name:'Antoine Semenyo',age:25,releaseClause:158},
-    {uid:18077264,name:'Youri Tielemans',age:28,releaseClause:159},
-    {uid:2000053930,name:'José Ángel Carmona',age:25,releaseClause:155},
-    {uid:19284037,name:'Ayrton Lucas',age:28,releaseClause:130},
-    {uid:19347264,name:'Morato',age:25,releaseClause:139},
-    {uid:25042141,name:'Patrik Schick',age:29,releaseClause:153},
-    {uid:28100269,name:'Axel Tuanzebe',age:27,releaseClause:128},
-    {uid:37024470,name:'Memphis Depay',age:31,releaseClause:145},
-    {uid:48036643,name:'Mouctar Diakhaby',age:28,releaseClause:140},
-    {uid:49038271,name:'Maxence Lacroix',age:25,releaseClause:146},
-    {uid:53086846,name:'Fredrik Aursnes',age:29,releaseClause:148},
-    {uid:58156290,name:'Sergey Pinyaev',age:22,releaseClause:128},
-    {uid:70138807,name:'Youssouf Ndayishimiye',age:26,releaseClause:138},
-    {uid:78076343,name:'Mathías Olivera',age:27,releaseClause:146},
-    {uid:91144903,name:'Moritz Nicolas',age:27,releaseClause:136},
-    {uid:2000163504,name:'Mario Martín',age:22,releaseClause:141},
-    {uid:55063493,name:'Rafa',age:32,releaseClause:145},
-    {uid:2000210551,name:'William Gomes',age:21,releaseClause:136},
-    {uid:29125334,name:'Dean Henderson',age:28,releaseClause:147},
-    {uid:2000280807,name:'Harry Amass',age:20,releaseClause:139},
-    {uid:2000245263,name:'Johan Manzambi',age:21,releaseClause:143},
-    {uid:2000303600,name:'Wang Yudong',age:20,releaseClause:104},
-    {uid:2000266424,name:'Diego Mascardi',age:19,releaseClause:115},
-    {uid:2000215081,name:'Víctor Moreno',age:20,releaseClause:118},
-    {uid:2000219431,name:'Ayoub Oufkir',age:20,releaseClause:131},
-    {uid:2000085967,name:'Matteo Pérez Vinlöf',age:20,releaseClause:118},
-    {uid:2000230119,name:'Iván Román',age:19,releaseClause:119},
-    {uid:2000108694,name:'Leo Castledine',age:20,releaseClause:121},
-  ],
-  'Nottingham Forest': [
-    {uid:13158205,name:'Victor Osimhen',age:26,releaseClause:160},
-    {uid:49047182,name:'Manu Koné',age:25,releaseClause:158},
-    {uid:91138280,name:'Leroy Sané',age:29,releaseClause:155},
-    {uid:2000006158,name:'Willy Kambwala',age:22,releaseClause:151},
-    {uid:12094339,name:'Abakar Sylla',age:24,releaseClause:143},
-    {uid:12095249,name:'Ibrahim Diarra',age:20,releaseClause:100},
-    {uid:33001438,name:'Hrádecký',age:35,releaseClause:140},
-    {uid:43409366,name:'Lorenzo Lucca',age:25,releaseClause:140},
-    {uid:61093823,name:'Josh Doig',age:25,releaseClause:148},
-    {uid:67276474,name:'Benat Turrientes',age:25,releaseClause:138},
-    {uid:83335582,name:'Diego Callai',age:23,releaseClause:109},
-    {uid:2000302092,name:'Trevan Sanusi',age:20,releaseClause:100},
-    {uid:2000356711,name:'Christopher Cupps',age:19,releaseClause:95},
-    {uid:2000447889,name:'victor ozhianvuna',age:18,releaseClause:86},
-    {uid:2000496104,name:'Gilberto Mora',age:18,releaseClause:132},
-    {uid:19258642,name:'Bruno Henrique',age:34,releaseClause:130},
-    {uid:2000382120,name:'Chido Obi-Martin',age:19,releaseClause:102},
-    {uid:83174775,name:'Joao Mário',age:25,releaseClause:137},
-    {uid:18083491,name:'Leon Bailey',age:27,releaseClause:137},
-    {uid:28108490,name:'Jadon Sancho',age:25,releaseClause:147},
-    {uid:49054420,name:'Youte',age:25,releaseClause:120},
-    {uid:85133751,name:'Ferland Mendy',age:30,releaseClause:143},
-    {uid:16147660,name:'Xaver Schlager',age:27,releaseClause:150},
-    {uid:2000297774,name:'Shane Kluivert',age:19,releaseClause:90},
-    {uid:2000370206,name:'Dastan Satpaev',age:18,releaseClause:126},
-    {uid:2000406728,name:'Ilyas Azizi',age:19,releaseClause:77},
-    {uid:2000487855,name:'Arone Gadou',age:18,releaseClause:75},
-    {uid:2000506287,name:'Finley Grigg',age:17.5,releaseClause:70},
-    {uid:2000302495,name:'Anhá Candé',age:18,releaseClause:90},
-    {uid:2000424111,name:'miguel agamez',age:16.5,releaseClause:90},
-  ],
-  'RC Lens': [
-    {uid:19302146,name:'Vinícius Júnior',age:25,releaseClause:184},
-    {uid:2000138835,name:'Kenan Yildiz',age:22,releaseClause:190},
-    {uid:28120042,name:'Cole Palmer',age:25,releaseClause:173},
-    {uid:48042658,name:'Bryan Mbeumo',age:25,releaseClause:155},
-    {uid:43298002,name:'Marco Carnesecchi',age:25,releaseClause:159},
-    {uid:2000054872,name:'Ez Abde',age:25,releaseClause:161},
-    {uid:43372892,name:'Nicolò Rovella',age:25,releaseClause:156},
-    {uid:19383257,name:'Yan Couto',age:25,releaseClause:160},
-    {uid:2000094252,name:'Beraldo',age:23,releaseClause:163},
-    {uid:18108550,name:'Koni De Winter',age:25,releaseClause:149},
-    {uid:37065561,name:'Ramon Hendriks',age:25,releaseClause:135},
-    {uid:37073317,name:'Kenneth Taylor',age:25,releaseClause:141},
-    {uid:37084510,name:'Ryan Flamingo',age:24,releaseClause:138},
-    {uid:67271371,name:'Rodrigo Zalazar',age:25,releaseClause:147},
-    {uid:78093159,name:'Maximiliano Araújo',age:25,releaseClause:148},
-    {uid:2000077331,name:'Valentín Gómez',age:24,releaseClause:141},
-    {uid:2000231531,name:'Anan Khalaily',age:22,releaseClause:134},
-    {uid:35018013,name:'Kevin Trapp',age:34,releaseClause:136},
-    {uid:79034187,name:'Julio Enciso',age:23,releaseClause:151},
-    {uid:27104982,name:'Jens Stage',age:28,releaseClause:142},
-    {uid:43195181,name:'Umar Sadiq',age:28,releaseClause:136},
-    {uid:2000049425,name:'Omar El Hilali',age:23,releaseClause:141},
-    {uid:67269484,name:'Samuel Chukwueze',age:26,releaseClause:141},
-    {uid:2000127879,name:'Rayane Bounida',age:21,releaseClause:125},
-    {uid:2000267443,name:'Abdelhamid Ait Boudlal',age:21,releaseClause:112},
-    {uid:2000259411,name:'Francis Onyeka',age:20,releaseClause:125},
-    {uid:2000403784,name:'Selton',age:20,releaseClause:105},
-    {uid:2000462816,name:'Djibril Coulibaly',age:18,releaseClause:101},
-    {uid:2000295451,name:'Noah Nsoki',age:19.5,releaseClause:77},
+  'Paris SG': [
+    {uid:37024025,name:'Virgil van Dijk',age:32.0,releaseClause:95},{uid:83261910,name:'Nuno Mendes',age:24.0,releaseClause:150},{uid:91193048,name:'Florian Wirtz',age:23.0,releaseClause:200},{uid:24060473,name:'Josko Gvardiol',age:24.0,releaseClause:130},{uid:653054,name:'Luka Modric',age:39.0,releaseClause:15},{uid:28104124,name:'Trent Alexander-Arnold',age:26.0,releaseClause:55},{uid:28121369,name:'Armando Broja',age:24.0,releaseClause:20},{uid:2000375662,name:'Lennart Karl',age:18.0,releaseClause:140},{uid:91205962,name:'Omar Marmoush',age:26.0,releaseClause:55},{uid:27132703,name:'Morten Hjulmand',age:26.0,releaseClause:30},{uid:67172040,name:'Ayeze Perez',age:31.0,releaseClause:5},{uid:13160655,name:'Reinildo',age:31.0,releaseClause:4},{uid:19409448,name:'Vanderson',age:25.0,releaseClause:6},{uid:25055083,name:'Ladislav Krejčí',age:26.0,releaseClause:4},{uid:28110176,name:'Nathan Trott',age:26.0,releaseClause:1},{uid:29141827,name:'Ezri Konsa',age:27.0,releaseClause:10},{uid:43426126,name:'Nicola Zalewski',age:24.0,releaseClause:5},{uid:67030171,name:'David De Gea',age:34.0,releaseClause:20},{uid:79024232,name:'Miguel Ángel Almirón Rejala',age:31.0,releaseClause:4},{uid:92017376,name:'Pascal Gross',age:34.0,releaseClause:4},{uid:91119265,name:'Julian Brandt',age:29.0,releaseClause:5},{uid:2000379470,name:'Taufik Seidu Zanzi Awudu',age:18.0,releaseClause:0},{uid:2000406231,name:'Ilies Belmokhtar',age:18.0,releaseClause:0},{uid:2000476255,name:'Reggie Spencer Walsh',age:17.0,releaseClause:0},{uid:2000476261,name:'Mathis Maxime E. Eboué',age:17.0,releaseClause:0}
   ],
   'River': [
-    {uid:37084591,name:'Micky van de Ven',age:25,releaseClause:175},
-    {uid:18111484,name:'Johan Bakayoko',age:24,releaseClause:158},
-    {uid:91207281,name:'Maximilian Beier',age:24,releaseClause:160},
-    {uid:71101334,name:'Anatolii Trubin',age:25,releaseClause:159},
-    {uid:71110357,name:'Yehor Yarmoliuk',age:23,releaseClause:148},
-    {uid:62220026,name:'Strahinja Pavlovic',age:25,releaseClause:153},
-    {uid:12078947,name:'Wilfried Singo',age:25,releaseClause:140},
-    {uid:16010162,name:'David Alaba',age:33,releaseClause:148},
-    {uid:16283629,name:'Amar Dedic',age:24,releaseClause:145},
-    {uid:18018791,name:'Matz Sels',age:33,releaseClause:138},
-    {uid:19024412,name:'Neymar',age:33,releaseClause:145},
-    {uid:19265858,name:'Richarlison',age:28,releaseClause:139},
-    {uid:19383256,name:'Igor Paixao',age:25,releaseClause:145},
-    {uid:37061602,name:'Orkun Kökçü',age:25,releaseClause:145},
-    {uid:43167354,name:'Manuel Locatelli',age:27,releaseClause:152},
-    {uid:49039003,name:'Logan Costa',age:25,releaseClause:143},
-    {uid:53110135,name:'Kristoffer Ajer',age:27,releaseClause:139},
-    {uid:53174131,name:'Victor Boniface',age:25,releaseClause:141},
-    {uid:67258414,name:'Sergio Gómez',age:25,releaseClause:152},
-    {uid:67276375,name:'Aimar',age:25,releaseClause:149},
-    {uid:2000104173,name:'Gianluca Prestianni',age:21,releaseClause:131},
-    {uid:2000127875,name:'Ethan Butera',age:21,releaseClause:101},
-    {uid:43316850,name:'Giacomo Raspadori',age:25,releaseClause:144},
-    {uid:19377206,name:'Luiz Henrique',age:25,releaseClause:144},
-    {uid:2000235296,name:'Mateo Caicedo',age:20,releaseClause:91},
-    {uid:2000328959,name:'Emanuele Sala',age:19,releaseClause:83},
-    {uid:2000412322,name:'Rudy Matondo',age:19,releaseClause:100},
-    {uid:2000474046,name:'Joshu Nga Kana',age:18,releaseClause:97},
+    {uid:37084591,name:'Micky van de Ven',age:25.0,releaseClause:170},{uid:18111484,name:'Johan Bakayoko',age:23.0,releaseClause:70},{uid:91207281,name:'Maximilian Beier',age:23.0,releaseClause:90},{uid:71101334,name:'Anatolii Trubin',age:25.0,releaseClause:50},{uid:62220026,name:'Strahinja Pavlovic',age:25.0,releaseClause:80},{uid:12078947,name:'Wilfried Singo',age:25.0,releaseClause:30},{uid:16010162,name:'David Alaba',age:33.0,releaseClause:5},{uid:16283629,name:'Amar Dedic',age:23.0,releaseClause:35},{uid:18018791,name:'Matz Sels',age:33.0,releaseClause:5},{uid:19024412,name:'Neymar',age:33.0,releaseClause:10},{uid:19265858,name:'Richarlison',age:28.0,releaseClause:5},{uid:19383256,name:'Igor Paixao',age:25.0,releaseClause:15},{uid:37061602,name:'Orkun Kökçü',age:25.0,releaseClause:5},{uid:43167354,name:'Manuel Locatelli',age:27.0,releaseClause:10},{uid:49039003,name:'Logan Costa',age:25.0,releaseClause:10},{uid:53110135,name:'Kristoffer Ajer',age:27.0,releaseClause:10},{uid:53174131,name:'Victor Boniface',age:25.0,releaseClause:80},{uid:67258414,name:'Sergio Gómez',age:25.0,releaseClause:15},{uid:67276375,name:'Aimar',age:24.0,releaseClause:15},{uid:71110357,name:'Yehor Yarmoliuk',age:22.0,releaseClause:20},{uid:2000085150,name:'Cole Campbell',age:20.0,releaseClause:15},{uid:2000104173,name:'Gianluca Prestianni',age:20.0,releaseClause:10},{uid:2000127875,name:'Ethan Butera',age:20.0,releaseClause:1},{uid:2000172478,name:'Damion Downs',age:22.0,releaseClause:16},{uid:2000235296,name:'Mateo Caicedo',age:19.0,releaseClause:0},{uid:2000328959,name:'Emanuele Sala',age:18.0,releaseClause:0},{uid:2000412322,name:'Rudy Matondo',age:18.0,releaseClause:0},{uid:2000474046,name:'Joshu Nga Kana',age:17.0,releaseClause:0}
   ],
-  'Schalke': [
-    {uid:2000179712,name:'Warren Zaire-Emery',age:21,releaseClause:190},
-    {uid:14157184,name:'Alexis Mac Allister',age:26,releaseClause:159},
-    {uid:29226000,name:'Jarrad Branthwaite',age:25,releaseClause:160},
-    {uid:49048357,name:'Lucas Chevalier',age:25,releaseClause:151},
-    {uid:49056273,name:'Castello Lukeba',age:24,releaseClause:170},
-    {uid:59138294,name:'Giorgi Mamardashvili',age:25,releaseClause:156},
-    {uid:85111795,name:'Serhou Guirassy',age:29,releaseClause:160},
-    {uid:2000265865,name:'Rodrigo Mora',age:20,releaseClause:151},
-    {uid:2000181764,name:'Kees Smit',age:21,releaseClause:138},
-    {uid:2000054263,name:'Bryan Zaragoza',age:25,releaseClause:161},
-    {uid:12038706,name:'Ramy Bensebaini',age:30,releaseClause:146},
-    {uid:19380090,name:'Rômulo Cardoso',age:25,releaseClause:145},
-    {uid:29147447,name:'Matty Cash',age:27,releaseClause:148},
-    {uid:37049949,name:'Jerry St. Juste',age:28,releaseClause:136},
-    {uid:2000312673,name:'Jesús Rodríguez',age:21,releaseClause:144},
-    {uid:2000191507,name:'Adam Aznou',age:21,releaseClause:126},
-    {uid:83228802,name:'Fábio Silva',age:25,releaseClause:138},
-    {uid:18104985,name:'Edon Zhegrova',age:26,releaseClause:145},
-    {uid:2000404708,name:'Stephen Mfuni',age:19,releaseClause:111},
-    {uid:2000385919,name:'Ibrahim Mbaye',age:19,releaseClause:132},
-    {uid:67256618,name:'Dani Vivian',age:25,releaseClause:150},
-    {uid:83283239,name:'Tiago Santos',age:25,releaseClause:140},
-    {uid:2000273252,name:'Isaque',age:20,releaseClause:117},
-    {uid:2000273266,name:'Riquelme Felipe',age:20,releaseClause:94},
-    {uid:2000368243,name:'Nathan De Cat',age:19,releaseClause:132},
-    {uid:2000299435,name:'Joan Martínez',age:19,releaseClause:106},
-    {uid:2000386347,name:'Mathis Jangeal',age:19,releaseClause:92},
-    {uid:2000459410,name:'Aleksander Borgersen',age:18,releaseClause:82},
-    {uid:2000467056,name:'Abdellah Ouazane',age:18,releaseClause:102},
-    {uid:2000503369,name:'Christian Imga',age:18,releaseClause:81},
-    {uid:2000228178,name:'Áron Yaakobishvili',age:20.5,releaseClause:110},
-    {uid:2000526731,name:'Johan Martinez',age:16.5,releaseClause:78},
-    {uid:2000531483,name:'Frank Egwuatu',age:16.5,releaseClause:75},
-    {uid:2000529244,name:'Santiago del Pino',age:16.5,releaseClause:86},
-    {uid:2000487145,name:'Elisandro Kožina',age:16.5,releaseClause:71},
+  'Palmeiras': [
+    {uid:53095137,name:'Martin Odegaard',age:26.0,releaseClause:120},{uid:2000256231,name:'Lamine Yamal',age:19.0,releaseClause:400},{uid:2000100253,name:'El Chadaille Bitshiabu',age:21.0,releaseClause:50},{uid:2000104850,name:'Mathys Tel',age:21.0,releaseClause:60},{uid:2000147056,name:'Tom Bischof',age:21.0,releaseClause:40},{uid:2000221458,name:'Luís Guilherme',age:20.0,releaseClause:85},{uid:28127161,name:'Jarell Quansah',age:23.0,releaseClause:65},{uid:78090138,name:'Darwin Núnez',age:26.0,releaseClause:30},{uid:12095226,name:'Amara Diouf',age:18.0,releaseClause:10},{uid:13194648,name:'Joao Paintsil',age:27.0,releaseClause:3},{uid:18116329,name:'Mario Stroeykens',age:21.0,releaseClause:1},{uid:37001813,name:'Marten de Roon',age:34.0,releaseClause:7},{uid:37057982,name:'Teun Koopmeiners',age:27.0,releaseClause:7},{uid:37078404,name:'Mees Hilgers',age:25.0,releaseClause:4},{uid:37084869,name:'Jayden Oosterwolde',age:25.0,releaseClause:25},{uid:43036586,name:'Leonardo Spinazzola',age:32.0,releaseClause:5},{uid:43093395,name:'Alessio Romagnoli',age:30.0,releaseClause:8},{uid:43096538,name:'Manuel Lazzari',age:31.0,releaseClause:8},{uid:43140326,name:'Alex Meret',age:28.0,releaseClause:25},{uid:58123343,name:'Nikita Khaikin',age:30.0,releaseClause:5},{uid:67178177,name:'José Gayà',age:30.0,releaseClause:10},{uid:85103818,name:'Ludovic Ajorque',age:31.0,releaseClause:4},{uid:2000087434,name:'Isaac Babadi',age:21.0,releaseClause:4},{uid:19273277,name:'Dodo',age:26.0,releaseClause:15},{uid:2000110066,name:'Alejo Sarco',age:20.0,releaseClause:0},{uid:2000178997,name:'Simone Pafundi',age:20.0,releaseClause:0},{uid:2000180882,name:'Paris Josua Brunner',age:20.0,releaseClause:0},{uid:2000237116,name:'Dujuan Richards',age:20.0,releaseClause:0},{uid:2000254107,name:'Kaye Furo',age:19.0,releaseClause:0},{uid:2000274204,name:'Julian Hall',age:18.0,releaseClause:0},{uid:2000288527,name:'Said El Mala',age:19.0,releaseClause:80},{uid:2000311467,name:'Bright Ede',age:19.0,releaseClause:0}
   ],
-  'Tottenham': [
-    {uid:13200568,name:'Mohammed Kudus',age:25,releaseClause:162},
-    {uid:19163495,name:'Marquinhos',age:31,releaseClause:166},
-    {uid:67276127,name:'Nico González',age:25,releaseClause:166},
-    {uid:2000007415,name:'Andrey Santos',age:23,releaseClause:167},
-    {uid:67260506,name:'Kang-In Lee',age:25,releaseClause:161},
-    {uid:2000168014,name:'Abdukodir Khusanov',age:23,releaseClause:164},
-    {uid:67200923,name:'Unai Simón',age:28,releaseClause:160},
-    {uid:29141472,name:'Benjamin White',age:27,releaseClause:155},
-    {uid:14181375,name:'Nicolás González',age:27,releaseClause:150},
-    {uid:37041773,name:'Robin Gosens',age:31,releaseClause:142},
-    {uid:48031641,name:'Olivier Boscagli',age:27,releaseClause:144},
-    {uid:49041153,name:'Esteban Lepaul',age:25,releaseClause:136},
-    {uid:49047581,name:'Rayan Ait-Nouri',age:25,releaseClause:153},
-    {uid:49048445,name:'Arnaud Kalimuendo',age:25,releaseClause:149},
-    {uid:67245412,name:'Josep Martínez',age:27,releaseClause:137},
-    {uid:67268221,name:'Pedro Porro',age:25,releaseClause:144},
-    {uid:71099066,name:'Artem Dovbyk',age:28,releaseClause:141},
-    {uid:2000031073,name:'Reda Belahyane',age:23,releaseClause:126},
-    {uid:2000156783,name:'Ernest Nuamah',age:23,releaseClause:150},
-    {uid:2000214886,name:'Jacobo Ramón',age:22,releaseClause:146},
-    {uid:36152916,name:'Christos Tzolis',age:24.5,releaseClause:135},
-    {uid:2000097986,name:'Thomas Berenbruch',age:22,releaseClause:101},
-    {uid:61078132,name:'Lewis Ferguson',age:25,releaseClause:142},
-    {uid:67224142,name:'Santiago Comesaña',age:28,releaseClause:150},
-    {uid:2000094208,name:'Obed Vargas',age:21,releaseClause:120},
-    {uid:2000269262,name:'Giacomo De Pieri',age:20,releaseClause:102},
-    {uid:2000274057,name:'Peyton Miller',age:19,releaseClause:113},
-    {uid:2000336547,name:'Vakhtang Salia',age:19,releaseClause:90},
-    {uid:2000372640,name:'Ryan Roberto',age:19,releaseClause:60},
-    {uid:2000474999,name:'Andria Bartishvili',age:18,releaseClause:75},
-    {uid:2000366060,name:'Mattia Marello',age:18,releaseClause:75},
-    {uid:2000292778,name:'Francisco Carvalho Souza Silva',age:18,releaseClause:93},
+  'Wrexham': [{uid:2000075038,name:'Bernardo Caltabiano Parise Fontes',age:0.0,releaseClause:10},{uid:67224142,name:'Santiago Comesaña Veiga',age:0.0,releaseClause:1},{uid:2000023527,name:'Issa Doumbia',age:0.0,releaseClause:30},{uid:2000307785,name:'Ibrahima Ba',age:0.0,releaseClause:15},
+    {uid:2000115202,name:'Désiré Doué',age:21.0,releaseClause:273},{uid:49038952,name:'Khephren Thuram',age:25.0,releaseClause:60},{uid:61089387,name:'Aaron Hickey',age:24.0,releaseClause:25},{uid:91187679,name:'Malik Tillman',age:24.0,releaseClause:30},{uid:2000023588,name:'Michael Kayode',age:22.0,releaseClause:65},{uid:13211267,name:'Abdul Fatawu',age:22.0,releaseClause:50},{uid:18105831,name:'Ismael Saibari',age:25.0,releaseClause:40},{uid:28115798,name:'Oluwafisayo Faruq Dele-Bashiru',age:25.0,releaseClause:5},{uid:49048468,name:'Chrislain Matsima',age:24.0,releaseClause:26},{uid:53160749,name:'Igoh Ogbu',age:25.0,releaseClause:10},{uid:83283239,name:'Tiago Santos',age:24.0,releaseClause:15},{uid:83297510,name:'Lukás Hornícek',age:24.0,releaseClause:12},{uid:92071481,name:'Finn Gilbert Dahmen',age:27.0,releaseClause:1},{uid:2000019413,name:'Carlos Romero Serrano',age:24.0,releaseClause:25},{uid:2000184619,name:'Tyrique George',age:20.0,releaseClause:6},{uid:2000187717,name:'Tommy Watson',age:20.0,releaseClause:10},{uid:2000230641,name:'Max Moerstedt',age:20.0,releaseClause:10},{uid:2000304487,name:'Christantus Uche',age:23.0,releaseClause:15},{uid:2000039991,name:'Luca Jaquez',age:23.0,releaseClause:16},{uid:2000048682,name:'Medon Berisha',age:22.0,releaseClause:1},{uid:2000426277,name:'Christian Kofane',age:20.0,releaseClause:75},{uid:2000182279,name:'Alessandro Vogt',age:21.0,releaseClause:15},{uid:2000301391,name:'than meichtry',age:20.0,releaseClause:12},{uid:2000265954,name:'Lorenzo Biliboc',age:18.0,releaseClause:1},{uid:37051305,name:'Arnaut Danjuma',age:28.0,releaseClause:6},{uid:2000205568,name:'Alphadjo Cissè',age:19.0,releaseClause:0},{uid:2000288469,name:'Veljko Milosavljevic',age:19.0,releaseClause:25},{uid:2000379558,name:'Tayo Subuloye',age:18.0,releaseClause:0},{uid:2000410735,name:'Andrej Kostić',age:19.0,releaseClause:0},{uid:2000277689,name:'Alysson Edward Franco da Rocha',age:19.5,releaseClause:0},{uid:2000335906,name:'Yassir Zabiri',age:20.5,releaseClause:10},{uid:2000205277,name:'Ismaëlo Ganiou',age:20.5,releaseClause:35},{uid:2000506792,name:'Cruz Ibeh',age:15.5,releaseClause:0},{uid:2000522407,name:'James Bogere',age:17.0,releaseClause:0},{uid:2000293366,name:'Matthew Warhurst',age:18.0,releaseClause:0},{uid:2000351894,name:'Mateus Mané',age:18.0,releaseClause:40},{uid:2000447622,name:'Akpe Victory',age:18.0,releaseClause:0}
   ],
-  'AC Milan': [
-    {uid:48043084,name:'Boubacar Kamara',age:25,releaseClause:159},
-    {uid:85094520,name:'Mike Maignan',age:30,releaseClause:162},
-    {uid:2000146883,name:'Francesco Pio Esposito',age:22,releaseClause:156},
-    {uid:92074020,name:'Christian Pulisic',age:26,releaseClause:160},
-    {uid:91206164,name:'Malick Thiaw',age:25,releaseClause:157},
-    {uid:2000211997,name:'Alex Jiménez',age:22,releaseClause:146},
-    {uid:43270682,name:'Alessandro Buongiorno',age:26,releaseClause:154},
-    {uid:24065108,name:'Martin Baturina',age:24,releaseClause:141},
-    {uid:43266774,name:'Matteo Gabbia',age:25,releaseClause:147},
-    {uid:43339195,name:'Andrea Cambiaso',age:25,releaseClause:148},
-    {uid:43500064,name:'Cesare Casadei',age:24,releaseClause:132},
-    {uid:84153276,name:'Dan Ndoye',age:25,releaseClause:154},
-    {uid:84161856,name:'Ardon Jashari',age:25,releaseClause:134},
-    {uid:2000033291,name:'Valentín Barco',age:23,releaseClause:151},
-    {uid:2000103120,name:'Lorenzo Torriani',age:22,releaseClause:111},
-    {uid:2000107103,name:'Mamadou Sarr',age:21,releaseClause:131},
-    {uid:2000183044,name:'Davide Bartesaghi',age:21,releaseClause:130},
-    {uid:2000338371,name:'Francesco Camarda',age:19,releaseClause:115},
-    {uid:49048348,name:'Dilane Bakwa',age:24,releaseClause:150},
-    {uid:67229630,name:'Youssef En-Nesyri',age:28,releaseClause:140},
-    {uid:2000025313,name:'FAVASULI',age:21.5,releaseClause:115},
-    {uid:37053643,name:'Gianluca Scamacca',age:26,releaseClause:145},
-    {uid:2000252799,name:'Mattia Liberali',age:20,releaseClause:107},
-    {uid:2000349187,name:'Edmund Baidoo',age:21,releaseClause:119},
-    {uid:2000218552,name:'David Odogu',age:21,releaseClause:115},
-    {uid:2000289673,name:'Soriba Diaoune',age:19,releaseClause:110},
-    {uid:2000298369,name:'Branimir Mlačić',age:20,releaseClause:110},
-    {uid:2000388375,name:'Christian Comotto',age:19,releaseClause:111},
-    {uid:2000491133,name:'Nahël Haddani',age:18,releaseClause:68},
-    {uid:2000440037,name:'Luis Eduardo',age:18.5,releaseClause:100},
-    {uid:2000374131,name:'Virgilio Olaya',age:18.5,releaseClause:90},
-    {uid:2000489302,name:'Samuele Pisati',age:16.5,releaseClause:61},
-    {uid:2000330183,name:'Yunus Ünal',age:17.5,releaseClause:92},
-    {uid:2000298881,name:'Federico Nardin',age:18.5,releaseClause:82},
+  '1860 Munchen': [
+    {uid:37071197,name:'Ryan Gravenberch',age:24.0,releaseClause:90},{uid:59130638,name:'Khvicha Kvaratskhelia',age:25.0,releaseClause:140},{uid:92026209,name:'Hakan Calhanoglu',age:31.0,releaseClause:20},{uid:2000210791,name:'Assane Diao',age:20.0,releaseClause:90},{uid:83188780,name:'Matheus Nunes',age:26.0,releaseClause:30},{uid:16337073,name:'Samson Baidoo',age:22.0,releaseClause:60},{uid:18107187,name:'Maarten Vandevoordt',age:24.0,releaseClause:5},{uid:19352610,name:'Rodrigo Muniz',age:25.0,releaseClause:15},{uid:36141838,name:'Giorgos Vagiannidis',age:24.0,releaseClause:4},{uid:67277455,name:'Mario Gila',age:25.0,releaseClause:20},{uid:2000100062,name:'Badredine Bouanani',age:21.0,releaseClause:14},{uid:2000103798,name:'Chemsdine Talbi',age:21.0,releaseClause:15},{uid:2000108691,name:'Lewis Hall',age:21.0,releaseClause:32},{uid:2000115205,name:'Jeanuel Belocian',age:21.0,releaseClause:15},{uid:2000218552,name:'David Odogu',age:20.0,releaseClause:20},{uid:2000221609,name:'Vitor Reis',age:20.0,releaseClause:52},{uid:2000242422,name:'Alexey Batrakov',age:21.0,releaseClause:20},{uid:29125334,name:'Dean Henderson',age:28.0,releaseClause:8},{uid:29192705,name:'Pedro Goncalves',age:27.0,releaseClause:20},{uid:67211760,name:'Mikel Merino',age:29.0,releaseClause:30},{uid:16191724,name:'nicolas seiwald',age:25.0,releaseClause:4},{uid:19259027,name:'Renan Lodi',age:27.0,releaseClause:4},{uid:19348862,name:'Kaio Jorge',age:23.0,releaseClause:5},{uid:2000336209,name:'Alessandro Longoni',age:18.0,releaseClause:0},{uid:2000368894,name:'Jesse Bisiwu',age:18.0,releaseClause:0},{uid:2000388083,name:'Kyllian Antonio',age:18.0,releaseClause:0},{uid:2000449220,name:'August De Wannemacker',age:17.0,releaseClause:0},{uid:2000497719,name:'Adil Hamdani',age:16.5,releaseClause:0}
   ],
-  'Asante Kotoko': [
-    {uid:67197125,name:'Marco Asensio',age:29,releaseClause:155},
-    {uid:91151081,name:'Kai Havertz',age:26,releaseClause:157},
-    {uid:14094572,name:'Rodrigo Bentancur',age:28,releaseClause:143},
-    {uid:14101872,name:'Agustín Rossi',age:22,releaseClause:133},
-    {uid:19226741,name:'Lucas Paquetá',age:27,releaseClause:138},
-    {uid:19270959,name:'Bernardo',age:30,releaseClause:140},
-    {uid:67157624,name:'Kepa Arrizabalaga',age:30,releaseClause:145},
-    {uid:67184140,name:'Alvaro García',age:32,releaseClause:144},
-    {uid:86080170,name:'Jon Aramburu',age:24,releaseClause:145},
-    {uid:98015432,name:'Berat Djimsiti',age:32,releaseClause:146},
-    {uid:2000068412,name:'Franjo Ivanovic',age:23,releaseClause:130},
-    {uid:2000116169,name:'Sergi Altimira',age:25,releaseClause:137},
-    {uid:28093567,name:'James Maddison',age:28,releaseClause:151},
-    {uid:67279753,name:'Ilaix Moriba',age:24,releaseClause:145},
-    {uid:29129073,name:'Rico Henry',age:28,releaseClause:142},
-    {uid:19310729,name:'Paulo Henrique',age:29,releaseClause:130},
-    {uid:2000193842,name:'Sindre Walle Egeli',age:21,releaseClause:123},
-    {uid:2000158356,name:'Jair',age:22,releaseClause:124},
-    {uid:2000040214,name:'Jhon Solís',age:22,releaseClause:125},
-    {uid:19259027,name:'Renan Lodi',age:27,releaseClause:135},
-    {uid:37076141,name:'Youri Baas',age:23,releaseClause:141},
-    {uid:67283137,name:'Yeremay',age:24,releaseClause:140},
-    {uid:2000271170,name:'Marius Courcoul',age:20,releaseClause:110},
-    {uid:2000287938,name:'Naoufel El Hannach',age:20,releaseClause:104},
-    {uid:2000289491,name:'Julián Vignolo',age:20,releaseClause:101},
-    {uid:2000330177,name:'Patrice Covic',age:20,releaseClause:108},
-    {uid:2000412744,name:'Alexis Vossah',age:19,releaseClause:107},
-    {uid:2000483445,name:'Maxima Goffi',age:19,releaseClause:105},
+  'Aberdeen': [
+    {uid:27160181,name:'Rasmus Hojlund',age:23.0,releaseClause:98},{uid:27164470,name:'Patrick Dorgu',age:21.0,releaseClause:68},{uid:28121564,name:'Mason Greenwood',age:24.0,releaseClause:115},{uid:43252073,name:'Gianluigi Donnarumma',age:26.0,releaseClause:70},{uid:2000107079,name:'Malick Fofana',age:21.0,releaseClause:75},{uid:89063107,name:'Iliman N\'Diaye',age:25.0,releaseClause:20},{uid:2000301027,name:'Ayden Heaven',age:19.0,releaseClause:86},{uid:29125343,name:'Scott McTominay',age:28.0,releaseClause:65},{uid:2000014205,name:'Martin Vitík',age:23.0,releaseClause:40},{uid:43075156,name:'Giovanni Di Lorenzo',age:32.0,releaseClause:20},{uid:12095306,name:'Sékou Koné',age:20.0,releaseClause:5},{uid:37065620,name:'Brian Brobbey',age:24.0,releaseClause:15},{uid:43162321,name:'Riccardo Orsolini',age:29.0,releaseClause:15},{uid:72051563,name:'Chris Richards',age:25.0,releaseClause:15},{uid:83282675,name:'Alexsandro Ribeiro',age:25.0,releaseClause:15},{uid:89051923,name:'Álvaro Valles',age:28.0,releaseClause:5},{uid:91194540,name:'Anton Stach',age:27.0,releaseClause:15},{uid:92065436,name:'Tim Kleindienst',age:30.0,releaseClause:10},{uid:2000049425,name:'Omar El Hilali',age:22.0,releaseClause:26},{uid:2000147523,name:'Omari Kellyman',age:20.0,releaseClause:4},{uid:2000256110,name:'Shea Lacey',age:19.0,releaseClause:15},{uid:2000379552,name:'Shim Mheuka',age:18.0,releaseClause:10},{uid:2000288426,name:'Tiago Gabriel',age:21.0,releaseClause:30},{uid:2000397286,name:'Arsene kouassi',age:21.0,releaseClause:10},{uid:2000126470,name:'Víctor Muñoz Villanueva',age:22.0,releaseClause:30},{uid:2000266583,name:'Federico Coletta',age:19.0,releaseClause:0},{uid:2000288856,name:'Axel Tape',age:18.0,releaseClause:0},{uid:2000330067,name:'Gaoussou Diakité',age:20.0,releaseClause:0},{uid:2000339863,name:'Caleb Yirenkyi',age:20.0,releaseClause:0},{uid:2000388663,name:'Jake Evans',age:17.0,releaseClause:0},{uid:2000241471,name:'Juan Arizala',age:19.5,releaseClause:0},{uid:2000359695,name:'Ben Casey',age:17.5,releaseClause:0},{uid:2000381116,name:'Christ Inao Oulaï',age:19.5,releaseClause:0},{uid:2000254841,name:'Cristian Orozco',age:17.0,releaseClause:0},{uid:2000223178,name:'Emanuele Rao',age:19.0,releaseClause:0},{uid:2000351894,name:'Mateus Mané',age:18.0,releaseClause:40},{uid:2000373378,name:'Adem Avdić',age:18.0,releaseClause:0}
+  ],
+  'Ajax': [
+    {uid:2000105654,name:'Jorrel Hato',age:20.0,releaseClause:90},{uid:2000030816,name:'Cristhian Mosquera',age:22.0,releaseClause:95},{uid:55041623,name:'Joao Cancelo',age:31.0,releaseClause:35},{uid:12095038,name:'Malick Yalcouyé',age:20.0,releaseClause:5},{uid:18083611,name:'Dodi Lukébakio',age:27.0,releaseClause:10},{uid:18101745,name:'Lois Openda',age:25.0,releaseClause:40},{uid:19337893,name:'Roger Ibanez',age:26.0,releaseClause:30},{uid:28097985,name:'Tammy Abraham',age:27.0,releaseClause:5},{uid:29115800,name:'Joe Gomez',age:28.0,releaseClause:30},{uid:37055842,name:'Noa Lang',age:26.0,releaseClause:10},{uid:48037391,name:'Matteo Guendouzi',age:26.0,releaseClause:15},{uid:48042432,name:'Timothy Weah',age:25.0,releaseClause:15},{uid:72044918,name:'Tyler Adams',age:26.0,releaseClause:25},{uid:83152910,name:'Galeno',age:27.0,releaseClause:10},{uid:96085886,name:'Kamil Grabara',age:26.0,releaseClause:9},{uid:2000107424,name:'Roger Fernandes',age:20.0,releaseClause:12},{uid:2000162595,name:'Max Weiss',age:22.0,releaseClause:5},{uid:2000162930,name:'Petar Sucic',age:22.0,releaseClause:45},{uid:2000215183,name:'Bence Dárdai',age:20.0,releaseClause:5},{uid:2000241002,name:'Niccolò Fortini',age:20.0,releaseClause:10},{uid:91151156,name:'Vangelis Pavlidis',age:26.0,releaseClause:30},{uid:85045409,name:'Raphael Guerreiro',age:31.0,releaseClause:5},{uid:2000165624,name:'Zachary Athekame',age:21.0,releaseClause:30},{uid:2000127926,name:'Thierno Barry',age:23.0,releaseClause:65},{uid:2000400123,name:'Honest Ahanor',age:18.0,releaseClause:40},{uid:2000287960,name:'Joane Gadou',age:19.0,releaseClause:0},{uid:2000378873,name:'Modou Kéba Cissé',age:20.0,releaseClause:0},{uid:2000441701,name:'Prince Amoako',age:19.0,releaseClause:0},{uid:2000464287,name:'Abubacarr Sedi Kinteh',age:19.0,releaseClause:0},{uid:2000330499,name:'Johannes Moser',age:18.0,releaseClause:0},{uid:2000220860,name:'Matviy Ponomarenko',age:19.0,releaseClause:0},{uid:2000410026,name:'Lamine Sadio',age:17.0,releaseClause:0},{uid:2000472538,name:'Luka Zarić',age:16.0,releaseClause:0},{uid:2000308790,name:'Yanis Musuayi',age:18.0,releaseClause:0},{uid:2000426362,name:'Samba Coulibaly',age:17.0,releaseClause:0}
   ],
   'AS Roma': [
-    {uid:28124573,name:'Levi Colwill',age:24,releaseClause:169},
-    {uid:29111433,name:'David Raya',age:29,releaseClause:160},
-    {uid:2000182819,name:'Leny Yoro',age:21,releaseClause:158},
-    {uid:98031331,name:'Manuel Akanji',age:30,releaseClause:155},
-    {uid:2000295603,name:'Marc Bernal',age:20,releaseClause:148},
-    {uid:2000214136,name:'George Ilenikhena',age:20,releaseClause:148},
-    {uid:29233143,name:'Harvey Elliott',age:24,releaseClause:152},
-    {uid:19380666,name:'Marcos Leonardo',age:24,releaseClause:130},
-    {uid:28009478,name:'Wojciech Szczesny',age:35,releaseClause:150},
-    {uid:43093502,name:'Gianluca Mancini',age:29,releaseClause:151},
-    {uid:52101552,name:'Jake O\'Brien',age:25,releaseClause:147},
-    {uid:70112874,name:'Baris Alper Yilmaz',age:25,releaseClause:145},
-    {uid:76063258,name:'Jhon Durán',age:23,releaseClause:150},
-    {uid:93123163,name:'Daniel Svensson',age:25,releaseClause:145},
-    {uid:2000027530,name:'Juanlu',age:23,releaseClause:141},
-    {uid:2000130568,name:'Javier Bonar',age:22,releaseClause:95},
-    {uid:2000192797,name:'Leo Sauer',age:21,releaseClause:147},
-    {uid:2000395140,name:'Cabanes Pau',age:22,releaseClause:125},
-    {uid:2000082598,name:'Stefan Bajcetic',age:22,releaseClause:139},
-    {uid:2000091515,name:'Kyriani Sabbe',age:21.5,releaseClause:116},
-    {uid:2000246003,name:'Relja Obric',age:21,releaseClause:97},
-    {uid:2000214885,name:'Álvaro Cortés',age:21.5,releaseClause:105},
-    {uid:91194540,name:'Anton Stach',age:27,releaseClause:147},
-    {uid:91170086,name:'Jonathan Burkardt',age:25,releaseClause:146},
-    {uid:2000301391,name:'than meichtry',age:21,releaseClause:117},
-    {uid:2000297000,name:'Valde',age:20,releaseClause:102},
-    {uid:2000300159,name:'David Otorbi',age:19,releaseClause:100},
-    {uid:2000398626,name:'Darryl Bakola',age:19,releaseClause:108},
-    {uid:2000288737,name:'Oumar Camara',age:19.5,releaseClause:115},
-    {uid:2000223283,name:'Jorge Cestero',age:20,releaseClause:105},
-    {uid:2000454284,name:'Bruninho',age:17,releaseClause:103},
-    {uid:2000310925,name:'Carlos Díez',age:18.5,releaseClause:76},
-    {uid:2000258043,name:'julien yanda',age:17.5,releaseClause:62},
+    {uid:28124573,name:'Levi Colwill',age:23.0,releaseClause:90},{uid:29111433,name:'David Raya',age:29.0,releaseClause:50},{uid:2000182819,name:'Leny Yoro',age:20.0,releaseClause:110},{uid:98031331,name:'Manuel Akanji',age:30.0,releaseClause:15},{uid:29233143,name:'Harvey Elliott',age:23.0,releaseClause:15},{uid:19380666,name:'Marcos Leonardo',age:23.0,releaseClause:15},{uid:28009478,name:'Wojciech Szczesny',age:35.0,releaseClause:10},{uid:43093502,name:'Gianluca Mancini',age:29.0,releaseClause:10},{uid:52101552,name:'Jake O\'Brien',age:25.0,releaseClause:30},{uid:67175052,name:'Thomas Partey',age:32.0,releaseClause:5},{uid:70112874,name:'Baris Alper Yilmaz',age:25.0,releaseClause:20},{uid:76063258,name:'Jhon Durán',age:22.0,releaseClause:15},{uid:93123163,name:'Daniel Svensson',age:24.0,releaseClause:20},{uid:2000027530,name:'Juanlu',age:22.0,releaseClause:30},{uid:2000130568,name:'Javier Bonar',age:21.0,releaseClause:10},{uid:2000192797,name:'Leo Sauer',age:20.0,releaseClause:25},{uid:2000214136,name:'George Ilenikhena',age:19.0,releaseClause:15},{uid:2000395140,name:'Cabanes Pau',age:21.0,releaseClause:15},{uid:2000295603,name:'Marc Bernal',age:19.0,releaseClause:90},{uid:2000082598,name:'Stefan Bajcetic',age:21.0,releaseClause:15},{uid:18116154,name:'Rafik Belghali',age:23.5,releaseClause:10},{uid:2000104444,name:'Vivaldo Semedo',age:21.0,releaseClause:10},{uid:2000091515,name:'Kyriani Sabbe',age:20.5,releaseClause:10},{uid:2000246003,name:'Relja Obric',age:20.0,releaseClause:10},{uid:2000297000,name:'Valde',age:19.0,releaseClause:0},{uid:2000300159,name:'David Otorbi',age:18.0,releaseClause:0},{uid:2000398626,name:'Darryl Bakola',age:18.0,releaseClause:0},{uid:2000214885,name:'Álvaro Cortés',age:20.5,releaseClause:15},{uid:2000288737,name:'Oumar Camara',age:18.5,releaseClause:0},{uid:2000223283,name:'Jorge Cestero',age:19.0,releaseClause:0},{uid:2000454284,name:'Bruninho',age:16.0,releaseClause:0},{uid:2000473856,name:'Álex González',age:18.0,releaseClause:0},{uid:2000351894,name:'Mateus Mané',age:18.0,releaseClause:40},{uid:2000310925,name:'Carlos Díez',age:18.0,releaseClause:0},{uid:2000258043,name:'julien yanda',age:18.0,releaseClause:0}
   ],
   'Atl. Tucuman': [
-    {uid:14130029,name:'Cristian Romero',age:27,releaseClause:156},
-    {uid:14222108,name:'Matías Soulé',age:24,releaseClause:163},
-    {uid:2000183231,name:'Franco Mastantuono',age:19,releaseClause:131},
-    {uid:14241914,name:'Alan Varela',age:25,releaseClause:156},
-    {uid:14236223,name:'Santiago Castro',age:22,releaseClause:159},
-    {uid:14030119,name:'Gerónimo Rulli',age:33,releaseClause:142},
-    {uid:14044150,name:'Paulo Dybala',age:31,releaseClause:150},
-    {uid:14059327,name:'Augusto Batalla',age:29,releaseClause:142},
-    {uid:14129337,name:'Nahuel Molina',age:27,releaseClause:143},
-    {uid:14185869,name:'Facundo Medina',age:26,releaseClause:143},
-    {uid:14186894,name:'Juan Foyth',age:27,releaseClause:145},
-    {uid:14217538,name:'Mateo Pellegrino',age:25,releaseClause:133},
-    {uid:14227360,name:'Máximo Perrone',age:24,releaseClause:152},
-    {uid:14247304,name:'Ezequiel Fernández',age:25,releaseClause:138},
-    {uid:14250859,name:'Giuliano Simeone',age:24,releaseClause:154},
-    {uid:2000044526,name:'José López',age:25,releaseClause:134},
-    {uid:2000096439,name:'Tomás Palacios',age:24,releaseClause:123},
-    {uid:2000142045,name:'Julio César Soler',age:22,releaseClause:142},
-    {uid:2000200406,name:'Mariano Troilo',age:24,releaseClause:122},
-    {uid:14080605,name:'Marcos Senesi',age:28,releaseClause:145},
-    {uid:14221878,name:'Kevin Lomónaco',age:23.5,releaseClause:130},
-    {uid:67201783,name:'Emiliano Buendía',age:28,releaseClause:144},
-    {uid:2000176500,name:'Dylan Aquino',age:21,releaseClause:117},
-    {uid:2000184436,name:'Dylan Gorosito',age:21,releaseClause:108},
-    {uid:2000321323,name:'Thomas De Martis',age:19,releaseClause:94},
-    {uid:2000455851,name:'Tobias Andrada',age:19,releaseClause:113},
-  ],
-  'Celtic': [
-    {uid:43124203,name:'Bruno Fernandes',age:30,releaseClause:175},
-    {uid:83320123,name:'Renato Veiga',age:24,releaseClause:153},
-    {uid:2000030130,name:'Joao Neves',age:22,releaseClause:174},
-    {uid:2000027719,name:'Diego Moreira',age:22,releaseClause:156},
-    {uid:28127254,name:'Elliot Anderson',age:24,releaseClause:164},
-    {uid:2000104892,name:'Eliesse Ben Seghir',age:22,releaseClause:151},
-    {uid:43161651,name:'Federico Chiesa',age:27,releaseClause:153},
-    {uid:78084541,name:'Manuel Ugarte',age:25,releaseClause:152},
-    {uid:12095040,name:'Bazoumana Touré',age:21,releaseClause:139},
-    {uid:14167329,name:'Lisandro Martínez',age:27,releaseClause:152},
-    {uid:18107436,name:'Senne Lammens',age:25,releaseClause:140},
-    {uid:19338230,name:'Antony',age:25,releaseClause:150},
-    {uid:28049740,name:'Harry Maguire',age:32,releaseClause:148},
-    {uid:29076105,name:'Luke Shaw',age:30,releaseClause:152},
-    {uid:36149384,name:'Kostas Tzolakis',age:24,releaseClause:135},
-    {uid:37076262,name:'Luciano Valente',age:23,releaseClause:147},
-    {uid:83105845,name:'Diogo Dalot',age:26,releaseClause:144},
-    {uid:2000010840,name:'Toby Collyer',age:23,releaseClause:124},
-    {uid:2000022188,name:'Lucas Stassin',age:22,releaseClause:123},
-    {uid:2000087400,name:'Dário Essugo',age:22,releaseClause:127},
-    {uid:2000146882,name:'Gustavo Sá',age:22,releaseClause:132},
-    {uid:2000190386,name:'Karl Etta Eyong',age:23,releaseClause:144},
-    {uid:2000243635,name:'Ousmane Diao',age:23,releaseClause:125},
-    {uid:2000224667,name:'Avom',age:22,releaseClause:131},
-    {uid:2000230641,name:'Max Moerstedt',age:21,releaseClause:115},
-    {uid:12094946,name:'Gueye',age:20,releaseClause:105},
-    {uid:2000269293,name:'Mosconi',age:20,releaseClause:96},
-    {uid:2000295427,name:'Villarreal',age:20,releaseClause:100},
-    {uid:2000384848,name:'Iddrissou',age:18,releaseClause:97},
-    {uid:2000238729,name:'Arroyo',age:20,releaseClause:115},
-    {uid:2000294672,name:'May',age:19,releaseClause:100},
-    {uid:12095307,name:'Tia',age:19,releaseClause:85},
-  ],
-  'Chelsea': [
-    {uid:14229525,name:'Enzo Fernández',age:25,releaseClause:174},
-    {uid:48037335,name:'Marcus Thuram',age:27,releaseClause:167},
-    {uid:91175868,name:'Yann Aurel Bisseck',age:25,releaseClause:161},
-    {uid:91207274,name:'Amadou Onana',age:25,releaseClause:160},
-    {uid:48042326,name:'Aurélien Tchouameni',age:25,releaseClause:166},
-    {uid:67184349,name:'Inaki Williams',age:31,releaseClause:151},
-    {uid:28103591,name:'Trevoh Chalobah',age:26,releaseClause:151},
-    {uid:48043873,name:'Randal Kolo Muani',age:26,releaseClause:145},
-    {uid:62216198,name:'Djordje Petrovic',age:25,releaseClause:143},
-    {uid:67215284,name:'Marc Cucurella',age:26,releaseClause:150},
-    {uid:83169822,name:'Joao Félix',age:25,releaseClause:150},
-    {uid:2000006186,name:'Lesley Ugochukwu',age:23,releaseClause:135},
-    {uid:2000105004,name:'Leon Grgic',age:21,releaseClause:115},
-    {uid:2000165653,name:'Iván Fresneda',age:22,releaseClause:154},
-    {uid:2000264337,name:'Pedro Lima',age:21,releaseClause:110},
-    {uid:28100207,name:'Harvey Barnes',age:28,releaseClause:141},
-    {uid:43161669,name:'Michele Di Gregorio',age:27,releaseClause:149},
-    {uid:2000102796,name:'Joshua Quarshie',age:23,releaseClause:125},
-    {uid:43426126,name:'Nicola Zalewski',age:25,releaseClause:145},
-    {uid:18115949,name:'Jackson Tchatchoua',age:25,releaseClause:134},
-    {uid:2000184286,name:'Mohamed Belloumi',age:23.5,releaseClause:132},
-    {uid:2000014205,name:'Martin Vitík',age:24,releaseClause:150},
-    {uid:2000447463,name:'Kevin Filling',age:18,releaseClause:98},
-    {uid:2000495995,name:'Felipe Morais',age:18,releaseClause:79},
-    {uid:2000488543,name:'Ederson Castillo',age:17.5,releaseClause:88},
-  ],
-  'Como': [
-    {uid:29232937,name:'Jude Bellingham',age:24,releaseClause:187},
-    {uid:83111483,name:'Rafael Leao',age:26,releaseClause:160},
-    {uid:62127037,name:'Sergej Milinkovic-Savic',age:30,releaseClause:155},
-    {uid:2000055184,name:'Bilal El Khannouss',age:23,releaseClause:149},
-    {uid:91206105,name:'Rocco Reitz',age:25,releaseClause:138},
-    {uid:2000065610,name:'Armindo Sieb',age:24,releaseClause:130},
-    {uid:2000120656,name:'Sebastian Villaume Otoa',age:23,releaseClause:118},
-    {uid:2000196762,name:'Ilyas Ansah',age:22,releaseClause:136},
-    {uid:2000219705,name:'Youssef Enriquez Lekhedim',age:21,releaseClause:123},
-    {uid:2000241044,name:'Vasilije Adzic',age:21,releaseClause:128},
-    {uid:2000333587,name:'Victor Orakpo',age:21,releaseClause:109},
-    {uid:2000378259,name:'Daniel Banjaqui',age:19,releaseClause:112},
-    {uid:2000383145,name:'Matteo Palma',age:19,releaseClause:115},
-    {uid:2000407543,name:'Jack Porter',age:19,releaseClause:88},
-    {uid:2000151103,name:'Carlos Garcés',age:24.5,releaseClause:116},
-    {uid:29194731,name:'William Kokolo',age:25,releaseClause:116},
-    {uid:2000375174,name:'Harry Howell',age:19,releaseClause:101},
-    {uid:2000180847,name:'Noël Aséko',age:20.5,releaseClause:120},
-    {uid:49034219,name:'Jean-Philippe Mateta',age:28,releaseClause:146},
-    {uid:91204520,name:'Merlin Rohl',age:25,releaseClause:153},
-    {uid:29218024,name:'Hayden Hackney',age:23.5,releaseClause:134},
-    {uid:2000097988,name:'Valentín Carboni',age:22,releaseClause:153},
-    {uid:27014576,name:'Frederik Ronnow',age:32,releaseClause:143},
-    {uid:12096015,name:'Seydou Dembélé',age:19,releaseClause:93},
-    {uid:2000302080,name:'Sean Neave',age:20,releaseClause:83},
-    {uid:2000310973,name:'Tiago Pitarch Pinar',age:19,releaseClause:93},
-    {uid:2000472536,name:'Aleksa Damjanović',age:18,releaseClause:85},
-    {uid:2000476049,name:'Christ Batola',age:18,releaseClause:75},
-    {uid:2000511933,name:'Tyrese Noubissie',age:18,releaseClause:85},
-    {uid:2000462497,name:'Yisa Alao',age:17.5,releaseClause:80},
-    {uid:2000423418,name:'Nicolás Azambuja',age:18,releaseClause:114},
-    {uid:2000529129,name:'Bara Ndiaye',age:17.5,releaseClause:90},
-    {uid:2000480647,name:'muhamadou kanteh',age:18.5,releaseClause:92},
+    {uid:14130029,name:'Cristian Romero',age:27.0,releaseClause:50},{uid:14172522,name:'Thiago Almada',age:25.0,releaseClause:10},{uid:14222108,name:'Matías Soulé',age:23.0,releaseClause:62},{uid:2000183231,name:'Franco Mastantuono',age:18.0,releaseClause:80},{uid:14241914,name:'Alan Varela',age:25.0,releaseClause:25},{uid:14000219,name:'Angel Di María',age:37.0,releaseClause:5},{uid:14030119,name:'Gerónimo Rulli',age:33.0,releaseClause:10},{uid:14044150,name:'Paulo Dybala',age:31.0,releaseClause:10},{uid:14059327,name:'Augusto Batalla',age:29.0,releaseClause:5},{uid:14077011,name:'Nicolás Domínguez',age:27.0,releaseClause:5},{uid:14129337,name:'Nahuel Molina',age:27.0,releaseClause:10},{uid:14185869,name:'Facundo Medina',age:26.0,releaseClause:5},{uid:14186894,name:'Juan Foyth',age:27.0,releaseClause:5},{uid:14217538,name:'Mateo Pellegrino',age:24.0,releaseClause:30},{uid:14227360,name:'Máximo Perrone',age:23.0,releaseClause:50},{uid:14236223,name:'Santiago Castro',age:21.0,releaseClause:47},{uid:14247304,name:'Ezequiel Fernández',age:24.0,releaseClause:15},{uid:14250859,name:'Giuliano Simeone',age:23.0,releaseClause:40},{uid:2000044526,name:'José López',age:25.0,releaseClause:20},{uid:2000096439,name:'Tomás Palacios',age:23.0,releaseClause:20},{uid:2000142045,name:'Julio César Soler',age:21.0,releaseClause:20},{uid:2000173400,name:'Agustín Ruberto',age:20.0,releaseClause:15},{uid:2000200406,name:'Mariano Troilo',age:23.0,releaseClause:30},{uid:2000254616,name:'Juan Giménez',age:20.0,releaseClause:10},{uid:14080605,name:'Marcos Senesi',age:28.0,releaseClause:10},{uid:2000184436,name:'Dylan Gorosito',age:20.0,releaseClause:0},{uid:2000258392,name:'Ian Subiabre',age:19.0,releaseClause:0},{uid:2000321323,name:'Thomas De Martis',age:18.0,releaseClause:0},{uid:2000360842,name:'Felipe Esquivel',age:18.0,releaseClause:0},{uid:2000455851,name:'Tobias Andrada',age:18.0,releaseClause:0},{uid:2000176500,name:'Dylan Aquino',age:20.0,releaseClause:0},{uid:2000351894,name:'Mateus Mané',age:18.0,releaseClause:40},{uid:14221878,name:'Kevin Lomónaco',age:18.0,releaseClause:20},{uid:67201783,name:'Emiliano Buendía',age:0.0,releaseClause:10}
   ],
   'Dortmund': [
-    {uid:18087914,name:'Mile Svilar',age:25,releaseClause:156},
-    {uid:55041632,name:'Bernardo Silva',age:30,releaseClause:164},
-    {uid:28113827,name:'Felix Nmecha',age:25,releaseClause:160},
-    {uid:19371552,name:'Joao Pedro',age:25,releaseClause:165},
-    {uid:29179717,name:'Pedro Neto',age:25,releaseClause:156},
-    {uid:2000180889,name:'Finn Jeltsch',age:21,releaseClause:156},
-    {uid:12081007,name:'El Bilal Touré',age:25,releaseClause:145},
-    {uid:12093439,name:'Lamine Camara',age:23,releaseClause:142},
-    {uid:19220266,name:'Gabriel Jesus',age:28,releaseClause:154},
-    {uid:28126249,name:'James McAtee',age:24,releaseClause:150},
-    {uid:29125265,name:'Antonee Robinson',age:27,releaseClause:150},
-    {uid:43093382,name:'Matteo Politano',age:31,releaseClause:152},
-    {uid:51054011,name:'Edson Alvarez',age:27,releaseClause:135},
-    {uid:53113114,name:'Julian Ryerson',age:27,releaseClause:146},
-    {uid:61083649,name:'Nathan Patterson',age:25,releaseClause:148},
-    {uid:67243881,name:'Javi Galán',age:30,releaseClause:142},
-    {uid:67248170,name:'Jorge Cuenca',age:25,releaseClause:138},
-    {uid:72051281,name:'Giovanni Reyna',age:24,releaseClause:126},
-    {uid:92012109,name:'Bernd Leno',age:33,releaseClause:144},
-    {uid:2000137635,name:'Ashley Phillips',age:22,releaseClause:146},
-    {uid:2000155483,name:'Julien Duranville',age:21,releaseClause:130},
-    {uid:2000184837,name:'Mario Dorgeles',age:22,releaseClause:129},
-    {uid:24003746,name:'Ante Budimir',age:34,releaseClause:147},
-    {uid:2000399711,name:'Juma Bah',age:21,releaseClause:129},
-    {uid:2000325860,name:'Divine Mukasa',age:19,releaseClause:115},
-    {uid:2000378240,name:'Jose Neto',age:19,releaseClause:103},
-    {uid:2000397242,name:'Mauro Furtado',age:19,releaseClause:79},
-    {uid:2000409460,name:'Tomas Soares',age:19,releaseClause:77},
-    {uid:2000412364,name:'Michael Noonan',age:19,releaseClause:82},
-    {uid:2000416598,name:'Ryan McAidoo',age:19,releaseClause:107},
-    {uid:2000515504,name:'Jan-Luca Riedl',age:18,releaseClause:85},
+    {uid:18087914,name:'Mile Svilar',age:25.0,releaseClause:40},{uid:28060397,name:'John Stones',age:31.0,releaseClause:60},{uid:55041632,name:'Bernardo Silva',age:30.0,releaseClause:60},{uid:28113827,name:'Felix Nmecha',age:25.0,releaseClause:65},{uid:19371552,name:'Joao Pedro',age:24.0,releaseClause:98},{uid:12081007,name:'El Bilal Touré',age:24.0,releaseClause:20},{uid:12093439,name:'Lamine Camara',age:22.0,releaseClause:30},{uid:19220266,name:'Gabriel Jesus',age:28.0,releaseClause:30},{uid:27051813,name:'Yussuf Poulsen',age:31.0,releaseClause:5},{uid:28126249,name:'James McAtee',age:23.0,releaseClause:20},{uid:29125265,name:'Antonee Robinson',age:27.0,releaseClause:32},{uid:29179717,name:'Pedro Neto',age:24.5,releaseClause:70},{uid:43093382,name:'Matteo Politano',age:31.0,releaseClause:10},{uid:51054011,name:'Edson Alvarez',age:27.0,releaseClause:15},{uid:53113114,name:'Julian Ryerson',age:27.0,releaseClause:10},{uid:61083649,name:'Nathan Patterson',age:24.0,releaseClause:10},{uid:67243881,name:'Javi Galán',age:30.0,releaseClause:8},{uid:67248170,name:'Jorge Cuenca',age:25.0,releaseClause:10},{uid:72051281,name:'Giovanni Reyna',age:23.0,releaseClause:10},{uid:92012109,name:'Bernd Leno',age:33.0,releaseClause:10},{uid:2000137635,name:'Ashley Phillips',age:21.0,releaseClause:40},{uid:2000155483,name:'Julien Duranville',age:20.0,releaseClause:40},{uid:2000184837,name:'Mario Dorgeles',age:21.0,releaseClause:10},{uid:2000232157,name:'Daniel Daga',age:19.0,releaseClause:0},{uid:2000325860,name:'Divine Mukasa',age:18.0,releaseClause:0},{uid:2000378240,name:'Jose Neto',age:18.0,releaseClause:0},{uid:2000397242,name:'Mauro Furtado',age:18.0,releaseClause:0},{uid:2000409460,name:'Tomas Soares',age:18.0,releaseClause:0},{uid:2000412364,name:'Michael Noonan',age:18.0,releaseClause:0},{uid:2000416598,name:'Ryan McAidoo',age:18.0,releaseClause:0},{uid:2000515504,name:'Jan-Luca Riedl',age:17.0,releaseClause:0}
   ],
-  'FC Koln': [
-    {uid:14180903,name:'Mateo Retegui',age:26,releaseClause:155},
-    {uid:83228731,name:'Goncalo Inácio',age:25,releaseClause:158},
-    {uid:14110846,name:'Exequiel Palacios',age:26,releaseClause:156},
-    {uid:2000011147,name:'Milos Kerkez',age:23,releaseClause:173},
-    {uid:71108249,name:'Heorhii Sudakov',age:24,releaseClause:155},
-    {uid:19260918,name:'David Neres',age:28,releaseClause:153},
-    {uid:19391095,name:'Richard Ríos',age:25,releaseClause:140},
-    {uid:28122195,name:'Fábio Carvalho',age:24,releaseClause:148},
-    {uid:29137172,name:'Aaron Ramsdale',age:27,releaseClause:137},
-    {uid:48037162,name:'Robin Le Normand',age:28,releaseClause:152},
-    {uid:67197145,name:'Lucas Hernández',age:29,releaseClause:153},
-    {uid:84159755,name:'Marvin Keller',age:25,releaseClause:133},
-    {uid:2000016808,name:'Ismaël Doukouré',age:23,releaseClause:132},
-    {uid:2000020287,name:'Andreas Schjelderup',age:23,releaseClause:146},
-    {uid:2000028607,name:'Leon Avdullahu',age:23,releaseClause:134},
-    {uid:2000108031,name:'Will Lankshear',age:22,releaseClause:123},
-    {uid:43091113,name:'Bryan Cristante',age:30,releaseClause:148},
-    {uid:62096282,name:'Aleksandar Mitrovic',age:30,releaseClause:145},
-    {uid:2000271959,name:'Gabriele Biancheri',age:20,releaseClause:92},
-    {uid:2000273442,name:'Elias Benkara',age:20,releaseClause:86},
+  'Fulham': [
+    {uid:28108036,name:'Conor Gallagher',age:25.0,releaseClause:12},{uid:28049320,name:'Harry Kane',age:32.0,releaseClause:100},{uid:28122642,name:'Bukayo Saka',age:24.0,releaseClause:180},{uid:28124569,name:'Tino Livramento',age:23.0,releaseClause:50},{uid:29141472,name:'Benjamin White',age:27.0,releaseClause:10},{uid:2000283274,name:'Myles Lewis-Skelly',age:19.0,releaseClause:80},{uid:2000205927,name:'Jobe Bellingham',age:20.0,releaseClause:40},{uid:29193659,name:'Jacob Ramsey',age:25.0,releaseClause:25},{uid:37076092,name:'Noni Madueke',age:24.0,releaseClause:80},{uid:13234277,name:'Sampson Dweh',age:24.0,releaseClause:3},{uid:28094856,name:'Daniel James',age:27.0,releaseClause:7},{uid:28109599,name:'Emile Smith Rowe',age:25.0,releaseClause:5},{uid:29165656,name:'Ryan Sessegnon',age:25.0,releaseClause:20},{uid:29217875,name:'Charlie Cresswell',age:23.0,releaseClause:20},{uid:2000102877,name:'Mike Penders',age:21.0,releaseClause:20},{uid:2000189871,name:'Lewis Miley',age:20.0,releaseClause:40},{uid:2000191846,name:'Jayden Danns',age:20.0,releaseClause:10},{uid:2000261214,name:'Trey Nyoni',age:19.0,releaseClause:15},{uid:2000276594,name:'Josh King',age:19.0,releaseClause:30},{uid:69005372,name:'Roman Bürki',age:34.0,releaseClause:3},{uid:29061164,name:'Dan Burn',age:33.0,releaseClause:5},{uid:28111079,name:'Calvin Bassey',age:25.0,releaseClause:15},{uid:29125191,name:'Dominic Solanke',age:27.0,releaseClause:5},{uid:2000251820,name:'Jonah Kusi-Asare',age:19.0,releaseClause:10},{uid:53161610,name:'Pedersen',age:25.0,releaseClause:5},{uid:29116247,name:'Ivan Toney',age:29.0,releaseClause:5},{uid:2000216555,name:'Joshua Nichols',age:20.0,releaseClause:0},{uid:2000273472,name:'Kiano Dyer',age:19.0,releaseClause:0},{uid:2000276761,name:'Kieran Morrison',age:19.0,releaseClause:0},{uid:2000301021,name:'will Sweet',age:19.0,releaseClause:0},{uid:2000303360,name:'Flávio Goncalves',age:19.0,releaseClause:0},{uid:2000399869,name:'Josh Sonni-Lambie',age:18.0,releaseClause:0},{uid:2000299994,name:'Jaden Dixon',age:18.0,releaseClause:0}
   ],
-  'FC Nurnberg': [
-    {uid:12080051,name:'Pape Matar Sarr',age:24,releaseClause:163},
-    {uid:49048380,name:'Georginio Rutter',age:25,releaseClause:161},
-    {uid:27156352,name:'Maurits Kjaergaard',age:24,releaseClause:157},
-    {uid:28116386,name:'Anthony Gordon',age:25,releaseClause:159},
-    {uid:2000181790,name:'Junior Kroupi',age:21,releaseClause:143},
-    {uid:67086656,name:'Antoine Griezmann',age:34,releaseClause:154},
-    {uid:67139735,name:'Dani Carvajal',age:33,releaseClause:152},
-    {uid:92071707,name:'Alexander Nübel',age:28,releaseClause:142},
-    {uid:2000027898,name:'Shea Charles',age:23,releaseClause:134},
-    {uid:2000147146,name:'Dzenan Pejcinovic',age:22,releaseClause:120},
-    {uid:2000175080,name:'Dennis Seimen',age:21,releaseClause:125},
-    {uid:43295822,name:'Nicolò Cambiaghi',age:25,releaseClause:142},
-    {uid:53161610,name:'Pedersen',age:25,releaseClause:128},
-    {uid:19337893,name:'Roger Ibanez',age:26,releaseClause:150},
-    {uid:85132406,name:'Allan Saint-Maximin',age:28,releaseClause:140},
-    {uid:29165656,name:'Ryan Sessegnon',age:25,releaseClause:144},
-    {uid:48043868,name:'Batista Mendy',age:25,releaseClause:137},
-    {uid:29219115,name:'Flavien-Enzo Boyomo',age:25,releaseClause:147},
-    {uid:37076459,name:'Ruben Kluivert',age:24.5,releaseClause:130},
-    {uid:67178177,name:'José Gayà',age:30,releaseClause:136},
-    {uid:53160749,name:'Igoh Ogbu',age:25,releaseClause:144},
-    {uid:43162321,name:'Riccardo Orsolini',age:29,releaseClause:152},
-    {uid:93142470,name:'Yasin Ayari',age:23,releaseClause:140},
-    {uid:2000054508,name:'Jaden Fernando Slory',age:22,releaseClause:121},
-    {uid:2000291355,name:'Jorge Salinas',age:20,releaseClause:120},
-    {uid:2000476260,name:'Chizaram Ezenwata',age:18,releaseClause:90},
-    {uid:2000283704,name:'Ryunosuke Sato',age:18.5,releaseClause:122},
-    {uid:2000150854,name:'Peio Canales',age:20.5,releaseClause:126},
-    {uid:2000233779,name:'Izan Merino',age:19.5,releaseClause:117},
-    {uid:2000180850,name:'Mert Kömür',age:19.5,releaseClause:122},
-    {uid:2000402956,name:'Sama Nomoko',age:17.5,releaseClause:100},
+  'Hertha BSC': [
+    {uid:18026122,name:'Thibaut Courtois',age:33.0,releaseClause:50},{uid:48030711,name:'André-Franck Zambo Anguissa',age:29.0,releaseClause:40},{uid:2000274379,name:'Geovany Quenda',age:19.0,releaseClause:137},{uid:2000381365,name:'Ayyoub Bouaddi',age:18.0,releaseClause:90},{uid:2000088490,name:'Roony Bardghji',age:20.0,releaseClause:40},{uid:12093353,name:'Karim Konaté',age:22.0,releaseClause:40},{uid:19342183,name:'Evanilson',age:25.0,releaseClause:10},{uid:43617061,name:'Nicolò Bertola',age:23.0,releaseClause:10},{uid:48032198,name:'Evan N\'Dicka',age:25.0,releaseClause:90},{uid:48034615,name:'Nordi Mukiele',age:27.0,releaseClause:15},{uid:55070264,name:'Nuno Santos',age:30.0,releaseClause:4},{uid:63029157,name:'Dominik Greif',age:28.0,releaseClause:6},{uid:67269484,name:'Samuel Chukwueze',age:26.0,releaseClause:10},{uid:76020280,name:'Johan Mojica',age:32.0,releaseClause:8},{uid:78064881,name:'Mauro Arambarri',age:29.0,releaseClause:10},{uid:2000052247,name:'Ibrahima Bamba',age:24.0,releaseClause:20},{uid:2000101248,name:'Marc Pubill',age:23.0,releaseClause:59},{uid:2000102845,name:'Mika Godts',age:21.0,releaseClause:60},{uid:2000113245,name:'Jean-Mattéo Bahoya',age:21.0,releaseClause:50},{uid:2000129380,name:'Darío Osorio',age:22.0,releaseClause:8},{uid:2000158335,name:'Matías Moreno',age:22.0,releaseClause:8},{uid:2000166604,name:'Alexander Freeman',age:21.0,releaseClause:20},{uid:2000257061,name:'Oskar Spiten-Nysæter',age:18.0,releaseClause:8},{uid:2000072022,name:'Igor Matanovic',age:23.0,releaseClause:30},{uid:43500245,name:'Giovanni Fabbian',age:23.0,releaseClause:4},{uid:2000269520,name:'Aaron Bouwman',age:18.0,releaseClause:0},{uid:2000279620,name:'Souleymane Sidibé',age:19.0,releaseClause:0},{uid:2000288837,name:'Lazar Jovanovic',age:19.0,releaseClause:0},{uid:2000299717,name:'Diego Aguado Facio',age:19.0,releaseClause:0},{uid:2000328963,name:'Bogdan Popov',age:19.0,releaseClause:0},{uid:2000335245,name:'Sydney Osazuwa',age:19.0,releaseClause:0},{uid:2000352027,name:'Òscar Gistau',age:18.0,releaseClause:0},{uid:2000412892,name:'Lushendry Martes',age:17.0,releaseClause:0},{uid:2000217846,name:'César Palacios',age:20.0,releaseClause:0}
   ],
-  'Genk': [
-    {uid:53122155,name:'Leo Skiri Østigård',age:25,releaseClause:134},
-    {uid:70104047,name:'Berke Özer',age:26,releaseClause:131},
-    {uid:91183532,name:'Diant Ramaj',age:25,releaseClause:143},
-    {uid:2000191043,name:'Herba Guirassy',age:20,releaseClause:115},
-    {uid:85033422,name:'Geoffrey Kondogbia',age:32,releaseClause:134},
-    {uid:2000054475,name:'Antoni-Djibu Milambo',age:21,releaseClause:133},
-    {uid:2000053497,name:'David Mella Boullón',age:21,releaseClause:124},
-    {uid:2000529223,name:'Bryan Bugarín Gonçalves',age:17,releaseClause:85},
-    {uid:2000379979,name:'Vinicius Lira',age:18,releaseClause:110},
-    {uid:2000062325,name:'Matte Smets',age:22,releaseClause:124},
-    {uid:91108805,name:'Robert Andrich',age:30,releaseClause:146},
-    {uid:2000344636,name:'Djylian N\'Guessan',age:18,releaseClause:80},
-    {uid:2000188753,name:'Aladji Bamba',age:20,releaseClause:100},
-    {uid:2000238992,name:'Tawaratsumida Kota',age:22,releaseClause:132},
-    {uid:28018613,name:'Kieran Trippier',age:34,releaseClause:147},
-    {uid:2000191040,name:'Louis Leroux',age:21,releaseClause:119},
-    {uid:2000241496,name:'Moisés Paniagua',age:19,releaseClause:108},
-    {uid:2000257060,name:'Sebastian Olderheim',age:20,releaseClause:102},
-    {uid:2000271175,name:'Sidiki Chérif',age:20,releaseClause:122},
-    {uid:2000275657,name:'Jay Robinson',age:20,releaseClause:126},
-    {uid:2000288566,name:'Nikola Simic',age:20,releaseClause:104},
-    {uid:2000288567,name:'Bogdan Kostić',age:20,releaseClause:105},
-    {uid:2000288923,name:'Khalis Merah',age:20,releaseClause:113},
-    {uid:2000475823,name:'Tiago Rocha Rodrigues',age:17,releaseClause:77},
-    {uid:2000271667,name:'Tommaso Rubino',age:19,releaseClause:101},
+  'Liverpool': [
+    {uid:85139014,name:'Kylian Mbappé',age:26.0,releaseClause:324},{uid:49062667,name:'Hugo Ekitiké',age:24.0,releaseClause:135},{uid:2000198043,name:'Tyler Dibling',age:20.0,releaseClause:45},{uid:2000094886,name:'Jérémy Jacquet',age:21.0,releaseClause:81},{uid:28115788,name:'Curtis Jones',age:25.0,releaseClause:40},{uid:19217413,name:'Gérson',age:28.0,releaseClause:6},{uid:19403484,name:'Luís Henrique',age:24.0,releaseClause:18},{uid:29158244,name:'Lloyd Kelly',age:26.0,releaseClause:15},{uid:29175587,name:'Leif Davis',age:25.0,releaseClause:8},{uid:37084637,name:'Robin Gerardus Petrus Roefs',age:23.0,releaseClause:15},{uid:48037291,name:'Axel Disasi',age:27.0,releaseClause:25},{uid:48044574,name:'Moussa Diaby',age:26.0,releaseClause:30},{uid:49038965,name:'Sacha Boey',age:25.0,releaseClause:10},{uid:49048461,name:'Lucien Agoumé',age:24.0,releaseClause:18},{uid:49054420,name:'Youte',age:24.0,releaseClause:2},{uid:2000022887,name:'Cher Ndour',age:22.0,releaseClause:15},{uid:2000101543,name:'Roberto Fernández',age:24.0,releaseClause:5},{uid:2000104915,name:'Saël Kumbedi Nseke',age:21.0,releaseClause:10},{uid:2000121585,name:'Filippo Mané',age:21.0,releaseClause:6},{uid:2000138872,name:'Kassoum Ouattara',age:21.0,releaseClause:6},{uid:2000180861,name:'Almugera Kabar',age:20.0,releaseClause:6},{uid:2000218544,name:'Rayan',age:19.0,releaseClause:90},{uid:2000123485,name:'GIOVANE',age:22.0,releaseClause:1},{uid:2000221411,name:'Allan Andrade Elias',age:21.0,releaseClause:15},{uid:2000183492,name:'Ndemeni Bastien Chefren Meupiyou Menadjou',age:20.0,releaseClause:0},{uid:2000268858,name:'Eduardo Felicíssimo',age:19.0,releaseClause:0},{uid:2000273913,name:'Gui Negão',age:19.0,releaseClause:0},{uid:2000293255,name:'Luca Meirelles',age:19.0,releaseClause:0},{uid:2000297302,name:'Albert Navarro',age:19.0,releaseClause:0},{uid:2000478239,name:'Simón Escobar',age:16.0,releaseClause:0},{uid:2000290365,name:'Mathys Niflore',age:18.0,releaseClause:0}
   ],
-  'Leverkusen': [
-    {uid:2000011972,name:'Sávio',age:23,releaseClause:180},
-    {uid:28126247,name:'Liam Delap',age:24,releaseClause:175},
-    {uid:86066853,name:'Piero Hincapié',age:25,releaseClause:168},
-    {uid:92088306,name:'Nico Schlotterbeck',age:25,releaseClause:160},
-    {uid:25055037,name:'David Doudera',age:27,releaseClause:131},
-    {uid:39062838,name:'Orri Steinn Oskarsson',age:22,releaseClause:130},
-    {uid:49061476,name:'Yoan Bonny',age:23,releaseClause:153},
-    {uid:91207698,name:'Jonas Urbig',age:23,releaseClause:132},
-    {uid:2000010316,name:'Rav van den Berg',age:23,releaseClause:120},
-    {uid:2000023222,name:'Djaoui Cissé',age:23,releaseClause:121},
-    {uid:2000048260,name:'Alberto Baio',age:23,releaseClause:146},
-    {uid:2000190479,name:'Sam Amo-Ameyaw',age:21,releaseClause:129},
-    {uid:2000222926,name:'Jeff Ekhator',age:20,releaseClause:123},
-    {uid:2000243128,name:'Gonzalo Petit',age:20,releaseClause:111},
-    {uid:2000254692,name:'Chris Rigg',age:20,releaseClause:127},
-    {uid:2000257921,name:'Karim Coulibaly',age:20,releaseClause:116},
-    {uid:2000290285,name:'Artem Stepanov',age:19,releaseClause:144},
-    {uid:2000300244,name:'Omar Janneh',age:20,releaseClause:97},
-    {uid:28110835,name:'Daniel Ballard',age:25,releaseClause:138},
-    {uid:2000207199,name:'João Victor de Souza Menezes',age:20.5,releaseClause:120},
-    {uid:2000310749,name:'mertcan ayhan',age:20,releaseClause:110},
-    {uid:2000154161,name:'aljoscha kemlein',age:21,releaseClause:123},
-    {uid:37060896,name:'Joey Veerman',age:26,releaseClause:144},
-    {uid:2000395183,name:'Rémi Himbert',age:18,releaseClause:100},
-    {uid:2000104655,name:'Edoardo Motta',age:20.5,releaseClause:114},
-    {uid:2000368639,name:'vasilije kostov',age:19,releaseClause:100},
-    {uid:2000391611,name:'Bovio',age:19,releaseClause:90},
-    {uid:2000459742,name:'Cassiano Kiala',age:18,releaseClause:102},
-    {uid:2000331119,name:'Fynn schenten',age:18.5,releaseClause:100},
-    {uid:2000262633,name:'David Santos Daiber',age:19.5,releaseClause:105},
-    {uid:2000282469,name:'Felipe Chávez',age:19.5,releaseClause:110},
-    {uid:2000485210,name:'miguel Cubo',age:17.5,releaseClause:82},
+  'Marseille': [
+    {uid:27156352,name:'Maurits Kjaergaard',age:23.0,releaseClause:60},{uid:28100266,name:'Marcus Rashford',age:27.0,releaseClause:80},{uid:92023410,name:'Antonio Rüdiger',age:32.0,releaseClause:70},{uid:18007344,name:'Romelu Lukaku',age:32.0,releaseClause:50},{uid:71101331,name:'Mykhaylo Mudryk',age:24.5,releaseClause:35},{uid:28100123,name:'Aaron Wan-Bissaka',age:27.0,releaseClause:10},{uid:29083750,name:'Nick Pope',age:33.0,releaseClause:12},{uid:62191195,name:'Nikola Milenkovic',age:27.0,releaseClause:20},{uid:62192744,name:'Aleksa Terzic',age:25.0,releaseClause:5},{uid:67174729,name:'Adama Traoré',age:29.0,releaseClause:35},{uid:79034187,name:'Julio Enciso',age:22.0,releaseClause:24},{uid:83111501,name:'Thierry Rendall Correia',age:26.0,releaseClause:15},{uid:2000091511,name:'Lequincio Zeefuik',age:21.0,releaseClause:40},{uid:2000098836,name:'Petar Ratkov',age:22.0,releaseClause:30},{uid:2000187623,name:'Jaydee Canvot',age:20.0,releaseClause:70},{uid:2000229933,name:'Kjell Watjen',age:20.0,releaseClause:10},{uid:19371031,name:'Joao Gomes',age:25.0,releaseClause:30},{uid:91175517,name:'David Raum',age:27.0,releaseClause:30},{uid:2000086472,name:'Kevin Kelsy',age:22.0,releaseClause:30},{uid:2000111055,name:'Afonso Moreira',age:21.0,releaseClause:30},{uid:2000279637,name:'Amadou Koné',age:21.0,releaseClause:1},{uid:2000102796,name:'Joshua Quarshie',age:22.0,releaseClause:20},{uid:2000104631,name:'Jakob Schöller',age:20.0,releaseClause:0},{uid:2000241678,name:'Lorran',age:19.0,releaseClause:0},{uid:2000433203,name:'Sherkhan Kalmurza',age:19.0,releaseClause:0},{uid:2000480447,name:'Emmanuel Chukwu',age:19.0,releaseClause:0},{uid:12094355,name:'Mamour N\'Diaye',age:19.5,releaseClause:0},{uid:2000140844,name:'David Ozoh',age:20.0,releaseClause:0},{uid:2000392430,name:'Godwill Kukonki',age:18.0,releaseClause:0},{uid:2000261857,name:'Guido Della Rovere',age:18.0,releaseClause:0},{uid:2000240974,name:'Farid Alfa-Ruprecht',age:19.0,releaseClause:0},{uid:2000196490,name:'Hendry Blank',age:20.0,releaseClause:0}
   ],
-  'Man Utd': [
-    {uid:2000123586,name:'Kobbie Mainoo',age:22,releaseClause:179},
-    {uid:43425040,name:'Amad Diallo',age:25,releaseClause:166},
-    {uid:2000035036,name:'Alejandro Garnacho',age:23,releaseClause:170},
-    {uid:19334410,name:'Matheus Cunha',age:26,releaseClause:152},
-    {uid:37058363,name:'Tyrell Malacia',age:25,releaseClause:134},
-    {uid:67201634,name:'André Onana',age:29,releaseClause:140},
-    {uid:2000025291,name:'Rhys Bennett',age:23,releaseClause:92},
-    {uid:2000123107,name:'Tyler Fredricson',age:22,releaseClause:102},
-    {uid:2000123626,name:'Daniel Gore',age:22,releaseClause:110},
-    {uid:2000272176,name:'Jayce Fitzgerald',age:20,releaseClause:93},
-    {uid:2000272185,name:'James Scanlon',age:20,releaseClause:96},
-    {uid:2000272807,name:'Reece Munro',age:20,releaseClause:88},
-    {uid:2000272808,name:'Jaydan Kamason',age:20,releaseClause:95},
-    {uid:2000280809,name:'Jack Fletcher',age:20,releaseClause:102},
-    {uid:2000280811,name:'Tyler Fletcher',age:20,releaseClause:96},
-    {uid:2000392421,name:'Daniel Arner',age:19,releaseClause:82},
-    {uid:2000392429,name:'Amir Ibragimov',age:19,releaseClause:88},
-    {uid:2000392431,name:'Bendito Mantato',age:19,releaseClause:91},
-    {uid:2000392459,name:'Jim Thwaites',age:19,releaseClause:92},
-    {uid:2000401490,name:'Enzo Kana-Biyik',age:20,releaseClause:96},
-    {uid:2000474164,name:'Jayden Ngwashi',age:18,releaseClause:86},
-    {uid:28103590,name:'Mason Mount',age:26,releaseClause:150},
-    {uid:2000273647,name:'Jacob Devaney',age:20,releaseClause:99},
-    {uid:2000474167,name:'Jay McEvoy',age:18,releaseClause:80},
-    {uid:2000474178,name:'Noah Ajayi',age:17,releaseClause:68},
+  'Monaco': [
+    {uid:49039004,name:'William Saliba',age:25.0,releaseClause:190},{uid:2000220941,name:'Endrick',age:20.0,releaseClause:210},{uid:14048343,name:'Rodrigo De Paul',age:31.0,releaseClause:6},{uid:67260204,name:'Oihan Sancet',age:25.0,releaseClause:35},{uid:28117372,name:'Nathan Collins',age:25.0,releaseClause:40},{uid:14042683,name:'Joaquín Correa',age:30.0,releaseClause:4},{uid:16253898,name:'Patrick Wimmer',age:25.0,releaseClause:5},{uid:24016925,name:'Mateo Kovacic',age:31.0,releaseClause:20},{uid:24047814,name:'Nikola Katic',age:28.0,releaseClause:2},{uid:28066082,name:'Héctor Bellerín',age:30.0,releaseClause:7},{uid:29110623,name:'Ollie Watkins',age:29.0,releaseClause:6},{uid:35017438,name:'Mario Gotze',age:33.0,releaseClause:3},{uid:37076465,name:'Denso Kasius',age:23.0,releaseClause:5},{uid:53063430,name:'Alexander Sorloth',age:29.0,releaseClause:40},{uid:67183918,name:'Alex Remiro',age:30.0,releaseClause:5},{uid:67295761,name:'Mika Mármol',age:25.0,releaseClause:11},{uid:76033272,name:'Wílmar Barrios',age:31.0,releaseClause:4},{uid:98033113,name:'Jonas Omlin',age:31.0,releaseClause:3},{uid:18115008,name:'Samuel Kinduelu Mbangula',age:22.0,releaseClause:18},{uid:71104595,name:'Vitaliy Mykolenko',age:26.0,releaseClause:5},{uid:49045776,name:'Youssouf Fofana',age:26.0,releaseClause:20},{uid:2000257869,name:'Filip Thorvaldsen',age:19.5,releaseClause:0},{uid:2000234703,name:'Simon Eriksson',age:19.5,releaseClause:0},{uid:2000402975,name:'Adrian Guerrero',age:17.5,releaseClause:0},{uid:2000399539,name:'Elías Alexander Legendre Quiñónez',age:17.5,releaseClause:0},{uid:2000241976,name:'Yannick Eduardo',age:19.5,releaseClause:0},{uid:2000332435,name:'Eymen Laghrissi',age:17.5,releaseClause:0},{uid:2000224269,name:'Alexandru Stoian',age:17.5,releaseClause:0}
   ],
   'Newcastle': [
-    {uid:49038942,name:'Benoit Badiashile',age:25,releaseClause:159},
-    {uid:2000053516,name:'Adam Wharton',age:23,releaseClause:167},
-    {uid:2000257209,name:'Givairo Read',age:21,releaseClause:164},
-    {uid:57178516,name:'Radu Dragusin',age:25,releaseClause:159},
-    {uid:85140301,name:'Christopher Nkunku',age:27,releaseClause:153},
-    {uid:28106999,name:'Brahim Díaz',age:25,releaseClause:148},
-    {uid:43272557,name:'Davide Frattesi',age:25,releaseClause:146},
-    {uid:48044735,name:'Amine Gouiri',age:25,releaseClause:142},
-    {uid:49047065,name:'Mohamed Simakan',age:25,releaseClause:140},
-    {uid:53143395,name:'Jorgen Strand Larsen',age:25,releaseClause:141},
-    {uid:73201428,name:'Guela Doué',age:24,releaseClause:139},
-    {uid:2000006280,name:'Mohamed-Ali Cho',age:23,releaseClause:130},
-    {uid:2000011415,name:'Kévin Danois',age:23,releaseClause:130},
-    {uid:2000102722,name:'Wilson Odobert',age:22,releaseClause:154},
-    {uid:2000142236,name:'Romain Esse',age:22,releaseClause:116},
-    {uid:2000184285,name:'Clement Bischoff',age:21,releaseClause:120},
-    {uid:2000190480,name:'Jayden Meghoma',age:21,releaseClause:105},
-    {uid:2000028428,name:'Leo Román',age:25,releaseClause:142},
-    {uid:2000188079,name:'Dayann Methalie',age:21,releaseClause:144},
-    {uid:2000333625,name:'Gessime Yassine',age:20.5,releaseClause:116},
-    {uid:2000288697,name:'Harrison Armstrong',age:20,releaseClause:122},
-    {uid:2000255823,name:'Viery',age:20.5,releaseClause:115},
-    {uid:2000280486,name:'Moustapha Dabo',age:19,releaseClause:85},
-    {uid:2000319095,name:'Domchak Nazar',age:19.5,releaseClause:110},
-    {uid:2000475043,name:'Stephan Zagadou',age:18,releaseClause:100},
-    {uid:2000407283,name:'Marvyn Muzungu',age:19,releaseClause:100},
-    {uid:2000368352,name:'Ifeanyi Ndukwe',age:18.5,releaseClause:87},
-    {uid:2000471424,name:'Zadok Yohanna',age:18.5,releaseClause:84},
-    {uid:2000481260,name:'Joshua Dago',age:16.5,releaseClause:83},
+    {uid:49038942,name:'Benoit Badiashile',age:25.0,releaseClause:80},{uid:2000053516,name:'Adam Wharton',age:22.0,releaseClause:68},{uid:2000257209,name:'Givairo Read',age:20.0,releaseClause:80},{uid:28115831,name:'James Garner',age:25.0,releaseClause:35},{uid:49041157,name:'Melvin Bard',age:25.0,releaseClause:16},{uid:85140301,name:'Christopher Nkunku',age:27.0,releaseClause:40},{uid:28106999,name:'Brahim Díaz',age:25.0,releaseClause:30},{uid:35018013,name:'Kevin Trapp',age:34.0,releaseClause:4},{uid:43272557,name:'Davide Frattesi',age:25.0,releaseClause:25},{uid:48044735,name:'Amine Gouiri',age:25.0,releaseClause:20},{uid:49047065,name:'Mohamed Simakan',age:25.0,releaseClause:20},{uid:53143395,name:'Jorgen Strand Larsen',age:25.0,releaseClause:40},{uid:57178516,name:'Radu Dragusin',age:24.0,releaseClause:55},{uid:73201428,name:'Guela Doué',age:23.0,releaseClause:25},{uid:2000006280,name:'Mohamed-Ali Cho',age:22.0,releaseClause:20},{uid:2000011415,name:'Kévin Danois',age:22.0,releaseClause:15},{uid:2000085414,name:'Keke Topp',age:22.0,releaseClause:10},{uid:2000102722,name:'Wilson Odobert',age:21.0,releaseClause:30},{uid:2000142236,name:'Romain Esse',age:21.0,releaseClause:10},{uid:2000184285,name:'Clement Bischoff',age:20.0,releaseClause:10},{uid:2000190480,name:'Jayden Meghoma',age:20.0,releaseClause:10},{uid:2000205018,name:'Mamadou Diakhon',age:20.0,releaseClause:1},{uid:2000226596,name:'Joeri Jesse Heerkens',age:20.0,releaseClause:1},{uid:2000224700,name:'Adriano Jagusic',age:19.5,releaseClause:5},{uid:2000188079,name:'Dayann Methalie',age:20.0,releaseClause:35},{uid:2000280486,name:'Moustapha Dabo',age:18.0,releaseClause:0},{uid:2000288364,name:'Ibrahim Kanté',age:19.0,releaseClause:0},{uid:2000288697,name:'Harrison Armstrong',age:19.0,releaseClause:10},{uid:2000313833,name:'Alexander Rossing-Lelesiit',age:19.0,releaseClause:0},{uid:2000407283,name:'Marvyn Muzungu',age:18.0,releaseClause:0},{uid:2000475043,name:'Stephan Zagadou',age:17.0,releaseClause:0},{uid:2000368352,name:'Ifeanyi Ndukwe',age:17.5,releaseClause:0},{uid:2000333625,name:'Gessime Yassine',age:19.5,releaseClause:20}
+  ],
+  'Nottingham Forest': [
+    {uid:13158205,name:'Victor Osimhen',age:26.0,releaseClause:200},{uid:28127254,name:'Elliot Anderson',age:23.0,releaseClause:75},{uid:49047182,name:'Manu Koné',age:25.0,releaseClause:65},{uid:91138280,name:'Leroy Sané',age:29.0,releaseClause:76},{uid:12094339,name:'Abakar Sylla',age:23.0,releaseClause:25},{uid:12095249,name:'Ibrahim Diarra',age:19.0,releaseClause:3},{uid:18115949,name:'Jackson Tchatchoua',age:24.0,releaseClause:10},{uid:28067800,name:'Jack Grealish',age:29.0,releaseClause:8},{uid:33001438,name:'Hrádecký',age:35.0,releaseClause:4},{uid:37051440,name:'Danilho Doekhi',age:27.0,releaseClause:5},{uid:43317730,name:'Salvatore Esposito',age:25.0,releaseClause:3},{uid:43409366,name:'Lorenzo Lucca',age:25.0,releaseClause:70},{uid:61093823,name:'Josh Doig',age:24.0,releaseClause:25},{uid:67276474,name:'Benat Turrientes',age:24.0,releaseClause:5},{uid:83335582,name:'Diego Callai',age:22.0,releaseClause:1},{uid:2000006158,name:'Willy Kambwala',age:21.0,releaseClause:60},{uid:2000302092,name:'Trevan Sanusi',age:19.0,releaseClause:8},{uid:2000356711,name:'Christopher Cupps',age:18.0,releaseClause:5},{uid:2000447889,name:'victor ozhianvuna',age:17.0,releaseClause:10},{uid:2000496104,name:'Gilberto Mora',age:17.0,releaseClause:50},{uid:19258642,name:'Bruno Henrique',age:34.0,releaseClause:2},{uid:2000382120,name:'Chido Obi-Martin',age:18.0,releaseClause:40},{uid:96088106,name:'Przemysław Płacheta',age:27.0,releaseClause:5},{uid:83174775,name:'Joao Mário',age:25.0,releaseClause:4},{uid:18083491,name:'Leon Bailey',age:27.0,releaseClause:5},{uid:2000268036,name:'Bouziane',age:19.0,releaseClause:0},{uid:2000297774,name:'Shane Kluivert',age:18.0,releaseClause:0},{uid:2000370206,name:'Dastan Satpaev',age:17.0,releaseClause:0},{uid:2000406728,name:'Ilyas Azizi',age:18.0,releaseClause:0},{uid:2000487855,name:'Arone Gadou',age:17.0,releaseClause:0},{uid:2000506287,name:'Finley Grigg',age:16.5,releaseClause:0},{uid:2000203153,name:'Tejiri Adejenughure',age:18.0,releaseClause:0},{uid:2000302495,name:'Anhán Candé',age:17.0,releaseClause:0}
+  ],
+  'Brighton': [
+    {uid:37055843,name:'Matthijs de Ligt',age:25.0,releaseClause:80},{uid:48042326,name:'Aurélien Tchouameni',age:25.0,releaseClause:95},{uid:49048380,name:'Georginio Rutter',age:24.0,releaseClause:45},{uid:2000051578,name:'Facundo Buonanotte',age:21.0,releaseClause:40},{uid:2000120742,name:'Evan Ferguson',age:21.0,releaseClause:122},{uid:2000180822,name:'Brajan Gruda',age:22.0,releaseClause:35},{uid:16199713,name:'Igor',age:27.0,releaseClause:4},{uid:24025298,name:'Dominik Livakovic',age:30.0,releaseClause:15},{uid:28010491,name:'Danny Welbeck',age:34.0,releaseClause:7},{uid:28112993,name:'Tariq Lamptey',age:25.0,releaseClause:15},{uid:29036189,name:'Lewis Dunk',age:33.0,releaseClause:5},{uid:29090530,name:'Solly March',age:30.0,releaseClause:5},{uid:37071145,name:'Mats Wieffer',age:25.0,releaseClause:10},{uid:52101143,name:'Andrew Moran',age:22.0,releaseClause:4},{uid:93142470,name:'Yasin Ayari',age:22.0,releaseClause:25},{uid:2000036372,name:'Diego Gómez',age:23.0,releaseClause:15},{uid:2000056845,name:'James Beadle',age:21.0,releaseClause:10},{uid:2000124287,name:'Jack Hinshelwood',age:21.0,releaseClause:29},{uid:2000227373,name:'Stefanos Tzimas',age:20.0,releaseClause:24},{uid:18110473,name:'Maxim De Cuyper',age:25.0,releaseClause:8},{uid:13182752,name:'Chidera Ejuke',age:27.0,releaseClause:8},{uid:37060600,name:'Ferdi Kadioglu',age:25.0,releaseClause:8},{uid:2000338014,name:'Justin Lerma',age:18.0,releaseClause:10},{uid:2000277534,name:'Abdoul Koné',age:20.0,releaseClause:10},{uid:2000025485,name:'Habib Diarra',age:22.0,releaseClause:8},{uid:2000216807,name:'Mason Melia',age:18.0,releaseClause:0},{uid:2000521120,name:'Edwin Josué Quintero Preciado',age:15.0,releaseClause:0},{uid:2000521121,name:'Holger Jamil Quintero Preciado',age:15.0,releaseClause:0},{uid:2000497883,name:'Hugo Fernández Muret',age:17.0,releaseClause:0},{uid:2000460892,name:'Akol Akon',age:16.0,releaseClause:0},{uid:2000299363,name:'Daniel Yáñez Barla',age:18.0,releaseClause:0},{uid:2000447804,name:'Giovanni Emir Baroni',age:16.0,releaseClause:0},{uid:2000529221,name:'Leo Lemaitre Lezcano',age:16.0,releaseClause:0},{uid:2000276593,name:'Samuel Amissah',age:18.0,releaseClause:0},{uid:2000384299,name:'José Antonio Morante Antúnez',age:18.0,releaseClause:0}
+  ],
+  'Chelsea': [
+    {uid:19058734,name:'Alisson',age:32.0,releaseClause:50},{uid:14229525,name:'Enzo Fernández',age:25.0,releaseClause:75},{uid:48037335,name:'Marcus Thuram',age:27.0,releaseClause:155},{uid:91119700,name:'Jonathan Tah',age:29.0,releaseClause:60},{uid:91175868,name:'Yann Aurel Bisseck',age:25.0,releaseClause:70},{uid:62127037,name:'Sergej Milinkovic-Savic',age:30.0,releaseClause:8},{uid:67184349,name:'Inaki Williams',age:31.0,releaseClause:10},{uid:28068727,name:'Ruben Loftus-Cheek',age:29.0,releaseClause:4},{uid:28100239,name:'Tosin Adarabioyo',age:27.0,releaseClause:12},{uid:28103591,name:'Trevoh Chalobah',age:26.0,releaseClause:40},{uid:48043873,name:'Randal Kolo Muani',age:26.0,releaseClause:45},{uid:62216198,name:'Djordje Petrovic',age:25.0,releaseClause:5},{uid:67215284,name:'Marc Cucurella',age:26.0,releaseClause:25},{uid:83169822,name:'Joao Félix',age:25.0,releaseClause:10},{uid:85132406,name:'Allan Saint-Maximin',age:28.0,releaseClause:15},{uid:85133751,name:'Ferland Mendy',age:30.0,releaseClause:8},{uid:92021718,name:'Emre Can',age:31.0,releaseClause:5},{uid:2000006186,name:'Lesley Ugochukwu',age:22.0,releaseClause:5},{uid:2000105004,name:'Leon Grgic',age:20.0,releaseClause:5},{uid:2000151926,name:'Kota Takai',age:21.0,releaseClause:5},{uid:2000165653,name:'Iván Fresneda',age:21.0,releaseClause:25},{uid:2000208439,name:'Gabriel Moscardo',age:20.0,releaseClause:5},{uid:2000264337,name:'Pedro Lima',age:20.0,releaseClause:5},{uid:28100207,name:'Harvey Barnes',age:28.0,releaseClause:5},{uid:2000447463,name:'Kevin Filling',age:17.0,releaseClause:0},{uid:2000495995,name:'Felipe Morais',age:17.0,releaseClause:0},{uid:2000488543,name:'Ederson Castillo',age:16.5,releaseClause:0},{uid:2000184286,name:'Mohamed Belloumi',age:18.0,releaseClause:10}
+  ],
+  'Everton': [
+    {uid:67293495,name:'Pedri',age:23.0,releaseClause:176},{uid:83174762,name:'Vitinha',age:25.0,releaseClause:111},{uid:67283140,name:'Filip Jorgensen',age:24.0,releaseClause:25},{uid:67103537,name:'Isco',age:33.0,releaseClause:11},{uid:28108033,name:'Marc Guéhi',age:25.0,releaseClause:80},{uid:24048100,name:'Dani Olmo',age:27.0,releaseClause:36},{uid:89056845,name:'Ferran Torres',age:25.0,releaseClause:20},{uid:67220143,name:'Mikel Oyarzábal',age:28.0,releaseClause:7},{uid:63013145,name:'Milan Škriniar',age:30.0,releaseClause:7},{uid:19371902,name:'Danilo',age:25.0,releaseClause:15},{uid:28005568,name:'Jordan Henderson',age:35.0,releaseClause:5},{uid:29179807,name:'Jayden Bogle',age:25.0,releaseClause:5},{uid:67153373,name:'Alex Moreno',age:32.0,releaseClause:5},{uid:67245413,name:'Oscar Mingueza',age:26.0,releaseClause:11},{uid:79027217,name:'Omar Alderete',age:28.0,releaseClause:6},{uid:83320135,name:'António Silva',age:22.0,releaseClause:20},{uid:292380027,name:'Tim Iroegbunam',age:23.0,releaseClause:10},{uid:2000160584,name:'Santiago Hidalgo',age:21.0,releaseClause:10},{uid:2000190301,name:'Louis Jackson',age:20.0,releaseClause:3},{uid:2000190312,name:'Ethan Williams',age:20.0,releaseClause:3},{uid:8826969,name:'Keylor Navas',age:38.0,releaseClause:6},{uid:61043456,name:'Andrew Robertson',age:31.0,releaseClause:19},{uid:85078880,name:'Lenglet',age:30.0,releaseClause:6},{uid:2000263566,name:'Ryan Francisco',age:19.0,releaseClause:8},{uid:2000375648,name:'Wisdom Okpako Mike',age:16.0,releaseClause:0},{uid:2000273902,name:'André Luiz Santos Dias',age:19.0,releaseClause:0}
+  ],
+  'Fiorentina': [
+    {uid:43390774,name:'Samuele Ricci',age:24.0,releaseClause:40},{uid:62246208,name:'Benjamin Sesko',age:23.0,releaseClause:300},{uid:13194021,name:'Cheick Doucouré',age:25.0,releaseClause:20},{uid:18097159,name:'Alexis Saelemaekers',age:26.0,releaseClause:20},{uid:28094949,name:'Harry Wilson',age:28.0,releaseClause:15},{uid:37075765,name:'Milan van Ewijk',age:25.0,releaseClause:5},{uid:49040115,name:'Illan Meslier',age:25.0,releaseClause:10},{uid:53110469,name:'Brice Wembangomo',age:28.0,releaseClause:10},{uid:61098180,name:'Calvin Ramsay',age:23.0,releaseClause:5},{uid:67271025,name:'Adrián Bernabé',age:25.0,releaseClause:10},{uid:70118933,name:'Cenk Ozkacar',age:25.0,releaseClause:5},{uid:83111338,name:'Gedson Fernandes',age:26.0,releaseClause:10},{uid:83169004,name:'Zaidu Sanusi',age:28.0,releaseClause:5},{uid:85051083,name:'Kalidou Koulibaly',age:34.0,releaseClause:20},{uid:85075595,name:'Kurt Zouma',age:30.0,releaseClause:40},{uid:85145148,name:'Jonathan Ikoné',age:27.0,releaseClause:15},{uid:86066843,name:'Moisés Ramírez',age:25.0,releaseClause:5},{uid:91182849,name:'Lazar Samardzic',age:24.0,releaseClause:20},{uid:92051583,name:'Timo Werner',age:29.0,releaseClause:10},{uid:92102718,name:'Armel Bella-Kotchap',age:24.0,releaseClause:30},{uid:2000080496,name:'Garang Kuol',age:21.0,releaseClause:10},{uid:2000109338,name:'Deniz Gül',age:22.0,releaseClause:30},{uid:2000114473,name:'Arijon Ibrahimovic',age:20.0,releaseClause:0},{uid:2000153847,name:'Sani Suleiman',age:19.0,releaseClause:0},{uid:2000169799,name:'John Mellberg',age:20.0,releaseClause:0},{uid:2000177913,name:'Shaqueel van Persie',age:19.0,releaseClause:0},{uid:2000258809,name:'Rafael Pinto Pedrosa',age:18.0,releaseClause:0},{uid:2000259382,name:'Luca Erlein',age:19.0,releaseClause:0},{uid:2000263996,name:'Riquelme Fillipi',age:19.0,releaseClause:0},{uid:2000332528,name:'Mirza Ćatović',age:19.0,releaseClause:0}
+  ],
+  'Frankfurt': [
+    {uid:29221846,name:'Michael Olise',age:24.0,releaseClause:200},{uid:2000032706,name:'Alvaro Carreras',age:23.0,releaseClause:65},{uid:91208050,name:'Kevin Schade',age:24.0,releaseClause:35},{uid:28054565,name:'Jordan Pickford',age:31.0,releaseClause:15},{uid:98003821,name:'Granit Xhaka',age:32.0,releaseClause:15},{uid:67288555,name:'Xavi Simons',age:23.0,releaseClause:55},{uid:27100968,name:'Rasmus Kristensen',age:28.0,releaseClause:6},{uid:45095577,name:'Ritsu Doan',age:27.0,releaseClause:8},{uid:84161623,name:'Aurèle Amenda',age:23.0,releaseClause:18},{uid:91147345,name:'Robin Koch',age:29.0,releaseClause:8},{uid:91203087,name:'Ansgar Knauff',age:24.0,releaseClause:8},{uid:96102946,name:'Jakub Kiwior',age:25.0,releaseClause:42},{uid:2000019708,name:'Hugo Larsson',age:22.0,releaseClause:28},{uid:2000045854,name:'Nnamdi Collins',age:22.0,releaseClause:46},{uid:2000052135,name:'Abdallah Sima',age:25.0,releaseClause:6},{uid:2000065824,name:'Mio Backhaus',age:22.0,releaseClause:13},{uid:2000068585,name:'Nathaniel Brown',age:23.0,releaseClause:56},{uid:2000096364,name:'Joaquin Panichelli',age:23.0,releaseClause:20},{uid:2000178777,name:'Kosta Nedeljkovic',age:20.0,releaseClause:20},{uid:2000184217,name:'Joel Ndala',age:20.0,releaseClause:6},{uid:2000307251,name:'Konstantinos Karetsas',age:18.0,releaseClause:20},{uid:2000385891,name:'Alejandro Gomes Rodríguez',age:18.0,releaseClause:10},{uid:2000097929,name:'Niccolò Pisilli',age:21.0,releaseClause:20},{uid:18105815,name:'Arthur Theate',age:25.0,releaseClause:15},{uid:2000186695,name:'Jan Ziółkowski',age:21.0,releaseClause:20},{uid:2000205299,name:'Rayan Fofana',age:20.0,releaseClause:0},{uid:2000263998,name:'Luis Gustavo Benedetti',age:20.0,releaseClause:0},{uid:2000269260,name:'Matteo Cocchi',age:19.0,releaseClause:0},{uid:2000289214,name:'Joël-Emmanuel Coulibaly',age:19.0,releaseClause:0},{uid:2000102803,name:'Ayoube Amaimouni-Echghouyab',age:20.5,releaseClause:15},{uid:2000267399,name:'Bendegúz Kovács',age:18.0,releaseClause:0},{uid:2000180832,name:'Elias Baum',age:19.0,releaseClause:0}
+  ],
+  'Genk': [
+    {uid:53122155,name:'Leo Skiri Østigård',age:25.0,releaseClause:5},{uid:70104047,name:'Berke Özer',age:26.0,releaseClause:15},{uid:91183532,name:'Diant Ramaj',age:24.0,releaseClause:10},{uid:2000191043,name:'Herba Guirassy',age:19.0,releaseClause:30},{uid:85033422,name:'Geoffrey Kondogbia',age:32.0,releaseClause:5},{uid:2000054475,name:'Antoni-Djibu Milambo',age:20.0,releaseClause:4},{uid:2000053497,name:'David Mella Boullón',age:20.0,releaseClause:35},{uid:2000529223,name:'Bryan Bugarín Gonçalves',age:16.0,releaseClause:40},{uid:37076141,name:'Youri Baas',age:22.0,releaseClause:35},{uid:2000379979,name:'Vinicius Lira',age:17.0,releaseClause:50},{uid:2000395183,name:'Rémi Himbert',age:17.0,releaseClause:39},{uid:2000062325,name:'Matte Smets',age:21.0,releaseClause:45},{uid:19404391,name:'alisson santos',age:22.0,releaseClause:45},{uid:2000212746,name:'Samir El Mourabet',age:19.0,releaseClause:30},{uid:91108805,name:'Robert Andrich',age:30.0,releaseClause:10},{uid:2000344636,name:'Djylian N\'Guessan',age:17.0,releaseClause:25},{uid:2000300033,name:'Romelle Donovan',age:18.0,releaseClause:20},{uid:2000188753,name:'Aladji Bamba',age:19.0,releaseClause:20},{uid:28126245,name:'Conrad Jaden Egan-Riley',age:22.0,releaseClause:15},{uid:2000238992,name:'Tawaratsumida Kota',age:21.0,releaseClause:10},{uid:2000238983,name:'Doi Kanta',age:20.0,releaseClause:10},{uid:2000334636,name:'Mochizuki Henry Heroki',age:24.0,releaseClause:6},{uid:2000191040,name:'Louis Leroux',age:20.0,releaseClause:0},{uid:2000241496,name:'Moisés Paniagua',age:18.0,releaseClause:0},{uid:2000257060,name:'Sebastian Olderheim',age:19.0,releaseClause:0},{uid:2000271175,name:'Sidiki Chérif',age:19.0,releaseClause:0},{uid:2000275657,name:'Jay Robinson',age:19.0,releaseClause:0},{uid:2000288566,name:'Nikola Simic',age:19.0,releaseClause:0},{uid:2000288567,name:'Bogdan Kostić',age:19.0,releaseClause:0},{uid:2000288923,name:'Khalis Merah',age:19.0,releaseClause:0},{uid:2000475823,name:'Tiago Rocha Rodrigues',age:16.0,releaseClause:0},{uid:2000271667,name:'Tommaso Rubino',age:18.0,releaseClause:0}
+  ],
+  'Hamburger SV': [
+    {uid:2000188173,name:'Assan Ouédraogo',age:20.0,releaseClause:70},{uid:2000283271,name:'Ethan Nwaneri',age:19.0,releaseClause:105},{uid:48037822,name:'Ibrahima Konaté',age:26.0,releaseClause:111},{uid:49056280,name:'Malo Gusto',age:23.0,releaseClause:70},{uid:2000195626,name:'Yankuba Minteh',age:22.0,releaseClause:70},{uid:28121372,name:'Ian Maatsen',age:24.0,releaseClause:45},{uid:37074900,name:'Palmeirasp van den Berg',age:24.0,releaseClause:45},{uid:19326796,name:'Ederson',age:26.0,releaseClause:38},{uid:2000171034,name:'Aleksandar Pavlovic',age:22.0,releaseClause:60},{uid:2000107089,name:'Matias Fernandez-Pardo',age:21.0,releaseClause:75},{uid:27014576,name:'Frederik Ronnow',age:32.0,releaseClause:4},{uid:37088234,name:'Emanuel Emegha',age:23.0,releaseClause:80},{uid:43108998,name:'Andrea Compagno',age:29.0,releaseClause:8},{uid:76046285,name:'Luis Suárez',age:27.0,releaseClause:12},{uid:2000126886,name:'Oscar Hojlund',age:21.0,releaseClause:1},{uid:2000219701,name:'Kaua Elias',age:20.0,releaseClause:10},{uid:2000402904,name:'Jan Virgili',age:20.0,releaseClause:21},{uid:91184334,name:'Maduka Okoye',age:25.0,releaseClause:2},{uid:48037362,name:'Moussa Niakhaté',age:29.0,releaseClause:4},{uid:2000253187,name:'Juan Rodríguez',age:21.0,releaseClause:5},{uid:49053443,name:'Lorenz Assignon',age:25.0,releaseClause:1},{uid:36078574,name:'Dimitrios Christos Giannoulis',age:29.0,releaseClause:1},{uid:28058224,name:'Ross Barkley',age:31.0,releaseClause:10},{uid:19310729,name:'Paulo Henrique',age:29.0,releaseClause:4},{uid:2000187477,name:'Tidiam Gomis',age:19.0,releaseClause:0},{uid:2000237714,name:'Mustafa Hekimoglu',age:19.0,releaseClause:1},{uid:2000276967,name:'Ethan Mbappé',age:19.0,releaseClause:0},{uid:2000366140,name:'Leon Jakirovic',age:18.0,releaseClause:0},{uid:2000392956,name:'Manuel Carrascosa Moreno',age:17.0,releaseClause:0},{uid:2000503477,name:'Samba Konate',age:17.0,releaseClause:0},{uid:2000454624,name:'Chris Irenee Ntamack Pondy',age:17.5,releaseClause:0},{uid:2000290392,name:'Seny Koumbassa',age:18.5,releaseClause:0},{uid:2000251805,name:'Adrian Adriano Lahdo',age:17.0,releaseClause:0},{uid:2000278478,name:'Mohamadou Kanté',age:19.0,releaseClause:0}
+  ],
+  'Lazio': [
+    {uid:2000163799,name:'Nico Paz',age:21.0,releaseClause:130},{uid:12087972,name:'Nicolas Jackson',age:25.0,releaseClause:85},{uid:43298481,name:'Sandro Tonali',age:25.0,releaseClause:88},{uid:64016316,name:'Jan Oblak',age:32.0,releaseClause:30},{uid:85086031,name:'Adrien Rabiot',age:30.0,releaseClause:25},{uid:11023165,name:'Amir Rrahmani',age:31.0,releaseClause:18},{uid:28107919,name:'Reiss Nelson',age:25.0,releaseClause:11},{uid:28121568,name:'Anthony Elanga',age:24.0,releaseClause:21},{uid:29178504,name:'Djed Spence',age:25.0,releaseClause:38},{uid:43017499,name:'Francesco Acerbi',age:37.0,releaseClause:6},{uid:43125343,name:'Mattia Zaccagni',age:30.0,releaseClause:11},{uid:43500130,name:'Diego Coppola',age:22.0,releaseClause:68},{uid:48043484,name:'Pape Guèye',age:26.0,releaseClause:22},{uid:49050736,name:'Adrien Truffert',age:24.0,releaseClause:17},{uid:67212046,name:'Alfonso Pedraza',age:29.0,releaseClause:2},{uid:83209468,name:'Goncalo Ramos',age:25.0,releaseClause:40},{uid:2000011613,name:'Soumaila Coulibaly',age:22.0,releaseClause:12},{uid:2000014080,name:'Rome-Jayden Owusu-Oduro',age:22.0,releaseClause:17},{uid:2000228120,name:'Marc Guiu',age:20.0,releaseClause:41},{uid:2000298715,name:'Mikey Moore',age:18.0,releaseClause:35},{uid:2000259401,name:'Kacper Kościerski',age:19.0,releaseClause:3},{uid:2000350903,name:'Sean Steur',age:18.0,releaseClause:0},{uid:2000404501,name:'Jaime Barroso',age:18.0,releaseClause:0}
+  ],
+  'Leicester': [
+    {uid:49056243,name:'Eduardo Camavinga',age:23.0,releaseClause:108},{uid:19306929,name:'Rodrygo',age:25.0,releaseClause:90},{uid:28112986,name:'Callum Hudson-Odoi',age:25.0,releaseClause:30},{uid:98040383,name:'Gregor Kobel',age:27.0,releaseClause:50},{uid:2000123482,name:'Murillo',age:24.0,releaseClause:60},{uid:2000138516,name:'Paul Wanner',age:20.0,releaseClause:84},{uid:91207274,name:'Amadou Onana',age:24.0,releaseClause:65},{uid:25044451,name:'Tomás Chory',age:30.0,releaseClause:20},{uid:28115792,name:'Neco Williams',age:25.0,releaseClause:8},{uid:28127273,name:'Jonathan Rowe',age:23.0,releaseClause:12},{uid:29175220,name:'Morgan Gibbs-White',age:25.0,releaseClause:20},{uid:43094150,name:'Ivan Provedel',age:31.0,releaseClause:8},{uid:43274977,name:'Moise Kean',age:25.0,releaseClause:20},{uid:48042717,name:'Ibrahim Sangaré',age:27.0,releaseClause:15},{uid:76023027,name:'Davinson Sánchez',age:29.0,releaseClause:15},{uid:91184445,name:'Josha Vagnoman',age:25.0,releaseClause:20},{uid:2000161829,name:'Breno Bidon',age:21.0,releaseClause:8},{uid:2000217198,name:'Milton Delgado',age:21.0,releaseClause:8},{uid:2000239167,name:'Moise Bombito',age:25.0,releaseClause:15},{uid:2000330773,name:'Yang Min-Hyuk',age:20.0,releaseClause:8},{uid:2000416048,name:'Reigan Heskey',age:18.0,releaseClause:15},{uid:2000181790,name:'Junior Kroupi',age:20.0,releaseClause:105},{uid:67294055,name:'Sergi Cardona',age:26.0,releaseClause:10},{uid:2000026194,name:'Lucas Hogsberg',age:20.0,releaseClause:0},{uid:2000165742,name:'Christian McFarlane',age:19.0,releaseClause:0},{uid:2000301767,name:'Buba Sangaré',age:18.0,releaseClause:0},{uid:2000368737,name:'René Mitongo',age:18.0,releaseClause:0},{uid:2000457463,name:'Sadriddin Hasanov',age:18.0,releaseClause:0}
+  ],
+  'RC Lens': [
+    {uid:19302146,name:'Vinícius Júnior',age:24.5,releaseClause:180},{uid:2000138835,name:'Kenan Yildiz',age:21.0,releaseClause:200},{uid:28120042,name:'Cole Palmer',age:24.0,releaseClause:148},{uid:48042658,name:'Bryan Mbeumo',age:25.0,releaseClause:72},{uid:43298002,name:'Marco Carnesecchi',age:24.5,releaseClause:40},{uid:2000054872,name:'Ez Abde',age:24.0,releaseClause:32},{uid:43372892,name:'Nicolò Rovella',age:24.0,releaseClause:12},{uid:19383257,name:'Yan Couto',age:24.0,releaseClause:32},{uid:14031132,name:'Lucas Ocampos',age:31.0,releaseClause:4},{uid:18108550,name:'Koni De Winter',age:24.0,releaseClause:32},{uid:29219115,name:'Flavien-Enzo Boyomo',age:24.0,releaseClause:35},{uid:37065561,name:'Ramon Hendriks',age:25.0,releaseClause:12},{uid:37073317,name:'Kenneth Taylor',age:24.0,releaseClause:8},{uid:37084510,name:'Ryan Flamingo',age:23.0,releaseClause:12},{uid:67271371,name:'Rodrigo Zalazar',age:25.0,releaseClause:4},{uid:78074598,name:'Leonardo Fernández',age:24.5,releaseClause:8},{uid:78093159,name:'Maximiliano Araújo',age:25.0,releaseClause:16},{uid:91204520,name:'Merlin Rohl',age:24.0,releaseClause:16},{uid:2000028428,name:'Leo Román',age:25.0,releaseClause:8},{uid:2000040214,name:'Jhon Solís',age:21.0,releaseClause:5},{uid:2000077331,name:'Valentín Gómez',age:23.0,releaseClause:12},{uid:2000231531,name:'Anan Khalaily',age:21.0,releaseClause:12},{uid:49061868,name:'Elye Wahi',age:23.0,releaseClause:12},{uid:2000127879,name:'Rayane Bounida',age:20.0,releaseClause:0},{uid:2000259411,name:'Francis Onyeka',age:19.0,releaseClause:0},{uid:2000267443,name:'Abdelhamid Ait Boudlal',age:20.0,releaseClause:0},{uid:2000403784,name:'Selton',age:19.0,releaseClause:0},{uid:2000462816,name:'Djibril Coulibaly',age:17.0,releaseClause:0},{uid:2000295451,name:'Noah Nsoki',age:18.5,releaseClause:0}
+  ],
+  'Schalke': [
+    {uid:2000179712,name:'Warren Zaire-Emery',age:20.0,releaseClause:120},{uid:14157184,name:'Alexis Mac Allister',age:26.0,releaseClause:70},{uid:29226000,name:'Jarrad Branthwaite',age:24.0,releaseClause:90},{uid:49048357,name:'Lucas Chevalier',age:24.0,releaseClause:30},{uid:49056273,name:'Castello Lukeba',age:23.0,releaseClause:70},{uid:59138294,name:'Giorgi Mamardashvili',age:25.0,releaseClause:40},{uid:85111795,name:'Serhou Guirassy',age:29.0,releaseClause:40},{uid:2000265865,name:'Rodrigo Mora',age:19.0,releaseClause:100},{uid:2000181764,name:'Kees Smit',age:20.0,releaseClause:40},{uid:2000054263,name:'Bryan Zaragoza',age:25.0,releaseClause:25},{uid:12038706,name:'Ramy Bensebaini',age:30.0,releaseClause:5},{uid:16130398,name:'Philipp Lienhart',age:29.0,releaseClause:3},{uid:19380090,name:'Rômulo Cardoso',age:24.0,releaseClause:10},{uid:29147447,name:'Matty Cash',age:27.0,releaseClause:5},{uid:37049949,name:'Jerry St. Juste',age:28.0,releaseClause:7},{uid:2000312673,name:'Jesús Rodríguez',age:20.0,releaseClause:40},{uid:2000191507,name:'Adam Aznou',age:20.0,releaseClause:5},{uid:83228802,name:'Fábio Silva',age:24.0,releaseClause:10},{uid:18104985,name:'Edon Zhegrova',age:26.0,releaseClause:10},{uid:2000404708,name:'Stephen Mfuni',age:18.0,releaseClause:40},{uid:2000385919,name:'Ibrahim Mbaye',age:18.0,releaseClause:35},{uid:67256618,name:'Dani Vivian',age:25.0,releaseClause:5},{uid:2000273252,name:'Isaque',age:19.0,releaseClause:25},{uid:2000273266,name:'Riquelme Felipe',age:19.0,releaseClause:6},{uid:2000299435,name:'Joan Martínez',age:18.0,releaseClause:0},{uid:2000368243,name:'Nathan De Cat',age:18.0,releaseClause:40},{uid:2000386347,name:'Mathis Jangeal',age:18.0,releaseClause:0},{uid:2000459410,name:'Aleksander Borgersen',age:17.0,releaseClause:0},{uid:2000467056,name:'Abdellah Ouazane',age:17.0,releaseClause:0},{uid:2000475889,name:'Joshua Bastien',age:16.0,releaseClause:0},{uid:2000503369,name:'Christian Imga',age:17.0,releaseClause:0},{uid:2000228178,name:'Áron Yaakobishvili',age:19.5,releaseClause:0}
+  ],
+  'AC Milan': [{uid:2000025313,name:'FAVASULI',age:0.0,releaseClause:8},
+    {uid:48043084,name:'Boubacar Kamara',age:25.0,releaseClause:50},{uid:85094520,name:'Mike Maignan',age:30.0,releaseClause:40},{uid:2000146883,name:'Francesco Pio Esposito',age:21.0,releaseClause:100},{uid:92074020,name:'Christian Pulisic',age:26.0,releaseClause:50},{uid:91206164,name:'Malick Thiaw',age:24.0,releaseClause:80},{uid:2000211997,name:'Alex Jiménez',age:21.0,releaseClause:47},{uid:43270682,name:'Alessandro Buongiorno',age:26.0,releaseClause:30},{uid:24065108,name:'Martin Baturina',age:23.0,releaseClause:40},{uid:37071180,name:'Quilindschy Hartman',age:24.0,releaseClause:10},{uid:43266774,name:'Matteo Gabbia',age:25.0,releaseClause:5},{uid:43339195,name:'Andrea Cambiaso',age:25.0,releaseClause:15},{uid:43500064,name:'Cesare Casadei',age:23.0,releaseClause:10},{uid:84153276,name:'Dan Ndoye',age:25.0,releaseClause:27},{uid:84161856,name:'Ardon Jashari',age:24.0,releaseClause:5},{uid:2000006107,name:'Warren Bondo',age:22.0,releaseClause:1},{uid:2000033291,name:'Valentín Barco',age:22.0,releaseClause:40},{uid:2000103120,name:'Lorenzo Torriani',age:21.0,releaseClause:3},{uid:2000107103,name:'Mamadou Sarr',age:20.0,releaseClause:40},{uid:2000183044,name:'Davide Bartesaghi',age:20.0,releaseClause:40},{uid:2000338371,name:'Francesco Camarda',age:18.0,releaseClause:65},{uid:49048348,name:'Dilane Bakwa',age:23.0,releaseClause:20},{uid:67229630,name:'Youssef En-Nesyri',age:28.0,releaseClause:5},{uid:2000252799,name:'Mattia Liberali',age:19.0,releaseClause:8},{uid:2000289673,name:'Soriba Diaoune',age:18.0,releaseClause:0},{uid:2000298369,name:'Branimir Mlačić',age:19.0,releaseClause:0},{uid:2000349187,name:'Edmund Baidoo',age:20.0,releaseClause:9},{uid:2000388375,name:'Christian Comotto',age:18.0,releaseClause:0},{uid:2000491133,name:'Nahël Haddani',age:17.0,releaseClause:0},{uid:2000440037,name:'Luis Eduardo',age:17.5,releaseClause:0},{uid:2000374131,name:'Virgilio Olaya',age:17.5,releaseClause:0},{uid:2000330183,name:'Yunus Ünal',age:28.0,releaseClause:0},{uid:2000298881,name:'Federico Nardin',age:21.0,releaseClause:0}
+  ],
+  'A. Madrid': [
+    {uid:14183207,name:'Julián Alvarez',age:25.0,releaseClause:130},{uid:28113828,name:'Jeremie Frimpong',age:25.0,releaseClause:124},{uid:37047745,name:'Frenkie de Jong',age:28.0,releaseClause:40},{uid:37071126,name:'Tijjani Reijnders',age:27.0,releaseClause:30},{uid:49056279,name:'Rayan Cherki',age:22.0,releaseClause:106},{uid:83169226,name:'Diogo Costa',age:25.0,releaseClause:33},{uid:37076335,name:'Jan Paul van Hecke',age:25.0,releaseClause:73},{uid:19184436,name:'Joelinton',age:28.0,releaseClause:16},{uid:37060922,name:'Joshua Zirkzee',age:25.0,releaseClause:60},{uid:29128536,name:'Ben Chilwell',age:28.0,releaseClause:4},{uid:37050136,name:'Bijlow',age:27.0,releaseClause:4},{uid:37060952,name:'Quinten Timber',age:25.0,releaseClause:9},{uid:37064720,name:'Lutsharel Geertruida',age:25.0,releaseClause:4},{uid:37073313,name:'Devyne Rensch',age:23.0,releaseClause:4},{uid:43316850,name:'Giacomo Raspadori',age:25.0,releaseClause:5},{uid:2000138305,name:'Nobel Mendy',age:21.0,releaseClause:25},{uid:2000144508,name:'Ezechiel Banzuzi',age:21.0,releaseClause:10},{uid:78085068,name:'Ronald Araujo',age:26.0,releaseClause:50},{uid:37055841,name:'Justin Kluivert',age:26.0,releaseClause:17},{uid:2000017415,name:'Alessandro Circati',age:22.0,releaseClause:2},{uid:86045976,name:'Pervis Estupinán',age:27.0,releaseClause:4},{uid:2000402688,name:'Dro',age:18.0,releaseClause:20},{uid:2000254418,name:'Robin Mirisola',age:19.0,releaseClause:0},{uid:2000257577,name:'Ayodele Thomas',age:19.0,releaseClause:0},{uid:2000310111,name:'Giacomo Koloto',age:18.0,releaseClause:0},{uid:2000378966,name:'Wendeson Dell',age:18.0,releaseClause:0},{uid:2000443913,name:'Zé Lucas',age:18.0,releaseClause:0},{uid:2000460060,name:'Angelo Candido',age:17.0,releaseClause:0},{uid:2000389904,name:'Tynan Thompson',age:17.5,releaseClause:0},{uid:2000269819,name:'mathys detourbet',age:18.5,releaseClause:0},{uid:2000185929,name:'Daryll Benlahlou',age:19.0,releaseClause:0},{uid:2000205837,name:'Matteo Lavelli',age:18.0,releaseClause:0},{uid:2000158496,name:'Jonathan Jesus',age:21.0,releaseClause:10}
+  ],
+  'Asante Kotoko': [
+    {uid:67197125,name:'Marco Asensio',age:29.0,releaseClause:20},{uid:14094572,name:'Rodrigo Bentancur',age:28.0,releaseClause:15},{uid:14101872,name:'Agustín Rossi',age:21.0,releaseClause:5},{uid:19226741,name:'Lucas Paquetá',age:27.0,releaseClause:5},{uid:19270959,name:'Bernardo',age:30.0,releaseClause:10},{uid:27104982,name:'Jens Stage',age:28.0,releaseClause:8},{uid:28106687,name:'Eddie Nketiah',age:26.0,releaseClause:10},{uid:67157624,name:'Kepa Arrizabalaga',age:30.0,releaseClause:15},{uid:67184140,name:'Alvaro García',age:32.0,releaseClause:15},{uid:86080170,name:'Jon Aramburu',age:23.0,releaseClause:20},{uid:91107789,name:'Matthias Ginter',age:31.0,releaseClause:10},{uid:98015432,name:'Berat Djimsiti',age:32.0,releaseClause:10},{uid:2000068412,name:'Franjo Ivanovic',age:22.0,releaseClause:40},{uid:2000116169,name:'Sergi Altimira',age:24.0,releaseClause:5},{uid:2000218258,name:'Alvaro Rodríguez',age:21.0,releaseClause:40},{uid:2000205570,name:'Rabby Nzingoula',age:20.0,releaseClause:10},{uid:28093567,name:'James Maddison',age:28.0,releaseClause:20},{uid:67279753,name:'Ilaix Moriba',age:23.0,releaseClause:20},{uid:67291985,name:'Carlos Alvarez',age:22.0,releaseClause:4},{uid:29129073,name:'Rico Henry',age:28.0,releaseClause:10},{uid:2000271170,name:'Marius Courcoul',age:19.0,releaseClause:0},{uid:2000287938,name:'Naoufel El Hannach',age:19.0,releaseClause:0},{uid:2000289491,name:'Julián Vignolo',age:19.0,releaseClause:0},{uid:2000330177,name:'Patrice Covic',age:19.0,releaseClause:0},{uid:2000412744,name:'Alexis Vossah',age:18.0,releaseClause:0},{uid:2000483445,name:'Maxima Goffi',age:18.0,releaseClause:0}
+  ],
+  'Atalanta': [
+    {uid:28106491,name:'Declan Rice',age:26.0,releaseClause:123},{uid:98028755,name:'Mohamed Salah',age:33.0,releaseClause:85},{uid:2000202295,name:'Victor Froholdt',age:20.0,releaseClause:45},{uid:2000164850,name:'Ben Doak',age:20.0,releaseClause:46},{uid:83137935,name:'Francisco Trincao',age:25.0,releaseClause:15},{uid:67216396,name:'Fabián',age:29.0,releaseClause:40},{uid:93070271,name:'Viktor Gyokeres',age:27.0,releaseClause:117},{uid:19351985,name:'Natan',age:25.0,releaseClause:20},{uid:39060464,name:'Hákon Arnar Haraldsson',age:23.0,releaseClause:26},{uid:62142830,name:'Vanja Milinkovic-Savic',age:28.0,releaseClause:10},{uid:83169817,name:'Florentino Luís',age:25.0,releaseClause:8},{uid:95080787,name:'Kialonda Gaspar',age:27.0,releaseClause:9},{uid:2000012523,name:'Vinicius Augusto Tobias da Silva',age:22.0,releaseClause:12},{uid:2000039995,name:'Antonín Kinsky',age:23.0,releaseClause:15},{uid:2000054508,name:'Jaden Fernando Slory',age:21.0,releaseClause:12},{uid:2000146948,name:'Tom Rothe',age:21.0,releaseClause:9},{uid:2000351877,name:'Guille Fernández',age:18.0,releaseClause:16},{uid:12091814,name:'Dango Ouattara',age:24.0,releaseClause:4},{uid:27066387,name:'Andreas Christensen',age:29.0,releaseClause:10},{uid:92079338,name:'Ridle Baku',age:27.0,releaseClause:10},{uid:85120944,name:'Benjamin Pavard',age:29.0,releaseClause:12},{uid:61078265,name:'Billy Gilmour',age:25.0,releaseClause:8},{uid:85140175,name:'Yoane Wissa',age:28.0,releaseClause:8},{uid:2000294487,name:'Joselillo',age:18.5,releaseClause:0},{uid:2000186151,name:'Alex Tóth',age:19.5,releaseClause:0},{uid:2000350554,name:'Filip Öhman',age:17.5,releaseClause:0},{uid:2000183396,name:'Ollie scarles',age:19.5,releaseClause:0},{uid:2000416938,name:'alex marchal',age:17.5,releaseClause:0},{uid:2000332522,name:'Florian Hellstern',age:17.5,releaseClause:0},{uid:2000308098,name:'Josh Landers',age:18.5,releaseClause:0},{uid:2000301241,name:'Mathys Angély',age:19.0,releaseClause:0},{uid:2000221745,name:'Loun Srdanovic',age:19.0,releaseClause:0},{uid:2000150158,name:'Jonathan Asp Jensen',age:20.0,releaseClause:0}
+  ],
+  'Celtic': [
+    {uid:43124203,name:'Bruno Fernandes',age:30.0,releaseClause:95},{uid:83320123,name:'Renato Veiga',age:23.0,releaseClause:78},{uid:2000030130,name:'Joao Neves',age:21.0,releaseClause:85},{uid:43161651,name:'Federico Chiesa',age:27.0,releaseClause:35},{uid:78084541,name:'Manuel Ugarte',age:25.0,releaseClause:30},{uid:12095040,name:'Bazoumana Touré',age:20.0,releaseClause:46},{uid:14167329,name:'Lisandro Martínez',age:27.0,releaseClause:25},{uid:18107436,name:'Senne Lammens',age:24.0,releaseClause:33},{uid:19338230,name:'Antony',age:25.0,releaseClause:30},{uid:19362984,name:'Luiz Júnior',age:25.0,releaseClause:12},{uid:28049740,name:'Harry Maguire',age:32.0,releaseClause:15},{uid:29076105,name:'Luke Shaw',age:30.0,releaseClause:15},{uid:36149384,name:'Kostas Tzolakis',age:23.0,releaseClause:15},{uid:37076262,name:'Luciano Valente',age:22.0,releaseClause:20},{uid:83105845,name:'Diogo Dalot',age:26.0,releaseClause:20},{uid:83333463,name:'Rodrigo Gomes',age:23.0,releaseClause:10},{uid:2000010840,name:'Toby Collyer',age:22.0,releaseClause:12},{uid:2000022188,name:'Lucas Stassin',age:21.0,releaseClause:15},{uid:2000027719,name:'Diego Moreira',age:21.0,releaseClause:40},{uid:2000087400,name:'Dário Essugo',age:21.0,releaseClause:16},{uid:2000104892,name:'Eliesse Ben Seghir',age:21.0,releaseClause:30},{uid:2000146882,name:'Gustavo Sá',age:21.0,releaseClause:15},{uid:2000190386,name:'Karl Etta Eyong',age:22.0,releaseClause:30},{uid:2000243635,name:'Ousmane Diao',age:22.0,releaseClause:15},{uid:2000224667,name:'Avom',age:21.0,releaseClause:15},{uid:12094946,name:'Gueye',age:19.0,releaseClause:0},{uid:2000145303,name:'Vavassori',age:20.0,releaseClause:0},{uid:2000200565,name:'Amougou',age:20.0,releaseClause:0},{uid:2000269293,name:'Mosconi',age:19.0,releaseClause:0},{uid:2000449303,name:'Matthias Wamu',age:16.5,releaseClause:0},{uid:2000295427,name:'Villarreal',age:19.0,releaseClause:0},{uid:2000384848,name:'Iddrissou',age:17.0,releaseClause:0},{uid:2000238729,name:'Arroyo',age:19.0,releaseClause:0},{uid:2000294672,name:'May',age:18.0,releaseClause:0},{uid:12095307,name:'Tia',age:18.0,releaseClause:0}
+  ],
+  'Como': [
+    {uid:29232937,name:'Jude Bellingham',age:23.0,releaseClause:218},{uid:83111483,name:'Rafael Leao',age:26.0,releaseClause:120},{uid:16147660,name:'Xaver Schlager',age:27.0,releaseClause:8},{uid:91206105,name:'Rocco Reitz',age:24.0,releaseClause:10},{uid:2000065610,name:'Armindo Sieb',age:23.0,releaseClause:8},{uid:2000070509,name:'Tjark Ernst',age:23.0,releaseClause:6},{uid:2000120656,name:'Sebastian Villaume Otoa',age:22.0,releaseClause:6},{uid:2000196762,name:'Ilyas Ansah',age:21.0,releaseClause:30},{uid:2000202298,name:'Amin Chiakha',age:20.0,releaseClause:4},{uid:2000219705,name:'Youssef Enriquez Lekhedim',age:20.0,releaseClause:15},{uid:2000241044,name:'Vasilije Adzic',age:20.0,releaseClause:10},{uid:2000333587,name:'Victor Orakpo',age:20.0,releaseClause:11},{uid:2000378259,name:'Daniel Banjaqui',age:18.0,releaseClause:35},{uid:2000383145,name:'Matteo Palma',age:18.0,releaseClause:45},{uid:2000399711,name:'Juma Bah',age:20.0,releaseClause:50},{uid:2000407543,name:'Jack Porter',age:18.0,releaseClause:5},{uid:2000151103,name:'Carlos Garcés',age:23.5,releaseClause:3},{uid:29194731,name:'William Kokolo',age:25.0,releaseClause:3},{uid:2000133279,name:'Noah Markmann',age:19.0,releaseClause:3},{uid:19377206,name:'Luiz Henrique',age:25.0,releaseClause:14},{uid:2000375174,name:'Harry Howell',age:18.0,releaseClause:10},{uid:25059064,name:'Pavel Šulc',age:24.0,releaseClause:4},{uid:2000180847,name:'Noël Aséko',age:19.5,releaseClause:15},{uid:12096015,name:'Seydou Dembélé',age:18.0,releaseClause:0},{uid:2000302080,name:'Sean Neave',age:19.0,releaseClause:0},{uid:2000307250,name:'Brad Manguelle',age:18.0,releaseClause:0},{uid:2000310973,name:'Tiago Pitarch Pinar',age:18.0,releaseClause:0},{uid:2000472536,name:'Aleksa Damjanović',age:17.0,releaseClause:0},{uid:2000476049,name:'Christ Batola',age:17.0,releaseClause:0},{uid:2000511933,name:'Tyrese Noubissie',age:17.0,releaseClause:0},{uid:2000462497,name:'Yisa Alao',age:16.5,releaseClause:0},{uid:2000423418,name:'Nicolás Azambuja',age:17.0,releaseClause:0},{uid:29218024,name:'Hayden Hackney',age:22.0,releaseClause:10},{uid:2000480647,name:'muhamadou kanteh',age:18.0,releaseClause:0}
+  ],
+  'FC Koln': [
+    {uid:14180903,name:'Mateo Retegui',age:26.0,releaseClause:55},{uid:83228731,name:'Goncalo Inácio',age:24.0,releaseClause:80},{uid:37065567,name:'Crysencio Summerville',age:24.0,releaseClause:43},{uid:14110846,name:'Exequiel Palacios',age:26.0,releaseClause:20},{uid:2000011147,name:'Milos Kerkez',age:22.0,releaseClause:80},{uid:19260918,name:'David Neres',age:28.0,releaseClause:15},{uid:19391095,name:'Richard Ríos',age:25.0,releaseClause:5},{uid:28122195,name:'Fábio Carvalho',age:23.0,releaseClause:15},{uid:29137172,name:'Aaron Ramsdale',age:27.0,releaseClause:10},{uid:48037162,name:'Robin Le Normand',age:28.0,releaseClause:25},{uid:67197145,name:'Lucas Hernández',age:29.0,releaseClause:25},{uid:71108249,name:'Heorhii Sudakov',age:23.0,releaseClause:25},{uid:84159755,name:'Marvin Keller',age:24.0,releaseClause:4},{uid:2000016808,name:'Ismaël Doukouré',age:22.0,releaseClause:7},{uid:2000020287,name:'Andreas Schjelderup',age:22.0,releaseClause:40},{uid:2000028607,name:'Leon Avdullahu',age:22.0,releaseClause:7},{uid:2000053930,name:'José Ángel Carmona',age:24.0,releaseClause:16},{uid:2000108031,name:'Will Lankshear',age:21.0,releaseClause:20},{uid:2000280807,name:'Harry Amass',age:19.0,releaseClause:20},{uid:28095341,name:'Pablo Maffeo',age:28.0,releaseClause:10},{uid:43091113,name:'Bryan Cristante',age:30.0,releaseClause:5},{uid:62096282,name:'Aleksandar Mitrovic',age:30.0,releaseClause:5},{uid:2000246890,name:'Lorenzo Venturino',age:20.0,releaseClause:0},{uid:2000271959,name:'Gabriele Biancheri',age:19.0,releaseClause:0},{uid:2000273442,name:'Elias Benkara',age:19.0,releaseClause:0},{uid:2000315290,name:'Luighi',age:20.0,releaseClause:0}
+  ],
+  'FC Porto': [{uid:37076459,name:'Ruben Kluivert',age:0.0,releaseClause:10},
+    {uid:28124579,name:'Jamal Musiala',age:23.0,releaseClause:200},{uid:735216,name:'Cristiano Ronaldo',age:40.0,releaseClause:15},{uid:12080051,name:'Pape Matar Sarr',age:23.0,releaseClause:60},{uid:8435089,name:'Karim Benzema',age:37.0,releaseClause:2},{uid:67086656,name:'Antoine Griezmann',age:34.0,releaseClause:15},{uid:67104772,name:'Íñigo Martínez',age:34.0,releaseClause:6},{uid:67139735,name:'Dani Carvajal',age:33.0,releaseClause:15},{uid:85104424,name:'Kingsley Coman',age:29.0,releaseClause:25},{uid:7458272,name:'Sergio Ramos',age:39.0,releaseClause:5},{uid:19409389,name:'Thiago',age:25.0,releaseClause:40},{uid:28018613,name:'Kieran Trippier',age:34.0,releaseClause:5},{uid:35011448,name:'Thomas Müller',age:35.0,releaseClause:2},{uid:55070285,name:'Joao Palhinha',age:30.0,releaseClause:40},{uid:67030696,name:'Nacho',age:35.0,releaseClause:1},{uid:85028014,name:'Paul Pogba',age:32.0,releaseClause:5},{uid:91177332,name:'Jeff Chabot',age:27.0,releaseClause:10},{uid:92071707,name:'Alexander Nübel',age:28.0,releaseClause:10},{uid:2000027898,name:'Shea Charles',age:22.0,releaseClause:50},{uid:2000147146,name:'Dzenan Pejcinovic',age:21.0,releaseClause:25},{uid:2000175080,name:'Dennis Seimen',age:20.0,releaseClause:30},{uid:2000208868,name:'Jonathan De Irastorza',age:20.0,releaseClause:5},{uid:2000218213,name:'Taylan Bulut',age:20.0,releaseClause:10},{uid:2000215455,name:'Ishé Samuels-Smith',age:20.0,releaseClause:1},{uid:43295822,name:'Nicolò Cambiaghi',age:24.0,releaseClause:10},{uid:2000180865,name:'Justin von der Hitz',age:19.0,releaseClause:0},{uid:2000259412,name:'Adin Licina',age:19.0,releaseClause:0},{uid:2000291355,name:'Jorge Salinas',age:19.0,releaseClause:0},{uid:2000332589,name:'Jussef Nasrawe',age:19.0,releaseClause:0},{uid:2000352129,name:'Andrea Natali',age:18.0,releaseClause:0},{uid:2000476260,name:'Chizaram Ezenwata',age:17.0,releaseClause:0},{uid:2000402956,name:'Sama Nomoko',age:19.0,releaseClause:0}
+  ],
+  'Flamengo': [
+    {uid:2000263999,name:'Estêvao',age:19.0,releaseClause:260},{uid:67277675,name:'Joan García',age:25.0,releaseClause:45},{uid:2000049413,name:'Gavi',age:21.0,releaseClause:58},{uid:2000141742,name:'Fermín',age:23.0,releaseClause:58},{uid:2000296497,name:'Pau Cubarsí',age:19.0,releaseClause:90},{uid:76049803,name:'Luis Díaz',age:28.0,releaseClause:100},{uid:19258927,name:'Caio Henrique',age:28.0,releaseClause:5},{uid:29156212,name:'Robert Sánchez',age:27.0,releaseClause:5},{uid:37053643,name:'Gianluca Scamacca',age:26.0,releaseClause:6},{uid:2000009057,name:'Carlos Forbs',age:22.0,releaseClause:25},{uid:2000058198,name:'Marc Casadó',age:22.0,releaseClause:7},{uid:2000141707,name:'Yarek Gasiorowski',age:21.0,releaseClause:18},{uid:2000227977,name:'Héctor Fort',age:19.0,releaseClause:8},{uid:2000123587,name:'jeremy arevalo',age:21.0,releaseClause:3},{uid:29074544,name:'Tyrone Mings',age:32.0,releaseClause:12},{uid:2000101061,name:'Gerard Martín',age:24.0,releaseClause:15},{uid:95081385,name:'Otávio',age:24.0,releaseClause:15},{uid:91184426,name:'Angelo Stiller',age:25.0,releaseClause:25},{uid:2000128974,name:'Eliezer Mayenda',age:21.0,releaseClause:12},{uid:2000351880,name:'Toni Fernández',age:18.0,releaseClause:15},{uid:93085044,name:'Emil Holm',age:25.0,releaseClause:10},{uid:85140415,name:'Issa Diop',age:28.0,releaseClause:5},{uid:2000149882,name:'Ebenezer Akinsanmiro',age:21.0,releaseClause:5},{uid:2000220048,name:'Chema Andrés',age:21.0,releaseClause:15},{uid:2000229718,name:'Jon Martín',age:20.0,releaseClause:27},{uid:2000210786,name:'Pablo García',age:20.0,releaseClause:0},{uid:2000298787,name:'Xavi Espart',age:19.0,releaseClause:0},{uid:2000370427,name:'Pedro Rodríguez',age:18.0,releaseClause:0},{uid:2000472427,name:'Raúl Expósito',age:17.0,releaseClause:0},{uid:2000297470,name:'Tomàs Marqués',age:18.5,releaseClause:0},{uid:2000402287,name:'Hamza Abdelkarim',age:17.5,releaseClause:0},{uid:2000475982,name:'João Gabriel Castro Santos',age:16.5,releaseClause:0},{uid:2000103231,name:'Nikolaus Wurmbrand',age:19.5,releaseClause:0},{uid:2000234010,name:'Patricio Pacífico',age:19.0,releaseClause:0},{uid:2000297543,name:'Juan Hernández',age:18.0,releaseClause:0},{uid:2000399274,name:'Ugo Lamare El Kadmiri',age:18.0,releaseClause:0}
+  ],
+  'Inter': [
+    {uid:14110660,name:'Lautaro Martínez',age:27.0,releaseClause:142},{uid:43139595,name:'Nicolò Barella',age:28.0,releaseClause:32},{uid:43252460,name:'Alessandro Bastoni',age:26.0,releaseClause:92},{uid:43500755,name:'Giorgio Scalvini',age:22.0,releaseClause:80},{uid:28115996,name:'Morgan Rogers',age:24.0,releaseClause:100},{uid:28126241,name:'Oscar Bobb',age:23.0,releaseClause:20},{uid:2000097988,name:'Valentín Carboni',age:21.0,releaseClause:30},{uid:19350649,name:'Carlos Augusto',age:26.0,releaseClause:12},{uid:43155241,name:'Guglielmo Vicario',age:28.0,releaseClause:10},{uid:43391659,name:'Elia Caprile',age:24.0,releaseClause:10},{uid:43617691,name:'Nicolò Savona',age:23.0,releaseClause:15},{uid:49037684,name:'Oumar Solet',age:25.0,releaseClause:35},{uid:61078132,name:'Lewis Ferguson',age:25.0,releaseClause:1},{uid:67277845,name:'Borja Sainz',age:25.0,releaseClause:15},{uid:2000024341,name:'Arthur Atta',age:23.0,releaseClause:35},{uid:2000082098,name:'Alex Valle',age:22.0,releaseClause:20},{uid:2000136198,name:'Marco Palestra',age:21.0,releaseClause:50},{uid:2000273835,name:'Christos Mouzakitis',age:19.0,releaseClause:20},{uid:2000288835,name:'Mihajlo Cvetkovic',age:19.0,releaseClause:10},{uid:91190494,name:'Tim Lemperle',age:24.0,releaseClause:2},{uid:2000013430,name:'Pablo Felipe',age:22.0,releaseClause:5},{uid:2000221925,name:'Rafiu Durosinmi',age:22.5,releaseClause:15},{uid:2000031536,name:'Soungoutou Magassa',age:21.0,releaseClause:1},{uid:83320131,name:'Youssef Chermiti',age:21.0,releaseClause:15},{uid:2000311773,name:'Noahkai Banks',age:19.0,releaseClause:30},{uid:2000259904,name:'Giovanni Leoni',age:19.0,releaseClause:0},{uid:2000438795,name:'Saba Kharebashvili',age:17.0,releaseClause:0},{uid:2000330855,name:'Kerim Alajbegovic',age:18.0,releaseClause:0},{uid:2000388194,name:'Will Wright',age:18.0,releaseClause:0},{uid:2000519166,name:'Maycon Cardozo',age:16.5,releaseClause:0},{uid:2000363430,name:'Juan Angulo',age:17.5,releaseClause:5},{uid:2000417237,name:'Vasilije Novicic',age:17.0,releaseClause:0},{uid:2000327151,name:'Mick Schmetgens',age:17.0,releaseClause:0},{uid:2000259556,name:'Philipp Maybach',age:17.0,releaseClause:0},{uid:2000184216,name:'Nicolò Tresoldi',age:21.0,releaseClause:0}
+  ],
+  'Leverkusen': [
+    {uid:2000011972,name:'Sávio',age:22.0,releaseClause:130},{uid:86066853,name:'Piero Hincapie',age:24.0,releaseClause:93},{uid:92088306,name:'Nico Schlotterbeck',age:25.0,releaseClause:162},{uid:2000180889,name:'Finn Jeltsch',age:20.0,releaseClause:52},{uid:25055037,name:'David Doudera',age:27.0,releaseClause:2},{uid:35017377,name:'Oliver Baumann',age:35.0,releaseClause:10},{uid:39062838,name:'Orri Steinn Oskarsson',age:21.0,releaseClause:8},{uid:49061476,name:'Yoan Bonny',age:22.0,releaseClause:70},{uid:91207698,name:'Jonas Urbig',age:22.0,releaseClause:15},{uid:2000010316,name:'Rav van den Berg',age:22.0,releaseClause:6},{uid:2000023222,name:'Djaoui Cissé',age:22.0,releaseClause:6},{uid:2000048260,name:'Alberto Baio',age:22.0,releaseClause:38},{uid:2000154217,name:'Semih Kilicsoy',age:20.0,releaseClause:10},{uid:2000190479,name:'Sam Amo-Ameyaw',age:20.0,releaseClause:8},{uid:2000222926,name:'Jeff Ekhator',age:19.0,releaseClause:15},{uid:2000243128,name:'Gonzalo Petit',age:19.0,releaseClause:5},{uid:2000245263,name:'Johan Manzambi',age:20.0,releaseClause:65},{uid:2000254692,name:'Chris Rigg',age:19.0,releaseClause:12},{uid:2000257921,name:'Karim Coulibaly',age:19.0,releaseClause:25},{uid:2000290285,name:'Artem Stepanov',age:18.0,releaseClause:50},{uid:16184707,name:'Christoph Baumgartner',age:25.0,releaseClause:5},{uid:2000300244,name:'Omar Janneh',age:19.0,releaseClause:10},{uid:2000008568,name:'Williot Swedberg',age:22.0,releaseClause:6},{uid:28110835,name:'Daniel Ballard',age:25.0,releaseClause:6},{uid:2000207199,name:'João Victor de Souza Menezes',age:19.5,releaseClause:10},{uid:2000310749,name:'mertcan ayhan',age:19.0,releaseClause:8},{uid:2000368639,name:'vasilije kostov',age:18.0,releaseClause:0},{uid:2000391611,name:'Bovio',age:18.0,releaseClause:0},{uid:2000459742,name:'Cassiano Kiala',age:17.0,releaseClause:0},{uid:2000331119,name:'Fynn schenten',age:17.5,releaseClause:0},{uid:2000262633,name:'David Santos Daiber',age:18.5,releaseClause:0},{uid:2000282469,name:'Felipe Chávez',age:18.5,releaseClause:0},{uid:2000327139,name:'Mika wallentowitz',age:17.5,releaseClause:0},{uid:2000170587,name:'Nelson Weiper',age:20.0,releaseClause:0},{uid:2000154161,name:'aljoscha kemlein',age:20.0,releaseClause:4},{uid:2000104655,name:'Edoardo Motta',age:20.0,releaseClause:0}
+  ],
+  'Man Utd': [
+    {uid:43425040,name:'Amad Diallo',age:24.0,releaseClause:60},{uid:2000035036,name:'Alejandro Garnacho',age:22.0,releaseClause:120},{uid:2000123586,name:'Kobbie Mainoo',age:21.0,releaseClause:60},{uid:19334410,name:'Matheus Cunha',age:26.0,releaseClause:70},{uid:37058363,name:'Tyrell Malacia',age:25.0,releaseClause:10},{uid:67201634,name:'André Onana',age:29.0,releaseClause:20},{uid:2000025291,name:'Rhys Bennett',age:22.0,releaseClause:5},{uid:2000123107,name:'Tyler Fredricson',age:21.0,releaseClause:10},{uid:2000123626,name:'Daniel Gore',age:21.0,releaseClause:5},{uid:2000272176,name:'Jayce Fitzgerald',age:19.0,releaseClause:20},{uid:2000272185,name:'James Scanlon',age:19.0,releaseClause:10},{uid:2000272807,name:'Reece Munro',age:19.0,releaseClause:10},{uid:2000272808,name:'Jaydan Kamason',age:19.0,releaseClause:10},{uid:2000280809,name:'Jack Fletcher',age:19.0,releaseClause:10},{uid:2000280811,name:'Tyler Fletcher',age:19.0,releaseClause:10},{uid:2000392421,name:'Daniel Arner',age:18.0,releaseClause:5},{uid:2000392429,name:'Amir Ibragimov',age:18.0,releaseClause:20},{uid:2000392431,name:'Bendito Mantato',age:18.0,releaseClause:10},{uid:2000392459,name:'Jim Thwaites',age:18.0,releaseClause:10},{uid:2000401490,name:'Enzo Kana-Biyik',age:19.0,releaseClause:10},{uid:2000474164,name:'Jayden Ngwashi',age:17.0,releaseClause:20},{uid:28103590,name:'Mason Mount',age:26.0,releaseClause:30},{uid:2000190299,name:'Elyh Harrison',age:20.0,releaseClause:0},{uid:2000190306,name:'Jack Moorhouse',age:20.0,releaseClause:0},{uid:2000273647,name:'Jacob Devaney',age:19.0,releaseClause:0},{uid:2000474167,name:'Jay McEvoy',age:17.0,releaseClause:0},{uid:2000474178,name:'Noah Ajayi',age:16.0,releaseClause:0}
+  ],
+  'Napoli': [
+    {uid:91151081,name:'Kai Havertz',age:26.0,releaseClause:90},{uid:2000250907,name:'Ibrahim Osman',age:21.0,releaseClause:60},{uid:12078577,name:'Emmanuel Agbadou',age:28.0,releaseClause:5},{uid:19030933,name:'Neto',age:36.0,releaseClause:5},{uid:19284037,name:'Ayrton Lucas',age:28.0,releaseClause:10},{uid:19347264,name:'Morato',age:25.0,releaseClause:50},{uid:25042141,name:'Patrik Schick',age:29.0,releaseClause:50},{uid:28100269,name:'Axel Tuanzebe',age:27.0,releaseClause:10},{uid:37024470,name:'Memphis Depay',age:31.0,releaseClause:20},{uid:37055844,name:'Donyell Malen',age:26.0,releaseClause:46},{uid:48036643,name:'Mouctar Diakhaby',age:28.0,releaseClause:10},{uid:49038271,name:'Maxence Lacroix',age:25.0,releaseClause:60},{uid:53086846,name:'Fredrik Aursnes',age:29.0,releaseClause:10},{uid:55070307,name:'Rúben Neves',age:28.0,releaseClause:6},{uid:58156290,name:'Sergey Pinyaev',age:21.0,releaseClause:10},{uid:70138807,name:'Youssouf Ndayishimiye',age:26.0,releaseClause:10},{uid:78076343,name:'Mathías Olivera',age:27.0,releaseClause:10},{uid:91144903,name:'Moritz Nicolas',age:27.0,releaseClause:10},{uid:2000180880,name:'Eric da Silva Moreira',age:20.0,releaseClause:1},{uid:2000163504,name:'Mario Martín',age:21.0,releaseClause:15},{uid:55063493,name:'Rafa',age:32.0,releaseClause:10},{uid:2000303600,name:'Wang Yudong',age:19.0,releaseClause:0},{uid:2000266424,name:'Diego Mascardi',age:18.0,releaseClause:0},{uid:2000215081,name:'Víctor Moreno',age:19.0,releaseClause:0},{uid:2000219431,name:'Ayoub Oufkir',age:19.0,releaseClause:0},{uid:2000085967,name:'Matteo Pérez Vinlöf',age:19.0,releaseClause:0},{uid:2000230119,name:'Iván Román',age:18.0,releaseClause:0},{uid:2000108694,name:'Leo Castledine',age:19.0,releaseClause:0}
   ],
   'Oriental Dragon': [
-    {uid:91187791,name:'Nick Woltemade',age:25,releaseClause:165},
-    {uid:2000077193,name:'Arda Güler',age:22,releaseClause:173},
-    {uid:2000090211,name:'Antonio Nusa',age:22,releaseClause:156},
-    {uid:2000184611,name:'Josh Acheampong',age:21,releaseClause:148},
-    {uid:2000262615,name:'El Hadji Malick Diouf',age:22,releaseClause:149},
-    {uid:36159445,name:'Kostas Koulierakis',age:23,releaseClause:136},
-    {uid:37063774,name:'Sam Beukema',age:26,releaseClause:145},
-    {uid:45112276,name:'Zion Suzuki',age:24,releaseClause:140},
-    {uid:49039789,name:'Loic Badé',age:25,releaseClause:152},
-    {uid:67294886,name:'Gabri Veiga',age:25,releaseClause:151},
-    {uid:89066513,name:'Johnny',age:25,releaseClause:151},
-    {uid:91205129,name:'Fisnik Asllani',age:24,releaseClause:140},
-    {uid:2000026180,name:'Conrad Harder',age:22,releaseClause:147},
-    {uid:2000065061,name:'Oscar Gloukh',age:23,releaseClause:130},
-    {uid:2000122572,name:'Aarón Anselmino',age:22,releaseClause:135},
-    {uid:2000126407,name:'Raúl Asencio',age:24,releaseClause:145},
-    {uid:2000179623,name:'Dies Janse',age:21,releaseClause:119},
-    {uid:2000188763,name:'Alvaro Montoro',age:20,releaseClause:124},
-    {uid:2000298276,name:'Pedro Luccas Morisco da Silva',age:23,releaseClause:123},
-    {uid:2000375912,name:'Ruud Nijstad',age:19,releaseClause:95},
-    {uid:2000411042,name:'Anísio',age:19,releaseClause:101},
-    {uid:2000414242,name:'Bradley Burrowes',age:19,releaseClause:85},
-    {uid:2000415453,name:'Kaden Elliot Braithwaite',age:19,releaseClause:75},
-    {uid:2000493921,name:'Seth Somapalan Ridgeon',age:18,releaseClause:85},
+    {uid:91187791,name:'Nick Woltemade',age:24.0,releaseClause:70},{uid:2000077193,name:'Arda Güler',age:21.0,releaseClause:110},{uid:2000090211,name:'Antonio Nusa',age:21.0,releaseClause:50},{uid:28111507,name:'Tyrick Mitchell',age:25.0,releaseClause:8},{uid:36159445,name:'Kostas Koulierakis',age:22.0,releaseClause:33},{uid:37063774,name:'Sam Beukema',age:26.0,releaseClause:12},{uid:45112276,name:'Zion Suzuki',age:23.0,releaseClause:8},{uid:49039789,name:'Loic Badé',age:25.0,releaseClause:40},{uid:67294886,name:'Gabri Veiga',age:24.0,releaseClause:10},{uid:89066513,name:'Johnny',age:24.0,releaseClause:10},{uid:91205129,name:'Fisnik Asllani',age:23.0,releaseClause:30},{uid:91205203,name:'Eric Martel',age:24.0,releaseClause:5},{uid:2000026180,name:'Conrad Harder',age:21.0,releaseClause:16},{uid:2000065061,name:'Oscar Gloukh',age:22.0,releaseClause:12},{uid:2000122572,name:'Aarón Anselmino',age:21.0,releaseClause:10},{uid:2000126407,name:'Raúl Asencio',age:23.0,releaseClause:20},{uid:2000179623,name:'Dies Janse',age:20.0,releaseClause:8},{uid:2000184611,name:'Josh Acheampong',age:20.0,releaseClause:59},{uid:2000188763,name:'Alvaro Montoro',age:19.0,releaseClause:15},{uid:2000298276,name:'Pedro Luccas Morisco da Silva',age:22.0,releaseClause:1},{uid:2000375912,name:'Ruud Nijstad',age:18.0,releaseClause:0},{uid:2000411042,name:'Anísio',age:18.0,releaseClause:0},{uid:2000414242,name:'Bradley Burrowes',age:18.0,releaseClause:0},{uid:2000415453,name:'Kaden Elliot Braithwaite',age:18.0,releaseClause:0},{uid:2000493921,name:'Seth Somapalan Ridgeon',age:17.0,releaseClause:0}
   ],
   'PSV': [
-    {uid:28124569,name:'Tino Livramento',age:24,releaseClause:170},
-    {uid:83137935,name:'Francisco Trincao',age:25,releaseClause:156},
-    {uid:91205962,name:'Omar Marmoush',age:26,releaseClause:163},
-    {uid:2000107079,name:'Malick Fofana',age:22,releaseClause:171},
-    {uid:28108492,name:'Arijanet Anan Murić',age:26,releaseClause:135},
-    {uid:29125842,name:'Jarrod Bowen',age:28,releaseClause:152},
-    {uid:47102498,name:'Gvidas Gineitis',age:23,releaseClause:140},
-    {uid:67288450,name:'Abel Bretones',age:25,releaseClause:138},
-    {uid:85033423,name:'Lucas Digne',age:32,releaseClause:147},
-    {uid:91011532,name:'Willi Orbán',age:32,releaseClause:153},
-    {uid:91137493,name:'Waldemar Anton',age:29,releaseClause:150},
-    {uid:2000006106,name:'Isaak Touré',age:24,releaseClause:120},
-    {uid:2000254793,name:'Sverre Nypan',age:20,releaseClause:125},
-    {uid:2000387880,name:'Sami Bouhoudane',age:19,releaseClause:102},
-    {uid:37065767,name:'Sergino Dest',age:25,releaseClause:143},
-    {uid:37076315,name:'Couhaib Driouech',age:24,releaseClause:137},
-    {uid:2000188625,name:'Yanis Massolin',age:23,releaseClause:120},
-    {uid:37057744,name:'Jerdy Schouten',age:28,releaseClause:143},
-    {uid:20048604,name:'Ricardo Pepi',age:24,releaseClause:151},
-    {uid:2000110948,name:'Julian Gonstad',age:20,releaseClause:115},
-    {uid:2000379974,name:'João Pedro',age:18,releaseClause:107},
-    {uid:2000257651,name:'Noah Darvich',age:20,releaseClause:115},
-    {uid:2000258154,name:'Luis Engelns',age:20,releaseClause:108},
-    {uid:2000382564,name:'Marc Domènech',age:20,releaseClause:118},
-    {uid:2000143321,name:'David Martínez',age:20,releaseClause:111},
-    {uid:2000284118,name:'Yunus Emre Konak',age:20,releaseClause:119},
-    {uid:2000174402,name:'Jones El-Abdellaoui',age:17.5,releaseClause:126},
-    {uid:2000183494,name:'Saïmon Bouabré',age:19.5,releaseClause:120},
+    {uid:28100477,name:'Joe Rodon',age:27.0,releaseClause:10},{uid:28108492,name:'Arijanet Anan Murić',age:26.0,releaseClause:6},{uid:29125842,name:'Jarrod Bowen',age:28.0,releaseClause:60},{uid:47102498,name:'Gvidas Gineitis',age:22.0,releaseClause:30},{uid:49034219,name:'Jean-Philippe Mateta',age:28.0,releaseClause:17},{uid:49041006,name:'Evann Guessand',age:25.0,releaseClause:10},{uid:67288450,name:'Abel Bretones',age:25.0,releaseClause:14},{uid:85033423,name:'Lucas Digne',age:32.0,releaseClause:15},{uid:91011532,name:'Willi Orbán',age:32.0,releaseClause:30},{uid:91137493,name:'Waldemar Anton',age:29.0,releaseClause:25},{uid:2000006106,name:'Isaak Touré',age:23.0,releaseClause:20},{uid:2000254793,name:'Sverre Nypan',age:19.0,releaseClause:80},{uid:2000293312,name:'Jesús Fortea',age:19.0,releaseClause:25},{uid:2000387880,name:'Sami Bouhoudane',age:18.0,releaseClause:70},{uid:37060896,name:'Joey Veerman',age:26.0,releaseClause:15},{uid:37065767,name:'Sergino Dest',age:25.0,releaseClause:20},{uid:37076315,name:'Couhaib Driouech',age:23.0,releaseClause:40},{uid:2000188625,name:'Yanis Massolin',age:22.0,releaseClause:10},{uid:37057744,name:'Jerdy Schouten',age:28.0,releaseClause:15},{uid:2000063168,name:'Luka Kharatishvili',age:22.0,releaseClause:1},{uid:20048604,name:'Ricardo Pepi',age:23.0,releaseClause:30},{uid:2000257651,name:'Noah Darvich',age:19.0,releaseClause:0},{uid:2000258154,name:'Luis Engelns',age:19.0,releaseClause:0},{uid:2000382564,name:'Marc Domènech',age:19.0,releaseClause:0},{uid:2000476249,name:'Lewi Richards',age:17.0,releaseClause:0},{uid:2000110948,name:'Julian Gonstad',age:19.0,releaseClause:15},{uid:2000143321,name:'David Martínez',age:19.0,releaseClause:0},{uid:2000284118,name:'Yunus Emre Konak',age:19.0,releaseClause:0},{uid:2000379974,name:'João Pedro Lúcio da Silva',age:17.0,releaseClause:10}
   ],
   'R. Madrid': [
-    {uid:2000169739,name:'Lucas Bergvall',age:21,releaseClause:180},
-    {uid:719601,name:'Robert Lewandowski',age:36,releaseClause:160},
-    {uid:16202373,name:'Dominik Szoboszlai',age:25,releaseClause:170},
-    {uid:37062185,name:'Cody Gakpo',age:26,releaseClause:155},
-    {uid:45104608,name:'Takefusa Kubo',age:25,releaseClause:166},
-    {uid:2000183245,name:'Martim Fernandes',age:21,releaseClause:159},
-    {uid:2000056415,name:'Ilias Akhomach',age:23,releaseClause:145},
-    {uid:27069975,name:'Joachim Andersen',age:29,releaseClause:146},
-    {uid:28018193,name:'Péter Gulácsi',age:35,releaseClause:148},
-    {uid:28104130,name:'Caoimhin Kelleher',age:26,releaseClause:145},
-    {uid:45030953,name:'Wataru Endo',age:32,releaseClause:148},
-    {uid:48044499,name:'Jean-Clair Todibo',age:25,releaseClause:139},
-    {uid:62095383,name:'Adam Marusic',age:32,releaseClause:145},
-    {uid:67196204,name:'Carlos Soler',age:28,releaseClause:142},
-    {uid:67210735,name:'Alejandro Catena',age:30,releaseClause:140},
-    {uid:67257950,name:'Víctor Gómez',age:25,releaseClause:138},
-    {uid:85028361,name:'Benjamin André',age:34,releaseClause:141},
-    {uid:85136376,name:'Nicolas Pépé',age:30,releaseClause:144},
-    {uid:86047272,name:'Yangel Clemente Herrera Ravelo',age:27,releaseClause:142},
-    {uid:91143714,name:'Maximilian Mittelstädt',age:28,releaseClause:150},
-    {uid:92020288,name:'Heung-Min Son',age:33,releaseClause:151},
-    {uid:2000273988,name:'Gabriel Carvalho',age:19,releaseClause:105},
-    {uid:2000288465,name:'Andrija Maksimovic',age:20,releaseClause:122},
-    {uid:2000379917,name:'Wesley Natã',age:19,releaseClause:86},
-    {uid:2000407413,name:'Asier Bonel Aicua',age:19,releaseClause:85},
-    {uid:2000465225,name:'Mathis Albert',age:18,releaseClause:92},
-    {uid:2000474063,name:'Jayden Onia Seke',age:18,releaseClause:97},
-    {uid:2000495383,name:'Quenten Attigah',age:18,releaseClause:98},
+    {uid:719601,name:'Robert Lewandowski',age:36.0,releaseClause:50},{uid:16202373,name:'Dominik Szoboszlai',age:25.0,releaseClause:80},{uid:37062185,name:'Cody Gakpo',age:26.0,releaseClause:72},{uid:45104608,name:'Takefusa Kubo',age:25.0,releaseClause:45},{uid:2000169739,name:'Lucas Bergvall',age:20.0,releaseClause:110},{uid:2000183245,name:'Martim Fernandes',age:20.0,releaseClause:30},{uid:2000056415,name:'Ilias Akhomach',age:22.0,releaseClause:25},{uid:27069975,name:'Joachim Andersen',age:29.0,releaseClause:10},{uid:28018193,name:'Péter Gulácsi',age:35.0,releaseClause:10},{uid:28104130,name:'Caoimhin Kelleher',age:26.0,releaseClause:10},{uid:45030953,name:'Wataru Endo',age:32.0,releaseClause:10},{uid:48044499,name:'Jean-Clair Todibo',age:25.0,releaseClause:45},{uid:62095383,name:'Adam Marusic',age:32.0,releaseClause:8},{uid:67196204,name:'Carlos Soler',age:28.0,releaseClause:10},{uid:67210735,name:'Alejandro Catena',age:30.0,releaseClause:10},{uid:67257950,name:'Víctor Gómez',age:25.0,releaseClause:9},{uid:85028361,name:'Benjamin André',age:34.0,releaseClause:8},{uid:85136376,name:'Nicolas Pépé',age:30.0,releaseClause:8},{uid:86047272,name:'Yangel Clemente Herrera Ravelo',age:27.0,releaseClause:8},{uid:91143714,name:'Maximilian Mittelstädt',age:28.0,releaseClause:8},{uid:92020288,name:'Heung-Min Son',age:33.0,releaseClause:10},{uid:2000273988,name:'Gabriel Carvalho',age:18.0,releaseClause:0},{uid:2000288465,name:'Andrija Maksimovic',age:19.0,releaseClause:0},{uid:2000379917,name:'Wesley Natã',age:18.0,releaseClause:0},{uid:2000407413,name:'Asier Bonel Aicua',age:18.0,releaseClause:0},{uid:2000465225,name:'Mathis Albert',age:17.0,releaseClause:0},{uid:2000474063,name:'Jayden Onia Seke',age:17.0,releaseClause:0},{uid:2000495383,name:'Quentin Attigah',age:17.0,releaseClause:0}
   ],
   'Sporting': [
-    {uid:37024025,name:'Virgil van Dijk',age:32,releaseClause:179},
-    {uid:67246385,name:'Martín Zubimendi',age:26,releaseClause:161},
-    {uid:2000311833,name:'Yan Diomandé',age:20,releaseClause:156},
-    {uid:28060397,name:'John Stones',age:31,releaseClause:162},
-    {uid:12029963,name:'Yassine Bounou',age:34,releaseClause:150},
-    {uid:19320258,name:'Samuel Lino',age:25,releaseClause:138},
-    {uid:21024436,name:'Nikola Vasilj',age:29,releaseClause:136},
-    {uid:27039017,name:'Christian Norgaard',age:31,releaseClause:145},
-    {uid:27129532,name:'Alexander Bah',age:27,releaseClause:136},
-    {uid:48042766,name:'Ismaïla Sarr',age:27,releaseClause:148},
-    {uid:72048200,name:'Miles Robinson',age:28,releaseClause:134},
-    {uid:89040516,name:'Ethan Pinnock',age:32,releaseClause:135},
-    {uid:2000120348,name:'Hamza Igamane',age:24,releaseClause:140},
-    {uid:2000288850,name:'Quentin Ndjantou',age:20,releaseClause:108},
-    {uid:2000330201,name:'Kennet Eichhorn',age:18,releaseClause:110},
-    {uid:2000369658,name:'Davinchi',age:19,releaseClause:110},
-    {uid:2000388558,name:'Louis Page',age:19,releaseClause:112},
-    {uid:28068727,name:'Ruben Loftus-Cheek',age:29,releaseClause:144},
-    {uid:27100968,name:'Rasmus Kristensen',age:28,releaseClause:142},
-    {uid:29192705,name:'Pedro Goncalves',age:27,releaseClause:153},
-    {uid:2000248160,name:'Enrique Aguilar',age:20,releaseClause:90},
-    {uid:2000386325,name:'Emmanuel Mbemba',age:19,releaseClause:80},
-    {uid:2000403408,name:'Kaua Prates',age:18,releaseClause:94},
-    {uid:2000403932,name:'Baba Korouma',age:18,releaseClause:85},
-    {uid:2000417769,name:'Robinho Junior',age:19,releaseClause:110},
-    {uid:2000423813,name:'Zinadine Zidane Bedoya',age:18,releaseClause:82},
-    {uid:2000448414,name:'Rafael Belinho',age:18,releaseClause:82},
-    {uid:2000468465,name:'Wael Mohya',age:18,releaseClause:105},
-    {uid:2000476254,name:'Calvin Diakite',age:18,releaseClause:75},
-    {uid:2000494868,name:'Sam Alabi',age:18,releaseClause:85},
+    {uid:78074594,name:'Federico Valverde',age:27.0,releaseClause:133},{uid:67246385,name:'Martín Zubimendi',age:26.0,releaseClause:35},{uid:2000311833,name:'Yan Diomandé',age:19.0,releaseClause:158},{uid:12029963,name:'Yassine Bounou',age:34.0,releaseClause:10},{uid:19320258,name:'Samuel Lino',age:25.0,releaseClause:8},{uid:21024436,name:'Nikola Vasilj',age:29.0,releaseClause:5},{uid:27039017,name:'Christian Norgaard',age:31.0,releaseClause:5},{uid:27129532,name:'Alexander Bah',age:27.0,releaseClause:5},{uid:37052470,name:'Noussair Mazraoui',age:27.0,releaseClause:15},{uid:43425834,name:'Matteo Ruggeri',age:24.0,releaseClause:15},{uid:48042766,name:'Ismaïla Sarr',age:27.0,releaseClause:15},{uid:72048200,name:'Miles Robinson',age:28.0,releaseClause:5},{uid:89040516,name:'Ethan Pinnock',age:32.0,releaseClause:5},{uid:91170086,name:'Jonathan Burkardt',age:25.0,releaseClause:15},{uid:92074021,name:'Atakan Karazor',age:31.0,releaseClause:5},{uid:2000120348,name:'Hamza Igamane',age:23.0,releaseClause:20},{uid:2000288850,name:'Quentin Ndjantou',age:19.0,releaseClause:30},{uid:2000330201,name:'Kennet Eichhorn',age:17.0,releaseClause:70},{uid:2000369658,name:'Davinchi',age:18.0,releaseClause:15},{uid:2000388558,name:'Louis Page',age:18.0,releaseClause:25},{uid:2000476259,name:'Ryan Kavuma-McQueen',age:17.0,releaseClause:25},{uid:2000248160,name:'Enrique Aguilar',age:19.0,releaseClause:0},{uid:2000386325,name:'Emmanuel Mbemba',age:18.0,releaseClause:0},{uid:2000403408,name:'Kaua Prates',age:17.0,releaseClause:0},{uid:2000403932,name:'Baba Korouma',age:17.0,releaseClause:0},{uid:2000417769,name:'Robinho Junior',age:18.0,releaseClause:0},{uid:2000423813,name:'Zinadine Zidane Bedoya',age:17.0,releaseClause:0},{uid:2000448414,name:'Rafael Belinho',age:17.0,releaseClause:0},{uid:2000468465,name:'Wael Mohya',age:17.0,releaseClause:0},{uid:2000476254,name:'Calvin Diakite',age:17.0,releaseClause:0},{uid:2000494868,name:'Sam Alabi',age:17.0,releaseClause:0}
   ],
   'Stuttgart': [
-    {uid:86078360,name:'Moisés Caicedo',age:25,releaseClause:185},
-    {uid:18110528,name:'Charles De Ketelaere',age:25,releaseClause:160},
-    {uid:19273276,name:'Eder Militao',age:27,releaseClause:159},
-    {uid:91187679,name:'Malik Tillman',age:25,releaseClause:158},
-    {uid:2000474101,name:'Jeremy Monga',age:18,releaseClause:147},
-    {uid:37074900,name:'Palmeirasp van den Berg',age:25,releaseClause:156},
-    {uid:2000202578,name:'Alisson',age:21,releaseClause:149},
-    {uid:2000241381,name:'Matvey Kislyak',age:22,releaseClause:145},
-    {uid:28095342,name:'Angeliño',age:28,releaseClause:148},
-    {uid:63029353,name:'Dávid Hancko',age:27,releaseClause:149},
-    {uid:91105813,name:'Robin Zentner',age:30,releaseClause:135},
-    {uid:92103754,name:'Jamie Leweling',age:25,releaseClause:145},
-    {uid:2000112357,name:'Kauã Santos',age:24,releaseClause:125},
-    {uid:2000136301,name:'Marlon Gomes',age:23,releaseClause:139},
-    {uid:2000158854,name:'Tani Oluwaseyi',age:25,releaseClause:141},
-    {uid:2000165617,name:'Kike Salas',age:25,releaseClause:140},
-    {uid:2000241413,name:'Kirill Glebov',age:21,releaseClause:129},
-    {uid:2000409386,name:'José Reyes',age:19,releaseClause:95},
-    {uid:2000485992,name:'Luca Williams-Barnett',age:18,releaseClause:105},
-    {uid:2000080723,name:'Demir Ege Tiknaz',age:22,releaseClause:120},
-    {uid:19409389,name:'Thiago',age:25,releaseClause:148},
-    {uid:2000227977,name:'Héctor Fort',age:20,releaseClause:136},
-    {uid:91203087,name:'Ansgar Knauff',age:25,releaseClause:136},
-    {uid:2000227258,name:'Ricardo Mathias',age:21,releaseClause:115},
-    {uid:2000272205,name:'Lucas Ferreira',age:21,releaseClause:115},
-    {uid:2000350902,name:'Emre Unüvar',age:19,releaseClause:101},
-    {uid:2000375172,name:'Freddie Simmonds',age:19,releaseClause:95},
+    {uid:18110528,name:'Charles De Ketelaere',age:25.0,releaseClause:60},{uid:19273276,name:'Eder Militao',age:27.0,releaseClause:50},{uid:28095342,name:'Angeliño',age:28.0,releaseClause:15},{uid:63029353,name:'Dávid Hancko',age:27.0,releaseClause:10},{uid:67217491,name:'Andrei Raţiu',age:27.0,releaseClause:35},{uid:67283137,name:'Yeremay',age:23.0,releaseClause:12},{uid:91105813,name:'Robin Zentner',age:30.0,releaseClause:5},{uid:92103754,name:'Jamie Leweling',age:25.0,releaseClause:30},{uid:2000047226,name:'Brooke Norton-Cuffy',age:22.0,releaseClause:10},{uid:2000112357,name:'Kauã Santos',age:23.0,releaseClause:10},{uid:2000136301,name:'Marlon Gomes',age:22.0,releaseClause:15},{uid:2000158854,name:'Tani Oluwaseyi',age:25.0,releaseClause:20},{uid:2000165617,name:'Kike Salas',age:24.0,releaseClause:15},{uid:2000241381,name:'Matvey Kislyak',age:21.0,releaseClause:30},{uid:2000241413,name:'Kirill Glebov',age:20.0,releaseClause:30},{uid:2000409386,name:'José Reyes',age:18.0,releaseClause:25},{uid:2000474101,name:'Jeremy Monga',age:17.0,releaseClause:70},{uid:2000485992,name:'Luca Williams-Barnett',age:17.0,releaseClause:50},{uid:2000080723,name:'Demir Ege Tiknaz',age:21.0,releaseClause:15},{uid:48043868,name:'Batista Mendy',age:25.0,releaseClause:10},{uid:19225861,name:'Fabricio Bruno',age:29.0,releaseClause:5},{uid:2000202578,name:'Alisson',age:20.0,releaseClause:0},{uid:2000227258,name:'Ricardo Mathias',age:20.0,releaseClause:0},{uid:2000272205,name:'Lucas Ferreira',age:20.0,releaseClause:0},{uid:2000350902,name:'Emre Unüvar',age:18.0,releaseClause:0},{uid:2000375172,name:'Freddie Simmonds',age:18.0,releaseClause:0}
   ],
   'Sunderland': [
-    {uid:2000095783,name:'Vitor Roque',age:22,releaseClause:161},
-    {uid:2000399897,name:'Rio Ngumoha',age:18,releaseClause:135},
-    {uid:2000096278,name:'Pietro Comuzzo',age:22,releaseClause:149},
-    {uid:27129125,name:'Frank Onyeka',age:27,releaseClause:131},
-    {uid:28128173,name:'William Osula',age:23,releaseClause:136},
-    {uid:43272105,name:'Michele Collocolo',age:25,releaseClause:127},
-    {uid:59058929,name:'Tärlan Ähmädli',age:30,releaseClause:90},
-    {uid:76018954,name:'Jhon Córdoba',age:32,releaseClause:139},
-    {uid:91193999,name:'Omar Traoré',age:27,releaseClause:126},
-    {uid:2000184143,name:'Tommaso Martinelli',age:21,releaseClause:117},
-    {uid:2000251841,name:'Mtias Acevedo',age:19,releaseClause:92},
-    {uid:2000274341,name:'Kacper Potulski',age:19,releaseClause:122},
-    {uid:2000288922,name:'Enzo Molebe',age:19,releaseClause:102},
-    {uid:2000326671,name:'Viktor Bjarki Daðason',age:19,releaseClause:114},
-    {uid:2000351894,name:'Mateus Mané',age:19,releaseClause:125},
-    {uid:2000448428,name:'Mikkel Bro Hansen',age:18,releaseClause:98},
-    {uid:2000466272,name:'Brian Madjo',age:18,releaseClause:95},
-    {uid:2000481114,name:'Tian Nai Koren',age:18,releaseClause:95},
-    {uid:2000019039,name:'Lorenzo Bernasconi',age:22.5,releaseClause:124},
-    {uid:2000233765,name:'Younes Ebnoutalib',age:23.5,releaseClause:135},
-    {uid:2000312176,name:'Igor Tyjon',age:19,releaseClause:96},
-    {uid:2000335003,name:'Maxloren Castro',age:19,releaseClause:85},
-    {uid:2000338373,name:'Francisco Baridó',age:19,releaseClause:93},
-    {uid:2000370918,name:'Igor Oyono',age:19,releaseClause:88},
-    {uid:2000292320,name:'Jesse Derry',age:20,releaseClause:98},
-    {uid:2000474873,name:'Jivayno Zinhagel',age:18,releaseClause:90},
-    {uid:2000500824,name:'Ekene Russel Chukwuani',age:18,releaseClause:76},
-    {uid:2000488948,name:'David Nogueira Carmo',age:17.5,releaseClause:84},
-    {uid:2000324081,name:'Tomás Leandro Aranda',age:18.5,releaseClause:109},
-    {uid:2000447684,name:'José Rafael Escorcia De La Cruz',age:16.5,releaseClause:75},
+    {uid:2000095783,name:'Vitor Roque',age:21.0,releaseClause:60},{uid:2000399897,name:'Rio Ngumoha',age:17.0,releaseClause:168},{uid:2000096278,name:'Pietro Comuzzo',age:21.0,releaseClause:30},{uid:16199712,name:'Gideon Mensah',age:27.0,releaseClause:5},{uid:27129125,name:'Frank Onyeka',age:27.0,releaseClause:6},{uid:28128173,name:'William Osula',age:22.0,releaseClause:40},{uid:43272105,name:'Michele Collocolo',age:25.0,releaseClause:6},{uid:59058929,name:'Tärlan Ähmädli',age:30.0,releaseClause:2},{uid:76018954,name:'Jhon Córdoba',age:32.0,releaseClause:5},{uid:91193999,name:'Omar Traoré',age:27.0,releaseClause:6},{uid:2000184143,name:'Tommaso Martinelli',age:20.0,releaseClause:20},{uid:2000251841,name:'Mtias Acevedo',age:18.0,releaseClause:20},{uid:2000274341,name:'Kacper Potulski',age:18.0,releaseClause:35},{uid:2000288922,name:'Enzo Molebe',age:18.0,releaseClause:30},{uid:2000326671,name:'Viktor Bjarki Daðason',age:18.0,releaseClause:35},{uid:2000351894,name:'Mateus Mané',age:18.0,releaseClause:40},{uid:2000448428,name:'Mikkel Bro Hansen',age:17.0,releaseClause:25},{uid:2000466272,name:'Brian Madjo',age:17.0,releaseClause:30},{uid:2000481114,name:'Tian Nai Koren',age:17.0,releaseClause:15},{uid:2000019039,name:'Lorenzo Bernasconi',age:21.5,releaseClause:25},{uid:2000233765,name:'Younes Ebnoutalib',age:22.5,releaseClause:25},{uid:2000292320,name:'Jesse Derry',age:19.0,releaseClause:0},{uid:2000312176,name:'Igor Tyjon',age:18.0,releaseClause:0},{uid:2000335003,name:'Maxloren Castro',age:18.0,releaseClause:0},{uid:2000338373,name:'Francisco Barído',age:18.0,releaseClause:0},{uid:2000370918,name:'Igor Oyono',age:18.0,releaseClause:0},{uid:2000445433,name:'Kalum Thompson',age:17.0,releaseClause:0},{uid:2000474873,name:'Jivayno Zinhagel',age:17.0,releaseClause:0},{uid:2000476248,name:'Freddy Jorge Bernal',age:17.0,releaseClause:0},{uid:2000500824,name:'Ekene Russel Chukwuani',age:17.0,releaseClause:0},{uid:2000488948,name:'David Nogueira Carmo',age:16.5,releaseClause:0},{uid:2000447684,name:'José Rafael Escorcia De La Cruz',age:18.0,releaseClause:0},{uid:2000324081,name:'Tomás Leandro Aranda',age:18.0,releaseClause:0}
+  ],
+  'Tottenham': [
+    {uid:13200568,name:'Mohammed Kudus',releaseClause:60},{uid:19163495,name:'Marquinhos',releaseClause:35},{uid:67276127,name:'Nico González',releaseClause:55},{uid:2000007415,name:'Andrey Santos',releaseClause:50},{uid:67260506,name:'Kang-In Lee',releaseClause:30},{uid:2000168014,name:'Abdukodir Khusanov',releaseClause:130},{uid:7990060,name:'Matteo Darmian',releaseClause:1},{uid:14181375,name:'Nicolás González',releaseClause:35},{uid:37041773,name:'Robin Gosens',releaseClause:5},{uid:45111317,name:'Yukinari Sugawara',releaseClause:3},{uid:48031641,name:'Olivier Boscagli',releaseClause:5},{uid:49041153,name:'Esteban Lepaul',releaseClause:15},{uid:49047581,name:'Rayan Ait-Nouri',releaseClause:39},{uid:49048445,name:'Arnaud Kalimuendo',releaseClause:25},{uid:67245412,name:'Martínez',releaseClause:4},{uid:67268221,name:'Pedro Porro',releaseClause:40},{uid:71099066,name:'Artem Dovbyk',releaseClause:25},{uid:2000031073,name:'Reda Belahyane',releaseClause:4},{uid:2000156783,name:'Ernest Nuamah',releaseClause:35},{uid:2000214886,name:'Jacobo Ramón',releaseClause:40},{uid:2000261789,name:'Santiago López',releaseClause:4},{uid:28108490,name:'Jadon Sancho',releaseClause:15},{uid:36152916,name:'Christos Tzolis',releaseClause:30},{uid:2000097986,name:'Thomas Berenbruch',releaseClause:5},{uid:70097314,name:'Uğurcan Çakır',releaseClause:1},{uid:2000094208,name:'Obed Vargas',age:20.0,releaseClause:0},{uid:2000179918,name:'Giacomo Gabbiani',age:20.0,releaseClause:0},{uid:2000269262,name:'Giacomo De Pieri',age:19.0,releaseClause:0},{uid:2000274057,name:'Peyton Miller',age:18.0,releaseClause:0},{uid:2000336547,name:'Vakhtang Salia',age:18.0,releaseClause:0},{uid:2000372640,name:'Ryan Roberto',age:18.0,releaseClause:0},{uid:2000474999,name:'Andria Bartishvili',age:17.0,releaseClause:0},{uid:2000366060,name:'Mattia Marello',age:17.0,releaseClause:0},{uid:2000292778,name:'Francisco Carvalho Souza Silva',age:17.0,releaseClause:0}
   ],
   'West Ham': [
-    {uid:2000390047,name:'Tylel Tati',age:19,releaseClause:114},
-    {uid:2000395118,name:'Uchenna Ogundu',age:21,releaseClause:115},
-    {uid:2000258668,name:'Louey Ben Farhat',age:21,releaseClause:115},
-    {uid:2000466343,name:'Olivier Mambwa',age:18,releaseClause:96},
-    {uid:2000485995,name:'Byfield Jun\'ai',age:18,releaseClause:88},
-    {uid:2000461946,name:'Antonio Arena',age:18,releaseClause:90},
-    {uid:2000408376,name:'Cheveyo Balentien',age:20,releaseClause:85},
-    {uid:2000497044,name:'David Boly',age:18,releaseClause:88},
-    {uid:2000214745,name:'Sascha Britschgi',age:20,releaseClause:115},
-    {uid:2000216339,name:'Othmane Maamma',age:21,releaseClause:125},
-    {uid:2000350319,name:'Love Arrhov',age:19,releaseClause:105},
-    {uid:2000449300,name:'Moncef Zekri',age:18,releaseClause:91},
-    {uid:27120988,name:'Mads Hermansen',age:25,releaseClause:132},
-    {uid:14063109,name:'Jeremías Ledesma',age:32,releaseClause:130},
-    {uid:76042952,name:'Jhon Lucumí',age:27,releaseClause:147},
-    {uid:83257795,name:'Leonardo Filipe Cruz Lelo',age:25,releaseClause:132},
-    {uid:2000170028,name:'Lennon Miller',age:20,releaseClause:126},
-    {uid:2000030160,name:'Franculino Djú',age:23,releaseClause:141},
-    {uid:28058224,name:'Ross Barkley',age:31,releaseClause:143},
-    {uid:28127273,name:'Jonathan Rowe',age:24,releaseClause:137},
-    {uid:2000047226,name:'Brooke Norton-Cuffy',age:23,releaseClause:131},
-    {uid:2000252612,name:'Santiago Londoño',age:19,releaseClause:96},
-    {uid:2000290759,name:'Hugo Camberos',age:20,releaseClause:113},
-    {uid:2000372610,name:'Rin Ahmeti',age:18,releaseClause:60},
-    {uid:2000378267,name:'Rafael Quintas',age:19,releaseClause:83},
-    {uid:2000487699,name:'Destiny Elimoghale',age:18,releaseClause:78},
+    {uid:2000390047,name:'Tylel Tati',age:18.0,releaseClause:75},{uid:2000395118,name:'Uchenna Ogundu',age:20.0,releaseClause:40},{uid:2000258668,name:'Louey Ben Farhat',age:20.0,releaseClause:10},{uid:2000466343,name:'Olivier Mambwa',age:17.0,releaseClause:10},{uid:2000485995,name:'Byfield Jun\',age:17.0,releaseClause:10ai'},{uid:2000461946,name:'Antonio Arena',age:17.0,releaseClause:20},{uid:2000408376,name:'Cheveyo Balentien',age:19.0,releaseClause:10},{uid:2000497044,name:'David Boly',age:17.0,releaseClause:20},{uid:2000311463,name:'Oskar Pietuszewski',age:18.0,releaseClause:90},{uid:2000214745,name:'Sascha Britschgi',age:19.0,releaseClause:20},{uid:2000216339,name:'Othmane Maamma',age:20.0,releaseClause:25},{uid:2000350319,name:'Love Arrhov',age:18.0,releaseClause:15},{uid:2000449300,name:'Moncef Zekri',age:17.0,releaseClause:10},{uid:2000432704,name:'Darwin GUagUa',age:18.0,releaseClause:15},{uid:27120988,name:'Mads Hermansen',age:25.0,releaseClause:20},{uid:14063109,name:'Jeremías Ledesma',age:32.0,releaseClause:5},{uid:76042952,name:'Jhon Lucumí',age:27.0,releaseClause:8},{uid:83257795,name:'Leonardo Filipe Cruz Lelo',age:25.0,releaseClause:8},{uid:2000170028,name:'Lennon Miller',age:19.0,releaseClause:30},{uid:2000030160,name:'Franculino Djú',age:22.0,releaseClause:40},{uid:2000252612,name:'Santiago Londoño',age:18.0,releaseClause:0},{uid:2000290759,name:'Hugo Camberos',age:19.0,releaseClause:0},{uid:2000372610,name:'Rin Ahmeti',age:17.0,releaseClause:0},{uid:2000378267,name:'Rafael Quintas',age:18.0,releaseClause:0},{uid:2000487699,name:'Destiny Elimoghale',age:17.0,releaseClause:0}
   ],
-  'Wolfsburg': [
-    {uid:16337125,name:'Leopold Querfeld',age:23,releaseClause:130},
-    {uid:28122837,name:'Troy Parrott',age:25,releaseClause:133},
-    {uid:37053569,name:'Kingsley Ehizibue',age:30,releaseClause:132},
-    {uid:49055037,name:'Maghnes Akliouche',age:25,releaseClause:148},
-    {uid:53020695,name:'Joshua King',age:33,releaseClause:130},
-    {uid:2000199255,name:'Joao Fonseca',age:20,releaseClause:99},
-    {uid:2000457461,name:'Daulet Orynbasar',age:18,releaseClause:90},
-    {uid:2000463321,name:'Harry Gray',age:18,releaseClause:114},
-    {uid:2000131124,name:'Christian Mawissa',age:22,releaseClause:125},
-    {uid:2000466929,name:'Zabi',age:19.5,releaseClause:106},
-    {uid:2000407487,name:'Bernardo Lima',age:18,releaseClause:90},
-    {uid:2000384911,name:'Renato Nhaga',age:19,releaseClause:113},
-    {uid:2000072022,name:'Igor Matanovic',age:24,releaseClause:127},
-    {uid:2000187623,name:'Jaydee Canvot',age:21,releaseClause:133},
-    {uid:2000311463,name:'Oskar Pietuszewski',age:19,releaseClause:120},
-    {uid:2000154217,name:'Semih Kilicsoy',age:21,releaseClause:134},
-    {uid:292380027,name:'Tim Iroegbunam',age:24,releaseClause:135},
-    {uid:16202375,name:'David Affengruber',age:24.5,releaseClause:133},
-    {uid:2000063168,name:'Luka Kharatishvili',age:23,releaseClause:108},
-    {uid:2000206446,name:'Taras Mykhavko',age:21,releaseClause:118},
-    {uid:2000310893,name:'cajetan lenz',age:20.5,releaseClause:118},
-    {uid:2000299857,name:'Alfie Cresswell',age:19,releaseClause:92},
-    {uid:2000461757,name:'Mussa Kaba',age:18,releaseClause:90},
-    {uid:2000498739,name:'Finlay Gorman',age:18,releaseClause:75},
-    {uid:2000503845,name:'Aly Traoré',age:17.5,releaseClause:65},
-    {uid:2000330431,name:'Faik Sakar',age:18.5,releaseClause:86},
-    {uid:2000320711,name:'John Otomewo',age:19,releaseClause:82},
-    {uid:2000314725,name:'Bartosz Mazurek',age:18.5,releaseClause:88},
-    {uid:2000228176,name:'Diego Kochen',age:19.5,releaseClause:110},
-    {uid:2000302640,name:'Tiago Silva',age:17.5,releaseClause:76},
-    {uid:2000189187,name:'Olti Hyseni',age:17.5,releaseClause:106},
+  'Wolfsburg': [{uid:16202375,name:'David Affengruber',age:0.0,releaseClause:25},
+    {uid:16337125,name:'Leopold Querfeld',age:22.0,releaseClause:40},{uid:27148020,name:'Mohamed Daramy',age:24.0,releaseClause:5},{uid:28122837,name:'Troy Parrott',age:24.0,releaseClause:30},{uid:28129089,name:'Yunus Musah',age:23.0,releaseClause:10},{uid:29186052,name:'Matt O\'Riley',age:25.0,releaseClause:4},{uid:36141840,name:'Sotiris Alexandropoulos',age:24.0,releaseClause:5},{uid:37053569,name:'Kingsley Ehizibue',age:30.0,releaseClause:3},{uid:43161669,name:'Michele Di Gregorio',age:27.0,releaseClause:5},{uid:43195181,name:'Umar Sadiq',age:28.0,releaseClause:4},{uid:49055037,name:'Maghnes Akliouche',age:24.0,releaseClause:90},{uid:53020695,name:'Joshua King',age:33.0,releaseClause:1},{uid:83174759,name:'Fábio Vieira',age:25.0,releaseClause:5},{uid:2000199255,name:'Joao Fonseca',age:19.0,releaseClause:5},{uid:2000262615,name:'El Hadji Malick Diouf',age:21.0,releaseClause:66},{uid:2000457461,name:'Daulet Orynbasar',age:17.0,releaseClause:10},{uid:2000463321,name:'Harry Gray',age:17.0,releaseClause:30},{uid:2000131124,name:'Christian Mawissa',age:21.0,releaseClause:15},{uid:2000466929,name:'Zabi',age:18.5,releaseClause:30},{uid:2000471521,name:'Adri Mehmeti',age:16.0,releaseClause:30},{uid:2000407487,name:'Bernardo Lima',age:17.0,releaseClause:15},{uid:2000384911,name:'Renato Nhaga',age:18.0,releaseClause:15},{uid:2000299857,name:'Alfie Cresswell',age:18.0,releaseClause:0},{uid:2000461757,name:'Mussa Kaba',age:17.0,releaseClause:0},{uid:2000498739,name:'Finlay Gorman',age:17.0,releaseClause:0},{uid:2000310893,name:'cajetan lenz',age:19.5,releaseClause:15},{uid:2000503845,name:'Aly Traoré',age:16.5,releaseClause:0},{uid:2000330431,name:'Faik Sakar',age:17.5,releaseClause:0},{uid:2000206446,name:'Taras Mykhavko',age:20.0,releaseClause:15},{uid:2000320711,name:'John Otomewo',age:18.0,releaseClause:0}
   ],
   '青岛海神': [
-    {uid:43295814,name:'Dejan Kulusevski',age:25,releaseClause:164},
-    {uid:63012964,name:'Stanislav Lobotka',age:30,releaseClause:157},
-    {uid:67153376,name:'Alex Grimaldo',age:29,releaseClause:162},
-    {uid:67196198,name:'Marcos Llorente',age:30,releaseClause:155},
-    {uid:69000199,name:'Yann Sommer',age:36,releaseClause:156},
-    {uid:2000125958,name:'Pablo Barrios',age:24,releaseClause:174},
-    {uid:18087987,name:'Sebastiaan Bornauw',age:26,releaseClause:132},
-    {uid:19158043,name:'Emerson',age:30,releaseClause:135},
-    {uid:27129146,name:'Gustav Isaksen',age:25,releaseClause:150},
-    {uid:37039829,name:'Kenny Tete',age:29,releaseClause:142},
-    {uid:43491384,name:'Federico Gatti',age:27,releaseClause:147},
-    {uid:45104245,name:'Ao Tanaka',age:26,releaseClause:140},
-    {uid:55069796,name:'Ricardo Horta',age:30,releaseClause:147},
-    {uid:62215974,name:'Jaka Bijol',age:26,releaseClause:145},
-    {uid:67047092,name:'Koke',age:33,releaseClause:140},
-    {uid:90087316,name:'Keven Schlotterbeck',age:28,releaseClause:134},
-    {uid:91107360,name:'Niklas Süle',age:29,releaseClause:145},
-    {uid:2000091914,name:'Froilan Díaz',age:21,releaseClause:103},
-    {uid:11022221,name:'Vedat Muriqi',age:31,releaseClause:145},
-    {uid:13162051,name:'Oscar',age:27,releaseClause:143},
-    {uid:8435089,name:'Karim Benzema',age:37,releaseClause:150},
-    {uid:25059064,name:'Pavel Šulc',age:25,releaseClause:141},
-    {uid:2000264015,name:'Alessandro Nunziante',age:20,releaseClause:110},
-    {uid:2000280572,name:'Joachim Kayi Sanda',age:20,releaseClause:105},
-    {uid:2000302088,name:'Leo Shahar',age:20,releaseClause:94},
+    {uid:43295814,name:'Dejan Kulusevski',age:25.0,releaseClause:60},{uid:63012964,name:'Stanislav Lobotka',age:30.0,releaseClause:15},{uid:67153376,name:'Alex Grimaldo',age:29.0,releaseClause:50},{uid:67196198,name:'Marcos Llorente',age:30.0,releaseClause:15},{uid:69000199,name:'Yann Sommer',age:36.0,releaseClause:20},{uid:2000028320,name:'Alberto Moleiro',age:22.0,releaseClause:35},{uid:2000125958,name:'Pablo Barrios',age:23.0,releaseClause:45},{uid:2000166563,name:'Carlos Baleba',age:22.0,releaseClause:70},{uid:18087987,name:'Sebastiaan Bornauw',age:26.0,releaseClause:10},{uid:19158043,name:'Emerson',age:30.0,releaseClause:10},{uid:27129146,name:'Gustav Isaksen',age:25.0,releaseClause:30},{uid:37039829,name:'Kenny Tete',age:29.0,releaseClause:10},{uid:43491384,name:'Federico Gatti',age:27.0,releaseClause:20},{uid:45101691,name:'Daizen Maeda',age:27.0,releaseClause:10},{uid:45104245,name:'Ao Tanaka',age:26.0,releaseClause:10},{uid:55069796,name:'Ricardo Horta',age:30.0,releaseClause:15},{uid:62215974,name:'Jaka Bijol',age:26.0,releaseClause:10},{uid:67047092,name:'Koke',age:33.0,releaseClause:10},{uid:90087316,name:'Keven Schlotterbeck',age:28.0,releaseClause:10},{uid:91107360,name:'Niklas Süle',age:29.0,releaseClause:35},{uid:2000091914,name:'Froilan Díaz',age:20.0,releaseClause:10},{uid:11022221,name:'Vedat Muriqi',age:31.0,releaseClause:15},{uid:13162051,name:'Oscar',age:27.0,releaseClause:4},{uid:2000264015,name:'Alessandro Nunziante',age:19.0,releaseClause:0},{uid:2000280572,name:'Joachim Kayi Sanda',age:19.0,releaseClause:0},{uid:2000302088,name:'Leo Shahar',age:19.0,releaseClause:0}
   ],
   '上海申花': [
-    {uid:18106083,name:'Jérémy Doku',age:25,releaseClause:175},
-    {uid:19297055,name:'Bruno Guimaraes',age:27,releaseClause:168},
-    {uid:37076355,name:'Bart Verbruggen',age:24,releaseClause:165},
-    {uid:2000262919,name:'Luka Vuskovic',age:21,releaseClause:140},
-    {uid:18115016,name:'Zeno Debast',age:23,releaseClause:155},
-    {uid:2000016527,name:'Stanis Idumbo Muzambo',age:22,releaseClause:141},
-    {uid:16254093,name:'Luka Sucic',age:24,releaseClause:142},
-    {uid:18108540,name:'Jonathan David',age:25,releaseClause:152},
-    {uid:43500350,name:'Wilfried Gnonto',age:23,releaseClause:149},
-    {uid:58104594,name:'Alexandr Golovin',age:29,releaseClause:135},
-    {uid:58123738,name:'Matvey Safonov',age:26,releaseClause:149},
-    {uid:72048035,name:'Weston McKennie',age:26,releaseClause:153},
-    {uid:93142472,name:'Samuel Dahl',age:24,releaseClause:136},
-    {uid:2000005988,name:'Thomas Kristensen',age:25,releaseClause:140},
-    {uid:2000014077,name:'Arsen Zakharyan',age:24,releaseClause:128},
-    {uid:2000124157,name:'Javi Rodriguez',age:24,releaseClause:148},
-    {uid:2000127465,name:'Arthur Vermeeren',age:22,releaseClause:130},
-    {uid:2000146355,name:'Adam Daghim',age:21,releaseClause:133},
-    {uid:2000264561,name:'Luka Topalovic',age:21,releaseClause:113},
-    {uid:2000368248,name:'Jorthy Mokio',age:19,releaseClause:121},
-    {uid:2000318285,name:'Bruno Durdov',age:19,releaseClause:102},
-    {uid:85145172,name:'Armand Laurienté',age:26,releaseClause:134},
-    {uid:96047750,name:'Jan Bednarek',age:29,releaseClause:146},
-    {uid:2000129108,name:'Noah Nartey',age:21,releaseClause:128},
-    {uid:2000181028,name:'Elijah Dijkstra',age:20,releaseClause:116},
-    {uid:2000268884,name:'Joao Simões',age:20,releaseClause:134},
-    {uid:2000303379,name:'Salvador Blopá',age:20,releaseClause:111},
-    {uid:2000339841,name:'Mohammed El Âdfaoui',age:19,releaseClause:106},
-    {uid:2000366580,name:'Noah Fernandez',age:19,releaseClause:109},
-    {uid:2000490708,name:'Fabian Merién',age:17,releaseClause:104},
-    {uid:2000218555,name:'JP Chermont',age:20,releaseClause:111},
-    {uid:2000221876,name:'Winsley Boteli',age:20,releaseClause:102},
-  ],
-};;;;
+    {uid:18106083,name:'Jérémy Doku',age:24.0,releaseClause:160},{uid:18077264,name:'Youri Tielemans',age:28.0,releaseClause:8},{uid:19297055,name:'Bruno Guimaraes',age:27.0,releaseClause:55},{uid:37076355,name:'Bart Verbruggen',age:23.0,releaseClause:60},{uid:2000262919,name:'Luka Vuskovic',age:20.0,releaseClause:60},{uid:18115016,name:'Zeno Debast',age:22.0,releaseClause:50},{uid:2000016527,name:'Stanis Idumbo Muzambo',age:21.0,releaseClause:10},{uid:16254093,name:'Luka Sucic',age:23.0,releaseClause:15},{uid:18108540,name:'Jonathan David',age:25.0,releaseClause:15},{uid:43500350,name:'Wilfried Gnonto',age:22.0,releaseClause:20},{uid:58104594,name:'Alexandr Golovin',age:29.0,releaseClause:4},{uid:58123738,name:'Matvey Safonov',age:26.0,releaseClause:10},{uid:72048035,name:'Weston McKennie',age:26.0,releaseClause:10},{uid:93142472,name:'Samuel Dahl',age:23.0,releaseClause:5},{uid:2000005988,name:'Thomas Kristensen',age:24.0,releaseClause:10},{uid:2000014077,name:'Arsen Zakharyan',age:23.0,releaseClause:5},{uid:2000124157,name:'Javi Rodriguez',age:23.0,releaseClause:5},{uid:2000127465,name:'Arthur Vermeeren',age:21.0,releaseClause:5},{uid:2000146355,name:'Adam Daghim',age:20.0,releaseClause:10},{uid:2000264561,name:'Luka Topalovic',age:20.0,releaseClause:5},{uid:2000368248,name:'Jorthy Mokio',age:18.0,releaseClause:35},{uid:19386116,name:'Abner Vinicius',age:25.0,releaseClause:4},{uid:2000318285,name:'Bruno Durdov',age:18.0,releaseClause:5},{uid:85145172,name:'Armand Laurienté',age:26.0,releaseClause:4},{uid:96047750,name:'Jan Bednarek',age:29.0,releaseClause:5},{uid:2000129108,name:'Noah Nartey',age:20.0,releaseClause:0},{uid:2000181028,name:'Elijah Dijkstra',age:19.0,releaseClause:0},{uid:2000268884,name:'Joao Simões',age:19.0,releaseClause:0},{uid:2000303379,name:'Salvador Blopá',age:19.0,releaseClause:0},{uid:2000339841,name:'Mohammed El Âdfaoui',age:18.0,releaseClause:0},{uid:2000366580,name:'Noah Fernandez',age:18.0,releaseClause:0},{uid:2000332084,name:'Dylan Almada',age:17.5,releaseClause:0},{uid:2000490708,name:'Fabian Merién',age:16.0,releaseClause:0},{uid:2000218555,name:'JP Chermont',age:19.0,releaseClause:0},{uid:2000221876,name:'Winsley Boteli',age:19.0,releaseClause:0}
+  ]
+};
 
 // ============ SEASON MANAGEMENT ============
 // 赛季管理：支持多赛季归档和查阅
@@ -2994,11 +655,13 @@ function archiveCurrentSeason() {
   // 开始新赛季
   const newSeasonId = sid + 1;
   state.currentSeasonId = newSeasonId;
+  state.teams = [];
+  state.matches = [];
+  state.standings = {};
   state.cups = { championsCup: { teams: [], matches: [] }, leagueCup: { teams: [], matches: [] }, associationCup: { teams: [], matches: [] }, faCup: { teams: [], matches: [] } };
   viewingSeasonId = null;
 
-  // 填充新赛季球队数据（initData 内部会调用 saveState）
-  initData();
+  saveState();
   closeModal();
   updateSidebar();
   renderSeasonSelector();
@@ -3201,29 +864,6 @@ function loadState() {
         if (t.fromTeam === 'Nottm Forest') t.fromTeam = 'Nottingham Forest';
         if (t.toTeam === 'Nottm Forest') t.toTeam = 'Nottingham Forest';
       });
-      // ★ v1.0.476-477: 队名迁移（Brighton→La Coruna, FC Porto→FC Nurnberg, Fulham→Leeds）
-      const TEAM_RENAME_MAP = { 'Brighton': 'La Coruna', 'FC Porto': 'FC Nurnberg', 'Fulham': 'Leeds' };
-      state.teams.forEach(t => {
-        if (TEAM_RENAME_MAP[t.name]) t.name = TEAM_RENAME_MAP[t.name];
-      });
-      if (state.matches) state.matches.forEach(m => {
-        if (TEAM_RENAME_MAP[m.home]) m.home = TEAM_RENAME_MAP[m.home];
-        if (TEAM_RENAME_MAP[m.away]) m.away = TEAM_RENAME_MAP[m.away];
-      });
-      if (state.cups) Object.values(state.cups).forEach(c => {
-        if (c.matches) c.matches.forEach(m => {
-          if (TEAM_RENAME_MAP[m.home]) m.home = TEAM_RENAME_MAP[m.home];
-          if (TEAM_RENAME_MAP[m.away]) m.away = TEAM_RENAME_MAP[m.away];
-        });
-      });
-      if (state.transferMarket) state.transferMarket.forEach(t => {
-        if (TEAM_RENAME_MAP[t.teamName]) t.teamName = TEAM_RENAME_MAP[t.teamName];
-      });
-      if (state.pendingTransfers) state.pendingTransfers.forEach(t => {
-        if (TEAM_RENAME_MAP[t.fromTeam]) t.fromTeam = TEAM_RENAME_MAP[t.fromTeam];
-        if (TEAM_RENAME_MAP[t.toTeam]) t.toTeam = TEAM_RENAME_MAP[t.toTeam];
-      });
-
       // ★ v1.0.215: TRANSFER_GIST_ID 改为硬编码常量，不再从 state 恢复
       // 旧版 state._transferGistId 可能指向错误的 Gist（每个教练各自创建的）
       // 从比赛记录重新计算所有球员统计，修复历史数据不一致问题
@@ -3241,22 +881,6 @@ function loadState() {
   const archivedSeasons = localStorage.getItem('pgm_football_seasons_archive');
   if (archivedSeasons && (!state.seasons || Object.keys(state.seasons).length === 0)) {
     try { state.seasons = JSON.parse(archivedSeasons); saveState(); } catch(e) {}
-
-  // ★ v1.0.483: 主教练全量回填（覆盖线上旧数据，无需手动 initData）
-  if (typeof COACH_ASSIGN !== 'undefined' && state.teams) {
-    state.teams.forEach(t => {
-      if (COACH_ASSIGN[t.name] !== undefined) { t.coach = COACH_ASSIGN[t.name]; t.assistantCoaches = []; }
-    });
-    if (state.seasons) {
-      Object.keys(state.seasons).forEach(sid => {
-        const sd = state.seasons[sid];
-        if (sd && sd.teams) sd.teams.forEach(t => {
-          if (COACH_ASSIGN[t.name] !== undefined) { t.coach = COACH_ASSIGN[t.name]; t.assistantCoaches = []; }
-        });
-      });
-    }
-    saveState();
-  }
   }
 }
 
@@ -3332,49 +956,57 @@ function recalculateAllPlayerStats(sd) {
 // 将PLAYERS_DB中新增的球员安全合并到现有state，不破坏比赛数据/转会记录
 function syncPlayersFromDB() {
   if (!state.teams || state.teams.length < 60) { console.log('[SYNC] Skip: state.teams not ready'); return; }
-  let totalReplaced = 0;
-  let totalRemoved = 0;
+  let totalSynced = 0;
+  
+  // 全局已存在uid（防止已转会到他队的球员被加回原队，导致uid重复）
+  const globalUids = new Set();
+  state.teams.forEach(t => (t.players || []).forEach(p => globalUids.add(String(p.uid))));
 
   for (const team of state.teams) {
     const dbPlayers = PLAYERS_DB[team.name];
     if (!dbPlayers || dbPlayers.length === 0) continue;
-
-    // 保留旧球员的比赛统计数据（goals/assists/rating/gamesPlayed/motmCount）
-    const oldStats = {};
-    for (const p of (team.players || [])) {
-      oldStats[String(p.uid)] = {
-        goals: p.goals || 0, assists: p.assists || 0, rating: p.rating || 0,
-        gamesPlayed: p.gamesPlayed || 0, motmCount: p.motmCount || 0
-      };
+    
+    // 获取state中已有的uid集合
+    const existingUids = new Set(team.players.map(p => String(p.uid)));
+    
+    // 获取已解约到公海和已转出球员的uid（防止反复注入）
+    const openSeaUids = new Set((state.openSeaPlayers || []).map(p => String(p.uid)));
+    const transferredUids = new Set((state.pendingTransfers || []).filter(t => (t.status === 'processed' || t.status === 'completed') && t.fromTeamId === team.id).map(t => String(t.playerUid)));
+    
+    // 找出PLAYERS_DB中有但state中没有的球员（排除已解约和已转出）
+    const missing = dbPlayers.filter(p => !existingUids.has(String(p.uid)) && !openSeaUids.has(String(p.uid)) && !transferredUids.has(String(p.uid)) && !globalUids.has(String(p.uid)));
+    
+    if (missing.length > 0) {
+      // 计算下一个可用号码
+      const maxNum = Math.max.apply(null, [0].concat(team.players.map(function(p) { return p.number || 0; })));
+      
+      missing.forEach(function(p, idx) {
+        team.players.push({
+          id: team.id + '_' + p.uid,
+          uid: p.uid,
+          name: p.name,
+          number: maxNum + idx + 1,
+          position: 'FW',
+          age: p.age || 18.0,
+          releaseClause: p.releaseClause || 0,
+          goals: 0, assists: 0, rating: 0, gamesPlayed: 0, motmCount: 0
+        });
+      });
+      totalSynced += missing.length;
+      console.log('[SYNC] ' + team.name + ': +' + missing.length + ' players (' + missing.map(function(p) { return p.name; }).join(', ') + ')');
     }
-
-    const oldCount = (team.players || []).length;
-
-    // 直接用 PLAYERS_DB 覆盖球员列表
-    team.players = dbPlayers.map(function(p, idx) {
-      const uid = String(p.uid);
-      const stats = oldStats[uid] || { goals: 0, assists: 0, rating: 0, gamesPlayed: 0, motmCount: 0 };
-      return {
-        id: team.id + '_' + p.uid,
-        uid: p.uid,
-        name: p.name,
-        number: idx + 1,
-        position: p.position || 'FW',
-        age: p.age || 18.0,
-        ca: p.ca || 0,
-        releaseClause: p.releaseClause || 0,
-        goals: stats.goals, assists: stats.assists, rating: stats.rating,
-        gamesPlayed: stats.gamesPlayed, motmCount: stats.motmCount
-      };
-    });
-
-    totalReplaced += team.players.length;
-    totalRemoved += (oldCount - team.players.length);
-    console.log('[SYNC] ' + team.name + ': ' + oldCount + ' -> ' + team.players.length + ' players');
+  }
+  
+  if (totalSynced > 0) {
+    console.log('[SYNC] Total: ' + totalSynced + ' new players synced from PLAYERS_DB');
+  } else {
+    console.log('[SYNC] All PLAYERS_DB players already in state, nothing to sync');
   }
 
-  // 清理公海球员
+  // 主动清理：从所有球队中移除已在公海的球员（不触碰转会球员——转会由executeTransfer管理）
   const allOpenSeaUids = new Set((state.openSeaPlayers || []).map(p => String(p.uid)));
+  let totalCleaned = 0;
+
   for (const team of state.teams) {
     const beforeCount = team.players.length;
     team.players = team.players.filter(p => {
@@ -3382,11 +1014,16 @@ function syncPlayersFromDB() {
       if (allOpenSeaUids.has(uid)) { console.log('[CLEAN] Removed ' + p.name + ' from ' + team.name + ' (in openSea)'); return false; }
       return true;
     });
-    if (team.players.length < beforeCount) totalRemoved += (beforeCount - team.players.length);
+    if (team.players.length < beforeCount) totalCleaned += (beforeCount - team.players.length);
   }
 
-  console.log('[SYNC] Total: ' + totalReplaced + ' players replaced, ' + totalRemoved + ' removed');
-  saveState();
+  if (totalCleaned > 0) {
+    console.log('[CLEAN] Total: ' + totalCleaned + ' players removed (in openSea)');
+  }
+
+  if (totalSynced > 0 || totalCleaned > 0) {
+    saveState();
+  }
 }
 
 // ============ REPLAY TRANSFERS ============
@@ -3538,69 +1175,6 @@ function dedupePlayers() {
 
 
 // ============ INIT DATA ============
-const COACH_ASSIGN = {
-  'A. Bilbao': '撒丁',
-  'Arsenal': 'base',
-  'Aston Villa': '小罗',
-  'Benfica': 'mK',
-  'FC Bayern': '长臂猿',
-  'Leeds': '达达',
-  'Hamburger SV': '鲁指导',
-  'Lazio': '紫霞狼',
-  'Man City': 'Hooverga',
-  'Palmeiras': 'King',
-  'Paris SG': '包子',
-  'Wrexham': 'bobo',
-  '1860 Munchen': '苟',
-  'Aberdeen': '布指导',
-  'A. Madrid': '咖啡',
-  'Barcelona': 'fzjjjjw',
-  'Hertha BSC': '小君',
-  'Juventus': '史丁比',
-  'Liverpool': '大力娃',
-  'Marseille': '小沃',
-  'Monaco': 'ShinYeefun',
-  'Nottingham Forest': '卡拉',
-  'River': 'fza166',
-  'Tottenham': 'J.K',
-  'Ajax': '老虎',
-  'Atalanta': '边缘的光',
-  'La Coruna': '7指导',
-  'Everton': '酱油',
-  'Fiorentina': '暗影',
-  'Flamengo': '骚傲',
-  'Frankfurt': 'Emanon',
-  'Inter': '开朗',
-  'Leicester': '小时光',
-  'Napoli': '可乐',
-  'RC Lens': '满意',
-  'Schalke': '狗不理包子',
-  'AS Roma': 'leeds25',
-  'Atl. Tucuman': 'HenryPang',
-  'Dortmund': '香克斯',
-  'Newcastle': '我和你拼了',
-  'Como': '胖虎',
-  'FC Nurnberg': '三筒K',
-  'Leverkusen': 'Vanish',
-  'Oriental Dragon': '青蛙',
-  'R. Madrid': '恶魔',
-  'Stuttgart': '丁真',
-  'Sunderland': 'N德',
-  '青岛海神': '海神',
-  'AC Milan': '冰山',
-  'Asante Kotoko': '雅乐臣',
-  'Celtic': '斯潘',
-  'Chelsea': '奥亚尔',
-  'FC Koln': 'acmxtb',
-  'Genk': '男人',
-  'Man Utd': '书生',
-  'PSV': '大头',
-  'Sporting': '许轩',
-  'West Ham': '克瓜',
-  'Wolfsburg': 'Joshua King',
-  '上海申花': 'WT',
-};
-
 function initData() {
   state.teams = [];
   let teamId = 1;
@@ -3615,11 +1189,9 @@ function initData() {
         id: `p${teamId}_${p.uid}`,  // Use UID in player ID for unique identification
         uid: p.uid,  // Preserve the original UID
         name: p.name,
-      number: idx + 1,
-      position: p.position || (idx < 4 ? (idx === 0 ? 'GK' : 'DF') : idx < 8 ? 'MF' : 'FW'),  // 优先用DB真实位置
-      age: p.age || 0,
-      ca: p.ca || 0,  // 当前CA
-      releaseClause: p.releaseClause || 0,  // 年龄和违约金(单位M)
+        number: idx + 1,
+        position: idx < 4 ? (idx === 0 ? 'GK' : 'DF') : idx < 8 ? 'MF' : 'FW',  // Approximate positions
+        age: p.age || 0,releaseClause: p.releaseClause || 0,  // 年龄和违约金(单位M)
         goals: 0,
         assists: 0,
         rating: 0,
@@ -3627,9 +1199,30 @@ function initData() {
         motmCount: 0
       }));
 
-      // v1.0.483: 主教练统一从 COACH_ASSIGN 读取，助理教练清空
-      const coach = COACH_ASSIGN[teamName] || '';
-      const assistantCoaches = [];
+      // 特殊球队教练配置
+      let coach = COACH_NAMES[i % COACH_NAMES.length];
+      let assistantCoaches = [];
+      if (teamName === 'Tottenham') {
+        coach = 'J.K';
+        assistantCoaches = ['TL'];
+      } else if (teamName === 'Wrexham') {
+        coach = 'Bobo';
+        assistantCoaches = [];
+      } else if (teamName === 'Aberdeen') {
+        coach = '苟';
+        assistantCoaches = ['曾总'];
+      } else if (teamName === 'Aston Villa') {
+        coach = '小罗';
+        assistantCoaches = [];
+      } else if (teamName === 'Barcelona') {
+        coach = '四嫂';
+        assistantCoaches = [];
+      } else {
+        const assistantCount = 1 + (teamId % 3);
+        for (let a = 0; a < assistantCount; a++) {
+          assistantCoaches.push(ASSISTANT_COACH_NAMES[(teamId * 3 + a) % ASSISTANT_COACH_NAMES.length]);
+        }
+      }
 
       state.teams.push({
         id: `t${teamId}`,
@@ -3669,42 +1262,10 @@ function initData() {
   }
   saveState();
 }
-// 62赛季球员数据迁移到63赛季
-function migratePlayersFromArchive() {
-  if (state.currentSeasonId !== 63) return false;
-  if (!state.teams || state.teams.length === 0) return false;
-  
-  // 检查是否已经迁移过（第一支球队已有球员则跳过）
-  if (state.teams[0] && state.teams[0].players && state.teams[0].players.length > 0) {
-    // 检查球员是否已有 goals/assists 等数据（如果有则说明本赛季已录入，不覆盖）
-    var hasStats = state.teams.some(function(t) {
-      return t.players && t.players.some(function(p) { return p.goals > 0 || p.assists > 0 || p.gamesPlayed > 0; });
-    });
-    if (hasStats) return false; // 已有比赛数据，不覆盖
-  }
-  
-  var ARCHIVE_PLAYERS = {"A. Bilbao":[{"id":"p0_67228634","uid":67228634,"name":"Achraf Hakimi","number":0,"position":"","age":26,"ca":176,"clause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000134186","uid":2000134186,"name":"Mikel Jauregizar","number":0,"position":"","age":23,"ca":153,"clause":23,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000160511","uid":2000160511,"name":"Ousmane Diomande","number":0,"position":"","age":23,"ca":164,"clause":88,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000211219","uid":2000211219,"name":"Samu Aghehowa","number":0,"position":"","age":23,"ca":157,"clause":102,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000179713","uid":2000179713,"name":"Senny Mayulu","number":0,"position":"","age":21,"ca":144,"clause":37,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_29189400","uid":29189400,"name":"Brennan Johnson","number":0,"position":"","age":25,"ca":155,"clause":16,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_20041862","uid":20041862,"name":"Alphonso Davies","number":0,"position":"","age":25,"ca":170,"clause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000182795","uid":2000182795,"name":"Archie Gray","number":0,"position":"","age":21,"ca":170,"clause":65,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_67283140","uid":67283140,"name":"Filip Jorgensen","number":0,"position":"","age":25,"ca":169,"clause":22,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_67211695","uid":67211695,"name":"Theo Hernández","number":0,"position":"","age":27,"ca":150,"clause":65,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_29216094","uid":29216094,"name":"Festy Ebosele","number":0,"position":"","age":25,"ca":125,"clause":5,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_62182055","uid":62182055,"name":"Dusan Vlahovic","number":0,"position":"","age":25,"ca":153,"clause":70,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000034344","uid":2000034344,"name":"Javi Guerra","number":0,"position":"","age":24,"ca":152,"clause":12,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000045005","uid":2000045005,"name":"Noah Sadiki","number":0,"position":"","age":22,"ca":139,"clause":25,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000058232","uid":2000058232,"name":"Chadi Riad","number":0,"position":"","age":24,"ca":143,"clause":20,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000061312","uid":2000061312,"name":"Luca Koleosho","number":0,"position":"","age":22,"ca":148,"clause":5,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000031901","uid":2000031901,"name":"Kevin","number":0,"position":"","age":24,"ca":154,"clause":28,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_91137260","uid":91137260,"name":"Jordan Torunarigha","number":0,"position":"","age":27,"ca":125,"clause":1,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_95034355","uid":95034355,"name":"Cameron Pring","number":0,"position":"","age":27,"ca":125,"clause":2,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_70097314","uid":70097314,"name":"Uğurcan Çakır","number":0,"position":"","age":29,"ca":135,"clause":1,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_45101691","uid":45101691,"name":"Daizen Maeda","number":0,"position":"","age":27,"ca":137,"clause":8,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000334636","uid":2000334636,"name":"Mochizuki Henry Heroki","number":0,"position":"","age":25,"ca":130,"clause":7,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_85078880","uid":85078880,"name":"Lenglet","number":0,"position":"","age":30,"ca":145,"clause":1,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000171727","uid":2000171727,"name":"Pedro","number":0,"position":"","age":21,"ca":129,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000293527","uid":2000293527,"name":"Tyler Bindon","number":0,"position":"","age":21,"ca":123,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000297306","uid":2000297306,"name":"Jofre Torrents","number":0,"position":"","age":20,"ca":122,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000483116","uid":2000483116,"name":"Giovanni Baldini","number":0,"position":"","age":17.5,"ca":60,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000184284","uid":2000184284,"name":"Mattia Mannini","number":0,"position":"","age":20.5,"ca":106,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000510837","uid":2000510837,"name":"Yohann Obin","number":0,"position":"","age":17.5,"ca":70,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000294631","uid":2000294631,"name":"Mbekezeli Mbokazi","number":0,"position":"","age":19,"ca":120,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000300328","uid":2000300328,"name":"Harrison Bettoni","number":0,"position":"","age":18,"ca":89,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000491763","uid":2000491763,"name":"Xavier Mandza","number":0,"position":"","age":16,"ca":70,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Arsenal":[{"id":"p0_28106491","uid":28106491,"name":"Declan Rice","number":0,"position":"","age":26,"ca":182,"clause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_19242094","uid":19242094,"name":"Gabriel","number":0,"position":"","age":28,"ca":170,"clause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_19351309","uid":19351309,"name":"Gabriel Martinelli","number":0,"position":"","age":25,"ca":170,"clause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28108035","uid":28108035,"name":"Reece James","number":0,"position":"","age":25,"ca":173,"clause":70,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_93070286","uid":93070286,"name":"Alexander Isak","number":0,"position":"","age":25,"ca":169,"clause":180,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_67287665","uid":67287665,"name":"Alex Baena","number":0,"position":"","age":25,"ca":170,"clause":30,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000083915","uid":2000083915,"name":"Wesley","number":0,"position":"","age":23,"ca":155,"clause":45,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_43500755","uid":43500755,"name":"Giorgio Scalvini","number":0,"position":"","age":23,"ca":165,"clause":80,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_13136629","uid":13136629,"name":"Taiwo Awoniyi","number":0,"position":"","age":27,"ca":135,"clause":4,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_13181675","uid":13181675,"name":"Abdoulaye Faye","number":0,"position":"","age":22,"ca":118,"clause":5,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_54009099","uid":54009099,"name":"Łukasz Skorupski","number":0,"position":"","age":34,"ca":143,"clause":4,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_83169864","uid":83169864,"name":"Nuno Tavares","number":0,"position":"","age":25,"ca":143,"clause":20,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_83206392","uid":83206392,"name":"Samú","number":0,"position":"","age":25,"ca":145,"clause":5,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_84159608","uid":84159608,"name":"Albian Hajdari","number":0,"position":"","age":24,"ca":134,"clause":14,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000018781","uid":2000018781,"name":"Simon Adingra","number":0,"position":"","age":25,"ca":141,"clause":15,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000047221","uid":2000047221,"name":"Omari Hutchinson","number":0,"position":"","age":23,"ca":137,"clause":15,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000094715","uid":2000094715,"name":"Guillaume Restes","number":0,"position":"","age":22,"ca":130,"clause":15,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000188897","uid":2000188897,"name":"Dominik Prpic","number":0,"position":"","age":23,"ca":127,"clause":5,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000129012","uid":2000129012,"name":"Jayden Addai","number":0,"position":"","age":21,"ca":125,"clause":30,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28009441","uid":28009441,"name":"Kyle Walker","number":0,"position":"","age":35,"ca":143,"clause":4,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000032708","uid":2000032708,"name":"Mamadou Sangaré","number":0,"position":"","age":24.5,"ca":136,"clause":20,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_86045976","uid":86045976,"name":"Pervis Estupinán","number":0,"position":"","age":27,"ca":142,"clause":4,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000180114","uid":2000180114,"name":"Eguinaldo","number":0,"position":"","age":21.5,"ca":127,"clause":5,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000261761","uid":2000261761,"name":"Trey Samuel-Ogunsuyi","number":0,"position":"","age":20,"ca":79,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000357640","uid":2000357640,"name":"Alex Verón","number":0,"position":"","age":18,"ca":105,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000407507","uid":2000407507,"name":"Andre Harriman-Annous","number":0,"position":"","age":19,"ca":86,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000444739","uid":2000444739,"name":"Khensane","number":0,"position":"","age":18,"ca":82,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000457582","uid":2000457582,"name":"Eba Bekir İş","number":0,"position":"","age":18,"ca":95,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000461292","uid":2000461292,"name":"Roméo Garnier","number":0,"position":"","age":18,"ca":75,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000494587","uid":2000494587,"name":"Carlos Macià","number":0,"position":"","age":18,"ca":114,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000476256","uid":2000476256,"name":"Charles Robert Holland","number":0,"position":"","age":17.5,"ca":80,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000224404","uid":2000224404,"name":"Dylan Lawlor","number":0,"position":"","age":20.5,"ca":112,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Aston Villa":[{"id":"p0_19242277","uid":19242277,"name":"Raphinha","number":0,"position":"","age":28,"ca":176,"clause":133,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_85140178","uid":85140178,"name":"Ousmane Dembélé","number":0,"position":"","age":28,"ca":186,"clause":179,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_78074594","uid":78074594,"name":"Federico Valverde","number":0,"position":"","age":27,"ca":175,"clause":133,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_37063644","uid":37063644,"name":"Jurrien Timber","number":0,"position":"","age":25,"ca":168,"clause":69,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000093091","uid":2000093091,"name":"Nestory Irankunda","number":0,"position":"","age":21,"ca":160,"clause":69,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_29244869","uid":29244869,"name":"Kamaldeen Sulemana","number":0,"position":"","age":25,"ca":148,"clause":25,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_45116977","uid":45116977,"name":"Sano Kaishu","number":0,"position":"","age":25,"ca":140,"clause":15,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_48032338","uid":48032338,"name":"Ismael Bennacer","number":0,"position":"","age":27,"ca":146,"clause":5,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_49059205","uid":49059205,"name":"Bradley Locko","number":0,"position":"","age":25,"ca":145,"clause":13,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_93083839","uid":93083839,"name":"Isak Hien","number":0,"position":"","age":26,"ca":145,"clause":24,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000033033","uid":2000033033,"name":"Joel Ordónez","number":0,"position":"","age":23,"ca":125,"clause":34,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000382044","uid":2000382044,"name":"Ruan Pablo","number":0,"position":"","age":19,"ca":93,"clause":9,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000385385","uid":2000385385,"name":"Gabriel Mec","number":0,"position":"","age":19,"ca":109,"clause":29,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000426283","uid":2000426283,"name":"Mohamed Kader Meité","number":0,"position":"","age":19,"ca":115,"clause":35,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000447255","uid":2000447255,"name":"Cardoso Varela","number":0,"position":"","age":18,"ca":97,"clause":24,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28097980","uid":28097980,"name":"Fikayo Tomori","number":0,"position":"","age":27,"ca":147,"clause":22,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000101844","uid":2000101844,"name":"robin risser","number":0,"position":"","age":21,"ca":131,"clause":25,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_93065006","uid":93065006,"name":"Gabriel Gudmundsson","number":0,"position":"","age":26,"ca":140,"clause":4,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_49060933","uid":49060933,"name":"Maxime Estève","number":0,"position":"","age":25,"ca":152,"clause":25,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28090452","uid":28090452,"name":"Ola Aina","number":0,"position":"","age":28,"ca":143,"clause":21,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_53135726","uid":53135726,"name":"Thomas Olivier Amang A Kegueni","number":0,"position":"","age":27,"ca":110,"clause":2,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000290881","uid":2000290881,"name":"Robinio Vaz","number":0,"position":"","age":20,"ca":143,"clause":35,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000338014","uid":2000338014,"name":"Justin Lerma","number":0,"position":"","age":19,"ca":103,"clause":11,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_43155241","uid":43155241,"name":"Guglielmo Vicario","number":0,"position":"","age":28,"ca":144,"clause":13,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000289956","uid":2000289956,"name":"Prosper Peter","number":0,"position":"","age":19,"ca":108,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000332383","uid":2000332383,"name":"Alexander Staff","number":0,"position":"","age":19,"ca":87,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000368852","uid":2000368852,"name":"Lucca Kiaba Mounganga Brughmans","number":0,"position":"","age":19,"ca":105,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000391038","uid":2000391038,"name":"Jacob Ambaek","number":0,"position":"","age":19,"ca":112,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000451471","uid":2000451471,"name":"Joél Jason Drakes-Thomas","number":0,"position":"","age":18,"ca":85,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000488891","uid":2000488891,"name":"Nadson Juan","number":0,"position":"","age":18,"ca":94,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000490112","uid":2000490112,"name":"Saïd Remadnia","number":0,"position":"","age":17.5,"ca":70,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000251829","uid":2000251829,"name":"Genesis Kofi Koranteng Antwi","number":0,"position":"","age":19,"ca":100,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000360834","uid":2000360834,"name":"Juan Cruz Meza","number":0,"position":"","age":17.5,"ca":95,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Benfica":[{"id":"p0_29156522","uid":29156522,"name":"Ebere Eze","number":0,"position":"","age":27,"ca":155,"clause":75,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_43426047","uid":43426047,"name":"Destiny Udogie","number":0,"position":"","age":24,"ca":167,"clause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_49056282","uid":49056282,"name":"Bradley Barcola","number":0,"position":"","age":24,"ca":169,"clause":170,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000015300","uid":2000015300,"name":"Jamie Bynoe-Gittens","number":0,"position":"","age":22,"ca":168,"clause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_83261140","uid":83261140,"name":"Francisco Conceicao","number":0,"position":"","age":24,"ca":162,"clause":65,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000051886","uid":2000051886,"name":"Rafa Marín","number":0,"position":"","age":25,"ca":161,"clause":33,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_83243060","uid":83243060,"name":"Tomás Araújo","number":0,"position":"","age":25,"ca":155,"clause":40,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_71099053","uid":71099053,"name":"Andriy Lunin","number":0,"position":"","age":26,"ca":152,"clause":15,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_19375640","uid":19375640,"name":"André","number":0,"position":"","age":25,"ca":146,"clause":18,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28106683","uid":28106683,"name":"Nathan Tella","number":0,"position":"","age":26,"ca":142,"clause":4,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28127164","uid":28127164,"name":"Tyler Morton","number":0,"position":"","age":24,"ca":145,"clause":18,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_29123128","uid":29123128,"name":"Dominic Calvert-Lewin","number":0,"position":"","age":28,"ca":140,"clause":30,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_43424754","uid":43424754,"name":"Matteo Cancellieri","number":0,"position":"","age":25,"ca":135,"clause":4,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_49043189","uid":49043189,"name":"Georges Mikautadze","number":0,"position":"","age":25,"ca":151,"clause":16,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_49062699","uid":49062699,"name":"Andy Diouf","number":0,"position":"","age":24,"ca":134,"clause":13,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_83206395","uid":83206395,"name":"Francisco Moura","number":0,"position":"","age":25,"ca":135,"clause":5,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_91143491","uid":91143491,"name":"Nadiem Amiri","number":0,"position":"","age":28,"ca":149,"clause":5,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_91144914","uid":91144914,"name":"Kevin Danso","number":0,"position":"","age":26,"ca":145,"clause":20,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_91188349","uid":91188349,"name":"Noah Atubolu","number":0,"position":"","age":25,"ca":138,"clause":10,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_93127195","uid":93127195,"name":"Odilon Kossounou","number":0,"position":"","age":25,"ca":154,"clause":35,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000199219","uid":2000199219,"name":"Goncalo Moreira","number":0,"position":"","age":21,"ca":112,"clause":6,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000385886","uid":2000385886,"name":"Diego León","number":0,"position":"","age":20,"ca":101,"clause":10,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"FC Bayern":[{"id":"p0_92039023","uid":92039023,"name":"Joshua Kimmich","number":0,"position":"","age":30,"ca":178,"clause":65,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_16182894","uid":16182894,"name":"Dayot Upamecano","number":0,"position":"","age":26,"ca":165,"clause":98,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_37052843","uid":37052843,"name":"Denzel Dumfries","number":0,"position":"","age":29,"ca":158,"clause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_14020367","uid":14020367,"name":"Emiliano Martínez","number":0,"position":"","age":32,"ca":157,"clause":41,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_67296654","uid":67296654,"name":"Alejandro Balde","number":0,"position":"","age":23,"ca":170,"clause":106,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000395112","uid":2000395112,"name":"Pau Navarro","number":0,"position":"","age":22,"ca":156,"clause":20,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28066083","uid":28066083,"name":"Serge Gnabry","number":0,"position":"","age":30,"ca":157,"clause":20,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_19270493","uid":19270493,"name":"Bremer","number":0,"position":"","age":26,"ca":162,"clause":50,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000014559","uid":2000014559,"name":"Ernest Poku","number":0,"position":"","age":23,"ca":155,"clause":20,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000164850","uid":2000164850,"name":"Ben Doak","number":0,"position":"","age":21,"ca":166,"clause":46,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000055284","uid":2000055284,"name":"Angelo","number":0,"position":"","age":22,"ca":150,"clause":10,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_8718372","uid":8718372,"name":"Manuel Neuer","number":0,"position":"","age":39,"ca":145,"clause":10,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_16045721","uid":16045721,"name":"Marcel Sabitzer","number":0,"position":"","age":31,"ca":146,"clause":4,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_16147659","uid":16147659,"name":"Konrad Laimer","number":0,"position":"","age":28,"ca":153,"clause":12,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28116305","uid":28116305,"name":"Folarin Balogun","number":0,"position":"","age":25,"ca":148,"clause":20,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_36096824","uid":36096824,"name":"Kostas Tsimikas","number":0,"position":"","age":29,"ca":144,"clause":8,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_55061470","uid":55061470,"name":"Nélson Semedo","number":0,"position":"","age":31,"ca":140,"clause":5,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_89063073","uid":89063073,"name":"Kim Min-Jae","number":0,"position":"","age":28,"ca":153,"clause":55,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_91104807","uid":91104807,"name":"Leon Goretzka","number":0,"position":"","age":30,"ca":153,"clause":35,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_91190673","uid":91190673,"name":"Josip Stanisic","number":0,"position":"","age":25,"ca":148,"clause":15,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000069643","uid":2000069643,"name":"Mohamed Amoura","number":0,"position":"","age":25,"ca":146,"clause":20,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_49061868","uid":49061868,"name":"Elye Wahi","number":0,"position":"","age":24,"ca":150,"clause":12,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_29125191","uid":29125191,"name":"Dominic Solanke","number":0,"position":"","age":27,"ca":145,"clause":5,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000193585","uid":2000193585,"name":"Aymen Sliti","number":0,"position":"","age":21,"ca":120,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000209904","uid":2000209904,"name":"Bruno Ogbus","number":0,"position":"","age":20,"ca":123,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000396129","uid":2000396129,"name":"Justin Clarke","number":0,"position":"","age":17,"ca":83,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Leeds":[{"id":"p0_28049320","uid":28049320,"name":"Harry Kane","number":0,"position":"","age":32,"ca":188,"clause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28122642","uid":28122642,"name":"Bukayo Saka","number":0,"position":"","age":25,"ca":188,"clause":180,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_49037900","uid":49037900,"name":"Wesley Fofana","number":0,"position":"","age":25,"ca":180,"clause":80,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000205927","uid":2000205927,"name":"Jobe Bellingham","number":0,"position":"","age":21,"ca":146,"clause":40,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_29193659","uid":29193659,"name":"Jacob Ramsey","number":0,"position":"","age":25,"ca":165,"clause":25,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_37076092","uid":37076092,"name":"Noni Madueke","number":0,"position":"","age":25,"ca":165,"clause":80,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000189871","uid":2000189871,"name":"Lewis Miley","number":0,"position":"","age":21,"ca":147,"clause":40,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_43425834","uid":43425834,"name":"Matteo Ruggeri","number":0,"position":"","age":25,"ca":157,"clause":25,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_92026209","uid":92026209,"name":"Hakan Calhanoglu","number":0,"position":"","age":31,"ca":162,"clause":6,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_18054004","uid":18054004,"name":"Leandro Trossard","number":0,"position":"","age":30,"ca":155,"clause":11,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28094856","uid":28094856,"name":"Daniel James","number":0,"position":"","age":27,"ca":128,"clause":7,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_29217875","uid":29217875,"name":"Charlie Cresswell","number":0,"position":"","age":24,"ca":134,"clause":20,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000191846","uid":2000191846,"name":"Jayden Danns","number":0,"position":"","age":21,"ca":121,"clause":10,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000276594","uid":2000276594,"name":"Josh King","number":0,"position":"","age":20,"ca":141,"clause":30,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_69005372","uid":69005372,"name":"Roman Bürki","number":0,"position":"","age":34,"ca":132,"clause":3,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28111079","uid":28111079,"name":"Calvin Bassey","number":0,"position":"","age":25,"ca":146,"clause":15,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_29074544","uid":29074544,"name":"Tyrone Mings","number":0,"position":"","age":32,"ca":143,"clause":12,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28108036","uid":28108036,"name":"Conor Gallagher","number":0,"position":"","age":25,"ca":148,"clause":12,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28111507","uid":28111507,"name":"Tyrick Mitchell","number":0,"position":"","age":25,"ca":145,"clause":8,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28100123","uid":28100123,"name":"Aaron Wan-Bissaka","number":0,"position":"","age":27,"ca":138,"clause":10,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000147523","uid":2000147523,"name":"Omari Kellyman","number":0,"position":"","age":21,"ca":123,"clause":1,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_67174729","uid":67174729,"name":"Adama Traoré","number":0,"position":"","age":29,"ca":135,"clause":30,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_35017377","uid":35017377,"name":"Oliver Baumann","number":0,"position":"","age":35,"ca":150,"clause":9,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_13174979","uid":13174979,"name":"Yves Bissouma","number":0,"position":"","age":28,"ca":142,"clause":10,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000273472","uid":2000273472,"name":"Kiano Dyer","number":0,"position":"","age":20,"ca":97,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000303360","uid":2000303360,"name":"Flávio Goncalves","number":0,"position":"","age":20,"ca":110,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Hamburger SV":[{"id":"p0_2000188173","uid":2000188173,"name":"Assan Ouédraogo","number":0,"position":"","age":21,"ca":180,"clause":70,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000283271","uid":2000283271,"name":"Ethan Nwaneri","number":0,"position":"","age":20,"ca":187,"clause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_48037822","uid":48037822,"name":"Ibrahima Konaté","number":0,"position":"","age":26,"ca":158,"clause":111,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_49056280","uid":49056280,"name":"Malo Gusto","number":0,"position":"","age":24,"ca":163,"clause":70,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000195626","uid":2000195626,"name":"Yankuba Minteh","number":0,"position":"","age":23,"ca":156,"clause":70,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28121372","uid":28121372,"name":"Ian Maatsen","number":0,"position":"","age":25,"ca":160,"clause":45,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_19326796","uid":19326796,"name":"Ederson","number":0,"position":"","age":26,"ca":156,"clause":38,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000171034","uid":2000171034,"name":"Aleksandar Pavlovic","number":0,"position":"","age":23,"ca":172,"clause":60,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000180822","uid":2000180822,"name":"Brajan Gruda","number":0,"position":"","age":23,"ca":165,"clause":35,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000107089","uid":2000107089,"name":"Matias Fernandez-Pardo","number":0,"position":"","age":22,"ca":156,"clause":75,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_37088234","uid":37088234,"name":"Emanuel Emegha","number":0,"position":"","age":24,"ca":153,"clause":80,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_76046285","uid":76046285,"name":"Luis Suárez","number":0,"position":"","age":27,"ca":153,"clause":12,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000126886","uid":2000126886,"name":"Oscar Hojlund","number":0,"position":"","age":22,"ca":125,"clause":1,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000219701","uid":2000219701,"name":"Kaua Elias","number":0,"position":"","age":21,"ca":125,"clause":10,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_91184334","uid":91184334,"name":"Maduka Okoye","number":0,"position":"","age":25,"ca":133,"clause":2,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_48037362","uid":48037362,"name":"Moussa Niakhaté","number":0,"position":"","age":29,"ca":139,"clause":4,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000253187","uid":2000253187,"name":"Juan Rodríguez","number":0,"position":"","age":22,"ca":118,"clause":5,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_49053443","uid":49053443,"name":"Lorenz Assignon","number":0,"position":"","age":25,"ca":132,"clause":1,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_36078574","uid":36078574,"name":"Dimitrios Christos Giannoulis","number":0,"position":"","age":29,"ca":132,"clause":1,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_62191195","uid":62191195,"name":"Nikola Milenkovic","number":0,"position":"","age":27,"ca":146,"clause":20,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000111055","uid":2000111055,"name":"Afonso Moreira","number":0,"position":"","age":22,"ca":128,"clause":46,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_16253898","uid":16253898,"name":"Patrick Wimmer","number":0,"position":"","age":25,"ca":136,"clause":2,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_29083750","uid":29083750,"name":"Nick Pope","number":0,"position":"","age":33,"ca":141,"clause":2,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28100477","uid":28100477,"name":"Joe Rodon","number":0,"position":"","age":27,"ca":139,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000187477","uid":2000187477,"name":"Tidiam Gomis","number":0,"position":"","age":20,"ca":122,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000276967","uid":2000276967,"name":"Ethan Mbappé","number":0,"position":"","age":20,"ca":127,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000366140","uid":2000366140,"name":"Leon Jakirovic","number":0,"position":"","age":19,"ca":101,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000503477","uid":2000503477,"name":"Samba Konate","number":0,"position":"","age":18,"ca":86,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000454624","uid":2000454624,"name":"Chris Irenee Ntamack Pondy","number":0,"position":"","age":18.5,"ca":85,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000290392","uid":2000290392,"name":"Seny Koumbassa","number":0,"position":"","age":19.5,"ca":95,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000251805","uid":2000251805,"name":"Adrian Adriano Lahdo","number":0,"position":"","age":18,"ca":107,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000278478","uid":2000278478,"name":"Mohamadou Kanté","number":0,"position":"","age":20,"ca":111,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Lazio":[{"id":"p0_2000163799","uid":2000163799,"name":"Nico Paz","number":0,"position":"","age":22,"ca":181,"clause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_12087972","uid":12087972,"name":"Nicolas Jackson","number":0,"position":"","age":25,"ca":162,"clause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_43298481","uid":43298481,"name":"Sandro Tonali","number":0,"position":"","age":25,"ca":167,"clause":88,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_64016316","uid":64016316,"name":"Jan Oblak","number":0,"position":"","age":32,"ca":165,"clause":30,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_85086031","uid":85086031,"name":"Adrien Rabiot","number":0,"position":"","age":30,"ca":157,"clause":25,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_11023165","uid":11023165,"name":"Amir Rrahmani","number":0,"position":"","age":31,"ca":155,"clause":18,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_43500130","uid":43500130,"name":"Diego Coppola","number":0,"position":"","age":23,"ca":162,"clause":68,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000228120","uid":2000228120,"name":"Marc Guiu","number":0,"position":"","age":21,"ca":147,"clause":41,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000298715","uid":2000298715,"name":"Mikey Moore","number":0,"position":"","age":19,"ca":135,"clause":35,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28107919","uid":28107919,"name":"Reiss Nelson","number":0,"position":"","age":25,"ca":146,"clause":11,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28121568","uid":28121568,"name":"Anthony Elanga","number":0,"position":"","age":25,"ca":145,"clause":21,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_29178504","uid":29178504,"name":"Djed Spence","number":0,"position":"","age":25,"ca":152,"clause":38,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_43017499","uid":43017499,"name":"Francesco Acerbi","number":0,"position":"","age":37,"ca":149,"clause":6,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_43125343","uid":43125343,"name":"Mattia Zaccagni","number":0,"position":"","age":30,"ca":152,"clause":11,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_48043484","uid":48043484,"name":"Pape Guèye","number":0,"position":"","age":26,"ca":147,"clause":22,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_49050736","uid":49050736,"name":"Adrien Truffert","number":0,"position":"","age":25,"ca":153,"clause":17,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_67212046","uid":67212046,"name":"Alfonso Pedraza","number":0,"position":"","age":29,"ca":140,"clause":2,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_83209468","uid":83209468,"name":"Goncalo Ramos","number":0,"position":"","age":25,"ca":152,"clause":40,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000011613","uid":2000011613,"name":"Soumaila Coulibaly","number":0,"position":"","age":23,"ca":125,"clause":12,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000014080","uid":2000014080,"name":"Rome-Jayden Owusu-Oduro","number":0,"position":"","age":23,"ca":126,"clause":17,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_45015318","uid":45015318,"name":"Gotoku Sakai","number":0,"position":"","age":34,"ca":132,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_13199286","uid":13199286,"name":"Nayef Aguerd","number":0,"position":"","age":29,"ca":142,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000350903","uid":2000350903,"name":"Sean Steur","number":0,"position":"","age":19,"ca":137,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000404501","uid":2000404501,"name":"Jaime Barroso","number":0,"position":"","age":19,"ca":90,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Man City":[{"id":"p0_18115012","uid":18115012,"name":"Roméo Lavia","number":0,"position":"","age":23,"ca":180,"clause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_67217524","uid":67217524,"name":"Rodri","number":0,"position":"","age":29,"ca":180,"clause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_7458500","uid":7458500,"name":"Lionel Messi","number":0,"position":"","age":38,"ca":172,"clause":70,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_18004457","uid":18004457,"name":"Kevin De Bruyne","number":0,"position":"","age":34,"ca":171,"clause":40,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28108494","uid":28108494,"name":"Phil Foden","number":0,"position":"","age":25,"ca":169,"clause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_29141828","uid":29141828,"name":"Ademola Lookman","number":0,"position":"","age":27,"ca":158,"clause":46,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_37063649","uid":37063649,"name":"Sven Botman","number":0,"position":"","age":25,"ca":156,"clause":70,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_55070299","uid":55070299,"name":"Rúben Dias","number":0,"position":"","age":28,"ca":168,"clause":91,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_83320124","uid":83320124,"name":"Mateus Fernandes","number":0,"position":"","age":23,"ca":146,"clause":50,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000098727","uid":2000098727,"name":"Rico Lewis","number":0,"position":"","age":22,"ca":155,"clause":30,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28116427","uid":28116427,"name":"Eric García","number":0,"position":"","age":25,"ca":155,"clause":26,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000101285","uid":2000101285,"name":"Nico O'Reilly","number":0,"position":"","age":22,"ca":163,"clause":89,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_43252073","uid":43252073,"name":"Gianluigi Donnarumma","number":0,"position":"","age":26,"ca":170,"clause":70,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_37025551","uid":37025551,"name":"Nathan Aké","number":0,"position":"","age":30,"ca":153,"clause":20,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28116558","uid":28116558,"name":"Largie Ramazani","number":0,"position":"","age":25,"ca":152,"clause":30,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_34000647","uid":34000647,"name":"Olivier Giroud","number":0,"position":"","age":38,"ca":141,"clause":5,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_43295110","uid":43295110,"name":"Raoul Bellanova","number":0,"position":"","age":25,"ca":145,"clause":30,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_67245235","uid":67245235,"name":"Fran García","number":0,"position":"","age":25,"ca":145,"clause":20,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_98034601","uid":98034601,"name":"Denis Zakaria","number":0,"position":"","age":28,"ca":147,"clause":30,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000036812","uid":2000036812,"name":"Callum Doyle","number":0,"position":"","age":23,"ca":144,"clause":20,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000112986","uid":2000112986,"name":"Max Alleyne","number":0,"position":"","age":22,"ca":132,"clause":15,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_49045184","uid":49045184,"name":"Pierre Kalulu","number":0,"position":"","age":25,"ca":152,"clause":30,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_83297510","uid":83297510,"name":"Lukás Hornícek","number":0,"position":"","age":25,"ca":136,"clause":12,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000183134","uid":2000183134,"name":"Ewen Jaouen","number":0,"position":"","age":21,"ca":110,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000185228","uid":2000185228,"name":"Justin Oboavwoduo","number":0,"position":"","age":20,"ca":90,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000288733","uid":2000288733,"name":"Mahamadou Sangare","number":0,"position":"","age":20,"ca":88,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000421810","uid":2000421810,"name":"Bas Evers","number":0,"position":"","age":18,"ca":94,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000437952","uid":2000437952,"name":"Tyrone Samba","number":0,"position":"","age":19,"ca":71,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000511340","uid":2000511340,"name":"Floyd Samba","number":0,"position":"","age":18,"ca":76,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000511353","uid":2000511353,"name":"Teddie Lamb","number":0,"position":"","age":18,"ca":75,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000368021","uid":2000368021,"name":"Wojciech Mońka","number":0,"position":"","age":19,"ca":90,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000262414","uid":2000262414,"name":"Paulo da Silva","number":0,"position":"","age":18,"ca":89,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000503806","uid":2000503806,"name":"Iago Machado","number":0,"position":"","age":17,"ca":80,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000184227","uid":2000184227,"name":"Lakyle Samuel","number":0,"position":"","age":19,"ca":90,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Palmeiras":[{"id":"p0_53095137","uid":53095137,"name":"Martin Odegaard","number":0,"position":"","age":26,"ca":176,"clause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000256231","uid":2000256231,"name":"Lamine Yamal","number":0,"position":"","age":20,"ca":194,"clause":400,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_18026122","uid":18026122,"name":"Thibaut Courtois","number":0,"position":"","age":33,"ca":181,"clause":55,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000221458","uid":2000221458,"name":"Luís Guilherme","number":0,"position":"","age":21,"ca":179,"clause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000104850","uid":2000104850,"name":"Mathys Tel","number":0,"position":"","age":22,"ca":164,"clause":60,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000147056","uid":2000147056,"name":"Tom Bischof","number":0,"position":"","age":22,"ca":154,"clause":40,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28127161","uid":28127161,"name":"Jarell Quansah","number":0,"position":"","age":24,"ca":160,"clause":65,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000288527","uid":2000288527,"name":"Said El Mala","number":0,"position":"","age":20,"ca":146,"clause":80,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000100253","uid":2000100253,"name":"El Chadaille Bitshiabu","number":0,"position":"","age":22,"ca":160,"clause":50,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_12095226","uid":12095226,"name":"Amara Diouf","number":0,"position":"","age":19,"ca":97,"clause":10,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_13194648","uid":13194648,"name":"Joseph Paintsil","number":0,"position":"","age":27,"ca":129,"clause":3,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_37001813","uid":37001813,"name":"Marten de Roon","number":0,"position":"","age":34,"ca":149,"clause":7,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_37057982","uid":37057982,"name":"Teun Koopmeiners","number":0,"position":"","age":27,"ca":145,"clause":7,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_37084869","uid":37084869,"name":"Jayden Oosterwolde","number":0,"position":"","age":25,"ca":140,"clause":25,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_43036586","uid":43036586,"name":"Leonardo Spinazzola","number":0,"position":"","age":32,"ca":147,"clause":5,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_43093395","uid":43093395,"name":"Alessio Romagnoli","number":0,"position":"","age":30,"ca":148,"clause":8,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_43096538","uid":43096538,"name":"Manuel Lazzari","number":0,"position":"","age":31,"ca":136,"clause":8,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_58123343","uid":58123343,"name":"Nikita Khaikin","number":0,"position":"","age":30,"ca":138,"clause":5,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_85103818","uid":85103818,"name":"Ludovic Ajorque","number":0,"position":"","age":31,"ca":138,"clause":4,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000087434","uid":2000087434,"name":"Isaac Babadi","number":0,"position":"","age":22,"ca":128,"clause":4,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_19273277","uid":19273277,"name":"Dodo","number":0,"position":"","age":26,"ca":145,"clause":15,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_37071180","uid":37071180,"name":"Quilindschy Hartman","number":0,"position":"","age":25,"ca":150,"clause":10,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_29186052","uid":29186052,"name":"Matt O'Riley","number":0,"position":"","age":25,"ca":141,"clause":4,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000178997","uid":2000178997,"name":"Simone Pafundi","number":0,"position":"","age":21,"ca":115,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000180882","uid":2000180882,"name":"Paris Josua Brunner","number":0,"position":"","age":21,"ca":105,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000254107","uid":2000254107,"name":"Kaye Furo","number":0,"position":"","age":20,"ca":110,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000274204","uid":2000274204,"name":"Julian Hall","number":0,"position":"","age":19,"ca":94,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000311467","uid":2000311467,"name":"Bright Ede","number":0,"position":"","age":20,"ca":88,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Paris SG":[{"id":"p0_83261910","uid":83261910,"name":"Nuno Mendes","number":0,"position":"","age":25,"ca":180,"clause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_91193048","uid":91193048,"name":"Florian Wirtz","number":0,"position":"","age":24,"ca":188,"clause":200,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_24060473","uid":24060473,"name":"Josko Gvardiol","number":0,"position":"","age":25,"ca":180,"clause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_653054","uid":653054,"name":"Luka Modric","number":0,"position":"","age":39,"ca":166,"clause":15,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28104124","uid":28104124,"name":"Trent Alexander-Arnold","number":0,"position":"","age":26,"ca":160,"clause":55,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28121369","uid":28121369,"name":"Armando Broja","number":0,"position":"","age":25,"ca":160,"clause":20,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000375662","uid":2000375662,"name":"Lennart Karl","number":0,"position":"","age":19,"ca":158,"clause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000028320","uid":2000028320,"name":"Alberto Moleiro","number":0,"position":"","age":23,"ca":165,"clause":35,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_29125343","uid":29125343,"name":"Scott McTominay","number":0,"position":"","age":28,"ca":165,"clause":65,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_19184436","uid":19184436,"name":"Joelinton","number":0,"position":"","age":28,"ca":156,"clause":10,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_27132703","uid":27132703,"name":"Morten Hjulmand","number":0,"position":"","age":26,"ca":150,"clause":30,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_67172040","uid":67172040,"name":"Ayeze Perez","number":0,"position":"","age":31,"ca":153,"clause":5,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_13160655","uid":13160655,"name":"Reinildo","number":0,"position":"","age":31,"ca":146,"clause":4,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_19409448","uid":19409448,"name":"Vanderson","number":0,"position":"","age":25,"ca":139,"clause":6,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_25055083","uid":25055083,"name":"Ladislav Krejčí","number":0,"position":"","age":26,"ca":142,"clause":4,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_28110176","uid":28110176,"name":"Nathan Trott","number":0,"position":"","age":26,"ca":120,"clause":1,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_29141827","uid":29141827,"name":"Ezri Konsa","number":0,"position":"","age":27,"ca":150,"clause":10,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_67030171","uid":67030171,"name":"David De Gea","number":0,"position":"","age":34,"ca":147,"clause":20,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_79024232","uid":79024232,"name":"Miguel Ángel Almirón Rejala","number":0,"position":"","age":31,"ca":136,"clause":4,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_92017376","uid":92017376,"name":"Pascal Gross","number":0,"position":"","age":34,"ca":153,"clause":4,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_43075156","uid":43075156,"name":"Giovanni Di Lorenzo","number":0,"position":"","age":32,"ca":154,"clause":20,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_91147345","uid":91147345,"name":"Robin Koch","number":0,"position":"","age":29,"ca":145,"clause":4,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000379470","uid":2000379470,"name":"Taufik Seidu Zanzi Awudu","number":0,"position":"","age":19,"ca":90,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000406231","uid":2000406231,"name":"Ilies Belmokhtar","number":0,"position":"","age":19,"ca":95,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000476255","uid":2000476255,"name":"Reggie Spencer Walsh","number":0,"position":"","age":18,"ca":116,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000476261","uid":2000476261,"name":"Mathis Maxime E. Eboué","number":0,"position":"","age":18,"ca":75,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000484547","uid":2000484547,"name":"Yoann Becker","number":0,"position":"","age":16.5,"ca":70,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Wrexham":[{"id":"p0_2000115202","uid":2000115202,"name":"Désiré Doué","number":0,"position":"","age":22,"ca":190,"clause":273,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_61089387","uid":61089387,"name":"Aaron Hickey","number":0,"position":"","age":25,"ca":165,"clause":25,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000023588","uid":2000023588,"name":"Michael Kayode","number":0,"position":"","age":23,"ca":164,"clause":65,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_37065567","uid":37065567,"name":"Crysencio Summerville","number":0,"position":"","age":25,"ca":156,"clause":43,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_13211267","uid":13211267,"name":"Abdul Fatawu","number":0,"position":"","age":23,"ca":137,"clause":50,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_18105831","uid":18105831,"name":"Ismael Saibari","number":0,"position":"","age":25,"ca":151,"clause":40,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_49048468","uid":49048468,"name":"Chrislain Matsima","number":0,"position":"","age":25,"ca":142,"clause":26,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_92071481","uid":92071481,"name":"Finn Gilbert Dahmen","number":0,"position":"","age":27,"ca":140,"clause":1,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000019413","uid":2000019413,"name":"Carlos Romero Serrano","number":0,"position":"","age":25,"ca":145,"clause":25,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000187717","uid":2000187717,"name":"Tommy Watson","number":0,"position":"","age":21,"ca":127,"clause":10,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000304487","uid":2000304487,"name":"Christantus Uche","number":0,"position":"","age":24,"ca":149,"clause":15,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000048682","uid":2000048682,"name":"Medon Berisha","number":0,"position":"","age":23,"ca":124,"clause":1,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000426277","uid":2000426277,"name":"Christian Kofane","number":0,"position":"","age":21,"ca":141,"clause":75,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000182279","uid":2000182279,"name":"Alessandro Vogt","number":0,"position":"","age":22,"ca":120,"clause":15,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_37051305","uid":37051305,"name":"Arnaut Danjuma","number":0,"position":"","age":28,"ca":140,"clause":6,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000307785","uid":2000307785,"name":"Ibrahima Ba","number":0,"position":"","age":21.5,"ca":118,"clause":15,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000075038","uid":2000075038,"name":"Bernardo Fontes","number":0,"position":"","age":23.5,"ca":123,"clause":10,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000023527","uid":2000023527,"name":"Issa Doumbia","number":0,"position":"","age":21.5,"ca":115,"clause":30,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000335906","uid":2000335906,"name":"Yassir Zabiri","number":0,"position":"","age":21.5,"ca":130,"clause":10,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000288469","uid":2000288469,"name":"Veljko Milosavljevic","number":0,"position":"","age":20,"ca":126,"clause":25,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000205277","uid":2000205277,"name":"Ismaëlo Ganiou","number":0,"position":"","age":21.5,"ca":117,"clause":35,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_67211760","uid":67211760,"name":"Mikel Merino","number":0,"position":"","age":29,"ca":154,"clause":7,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000242422","uid":2000242422,"name":"Alexey Batrakov","number":0,"position":"","age":22,"ca":138,"clause":12,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000293312","uid":2000293312,"name":"Jesús Fortea","number":0,"position":"","age":20,"ca":104,"clause":6,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000277689","uid":2000277689,"name":"Alysson Edward Franco da Rocha","number":0,"position":"","age":20.5,"ca":115,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000205568","uid":2000205568,"name":"Alphadjo Cissè","number":0,"position":"","age":20,"ca":117,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000379558","uid":2000379558,"name":"Tayo Subuloye","number":0,"position":"","age":19,"ca":80,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000410735","uid":2000410735,"name":"Andrej Kostić","number":0,"position":"","age":20,"ca":111,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000506792","uid":2000506792,"name":"Cruz Ibeh","number":0,"position":"","age":16.5,"ca":73,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000522407","uid":2000522407,"name":"James Bogere","number":0,"position":"","age":18,"ca":88,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000462294","uid":2000462294,"name":"Samuel Martinez","number":0,"position":"","age":16.5,"ca":75,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000170106","uid":2000170106,"name":"jens hjerto-dahl","number":0,"position":"","age":19.5,"ca":115,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000503700","uid":2000503700,"name":"Raphael Canut","number":0,"position":"","age":16.5,"ca":63,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000447622","uid":2000447622,"name":"Akpe Victory","number":0,"position":"","age":18.5,"ca":88,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_2000432704","uid":2000432704,"name":"Darwin Guagua","number":0,"position":"","age":17,"ca":100,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"1860 Munchen":[{"id":"p25170_2000210791","uid":2000210791,"name":"Assane Diao","number":0,"position":"GK","age":21,"releaseClause":180,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p23419_59130638","uid":59130638,"name":"Khvicha Kvaratskhelia","number":0,"position":"GK","age":25,"releaseClause":173,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p42397_27164470","uid":27164470,"name":"Patrick Dorgu","number":0,"position":"GK","age":22,"releaseClause":158,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p35772_2000301027","uid":2000301027,"name":"Ayden Heaven","number":0,"position":"GK","age":20,"releaseClause":165,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p38224_49038952","uid":49038952,"name":"Khephren Thuram","number":0,"position":"GK","age":25,"releaseClause":163,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p87082_28115831","uid":28115831,"name":"James Garner","number":0,"position":"GK","age":25,"releaseClause":163,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5345_28112986","uid":28112986,"name":"Callum Hudson-Odoi","number":0,"position":"GK","age":25,"releaseClause":158,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p40862_2000218258","uid":2000218258,"name":"Alvaro Rodríguez","number":0,"position":"GK","age":22,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p63510_18107187","uid":18107187,"name":"Maarten Vandevoordt","number":0,"position":"GK","age":25,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p8546_67277455","uid":67277455,"name":"Mario Gila","number":0,"position":"GK","age":25,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p47574_2000100062","uid":2000100062,"name":"Badredine Bouanani","number":0,"position":"GK","age":22,"releaseClause":128,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p45025_2000103798","uid":2000103798,"name":"Chemsdine Talbi","number":0,"position":"GK","age":22,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p14416_2000108691","uid":2000108691,"name":"Lewis Hall","number":0,"position":"GK","age":22,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p18870_2000115205","uid":2000115205,"name":"Jeanuel Belocian","number":0,"position":"GK","age":22,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p47235_2000221609","uid":2000221609,"name":"Vitor Reis","number":0,"position":"GK","age":21,"releaseClause":124,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p900_43500900","uid":43500900,"name":"Mohamed Alì Zoma","number":0,"position":"GK","age":21.5,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5039_67217491","uid":67217491,"name":"Andrei Raţiu","number":0,"position":"GK","age":27,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p66228_62142830","uid":62142830,"name":"Vanja Milinkovic-Savic","number":0,"position":"GK","age":28,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37584_92065436","uid":92065436,"name":"Tim Kleindienst","number":0,"position":"GK","age":30,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p42311_37055844","uid":37055844,"name":"Donyell Malen","number":0,"position":"GK","age":26,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37104_37052470","uid":37052470,"name":"Noussair Mazraoui","number":0,"position":"GK","age":27,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p60708_2000261214","uid":2000261214,"name":"Trey Nyoni","number":0,"position":"GK","age":20,"releaseClause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p14232_55070285","uid":55070285,"name":"Joao Palhinha","number":0,"position":"GK","age":30,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37822_2000402904","uid":2000402904,"name":"Jan Virgili","number":0,"position":"GK","age":21,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p61098_2000336209","uid":2000336209,"name":"Alessandro Longoni","number":0,"position":"GK","age":19,"releaseClause":86,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p67528_2000368894","uid":2000368894,"name":"Jesse Bisiwu","number":0,"position":"GK","age":19,"releaseClause":95,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53938_2000388083","uid":2000388083,"name":"Kyllian Antonio","number":0,"position":"GK","age":19,"releaseClause":102,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p79666_2000449220","uid":2000449220,"name":"August De Wannemacker","number":0,"position":"GK","age":18,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p82541_2000497719","uid":2000497719,"name":"Adil Hamdani","number":0,"position":"GK","age":17.5,"releaseClause":88,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Aberdeen":[{"id":"p33298_27160181","uid":27160181,"name":"Rasmus Hojlund","number":0,"position":"GK","age":24,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p91386_28121564","uid":28121564,"name":"Mason Greenwood","number":0,"position":"GK","age":25,"releaseClause":167,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37189_95079228","uid":95079228,"name":"Alex Scott","number":0,"position":"GK","age":23,"releaseClause":164,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p95349_37071197","uid":37071197,"name":"Ryan Gravenberch","number":0,"position":"GK","age":25,"releaseClause":169,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p80978_49041157","uid":49041157,"name":"Melvin Bard","number":0,"position":"GK","age":25,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p55667_2000283274","uid":2000283274,"name":"Myles Lewis-Skelly","number":0,"position":"GK","age":20,"releaseClause":169,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p96231_16337073","uid":16337073,"name":"Samson Baidoo","number":0,"position":"GK","age":23,"releaseClause":159,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p38947_37065620","uid":37065620,"name":"Brian Brobbey","number":0,"position":"GK","age":25,"releaseClause":137,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p2906_2000256110","uid":2000256110,"name":"Shea Lacey","number":0,"position":"GK","age":20,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p61475_2000379552","uid":2000379552,"name":"Shim Mheuka","number":0,"position":"GK","age":19,"releaseClause":108,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p83378_2000288426","uid":2000288426,"name":"Tiago Gabriel","number":0,"position":"GK","age":22,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p87626_2000397286","uid":2000397286,"name":"Arsene kouassi","number":0,"position":"GK","age":22,"releaseClause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p21372_2000126470","uid":2000126470,"name":"Víctor Muñoz","number":0,"position":"GK","age":23,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p62345_36141838","uid":36141838,"name":"Giorgos Vagiannidis","number":0,"position":"GK","age":25,"releaseClause":127,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p11541_92079338","uid":92079338,"name":"Ridle Baku","number":0,"position":"GK","age":27,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p28558_16191724","uid":16191724,"name":"nicolas seiwald","number":0,"position":"GK","age":25,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p82351_27148020","uid":27148020,"name":"Mohamed Daramy","number":0,"position":"GK","age":25,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p95446_2000102877","uid":2000102877,"name":"Mike Penders","number":0,"position":"GK","age":22,"releaseClause":129,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p42066_2000070509","uid":2000070509,"name":"Tjark Ernst","number":0,"position":"GK","age":24,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p81393_2000288856","uid":2000288856,"name":"Axel Tape","number":0,"position":"GK","age":19,"releaseClause":118,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p63667_2000330067","uid":2000330067,"name":"Gaoussou Diakité","number":0,"position":"GK","age":21,"releaseClause":118,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19949_2000339863","uid":2000339863,"name":"Caleb Yirenkyi","number":0,"position":"GK","age":21,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p65845_2000241471","uid":2000241471,"name":"Juan Arizala","number":0,"position":"GK","age":20.5,"releaseClause":119,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p38400_2000381116","uid":2000381116,"name":"Christ Inao Oulaï","number":0,"position":"GK","age":20.5,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p15686_2000254841","uid":2000254841,"name":"Cristian Orozco","number":0,"position":"GK","age":18,"releaseClause":83,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p18652_2000223178","uid":2000223178,"name":"Emanuele Rao","number":0,"position":"GK","age":20,"releaseClause":96,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p90352_2000455095","uid":2000455095,"name":"Xander Dierckx","number":0,"position":"GK","age":16.5,"releaseClause":75,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p58653_2000373378","uid":2000373378,"name":"Adem Avdić","number":0,"position":"GK","age":17.5,"releaseClause":94,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Ajax":[{"id":"p17166_2000105654","uid":2000105654,"name":"Jorrel Hato","number":0,"position":"GK","age":21,"releaseClause":180,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5643_71101331","uid":71101331,"name":"Mykhaylo Mudryk","number":0,"position":"GK","age":25,"releaseClause":159,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p52340_55041623","uid":55041623,"name":"Joao Cancelo","number":0,"position":"GK","age":31,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p47070_12095038","uid":12095038,"name":"Malick Yalcouyé","number":0,"position":"GK","age":21,"releaseClause":122,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48738_18083611","uid":18083611,"name":"Dodi Lukébakio","number":0,"position":"GK","age":27,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92002_18101745","uid":18101745,"name":"Lois Openda","number":0,"position":"GK","age":25,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p78547_29115800","uid":29115800,"name":"Joe Gomez","number":0,"position":"GK","age":28,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p94283_37055842","uid":37055842,"name":"Noa Lang","number":0,"position":"GK","age":26,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p72065_48037391","uid":48037391,"name":"Matteo Guendouzi","number":0,"position":"GK","age":26,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p14161_48042432","uid":48042432,"name":"Timothy Weah","number":0,"position":"GK","age":25,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37441_72044918","uid":72044918,"name":"Tyler Adams","number":0,"position":"GK","age":26,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p99846_83152910","uid":83152910,"name":"Galeno","number":0,"position":"GK","age":27,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p21124_96085886","uid":96085886,"name":"Kamil Grabara","number":0,"position":"GK","age":26,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p95220_2000107424","uid":2000107424,"name":"Roger Fernandes","number":0,"position":"GK","age":21,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p15860_2000162595","uid":2000162595,"name":"Max Weiss","number":0,"position":"GK","age":23,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p73914_2000162930","uid":2000162930,"name":"Petar Sucic","number":0,"position":"GK","age":23,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p17895_2000241002","uid":2000241002,"name":"Niccolò Fortini","number":0,"position":"GK","age":21,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p28781_91151156","uid":91151156,"name":"Vangelis Pavlidis","number":0,"position":"GK","age":26,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p85236_85045409","uid":85045409,"name":"Raphael Guerreiro","number":0,"position":"GK","age":31,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p73922_2000165624","uid":2000165624,"name":"Zachary Athekame","number":0,"position":"GK","age":22,"releaseClause":121,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p18369_2000127926","uid":2000127926,"name":"Thierno Barry","number":0,"position":"GK","age":24,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p62266_2000400123","uid":2000400123,"name":"Honest Ahanor","number":0,"position":"GK","age":19,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p32591_83282675","uid":83282675,"name":"Alexsandro Ribeiro","number":0,"position":"GK","age":25,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p78585_2000287960","uid":2000287960,"name":"Joane Gadou","number":0,"position":"GK","age":20,"releaseClause":131,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p8032_2000378873","uid":2000378873,"name":"Modou Kéba Cissé","number":0,"position":"GK","age":21,"releaseClause":109,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p18511_2000441701","uid":2000441701,"name":"Prince Amoako","number":0,"position":"GK","age":20,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20027_2000464287","uid":2000464287,"name":"Abubacarr Sedi Kinteh","number":0,"position":"GK","age":20,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p47378_2000220860","uid":2000220860,"name":"Matviy Ponomarenko","number":0,"position":"GK","age":20,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p78545_2000426362","uid":2000426362,"name":"Samba Coulibaly","number":0,"position":"GK","age":18,"releaseClause":72,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p89006_2000288511","uid":2000288511,"name":"Ronan Kpakio","number":0,"position":"GK","age":18.5,"releaseClause":109,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"A. Madrid":[{"id":"p89498_14183207","uid":14183207,"name":"Julián Alvarez","number":0,"position":"GK","age":25,"releaseClause":172,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p68705_37047745","uid":37047745,"name":"Frenkie de Jong","number":0,"position":"GK","age":28,"releaseClause":165,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p16821_37071126","uid":37071126,"name":"Tijjani Reijnders","number":0,"position":"GK","age":27,"releaseClause":158,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p66787_49056279","uid":49056279,"name":"Rayan Cherki","number":0,"position":"GK","age":23,"releaseClause":174,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p25796_83169226","uid":83169226,"name":"Diogo Costa","number":0,"position":"GK","age":25,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p72935_37076335","uid":37076335,"name":"Jan Paul van Hecke","number":0,"position":"GK","age":25,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p34442_43424738","uid":43424738,"name":"Riccardo Calafiori","number":0,"position":"GK","age":25,"releaseClause":169,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p83057_37060922","uid":37060922,"name":"Joshua Zirkzee","number":0,"position":"GK","age":25,"releaseClause":154,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p39596_29128536","uid":29128536,"name":"Ben Chilwell","number":0,"position":"GK","age":28,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p33330_37050136","uid":37050136,"name":"Bijlow","number":0,"position":"GK","age":27,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p80796_37060952","uid":37060952,"name":"Quinten Timber","number":0,"position":"GK","age":25,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p29898_37064720","uid":37064720,"name":"Lutsharel Geertruida","number":0,"position":"GK","age":25,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19982_37073313","uid":37073313,"name":"Devyne Rensch","number":0,"position":"GK","age":24,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p64618_2000138305","uid":2000138305,"name":"Nobel Mendy","number":0,"position":"GK","age":22,"releaseClause":131,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p66172_2000144508","uid":2000144508,"name":"Ezechiel Banzuzi","number":0,"position":"GK","age":22,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p90013_78085068","uid":78085068,"name":"Ronald Araujo","number":0,"position":"GK","age":26,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p4756_37055841","uid":37055841,"name":"Justin Kluivert","number":0,"position":"GK","age":26,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p49351_2000017415","uid":2000017415,"name":"Alessandro Circati","number":0,"position":"GK","age":23,"releaseClause":131,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p95613_2000402688","uid":2000402688,"name":"Dro","number":0,"position":"GK","age":19,"releaseClause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p35480_2000184619","uid":2000184619,"name":"Tyrique George","number":0,"position":"GK","age":21,"releaseClause":116,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p72581_2000158496","uid":2000158496,"name":"Jonathan Jesus","number":0,"position":"GK","age":21.5,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p82656_37071145","uid":37071145,"name":"Mats Wieffer","number":0,"position":"GK","age":25,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53374_2000257577","uid":2000257577,"name":"Ayodele Thomas","number":0,"position":"GK","age":20,"releaseClause":106,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p23019_2000310111","uid":2000310111,"name":"Giacomo Koloto","number":0,"position":"GK","age":19,"releaseClause":97,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5421_2000378966","uid":2000378966,"name":"Wendeson Dell","number":0,"position":"GK","age":19,"releaseClause":95,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p1311_2000443913","uid":2000443913,"name":"Zé Lucas","number":0,"position":"GK","age":19,"releaseClause":117,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p23624_2000460060","uid":2000460060,"name":"Angelo Candido","number":0,"position":"GK","age":18,"releaseClause":77,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p49865_2000389904","uid":2000389904,"name":"Tynan Thompson","number":0,"position":"GK","age":18.5,"releaseClause":81,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p36437_2000269819","uid":2000269819,"name":"mathys detourbet","number":0,"position":"GK","age":19.5,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p64731_2000205837","uid":2000205837,"name":"Matteo Lavelli","number":0,"position":"GK","age":19,"releaseClause":88,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Atalanta":[{"id":"p80505_98028755","uid":98028755,"name":"Mohamed Salah","number":0,"position":"GK","age":33,"releaseClause":181,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p33880_2000202295","uid":2000202295,"name":"Victor Froholdt","number":0,"position":"GK","age":21,"releaseClause":154,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p86850_67216396","uid":67216396,"name":"Fabián","number":0,"position":"GK","age":29,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48743_39060464","uid":39060464,"name":"Hákon Arnar Haraldsson","number":0,"position":"GK","age":24,"releaseClause":157,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p94370_93070271","uid":93070271,"name":"Viktor Gyokeres","number":0,"position":"GK","age":27,"releaseClause":153,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p55153_19351985","uid":19351985,"name":"Natan","number":0,"position":"GK","age":25,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p24935_83169817","uid":83169817,"name":"Florentino Luís","number":0,"position":"GK","age":25,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p72082_95080787","uid":95080787,"name":"Kialonda Gaspar","number":0,"position":"GK","age":27,"releaseClause":133,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p91955_2000012523","uid":2000012523,"name":"Vinicius Augusto Tobias da Silva","number":0,"position":"GK","age":23,"releaseClause":128,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48696_2000039995","uid":2000039995,"name":"Antonín Kinsky","number":0,"position":"GK","age":24,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37133_2000146948","uid":2000146948,"name":"Tom Rothe","number":0,"position":"GK","age":22,"releaseClause":137,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p61750_2000351877","uid":2000351877,"name":"Guille Fernández","number":0,"position":"GK","age":19,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p63222_27066387","uid":27066387,"name":"Andreas Christensen","number":0,"position":"GK","age":29,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p8189_85120944","uid":85120944,"name":"Benjamin Pavard","number":0,"position":"GK","age":29,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p56449_85140175","uid":85140175,"name":"Yoane Wissa","number":0,"position":"GK","age":28,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53652_43108998","uid":43108998,"name":"Andrea Compagno","number":0,"position":"GK","age":29,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p52666_76047347","uid":76047347,"name":"Sinisterra","number":0,"position":"GK","age":26,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p70036_91177332","uid":91177332,"name":"Jeff Chabot","number":0,"position":"GK","age":27,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p44594_28109599","uid":28109599,"name":"Emile Smith Rowe","number":0,"position":"GK","age":25,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p29953_85104424","uid":85104424,"name":"Kingsley Coman","number":0,"position":"GK","age":29,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p72027_19030933","uid":19030933,"name":"Neto","number":0,"position":"GK","age":36,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p1068_2000183396","uid":2000183396,"name":"Ollie scarles","number":0,"position":"GK","age":20.5,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p43566_2000186151","uid":2000186151,"name":"Alex Tóth","number":0,"position":"GK","age":20.5,"releaseClause":116,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p83344_2000416938","uid":2000416938,"name":"alex marchal","number":0,"position":"GK","age":18.5,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20528_2000332522","uid":2000332522,"name":"Florian Hellstern","number":0,"position":"GK","age":18.5,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p57419_2000529228","uid":2000529228,"name":"Marco Company","number":0,"position":"GK","age":16.5,"releaseClause":84,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p9548_2000275655","uid":2000275655,"name":"Adetokunbo Adewale Ayomide Oyekunle","number":0,"position":"GK","age":18.5,"releaseClause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p99157_2000301241","uid":2000301241,"name":"Mathys Angély","number":0,"position":"GK","age":18.5,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p87262_2000221745","uid":2000221745,"name":"Loun Srdanovic","number":0,"position":"GK","age":18.5,"releaseClause":107,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p13960_2000150158","uid":2000150158,"name":"Jonathan Asp Jensen","number":0,"position":"GK","age":19.5,"releaseClause":117,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Barcelona":[{"id":"p7491_28124579","uid":28124579,"name":"Jamal Musiala","number":0,"position":"GK","age":24,"releaseClause":185,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p69025_43143488","uid":43143488,"name":"Federico Dimarco","number":0,"position":"GK","age":27,"releaseClause":162,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p27069_48036304","uid":48036304,"name":"Jules Koundé","number":0,"position":"GK","age":26,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p93771_67276230","uid":67276230,"name":"Nico Williams","number":0,"position":"GK","age":24,"releaseClause":171,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p35476_2000103330","uid":2000103330,"name":"Can Uzun","number":0,"position":"GK","age":21,"releaseClause":168,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p38666_2000193961","uid":2000193961,"name":"Ibrahim Maza","number":0,"position":"GK","age":21,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p94989_2000126534","uid":2000126534,"name":"Rodrigo Mendoza","number":0,"position":"GK","age":22,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p63132_2000030816","uid":2000030816,"name":"Cristhian Mosquera","number":0,"position":"GK","age":23,"releaseClause":169,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p34457_83188780","uid":83188780,"name":"Matheus Nunes","number":0,"position":"GK","age":26,"releaseClause":157,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p54448_16337326","uid":16337326,"name":"tarik muharemovic","number":0,"position":"GK","age":24,"releaseClause":131,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p60947_67011248","uid":67011248,"name":"David Soria","number":0,"position":"GK","age":32,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p55680_78060464","uid":78060464,"name":"José Giménez","number":0,"position":"GK","age":30,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p65480_2000090622","uid":2000090622,"name":"Santiago Mouriño","number":0,"position":"GK","age":25,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p38352_2000094152","uid":2000094152,"name":"Claudio Echeverri","number":0,"position":"GK","age":21,"releaseClause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48109_2000299722","uid":2000299722,"name":"Carlos Espi","number":0,"position":"GK","age":21,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p74264_2000333549","uid":2000333549,"name":"Luca Reggiani","number":0,"position":"GK","age":18,"releaseClause":98,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p55959_2000086175","uid":2000086175,"name":"Kaiki Bruno da Silva","number":0,"position":"GK","age":23.5,"releaseClause":128,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p79922_91157307","uid":91157307,"name":"Deniz Undav","number":0,"position":"GK","age":29,"releaseClause":154,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p76895_55070307","uid":55070307,"name":"Rúben Neves","number":0,"position":"GK","age":28,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6936_16184707","uid":16184707,"name":"Christoph Baumgartner","number":0,"position":"GK","age":25,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92728_2000273847","uid":2000273847,"name":"Charalabos Kostoulas","number":0,"position":"GK","age":20,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p75902_2000379943","uid":2000379943,"name":"Matias Siltanen","number":0,"position":"GK","age":20,"releaseClause":113,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p18062_43140326","uid":43140326,"name":"Alex Meret","number":0,"position":"GK","age":28,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p50436_18105815","uid":18105815,"name":"Arthur Theate","number":0,"position":"GK","age":25,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p50165_2000338374","uid":2000338374,"name":"Samuele Inácio","number":0,"position":"GK","age":19,"releaseClause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p38405_2000365946","uid":2000365946,"name":"Raul Kumar","number":0,"position":"GK","age":19,"releaseClause":99,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p59320_2000407494","uid":2000407494,"name":"Mateus Mide","number":0,"position":"GK","age":18.5,"releaseClause":92,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p98154_2000258576","uid":2000258576,"name":"Montrell Amare Culbreath","number":0,"position":"GK","age":18.5,"releaseClause":102,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p88531_2000524865","uid":2000524865,"name":"Mor Talla Ndiaye","number":0,"position":"GK","age":18,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p56090_2000480666","uid":2000480666,"name":"Kauê Furquim","number":0,"position":"GK","age":17,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19954_2000476257","uid":2000476257,"name":"Ibrahim Rabbaj","number":0,"position":"GK","age":17,"releaseClause":80,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p94921_2000408022","uid":2000408022,"name":"Malcom Dacosta","number":0,"position":"GK","age":17.5,"releaseClause":60,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5218_2000426366","uid":2000426366,"name":"Aymen Assab","number":0,"position":"GK","age":17.5,"releaseClause":75,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p40918_2000389019","uid":2000389019,"name":"Alexis Ciria","number":0,"position":"GK","age":18.5,"releaseClause":94,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"La Coruna":[{"id":"p17736_2000120742","uid":2000120742,"name":"Evan Ferguson","number":0,"position":"GK","age":22,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p56097_735216","uid":735216,"name":"Cristiano Ronaldo","number":0,"position":"GK","age":40,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p52404_16199713","uid":16199713,"name":"Igor","number":0,"position":"GK","age":27,"releaseClause":139,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p98747_24025298","uid":24025298,"name":"Dominik Livakovic","number":0,"position":"GK","age":30,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p61265_28112993","uid":28112993,"name":"Tariq Lamptey","number":0,"position":"GK","age":25,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p51046_29036189","uid":29036189,"name":"Lewis Dunk","number":0,"position":"GK","age":33,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p97412_52101143","uid":52101143,"name":"Andrew Moran","number":0,"position":"GK","age":23,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p23094_2000036372","uid":2000036372,"name":"Diego Gómez","number":0,"position":"GK","age":24,"releaseClause":137,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p68249_2000056845","uid":2000056845,"name":"James Beadle","number":0,"position":"GK","age":22,"releaseClause":117,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19140_2000124287","uid":2000124287,"name":"Jack Hinshelwood","number":0,"position":"GK","age":22,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p40671_2000227373","uid":2000227373,"name":"Stefanos Tzimas","number":0,"position":"GK","age":21,"releaseClause":137,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p38426_18110473","uid":18110473,"name":"Maxim De Cuyper","number":0,"position":"GK","age":25,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20819_13182752","uid":13182752,"name":"Chidera Ejuke","number":0,"position":"GK","age":27,"releaseClause":137,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6554_37060600","uid":37060600,"name":"Ferdi Kadioglu","number":0,"position":"GK","age":25,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p83799_2000277534","uid":2000277534,"name":"Abdoul Koné","number":0,"position":"GK","age":21,"releaseClause":108,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p35308_2000025485","uid":2000025485,"name":"Habib Diarra","number":0,"position":"GK","age":23,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p76856_28115798","uid":28115798,"name":"Oluwafisayo Faruq Dele-Bashiru","number":0,"position":"GK","age":25,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p29546_2000202298","uid":2000202298,"name":"Amin Chiakha","number":0,"position":"GK","age":21,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p77609_96088106","uid":96088106,"name":"Przemysław Płacheta","number":0,"position":"GK","age":27,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p54721_2000208868","uid":2000208868,"name":"Jonathan De Irastorza","number":0,"position":"GK","age":21,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p68002_2000218213","uid":2000218213,"name":"Taylan Bulut","number":0,"position":"GK","age":21,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p36469_85085378","uid":85085378,"name":"Aymeric Laporte","number":0,"position":"GK","age":31,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p89640_49041006","uid":49041006,"name":"Evann Guessand","number":0,"position":"GK","age":25,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p16819_67231100","uid":67231100,"name":"Jorge de Frutos","number":0,"position":"GK","age":28,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p9926_29061164","uid":29061164,"name":"Dan Burn","number":0,"position":"GK","age":33,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p83697_2000216807","uid":2000216807,"name":"Mason Melia","number":0,"position":"GK","age":19,"releaseClause":96,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p17051_2000521120","uid":2000521120,"name":"Edwin Josué Quintero Preciado","number":0,"position":"GK","age":16,"releaseClause":94,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p22528_2000521121","uid":2000521121,"name":"Holger Jamil Quintero Preciado","number":0,"position":"GK","age":16,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p63393_2000497883","uid":2000497883,"name":"Hugo Fernández Muret","number":0,"position":"GK","age":18,"releaseClause":70,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p7823_2000460892","uid":2000460892,"name":"Akol Akon","number":0,"position":"GK","age":17,"releaseClause":76,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92478_2000299363","uid":2000299363,"name":"Daniel Yáñez Barla","number":0,"position":"GK","age":19,"releaseClause":97,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5912_2000447804","uid":2000447804,"name":"Giovanni Emir Baroni","number":0,"position":"GK","age":17,"releaseClause":106,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p68917_2000529221","uid":2000529221,"name":"Leo Lemaitre Lezcano","number":0,"position":"GK","age":17,"releaseClause":83,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p97226_2000276593","uid":2000276593,"name":"Samuel Amissah","number":0,"position":"GK","age":19,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p71174_2000384299","uid":2000384299,"name":"José Antonio Morante Antúnez","number":0,"position":"GK","age":19,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Everton":[{"id":"p15596_67293495","uid":67293495,"name":"Pedri","number":0,"position":"GK","age":24,"releaseClause":185,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p99735_83174762","uid":83174762,"name":"Vitinha","number":0,"position":"GK","age":25,"releaseClause":177,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p59531_67103537","uid":67103537,"name":"Isco","number":0,"position":"GK","age":33,"releaseClause":158,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p70949_28108033","uid":28108033,"name":"Marc Guéhi","number":0,"position":"GK","age":25,"releaseClause":165,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p98316_24048100","uid":24048100,"name":"Dani Olmo","number":0,"position":"GK","age":27,"releaseClause":161,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20635_89056845","uid":89056845,"name":"Ferran Torres","number":0,"position":"GK","age":25,"releaseClause":159,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p90631_67220143","uid":67220143,"name":"Mikel Oyarzábal","number":0,"position":"GK","age":28,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92902_63013145","uid":63013145,"name":"Milan Škriniar","number":0,"position":"GK","age":30,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p73750_19371902","uid":19371902,"name":"Danilo","number":0,"position":"GK","age":25,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p16505_28005568","uid":28005568,"name":"Jordan Henderson","number":0,"position":"GK","age":35,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p22904_29179807","uid":29179807,"name":"Jayden Bogle","number":0,"position":"GK","age":25,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p82793_67153373","uid":67153373,"name":"Alex Moreno","number":0,"position":"GK","age":32,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20910_67245413","uid":67245413,"name":"Oscar Mingueza","number":0,"position":"GK","age":26,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p95380_79027217","uid":79027217,"name":"Omar Alderete","number":0,"position":"GK","age":28,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p63078_83320135","uid":83320135,"name":"António Silva","number":0,"position":"GK","age":23,"releaseClause":154,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p69206_2000160584","uid":2000160584,"name":"Santiago Hidalgo","number":0,"position":"GK","age":22,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p22587_2000190312","uid":2000190312,"name":"Ethan Williams","number":0,"position":"GK","age":21,"releaseClause":107,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5630_8826969","uid":8826969,"name":"Keylor Navas","number":0,"position":"GK","age":38,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p91314_61043456","uid":61043456,"name":"Andrew Robertson","number":0,"position":"GK","age":31,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p25485_2000263566","uid":2000263566,"name":"Ryan Francisco","number":0,"position":"GK","age":20,"releaseClause":126,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p31177_67104772","uid":67104772,"name":"Íñigo Martínez","number":0,"position":"GK","age":34,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p63610_83174759","uid":83174759,"name":"Fábio Vieira","number":0,"position":"GK","age":25,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p64981_28067800","uid":28067800,"name":"Jack Grealish","number":0,"position":"GK","age":29,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p24529_67277830","uid":67277830,"name":"Julen Agirrezabala","number":0,"position":"GK","age":25,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p24869_2000375648","uid":2000375648,"name":"Wisdom Okpako Mike","number":0,"position":"GK","age":17,"releaseClause":111,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p98125_2000273902","uid":2000273902,"name":"André Luiz Santos Dias","number":0,"position":"GK","age":20,"releaseClause":117,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Fiorentina":[{"id":"p674_62246208","uid":62246208,"name":"Benjamin Sesko","number":0,"position":"GK","age":24,"releaseClause":170,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p30492_91182849","uid":91182849,"name":"Lazar Samardzic","number":0,"position":"GK","age":25,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p79512_43390774","uid":43390774,"name":"Samuele Ricci","number":0,"position":"GK","age":25,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20421_13194021","uid":13194021,"name":"Cheick Doucouré","number":0,"position":"GK","age":25,"releaseClause":139,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p99141_18097159","uid":18097159,"name":"Alexis Saelemaekers","number":0,"position":"GK","age":26,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p63086_28094949","uid":28094949,"name":"Harry Wilson","number":0,"position":"GK","age":28,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p13510_49040115","uid":49040115,"name":"Illan Meslier","number":0,"position":"GK","age":25,"releaseClause":124,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p17678_53110469","uid":53110469,"name":"Brice Wembangomo","number":0,"position":"GK","age":28,"releaseClause":114,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p35737_61098180","uid":61098180,"name":"Calvin Ramsay","number":0,"position":"GK","age":24,"releaseClause":113,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p10805_67271025","uid":67271025,"name":"Adrián Bernabé","number":0,"position":"GK","age":25,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p70370_70118933","uid":70118933,"name":"Cenk Ozkacar","number":0,"position":"GK","age":25,"releaseClause":122,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p47271_83111338","uid":83111338,"name":"Gedson Fernandes","number":0,"position":"GK","age":26,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p12812_83169004","uid":83169004,"name":"Zaidu Sanusi","number":0,"position":"GK","age":28,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p67605_85051083","uid":85051083,"name":"Kalidou Koulibaly","number":0,"position":"GK","age":34,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p7392_85145148","uid":85145148,"name":"Jonathan Ikoné","number":0,"position":"GK","age":27,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37765_86066843","uid":86066843,"name":"Moisés Ramírez","number":0,"position":"GK","age":25,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p69637_92051583","uid":92051583,"name":"Timo Werner","number":0,"position":"GK","age":29,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p17432_92102718","uid":92102718,"name":"Armel Bella-Kotchap","number":0,"position":"GK","age":25,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p45100_2000080496","uid":2000080496,"name":"Garang Kuol","number":0,"position":"GK","age":22,"releaseClause":116,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p13915_2000109338","uid":2000109338,"name":"Deniz Gül","number":0,"position":"GK","age":23,"releaseClause":126,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p58932_2000153847","uid":2000153847,"name":"Sani Suleiman","number":0,"position":"GK","age":20,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p742_2000177913","uid":2000177913,"name":"Shaqueel van Persie","number":0,"position":"GK","age":20,"releaseClause":112,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p43279_2000258809","uid":2000258809,"name":"Rafael Pinto Pedrosa","number":0,"position":"GK","age":19,"releaseClause":106,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p79790_2000259382","uid":2000259382,"name":"Luca Erlein","number":0,"position":"GK","age":20,"releaseClause":106,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p22598_2000263996","uid":2000263996,"name":"Riquelme Fillipi","number":0,"position":"GK","age":20,"releaseClause":97,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p21858_2000332528","uid":2000332528,"name":"Mirza Ćatović","number":0,"position":"GK","age":20,"releaseClause":107,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Frankfurt":[{"id":"p71998_29221846","uid":29221846,"name":"Michael Olise","number":0,"position":"GK","age":25,"releaseClause":185,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53174_2000032706","uid":2000032706,"name":"Alvaro Carreras","number":0,"position":"GK","age":24,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p72963_91208050","uid":91208050,"name":"Kevin Schade","number":0,"position":"GK","age":25,"releaseClause":159,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p62123_28054565","uid":28054565,"name":"Jordan Pickford","number":0,"position":"GK","age":31,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p15044_98003821","uid":98003821,"name":"Granit Xhaka","number":0,"position":"GK","age":32,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p27824_67288555","uid":67288555,"name":"Xavi Simons","number":0,"position":"GK","age":24,"releaseClause":170,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92154_2000019708","uid":2000019708,"name":"Hugo Larsson","number":0,"position":"GK","age":23,"releaseClause":158,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p87613_45095577","uid":45095577,"name":"Ritsu Doan","number":0,"position":"GK","age":27,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p50737_84161623","uid":84161623,"name":"Aurèle Amenda","number":0,"position":"GK","age":24,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p39699_96102946","uid":96102946,"name":"Jakub Kiwior","number":0,"position":"GK","age":25,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p78696_2000045854","uid":2000045854,"name":"Nnamdi Collins","number":0,"position":"GK","age":23,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p97855_2000052135","uid":2000052135,"name":"Abdallah Sima","number":0,"position":"GK","age":25,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92484_2000065824","uid":2000065824,"name":"Mio Backhaus","number":0,"position":"GK","age":23,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p13787_2000068585","uid":2000068585,"name":"Nathaniel Brown","number":0,"position":"GK","age":24,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20381_2000096364","uid":2000096364,"name":"Joaquin Panichelli","number":0,"position":"GK","age":24,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p22632_2000178777","uid":2000178777,"name":"Kosta Nedeljkovic","number":0,"position":"GK","age":21,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p69812_2000307251","uid":2000307251,"name":"Konstantinos Karetsas","number":0,"position":"GK","age":19,"releaseClause":118,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p1290_2000385891","uid":2000385891,"name":"Alejandro Gomes Rodríguez","number":0,"position":"GK","age":19,"releaseClause":104,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p33848_2000097929","uid":2000097929,"name":"Niccolò Pisilli","number":0,"position":"GK","age":22,"releaseClause":139,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p33063_2000186695","uid":2000186695,"name":"Jan Ziółkowski","number":0,"position":"GK","age":22,"releaseClause":121,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p44182_2000102803","uid":2000102803,"name":"Ayoube Amaimouni-Echghouyab","number":0,"position":"GK","age":21.5,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20814_19404391","uid":19404391,"name":"alisson santos","number":0,"position":"GK","age":23,"releaseClause":128,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p62242_2000212746","uid":2000212746,"name":"Samir El Mourabet","number":0,"position":"GK","age":20,"releaseClause":122,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5916_2000205299","uid":2000205299,"name":"Rayan Fofana","number":0,"position":"GK","age":21,"releaseClause":114,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p66300_2000269260","uid":2000269260,"name":"Matteo Cocchi","number":0,"position":"GK","age":20,"releaseClause":104,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p50519_2000289214","uid":2000289214,"name":"Joël-Emmanuel Coulibaly","number":0,"position":"GK","age":20,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p40874_2000267399","uid":2000267399,"name":"Bendegúz Kovács","number":0,"position":"GK","age":19,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48879_2000180832","uid":2000180832,"name":"Elias Baum","number":0,"position":"GK","age":20,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p75380_2000380590","uid":2000380590,"name":"Wesley Okoduwa","number":0,"position":"GK","age":17.5,"releaseClause":87,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p81162_2000258482","uid":2000258482,"name":"Tom Atcheson","number":0,"position":"GK","age":18.5,"releaseClause":103,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p65130_2000490707","uid":2000490707,"name":"Lyan Araújo","number":0,"position":"GK","age":16.5,"releaseClause":80,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53593_2000347399","uid":2000347399,"name":"Keita Kosugi","number":0,"position":"GK","age":19.5,"releaseClause":114,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Flamengo":[{"id":"p65248_2000263999","uid":2000263999,"name":"Estêvao","number":0,"position":"GK","age":20,"releaseClause":200,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p85561_2000296497","uid":2000296497,"name":"Pau Cubarsí","number":0,"position":"GK","age":20,"releaseClause":171,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p66359_67277675","uid":67277675,"name":"Joan García","number":0,"position":"GK","age":25,"releaseClause":168,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p28174_2000049413","uid":2000049413,"name":"Gavi","number":0,"position":"GK","age":22,"releaseClause":170,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p64080_2000141742","uid":2000141742,"name":"Fermín","number":0,"position":"GK","age":24,"releaseClause":170,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p45503_76049803","uid":76049803,"name":"Luis Díaz","number":0,"position":"GK","age":28,"releaseClause":168,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53498_71113679","uid":71113679,"name":"Illia Zabarnyi","number":0,"position":"GK","age":24,"releaseClause":164,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p96971_2000058198","uid":2000058198,"name":"Marc Casadó","number":0,"position":"GK","age":23,"releaseClause":157,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p78650_2000128974","uid":2000128974,"name":"Eliezer Mayenda","number":0,"position":"GK","age":22,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p59416_19258927","uid":19258927,"name":"Caio Henrique","number":0,"position":"GK","age":28,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53825_29156212","uid":29156212,"name":"Robert Sánchez","number":0,"position":"GK","age":27,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p95705_2000009057","uid":2000009057,"name":"Carlos Forbs","number":0,"position":"GK","age":23,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p71325_2000141707","uid":2000141707,"name":"Yarek Gasiorowski","number":0,"position":"GK","age":22,"releaseClause":129,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20250_2000123587","uid":2000123587,"name":"jeremy arevalo","number":0,"position":"GK","age":22,"releaseClause":118,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p2300_2000101061","uid":2000101061,"name":"Gerard Martín","number":0,"position":"GK","age":25,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p42465_2000351880","uid":2000351880,"name":"Toni Fernández","number":0,"position":"GK","age":19,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p21784_93085044","uid":93085044,"name":"Emil Holm","number":0,"position":"GK","age":25,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p75886_85140415","uid":85140415,"name":"Issa Diop","number":0,"position":"GK","age":28,"releaseClause":129,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p60055_2000149882","uid":2000149882,"name":"Ebenezer Akinsanmiro","number":0,"position":"GK","age":22,"releaseClause":122,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p12952_2000220048","uid":2000220048,"name":"Chema Andrés","number":0,"position":"GK","age":22,"releaseClause":137,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p33515_2000229718","uid":2000229718,"name":"Jon Martín","number":0,"position":"GK","age":21,"releaseClause":127,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p74852_28100239","uid":28100239,"name":"Tosin Adarabioyo","number":0,"position":"GK","age":27,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p65729_28095341","uid":28095341,"name":"Pablo Maffeo","number":0,"position":"GK","age":28,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p84953_28127875","uid":28127875,"name":"Carney Chukwuemeka","number":0,"position":"GK","age":23,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p44217_2000210786","uid":2000210786,"name":"Pablo García","number":0,"position":"GK","age":21,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p65940_2000298787","uid":2000298787,"name":"Xavi Espart","number":0,"position":"GK","age":20,"releaseClause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p71833_2000370427","uid":2000370427,"name":"Pedro Rodríguez","number":0,"position":"GK","age":19,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p28513_2000472427","uid":2000472427,"name":"Raúl Expósito","number":0,"position":"GK","age":18,"releaseClause":75,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20251_2000297470","uid":2000297470,"name":"Tomàs Marqués","number":0,"position":"GK","age":19.5,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p99245_2000402287","uid":2000402287,"name":"Hamza Abdelkarim","number":0,"position":"GK","age":18.5,"releaseClause":112,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p68123_2000475982","uid":2000475982,"name":"João Gabriel Castro Santos","number":0,"position":"GK","age":17.5,"releaseClause":83,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p69352_2000103231","uid":2000103231,"name":"Nikolaus Wurmbrand","number":0,"position":"GK","age":20.5,"releaseClause":116,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p89881_2000234010","uid":2000234010,"name":"Patricio Pacífico","number":0,"position":"GK","age":20,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p64270_2000399274","uid":2000399274,"name":"Ugo Lamare El Kadmiri","number":0,"position":"GK","age":18.5,"releaseClause":80,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Hertha BSC":[{"id":"p84066_2000274379","uid":2000274379,"name":"Geovany Quenda","number":0,"position":"GK","age":20,"releaseClause":177,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p27750_48030711","uid":48030711,"name":"André-Franck Zambo Anguissa","number":0,"position":"GK","age":29,"releaseClause":159,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p35390_2000381365","uid":2000381365,"name":"Ayyoub Bouaddi","number":0,"position":"GK","age":19,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37118_2000088490","uid":2000088490,"name":"Roony Bardghji","number":0,"position":"GK","age":21,"releaseClause":170,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p90790_12093353","uid":12093353,"name":"Karim Konaté","number":0,"position":"GK","age":23,"releaseClause":158,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p70200_2000101248","uid":2000101248,"name":"Marc Pubill","number":0,"position":"GK","age":24,"releaseClause":159,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92560_19342183","uid":19342183,"name":"Evanilson","number":0,"position":"GK","age":25,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p11592_43617061","uid":43617061,"name":"Nicolò Bertola","number":0,"position":"GK","age":24,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p21004_48032198","uid":48032198,"name":"Evan N'Dicka","number":0,"position":"GK","age":25,"releaseClause":154,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p15096_48034615","uid":48034615,"name":"Nordi Mukiele","number":0,"position":"GK","age":27,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20498_55070264","uid":55070264,"name":"Nuno Santos","number":0,"position":"GK","age":30,"releaseClause":137,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p8545_63029157","uid":63029157,"name":"Dominik Greif","number":0,"position":"GK","age":28,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p9306_76020280","uid":76020280,"name":"Johan Mojica","number":0,"position":"GK","age":32,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p49712_78064881","uid":78064881,"name":"Mauro Arambarri","number":0,"position":"GK","age":29,"releaseClause":153,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p70458_2000102845","uid":2000102845,"name":"Mika Godts","number":0,"position":"GK","age":22,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6288_2000113245","uid":2000113245,"name":"Jean-Mattéo Bahoya","number":0,"position":"GK","age":22,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p1316_2000129380","uid":2000129380,"name":"Darío Osorio","number":0,"position":"GK","age":23,"releaseClause":122,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p59258_2000158335","uid":2000158335,"name":"Matías Moreno","number":0,"position":"GK","age":23,"releaseClause":121,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p38948_2000166604","uid":2000166604,"name":"Alexander Freeman","number":0,"position":"GK","age":22,"releaseClause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p34984_2000257061","uid":2000257061,"name":"Oskar Spiten-Nysæter","number":0,"position":"GK","age":19,"releaseClause":109,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p43059_43500245","uid":43500245,"name":"Giovanni Fabbian","number":0,"position":"GK","age":24,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p68484_78090138","uid":78090138,"name":"Darwin Núnez","number":0,"position":"GK","age":26,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p47640_35017428","uid":35017428,"name":"Marc-André ter Stegen","number":0,"position":"GK","age":33,"releaseClause":153,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p68283_2000217846","uid":2000217846,"name":"César Palacios","number":0,"position":"GK","age":21,"releaseClause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p33616_2000269520","uid":2000269520,"name":"Aaron Bouwman","number":0,"position":"GK","age":19,"releaseClause":97,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p64988_2000279620","uid":2000279620,"name":"Souleymane Sidibé","number":0,"position":"GK","age":20,"releaseClause":95,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p97088_2000288837","uid":2000288837,"name":"Lazar Jovanovic","number":0,"position":"GK","age":20,"releaseClause":108,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p67056_2000299717","uid":2000299717,"name":"Diego Aguado Facio","number":0,"position":"GK","age":20,"releaseClause":103,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p83429_2000328963","uid":2000328963,"name":"Bogdan Popov","number":0,"position":"GK","age":20,"releaseClause":114,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p4067_2000352027","uid":2000352027,"name":"Òscar Gistau","number":0,"position":"GK","age":19,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p77928_2000412892","uid":2000412892,"name":"Lushendry Martes","number":0,"position":"GK","age":18,"releaseClause":95,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Inter":[{"id":"p85286_14110660","uid":14110660,"name":"Lautaro Martínez","number":0,"position":"GK","age":27,"releaseClause":170,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p43314_43139595","uid":43139595,"name":"Nicolò Barella","number":0,"position":"GK","age":28,"releaseClause":162,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p71066_43252460","uid":43252460,"name":"Alessandro Bastoni","number":0,"position":"GK","age":26,"releaseClause":162,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p46965_28115996","uid":28115996,"name":"Morgan Rogers","number":0,"position":"GK","age":25,"releaseClause":170,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p79819_28126241","uid":28126241,"name":"Oscar Bobb","number":0,"position":"GK","age":24,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p74764_55057659","uid":55057659,"name":"Ederson","number":0,"position":"GK","age":31,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37432_2000259904","uid":2000259904,"name":"Giovanni Leoni","number":0,"position":"GK","age":20,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p32973_19350649","uid":19350649,"name":"Carlos Augusto","number":0,"position":"GK","age":26,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p27433_43391659","uid":43391659,"name":"Elia Caprile","number":0,"position":"GK","age":25,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p16889_43617691","uid":43617691,"name":"Nicolò Savona","number":0,"position":"GK","age":24,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p94006_49037684","uid":49037684,"name":"Oumar Solet","number":0,"position":"GK","age":25,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p86409_67277845","uid":67277845,"name":"Borja Sainz","number":0,"position":"GK","age":25,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p79747_2000024341","uid":2000024341,"name":"Arthur Atta","number":0,"position":"GK","age":24,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p1199_2000082098","uid":2000082098,"name":"Alex Valle","number":0,"position":"GK","age":23,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p10277_2000136198","uid":2000136198,"name":"Marco Palestra","number":0,"position":"GK","age":22,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p41342_2000273835","uid":2000273835,"name":"Christos Mouzakitis","number":0,"position":"GK","age":20,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p24486_2000288835","uid":2000288835,"name":"Mihajlo Cvetkovic","number":0,"position":"GK","age":20,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48329_2000013430","uid":2000013430,"name":"Pablo Felipe","number":0,"position":"GK","age":23,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p68500_83320131","uid":83320131,"name":"Youssef Chermiti","number":0,"position":"GK","age":22,"releaseClause":124,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p27654_2000311773","uid":2000311773,"name":"Noahkai Banks","number":0,"position":"GK","age":20,"releaseClause":122,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p65495_2000363430","uid":2000363430,"name":"Juan Angulo","number":0,"position":"GK","age":18.5,"releaseClause":97,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p46665_2000191037","uid":2000191037,"name":"Chupe","number":0,"position":"GK","age":20.5,"releaseClause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p93544_91184426","uid":91184426,"name":"Angelo Stiller","number":0,"position":"GK","age":25,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p11267_2000438795","uid":2000438795,"name":"Saba Kharebashvili","number":0,"position":"GK","age":18,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p9002_2000330855","uid":2000330855,"name":"Kerim Alajbegovic","number":0,"position":"GK","age":19,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p87998_2000388194","uid":2000388194,"name":"Will Wright","number":0,"position":"GK","age":19,"releaseClause":79,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p93252_2000519166","uid":2000519166,"name":"Maycon Cardozo","number":0,"position":"GK","age":17.5,"releaseClause":95,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p22477_2000451481","uid":2000451481,"name":"Paul Mendy","number":0,"position":"GK","age":18.5,"releaseClause":71,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p78661_2000184216","uid":2000184216,"name":"Nicolò Tresoldi","number":0,"position":"GK","age":20.5,"releaseClause":127,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Juventus":[{"id":"p69121_29179241","uid":29179241,"name":"Erling Haaland","number":0,"position":"GK","age":25,"releaseClause":184,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6545_16279486","uid":16279486,"name":"Karim Adeyemi","number":0,"position":"GK","age":25,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p62009_28127166","uid":28127166,"name":"Conor Bradley","number":0,"position":"GK","age":24,"releaseClause":165,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p58358_67295650","uid":67295650,"name":"Yeremy Pino","number":0,"position":"GK","age":24,"releaseClause":165,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p78037_86075795","uid":86075795,"name":"Willian Pacho","number":0,"position":"GK","age":25,"releaseClause":171,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p77394_2000053239","uid":2000053239,"name":"Yaser Asprilla","number":0,"position":"GK","age":23,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p70937_67276122","uid":67276122,"name":"Ansu Fati","number":0,"position":"GK","age":24,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p47205_67276071","uid":67276071,"name":"Miguel Gutiérrez","number":0,"position":"GK","age":25,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p28914_28126242","uid":28126242,"name":"James Trafford","number":0,"position":"GK","age":24,"releaseClause":154,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p13944_43500510","uid":43500510,"name":"Fabio Miretti","number":0,"position":"GK","age":23,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p70621_67217522","uid":67217522,"name":"Pau Torres","number":0,"position":"GK","age":28,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p1449_76050675","uid":76050675,"name":"Daniel Muñoz","number":0,"position":"GK","age":29,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p7351_2000024428","uid":2000024428,"name":"Radek Vítek","number":0,"position":"GK","age":23,"releaseClause":127,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p11533_2000058381","uid":2000058381,"name":"Ngal'Ayel Mukau","number":0,"position":"GK","age":22,"releaseClause":131,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p26212_2000108398","uid":2000108398,"name":"Joaquin Seys","number":0,"position":"GK","age":22,"releaseClause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p73666_2000116383","uid":2000116383,"name":"Nathan Zeze","number":0,"position":"GK","age":22,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p8465_2000143029","uid":2000143029,"name":"Gonzalo","number":0,"position":"GK","age":23,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p58722_2000164358","uid":2000164358,"name":"Raphael Kofler","number":0,"position":"GK","age":22,"releaseClause":111,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p41211_2000045246","uid":2000045246,"name":"Ruben van Bommel","number":0,"position":"GK","age":22,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p91623_13196616","uid":13196616,"name":"Edmond Tapsoba","number":0,"position":"GK","age":26,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p11656_2000282595","uid":2000282595,"name":"Eivind Fauske Helland","number":0,"position":"GK","age":22,"releaseClause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19838_2000186389","uid":2000186389,"name":"Edvin Austbø","number":0,"position":"GK","age":22,"releaseClause":122,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p43859_2000239998","uid":2000239998,"name":"Keisuke Goto","number":0,"position":"GK","age":22,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p96960_2000098012","uid":2000098012,"name":"Aleksandar Stankovic","number":0,"position":"GK","age":21,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53130_2000291513","uid":2000291513,"name":"Antonio Cordero","number":0,"position":"GK","age":20,"releaseClause":127,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5310_2000176791","uid":2000176791,"name":"Billy van Duijl","number":0,"position":"GK","age":20,"releaseClause":116,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5571_2000181767","uid":2000181767,"name":"Mats Rots","number":0,"position":"GK","age":20,"releaseClause":117,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p716_2000403065","uid":2000403065,"name":"Pedro Villar","number":0,"position":"GK","age":18,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53362_2000386356","uid":2000386356,"name":"Adam Ayari","number":0,"position":"GK","age":18,"releaseClause":86,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p95603_2000314474","uid":2000314474,"name":"Tobias van den Elshout","number":0,"position":"GK","age":18.5,"releaseClause":88,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p17951_2000198858","uid":2000198858,"name":"Renato Marin","number":0,"position":"GK","age":18.5,"releaseClause":99,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Leicester":[{"id":"p29122_49056243","uid":49056243,"name":"Eduardo Camavinga","number":0,"position":"GK","age":24,"releaseClause":175,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6322_19306929","uid":19306929,"name":"Rodrygo","number":0,"position":"GK","age":25,"releaseClause":175,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p87877_98040383","uid":98040383,"name":"Gregor Kobel","number":0,"position":"GK","age":27,"releaseClause":162,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19183_2000123482","uid":2000123482,"name":"Murillo","number":0,"position":"GK","age":25,"releaseClause":162,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p61131_2000138516","uid":2000138516,"name":"Paul Wanner","number":0,"position":"GK","age":21,"releaseClause":164,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37151_2000166563","uid":2000166563,"name":"Carlos Baleba","number":0,"position":"GK","age":23,"releaseClause":158,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p43867_37055843","uid":37055843,"name":"Matthijs de Ligt","number":0,"position":"GK","age":25,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p24938_28113828","uid":28113828,"name":"Jeremie Frimpong","number":0,"position":"GK","age":25,"releaseClause":164,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p65036_25044451","uid":25044451,"name":"Tomás Chory","number":0,"position":"GK","age":30,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p21006_28115792","uid":28115792,"name":"Neco Williams","number":0,"position":"GK","age":25,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p42833_29175220","uid":29175220,"name":"Morgan Gibbs-White","number":0,"position":"GK","age":25,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p96714_43094150","uid":43094150,"name":"Ivan Provedel","number":0,"position":"GK","age":31,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p78206_43274977","uid":43274977,"name":"Moise Kean","number":0,"position":"GK","age":25,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p38558_48042717","uid":48042717,"name":"Ibrahim Sangaré","number":0,"position":"GK","age":27,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p13002_76023027","uid":76023027,"name":"Davinson Sánchez","number":0,"position":"GK","age":29,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p41981_91184445","uid":91184445,"name":"Josha Vagnoman","number":0,"position":"GK","age":25,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p67275_2000161829","uid":2000161829,"name":"Breno Bidon","number":0,"position":"GK","age":22,"releaseClause":128,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p35460_2000239167","uid":2000239167,"name":"Moise Bombito","number":0,"position":"GK","age":25,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p51563_2000330773","uid":2000330773,"name":"Yang Min-Hyuk","number":0,"position":"GK","age":21,"releaseClause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p58867_2000416048","uid":2000416048,"name":"Reigan Heskey","number":0,"position":"GK","age":19,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p54856_67294055","uid":67294055,"name":"Sergi Cardona","number":0,"position":"GK","age":26,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p60913_67291985","uid":67291985,"name":"Carlos Alvarez","number":0,"position":"GK","age":23,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p52784_28106687","uid":28106687,"name":"Eddie Nketiah","number":0,"position":"GK","age":26,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p65008_2000026194","uid":2000026194,"name":"Lucas Hogsberg","number":0,"position":"GK","age":21,"releaseClause":133,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p68066_2000165742","uid":2000165742,"name":"Christian McFarlane","number":0,"position":"GK","age":20,"releaseClause":93,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p970_2000301767","uid":2000301767,"name":"Buba Sangaré","number":0,"position":"GK","age":19,"releaseClause":117,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p15609_2000368737","uid":2000368737,"name":"René Mitongo","number":0,"position":"GK","age":19,"releaseClause":92,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p45826_2000457463","uid":2000457463,"name":"Sadriddin Hasanov","number":0,"position":"GK","age":19,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Liverpool":[{"id":"p43574_85139014","uid":85139014,"name":"Kylian Mbappé","number":0,"position":"GK","age":26,"releaseClause":195,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p90018_49062667","uid":49062667,"name":"Hugo Ekitiké","number":0,"position":"GK","age":25,"releaseClause":174,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p40709_2000094886","uid":2000094886,"name":"Jérémy Jacquet","number":0,"position":"GK","age":22,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p36351_28115788","uid":28115788,"name":"Curtis Jones","number":0,"position":"GK","age":25,"releaseClause":159,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p14759_2000218544","uid":2000218544,"name":"Rayan","number":0,"position":"GK","age":20,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p76890_19217413","uid":19217413,"name":"Gérson","number":0,"position":"GK","age":28,"releaseClause":139,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p8035_19403484","uid":19403484,"name":"Luís Henrique","number":0,"position":"GK","age":25,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p94723_29158244","uid":29158244,"name":"Lloyd Kelly","number":0,"position":"GK","age":26,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p70342_29175587","uid":29175587,"name":"Leif Davis","number":0,"position":"GK","age":25,"releaseClause":133,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p52415_37084637","uid":37084637,"name":"Robin Gerardus Petrus Roefs","number":0,"position":"GK","age":24,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p81733_48037291","uid":48037291,"name":"Axel Disasi","number":0,"position":"GK","age":27,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p10781_48044574","uid":48044574,"name":"Moussa Diaby","number":0,"position":"GK","age":26,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p56514_49038965","uid":49038965,"name":"Sacha Boey","number":0,"position":"GK","age":25,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p29000_49048461","uid":49048461,"name":"Lucien Agoumé","number":0,"position":"GK","age":25,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48210_2000022887","uid":2000022887,"name":"Cher Ndour","number":0,"position":"GK","age":23,"releaseClause":133,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p45756_2000104915","uid":2000104915,"name":"Saël Kumbedi Nseke","number":0,"position":"GK","age":22,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p76436_2000121585","uid":2000121585,"name":"Filippo Mané","number":0,"position":"GK","age":22,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p78580_2000138872","uid":2000138872,"name":"Kassoum Ouattara","number":0,"position":"GK","age":22,"releaseClause":118,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p58711_2000180861","uid":2000180861,"name":"Almugera Kabar","number":0,"position":"GK","age":21,"releaseClause":112,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p44626_2000123485","uid":2000123485,"name":"GIOVANE","number":0,"position":"GK","age":23,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p14992_2000221411","uid":2000221411,"name":"Allan Andrade Elias","number":0,"position":"GK","age":22,"releaseClause":126,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53707_37051440","uid":37051440,"name":"Danilho Doekhi","number":0,"position":"GK","age":27,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p83067_19352610","uid":19352610,"name":"Rodrigo Muniz","number":0,"position":"GK","age":25,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p22370_2000183492","uid":2000183492,"name":"Meupiyou Menadjou","number":0,"position":"GK","age":21,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p56533_2000268858","uid":2000268858,"name":"Eduardo Felicíssimo","number":0,"position":"GK","age":20,"releaseClause":96,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p54770_2000273913","uid":2000273913,"name":"Gui Negão","number":0,"position":"GK","age":20,"releaseClause":113,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p4086_2000293255","uid":2000293255,"name":"Luca Meirelles","number":0,"position":"GK","age":20,"releaseClause":122,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p15474_2000297302","uid":2000297302,"name":"Albert Navarro","number":0,"position":"GK","age":20,"releaseClause":102,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p45649_2000478239","uid":2000478239,"name":"Simón Escobar","number":0,"position":"GK","age":17,"releaseClause":95,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p54052_2000290365","uid":2000290365,"name":"Mathys Niflore","number":0,"position":"GK","age":19,"releaseClause":91,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p31316_2000277018","uid":2000277018,"name":"Tomás Parmo","number":0,"position":"GK","age":17.5,"releaseClause":106,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Marseille":[{"id":"p38548_19058734","uid":19058734,"name":"Alisson","number":0,"position":"GK","age":32,"releaseClause":177,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p23169_28100266","uid":28100266,"name":"Marcus Rashford","number":0,"position":"GK","age":27,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p82043_92023410","uid":92023410,"name":"Antonio Rüdiger","number":0,"position":"GK","age":32,"releaseClause":157,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p73049_18007344","uid":18007344,"name":"Romelu Lukaku","number":0,"position":"GK","age":32,"releaseClause":158,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p99008_2000051578","uid":2000051578,"name":"Facundo Buonanotte","number":0,"position":"GK","age":22,"releaseClause":165,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p10960_89063107","uid":89063107,"name":"Iliman N'Diaye","number":0,"position":"GK","age":25,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53487_91119700","uid":91119700,"name":"Jonathan Tah","number":0,"position":"GK","age":29,"releaseClause":158,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p60624_2000198043","uid":2000198043,"name":"Tyler Dibling","number":0,"position":"GK","age":21,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p44938_83111501","uid":83111501,"name":"Thierry Rendall Correia","number":0,"position":"GK","age":26,"releaseClause":137,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p30096_2000091511","uid":2000091511,"name":"Lequincio Zeefuik","number":0,"position":"GK","age":22,"releaseClause":113,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p27276_2000098836","uid":2000098836,"name":"Petar Ratkov","number":0,"position":"GK","age":23,"releaseClause":133,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p30605_2000229933","uid":2000229933,"name":"Kjell Watjen","number":0,"position":"GK","age":21,"releaseClause":112,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p77481_19371031","uid":19371031,"name":"Joao Gomes","number":0,"position":"GK","age":25,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p2445_91175517","uid":91175517,"name":"David Raum","number":0,"position":"GK","age":27,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p64881_2000086472","uid":2000086472,"name":"Kevin Kelsy","number":0,"position":"GK","age":23,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20685_28129089","uid":28129089,"name":"Yunus Musah","number":0,"position":"GK","age":24,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p82526_72051563","uid":72051563,"name":"Chris Richards","number":0,"position":"GK","age":25,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p93071_2000221925","uid":2000221925,"name":"Rafiu Durosinmi","number":0,"position":"GK","age":23.5,"releaseClause":127,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p34206_2000085150","uid":2000085150,"name":"Cole Campbell","number":0,"position":"GK","age":21,"releaseClause":118,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p86303_2000252303","uid":2000252303,"name":"Kendry Páez","number":0,"position":"GK","age":20,"releaseClause":133,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p58288_37075765","uid":37075765,"name":"Milan van Ewijk","number":0,"position":"GK","age":25,"releaseClause":129,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19877_2000140844","uid":2000140844,"name":"David Ozoh","number":0,"position":"GK","age":21,"releaseClause":118,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p21787_2000241678","uid":2000241678,"name":"Lorran","number":0,"position":"GK","age":20,"releaseClause":114,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p63380_2000104631","uid":2000104631,"name":"Jakob Schöller","number":0,"position":"GK","age":20.5,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p45389_2000433203","uid":2000433203,"name":"Sherkhan Kalmurza","number":0,"position":"GK","age":20,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6457_2000480447","uid":2000480447,"name":"Emmanuel Chukwu","number":0,"position":"GK","age":20,"releaseClause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p39504_12094355","uid":12094355,"name":"Mamour N'Diaye","number":0,"position":"GK","age":20.5,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p10694_2000392430","uid":2000392430,"name":"Godwill Kukonki","number":0,"position":"GK","age":19,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p57067_2000261857","uid":2000261857,"name":"Guido Della Rovere","number":0,"position":"GK","age":19,"releaseClause":96,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p26933_2000240974","uid":2000240974,"name":"Farid Alfa-Ruprecht","number":0,"position":"GK","age":20,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p66201_2000175453","uid":2000175453,"name":"Jannik Schuster","number":0,"position":"GK","age":19.5,"releaseClause":96,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Monaco":[{"id":"p46584_49039004","uid":49039004,"name":"William Saliba","number":0,"position":"GK","age":25,"releaseClause":184,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p83756_2000220941","uid":2000220941,"name":"Endrick","number":0,"position":"GK","age":21,"releaseClause":200,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48086_14048343","uid":14048343,"name":"Rodrigo De Paul","number":0,"position":"GK","age":31,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p38640_67260204","uid":67260204,"name":"Oihan Sancet","number":0,"position":"GK","age":25,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p61030_28117372","uid":28117372,"name":"Nathan Collins","number":0,"position":"GK","age":25,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p63615_14042683","uid":14042683,"name":"Joaquín Correa","number":0,"position":"GK","age":30,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p54167_24016925","uid":24016925,"name":"Mateo Kovacic","number":0,"position":"GK","age":31,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53131_24047814","uid":24047814,"name":"Nikola Katic","number":0,"position":"GK","age":28,"releaseClause":126,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p12829_28066082","uid":28066082,"name":"Héctor Bellerín","number":0,"position":"GK","age":30,"releaseClause":139,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p82334_29110623","uid":29110623,"name":"Ollie Watkins","number":0,"position":"GK","age":29,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p99303_35017438","uid":35017438,"name":"Mario Gotze","number":0,"position":"GK","age":33,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p96990_37076465","uid":37076465,"name":"Denso Kasius","number":0,"position":"GK","age":24,"releaseClause":126,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p51595_53063430","uid":53063430,"name":"Alexander Sorloth","number":0,"position":"GK","age":29,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p61939_67183918","uid":67183918,"name":"Alex Remiro","number":0,"position":"GK","age":30,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p59661_67295761","uid":67295761,"name":"Mika Mármol","number":0,"position":"GK","age":25,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p39938_76033272","uid":76033272,"name":"Wílmar Barrios","number":0,"position":"GK","age":31,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p95929_18115008","uid":18115008,"name":"Samuel Kinduelu Mbangula","number":0,"position":"GK","age":23,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p87481_71104595","uid":71104595,"name":"Vitaliy Mykolenko","number":0,"position":"GK","age":26,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p52702_49045776","uid":49045776,"name":"Youssouf Fofana","number":0,"position":"GK","age":26,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p55154_14048328","uid":14048328,"name":"Juan Musso","number":0,"position":"GK","age":31,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Napoli":[{"id":"p3411_2000250907","uid":2000250907,"name":"Ibrahim Osman","number":0,"position":"GK","age":22,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p98196_29194724","uid":29194724,"name":"Antoine Semenyo","number":0,"position":"GK","age":25,"releaseClause":158,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p64925_18077264","uid":18077264,"name":"Youri Tielemans","number":0,"position":"GK","age":28,"releaseClause":159,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5804_2000053930","uid":2000053930,"name":"José Ángel Carmona","number":0,"position":"GK","age":25,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p27461_19284037","uid":19284037,"name":"Ayrton Lucas","number":0,"position":"GK","age":28,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p77367_19347264","uid":19347264,"name":"Morato","number":0,"position":"GK","age":25,"releaseClause":139,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p23653_25042141","uid":25042141,"name":"Patrik Schick","number":0,"position":"GK","age":29,"releaseClause":153,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p38558_28100269","uid":28100269,"name":"Axel Tuanzebe","number":0,"position":"GK","age":27,"releaseClause":128,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p98008_37024470","uid":37024470,"name":"Memphis Depay","number":0,"position":"GK","age":31,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p28660_48036643","uid":48036643,"name":"Mouctar Diakhaby","number":0,"position":"GK","age":28,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p50038_49038271","uid":49038271,"name":"Maxence Lacroix","number":0,"position":"GK","age":25,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p23381_53086846","uid":53086846,"name":"Fredrik Aursnes","number":0,"position":"GK","age":29,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p68780_58156290","uid":58156290,"name":"Sergey Pinyaev","number":0,"position":"GK","age":22,"releaseClause":128,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p61152_70138807","uid":70138807,"name":"Youssouf Ndayishimiye","number":0,"position":"GK","age":26,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p84392_78076343","uid":78076343,"name":"Mathías Olivera","number":0,"position":"GK","age":27,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6870_91144903","uid":91144903,"name":"Moritz Nicolas","number":0,"position":"GK","age":27,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p113_2000163504","uid":2000163504,"name":"Mario Martín","number":0,"position":"GK","age":22,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p11970_55063493","uid":55063493,"name":"Rafa","number":0,"position":"GK","age":32,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p66026_2000210551","uid":2000210551,"name":"William Gomes","number":0,"position":"GK","age":21,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p98116_29125334","uid":29125334,"name":"Dean Henderson","number":0,"position":"GK","age":28,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p49813_2000280807","uid":2000280807,"name":"Harry Amass","number":0,"position":"GK","age":20,"releaseClause":139,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p10220_2000245263","uid":2000245263,"name":"Johan Manzambi","number":0,"position":"GK","age":21,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p81795_2000303600","uid":2000303600,"name":"Wang Yudong","number":0,"position":"GK","age":20,"releaseClause":104,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p22631_2000266424","uid":2000266424,"name":"Diego Mascardi","number":0,"position":"GK","age":19,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p11279_2000215081","uid":2000215081,"name":"Víctor Moreno","number":0,"position":"GK","age":20,"releaseClause":118,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19679_2000219431","uid":2000219431,"name":"Ayoub Oufkir","number":0,"position":"GK","age":20,"releaseClause":131,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p66564_2000085967","uid":2000085967,"name":"Matteo Pérez Vinlöf","number":0,"position":"GK","age":20,"releaseClause":118,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p76153_2000230119","uid":2000230119,"name":"Iván Román","number":0,"position":"GK","age":19,"releaseClause":119,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20090_2000108694","uid":2000108694,"name":"Leo Castledine","number":0,"position":"GK","age":20,"releaseClause":121,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Nottingham Forest":[{"id":"p51522_13158205","uid":13158205,"name":"Victor Osimhen","number":0,"position":"GK","age":26,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92983_49047182","uid":49047182,"name":"Manu Koné","number":0,"position":"GK","age":25,"releaseClause":158,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p93912_91138280","uid":91138280,"name":"Leroy Sané","number":0,"position":"GK","age":29,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p43120_2000006158","uid":2000006158,"name":"Willy Kambwala","number":0,"position":"GK","age":22,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p71466_12094339","uid":12094339,"name":"Abakar Sylla","number":0,"position":"GK","age":24,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p75383_12095249","uid":12095249,"name":"Ibrahim Diarra","number":0,"position":"GK","age":20,"releaseClause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5012_33001438","uid":33001438,"name":"Hrádecký","number":0,"position":"GK","age":35,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p14788_43409366","uid":43409366,"name":"Lorenzo Lucca","number":0,"position":"GK","age":25,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p24672_61093823","uid":61093823,"name":"Josh Doig","number":0,"position":"GK","age":25,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37131_67276474","uid":67276474,"name":"Benat Turrientes","number":0,"position":"GK","age":25,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p88149_83335582","uid":83335582,"name":"Diego Callai","number":0,"position":"GK","age":23,"releaseClause":109,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p64737_2000302092","uid":2000302092,"name":"Trevan Sanusi","number":0,"position":"GK","age":20,"releaseClause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p77959_2000356711","uid":2000356711,"name":"Christopher Cupps","number":0,"position":"GK","age":19,"releaseClause":95,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p60683_2000447889","uid":2000447889,"name":"victor ozhianvuna","number":0,"position":"GK","age":18,"releaseClause":86,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92256_2000496104","uid":2000496104,"name":"Gilberto Mora","number":0,"position":"GK","age":18,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6513_19258642","uid":19258642,"name":"Bruno Henrique","number":0,"position":"GK","age":34,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p9179_2000382120","uid":2000382120,"name":"Chido Obi-Martin","number":0,"position":"GK","age":19,"releaseClause":102,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p54120_83174775","uid":83174775,"name":"Joao Mário","number":0,"position":"GK","age":25,"releaseClause":137,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p70701_18083491","uid":18083491,"name":"Leon Bailey","number":0,"position":"GK","age":27,"releaseClause":137,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p47993_28108490","uid":28108490,"name":"Jadon Sancho","number":0,"position":"GK","age":25,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p39059_49054420","uid":49054420,"name":"Youte","number":0,"position":"GK","age":25,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p12269_85133751","uid":85133751,"name":"Ferland Mendy","number":0,"position":"GK","age":30,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p66066_16147660","uid":16147660,"name":"Xaver Schlager","number":0,"position":"GK","age":27,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p38516_2000297774","uid":2000297774,"name":"Shane Kluivert","number":0,"position":"GK","age":19,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p58407_2000370206","uid":2000370206,"name":"Dastan Satpaev","number":0,"position":"GK","age":18,"releaseClause":126,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p69282_2000406728","uid":2000406728,"name":"Ilyas Azizi","number":0,"position":"GK","age":19,"releaseClause":77,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p84064_2000487855","uid":2000487855,"name":"Arone Gadou","number":0,"position":"GK","age":18,"releaseClause":75,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p63457_2000506287","uid":2000506287,"name":"Finley Grigg","number":0,"position":"GK","age":17.5,"releaseClause":70,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20033_2000302495","uid":2000302495,"name":"Anhá Candé","number":0,"position":"GK","age":18,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p73313_2000424111","uid":2000424111,"name":"miguel agamez","number":0,"position":"GK","age":16.5,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"RC Lens":[{"id":"p97956_19302146","uid":19302146,"name":"Vinícius Júnior","number":0,"position":"GK","age":25,"releaseClause":184,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p25455_2000138835","uid":2000138835,"name":"Kenan Yildiz","number":0,"position":"GK","age":22,"releaseClause":190,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p91534_28120042","uid":28120042,"name":"Cole Palmer","number":0,"position":"GK","age":25,"releaseClause":173,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p83662_48042658","uid":48042658,"name":"Bryan Mbeumo","number":0,"position":"GK","age":25,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p73844_43298002","uid":43298002,"name":"Marco Carnesecchi","number":0,"position":"GK","age":25,"releaseClause":159,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p90542_2000054872","uid":2000054872,"name":"Ez Abde","number":0,"position":"GK","age":25,"releaseClause":161,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p188_43372892","uid":43372892,"name":"Nicolò Rovella","number":0,"position":"GK","age":25,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p45766_19383257","uid":19383257,"name":"Yan Couto","number":0,"position":"GK","age":25,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p2358_2000094252","uid":2000094252,"name":"Beraldo","number":0,"position":"GK","age":23,"releaseClause":163,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p74345_18108550","uid":18108550,"name":"Koni De Winter","number":0,"position":"GK","age":25,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19895_37065561","uid":37065561,"name":"Ramon Hendriks","number":0,"position":"GK","age":25,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p63914_37073317","uid":37073317,"name":"Kenneth Taylor","number":0,"position":"GK","age":25,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p7677_37084510","uid":37084510,"name":"Ryan Flamingo","number":0,"position":"GK","age":24,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p36998_67271371","uid":67271371,"name":"Rodrigo Zalazar","number":0,"position":"GK","age":25,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p36433_78093159","uid":78093159,"name":"Maximiliano Araújo","number":0,"position":"GK","age":25,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p68838_2000077331","uid":2000077331,"name":"Valentín Gómez","number":0,"position":"GK","age":24,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p91871_2000231531","uid":2000231531,"name":"Anan Khalaily","number":0,"position":"GK","age":22,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p54123_35018013","uid":35018013,"name":"Kevin Trapp","number":0,"position":"GK","age":34,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p30879_79034187","uid":79034187,"name":"Julio Enciso","number":0,"position":"GK","age":23,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p32279_27104982","uid":27104982,"name":"Jens Stage","number":0,"position":"GK","age":28,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p51898_43195181","uid":43195181,"name":"Umar Sadiq","number":0,"position":"GK","age":28,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p98804_2000049425","uid":2000049425,"name":"Omar El Hilali","number":0,"position":"GK","age":23,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p4278_67269484","uid":67269484,"name":"Samuel Chukwueze","number":0,"position":"GK","age":26,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p71636_2000127879","uid":2000127879,"name":"Rayane Bounida","number":0,"position":"GK","age":21,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p39377_2000267443","uid":2000267443,"name":"Abdelhamid Ait Boudlal","number":0,"position":"GK","age":21,"releaseClause":112,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p83332_2000259411","uid":2000259411,"name":"Francis Onyeka","number":0,"position":"GK","age":20,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p39591_2000403784","uid":2000403784,"name":"Selton","number":0,"position":"GK","age":20,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p30168_2000462816","uid":2000462816,"name":"Djibril Coulibaly","number":0,"position":"GK","age":18,"releaseClause":101,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37558_2000295451","uid":2000295451,"name":"Noah Nsoki","number":0,"position":"GK","age":19.5,"releaseClause":77,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"River":[{"id":"p38955_37084591","uid":37084591,"name":"Micky van de Ven","number":0,"position":"GK","age":25,"releaseClause":175,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p72039_18111484","uid":18111484,"name":"Johan Bakayoko","number":0,"position":"GK","age":24,"releaseClause":158,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p3329_91207281","uid":91207281,"name":"Maximilian Beier","number":0,"position":"GK","age":24,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p22881_71101334","uid":71101334,"name":"Anatolii Trubin","number":0,"position":"GK","age":25,"releaseClause":159,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p38777_71110357","uid":71110357,"name":"Yehor Yarmoliuk","number":0,"position":"GK","age":23,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p47086_62220026","uid":62220026,"name":"Strahinja Pavlovic","number":0,"position":"GK","age":25,"releaseClause":153,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p90402_12078947","uid":12078947,"name":"Wilfried Singo","number":0,"position":"GK","age":25,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p11130_16010162","uid":16010162,"name":"David Alaba","number":0,"position":"GK","age":33,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p31043_16283629","uid":16283629,"name":"Amar Dedic","number":0,"position":"GK","age":24,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p55159_18018791","uid":18018791,"name":"Matz Sels","number":0,"position":"GK","age":33,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p8758_19024412","uid":19024412,"name":"Neymar","number":0,"position":"GK","age":33,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p12404_19265858","uid":19265858,"name":"Richarlison","number":0,"position":"GK","age":28,"releaseClause":139,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p22720_19383256","uid":19383256,"name":"Igor Paixao","number":0,"position":"GK","age":25,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p36096_37061602","uid":37061602,"name":"Orkun Kökçü","number":0,"position":"GK","age":25,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p2177_43167354","uid":43167354,"name":"Manuel Locatelli","number":0,"position":"GK","age":27,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p14438_49039003","uid":49039003,"name":"Logan Costa","number":0,"position":"GK","age":25,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p44111_53110135","uid":53110135,"name":"Kristoffer Ajer","number":0,"position":"GK","age":27,"releaseClause":139,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p95995_53174131","uid":53174131,"name":"Victor Boniface","number":0,"position":"GK","age":25,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p43385_67258414","uid":67258414,"name":"Sergio Gómez","number":0,"position":"GK","age":25,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5003_67276375","uid":67276375,"name":"Aimar","number":0,"position":"GK","age":25,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p52519_2000104173","uid":2000104173,"name":"Gianluca Prestianni","number":0,"position":"GK","age":21,"releaseClause":131,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5139_2000127875","uid":2000127875,"name":"Ethan Butera","number":0,"position":"GK","age":21,"releaseClause":101,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p47587_43316850","uid":43316850,"name":"Giacomo Raspadori","number":0,"position":"GK","age":25,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37692_19377206","uid":19377206,"name":"Luiz Henrique","number":0,"position":"GK","age":25,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p84751_2000235296","uid":2000235296,"name":"Mateo Caicedo","number":0,"position":"GK","age":20,"releaseClause":91,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p74277_2000328959","uid":2000328959,"name":"Emanuele Sala","number":0,"position":"GK","age":19,"releaseClause":83,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p39924_2000412322","uid":2000412322,"name":"Rudy Matondo","number":0,"position":"GK","age":19,"releaseClause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p49278_2000474046","uid":2000474046,"name":"Joshu Nga Kana","number":0,"position":"GK","age":18,"releaseClause":97,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Schalke":[{"id":"p94142_2000179712","uid":2000179712,"name":"Warren Zaire-Emery","number":0,"position":"GK","age":21,"releaseClause":190,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p65748_14157184","uid":14157184,"name":"Alexis Mac Allister","number":0,"position":"GK","age":26,"releaseClause":159,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p40275_29226000","uid":29226000,"name":"Jarrad Branthwaite","number":0,"position":"GK","age":25,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p94578_49048357","uid":49048357,"name":"Lucas Chevalier","number":0,"position":"GK","age":25,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p68776_49056273","uid":49056273,"name":"Castello Lukeba","number":0,"position":"GK","age":24,"releaseClause":170,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p88815_59138294","uid":59138294,"name":"Giorgi Mamardashvili","number":0,"position":"GK","age":25,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p86325_85111795","uid":85111795,"name":"Serhou Guirassy","number":0,"position":"GK","age":29,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p24088_2000265865","uid":2000265865,"name":"Rodrigo Mora","number":0,"position":"GK","age":20,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p75694_2000181764","uid":2000181764,"name":"Kees Smit","number":0,"position":"GK","age":21,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p25812_2000054263","uid":2000054263,"name":"Bryan Zaragoza","number":0,"position":"GK","age":25,"releaseClause":161,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p17452_12038706","uid":12038706,"name":"Ramy Bensebaini","number":0,"position":"GK","age":30,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p55219_19380090","uid":19380090,"name":"Rômulo Cardoso","number":0,"position":"GK","age":25,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p97239_29147447","uid":29147447,"name":"Matty Cash","number":0,"position":"GK","age":27,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p9571_37049949","uid":37049949,"name":"Jerry St. Juste","number":0,"position":"GK","age":28,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p46337_2000312673","uid":2000312673,"name":"Jesús Rodríguez","number":0,"position":"GK","age":21,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19362_2000191507","uid":2000191507,"name":"Adam Aznou","number":0,"position":"GK","age":21,"releaseClause":126,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p65827_83228802","uid":83228802,"name":"Fábio Silva","number":0,"position":"GK","age":25,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p99318_18104985","uid":18104985,"name":"Edon Zhegrova","number":0,"position":"GK","age":26,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53268_2000404708","uid":2000404708,"name":"Stephen Mfuni","number":0,"position":"GK","age":19,"releaseClause":111,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p3617_2000385919","uid":2000385919,"name":"Ibrahim Mbaye","number":0,"position":"GK","age":19,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p30700_67256618","uid":67256618,"name":"Dani Vivian","number":0,"position":"GK","age":25,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p49223_83283239","uid":83283239,"name":"Tiago Santos","number":0,"position":"GK","age":25,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p47216_2000273252","uid":2000273252,"name":"Isaque","number":0,"position":"GK","age":20,"releaseClause":117,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p45879_2000273266","uid":2000273266,"name":"Riquelme Felipe","number":0,"position":"GK","age":20,"releaseClause":94,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p10683_2000368243","uid":2000368243,"name":"Nathan De Cat","number":0,"position":"GK","age":19,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p56675_2000299435","uid":2000299435,"name":"Joan Martínez","number":0,"position":"GK","age":19,"releaseClause":106,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p86213_2000386347","uid":2000386347,"name":"Mathis Jangeal","number":0,"position":"GK","age":19,"releaseClause":92,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p26937_2000459410","uid":2000459410,"name":"Aleksander Borgersen","number":0,"position":"GK","age":18,"releaseClause":82,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p7284_2000467056","uid":2000467056,"name":"Abdellah Ouazane","number":0,"position":"GK","age":18,"releaseClause":102,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p43410_2000503369","uid":2000503369,"name":"Christian Imga","number":0,"position":"GK","age":18,"releaseClause":81,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p95600_2000228178","uid":2000228178,"name":"Áron Yaakobishvili","number":0,"position":"GK","age":20.5,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p41157_2000526731","uid":2000526731,"name":"Johan Martinez","number":0,"position":"GK","age":16.5,"releaseClause":78,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p95565_2000531483","uid":2000531483,"name":"Frank Egwuatu","number":0,"position":"GK","age":16.5,"releaseClause":75,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p81528_2000529244","uid":2000529244,"name":"Santiago del Pino","number":0,"position":"GK","age":16.5,"releaseClause":86,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p11072_2000487145","uid":2000487145,"name":"Elisandro Kožina","number":0,"position":"GK","age":16.5,"releaseClause":71,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Tottenham":[{"id":"p38484_13200568","uid":13200568,"name":"Mohammed Kudus","number":0,"position":"GK","age":25,"releaseClause":162,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p99705_19163495","uid":19163495,"name":"Marquinhos","number":0,"position":"GK","age":31,"releaseClause":166,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p23680_67276127","uid":67276127,"name":"Nico González","number":0,"position":"GK","age":25,"releaseClause":166,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48467_2000007415","uid":2000007415,"name":"Andrey Santos","number":0,"position":"GK","age":23,"releaseClause":167,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p62672_67260506","uid":67260506,"name":"Kang-In Lee","number":0,"position":"GK","age":25,"releaseClause":161,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p44977_2000168014","uid":2000168014,"name":"Abdukodir Khusanov","number":0,"position":"GK","age":23,"releaseClause":164,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p29886_67200923","uid":67200923,"name":"Unai Simón","number":0,"position":"GK","age":28,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p12787_29141472","uid":29141472,"name":"Benjamin White","number":0,"position":"GK","age":27,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p94350_14181375","uid":14181375,"name":"Nicolás González","number":0,"position":"GK","age":27,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p7039_37041773","uid":37041773,"name":"Robin Gosens","number":0,"position":"GK","age":31,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p35371_48031641","uid":48031641,"name":"Olivier Boscagli","number":0,"position":"GK","age":27,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p52015_49041153","uid":49041153,"name":"Esteban Lepaul","number":0,"position":"GK","age":25,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p21217_49047581","uid":49047581,"name":"Rayan Ait-Nouri","number":0,"position":"GK","age":25,"releaseClause":153,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p91469_49048445","uid":49048445,"name":"Arnaud Kalimuendo","number":0,"position":"GK","age":25,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p61150_67245412","uid":67245412,"name":"Josep Martínez","number":0,"position":"GK","age":27,"releaseClause":137,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p67562_67268221","uid":67268221,"name":"Pedro Porro","number":0,"position":"GK","age":25,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p1171_71099066","uid":71099066,"name":"Artem Dovbyk","number":0,"position":"GK","age":28,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p12567_2000031073","uid":2000031073,"name":"Reda Belahyane","number":0,"position":"GK","age":23,"releaseClause":126,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19286_2000156783","uid":2000156783,"name":"Ernest Nuamah","number":0,"position":"GK","age":23,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p90680_2000214886","uid":2000214886,"name":"Jacobo Ramón","number":0,"position":"GK","age":22,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p75097_36152916","uid":36152916,"name":"Christos Tzolis","number":0,"position":"GK","age":24.5,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p89082_2000097986","uid":2000097986,"name":"Thomas Berenbruch","number":0,"position":"GK","age":22,"releaseClause":101,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p62562_61078132","uid":61078132,"name":"Lewis Ferguson","number":0,"position":"GK","age":25,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p68368_67224142","uid":67224142,"name":"Santiago Comesaña","number":0,"position":"GK","age":28,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p39782_2000094208","uid":2000094208,"name":"Obed Vargas","number":0,"position":"GK","age":21,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p59430_2000269262","uid":2000269262,"name":"Giacomo De Pieri","number":0,"position":"GK","age":20,"releaseClause":102,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p25441_2000274057","uid":2000274057,"name":"Peyton Miller","number":0,"position":"GK","age":19,"releaseClause":113,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p59015_2000336547","uid":2000336547,"name":"Vakhtang Salia","number":0,"position":"GK","age":19,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p40303_2000372640","uid":2000372640,"name":"Ryan Roberto","number":0,"position":"GK","age":19,"releaseClause":60,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p43199_2000474999","uid":2000474999,"name":"Andria Bartishvili","number":0,"position":"GK","age":18,"releaseClause":75,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p28977_2000366060","uid":2000366060,"name":"Mattia Marello","number":0,"position":"GK","age":18,"releaseClause":75,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p29954_2000292778","uid":2000292778,"name":"Francisco Carvalho Souza Silva","number":0,"position":"GK","age":18,"releaseClause":93,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"AC Milan":[{"id":"p35123_48043084","uid":48043084,"name":"Boubacar Kamara","number":0,"position":"GK","age":25,"releaseClause":159,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53575_85094520","uid":85094520,"name":"Mike Maignan","number":0,"position":"GK","age":30,"releaseClause":162,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p60421_2000146883","uid":2000146883,"name":"Francesco Pio Esposito","number":0,"position":"GK","age":22,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p49691_92074020","uid":92074020,"name":"Christian Pulisic","number":0,"position":"GK","age":26,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p94026_91206164","uid":91206164,"name":"Malick Thiaw","number":0,"position":"GK","age":25,"releaseClause":157,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p56878_2000211997","uid":2000211997,"name":"Alex Jiménez","number":0,"position":"GK","age":22,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p77921_43270682","uid":43270682,"name":"Alessandro Buongiorno","number":0,"position":"GK","age":26,"releaseClause":154,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p30067_24065108","uid":24065108,"name":"Martin Baturina","number":0,"position":"GK","age":24,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p63638_43266774","uid":43266774,"name":"Matteo Gabbia","number":0,"position":"GK","age":25,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p67786_43339195","uid":43339195,"name":"Andrea Cambiaso","number":0,"position":"GK","age":25,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p75805_43500064","uid":43500064,"name":"Cesare Casadei","number":0,"position":"GK","age":24,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p7951_84153276","uid":84153276,"name":"Dan Ndoye","number":0,"position":"GK","age":25,"releaseClause":154,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p99350_84161856","uid":84161856,"name":"Ardon Jashari","number":0,"position":"GK","age":25,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p32514_2000033291","uid":2000033291,"name":"Valentín Barco","number":0,"position":"GK","age":23,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p11056_2000103120","uid":2000103120,"name":"Lorenzo Torriani","number":0,"position":"GK","age":22,"releaseClause":111,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p51266_2000107103","uid":2000107103,"name":"Mamadou Sarr","number":0,"position":"GK","age":21,"releaseClause":131,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p89989_2000183044","uid":2000183044,"name":"Davide Bartesaghi","number":0,"position":"GK","age":21,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p78450_2000338371","uid":2000338371,"name":"Francesco Camarda","number":0,"position":"GK","age":19,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p39800_49048348","uid":49048348,"name":"Dilane Bakwa","number":0,"position":"GK","age":24,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p16577_67229630","uid":67229630,"name":"Youssef En-Nesyri","number":0,"position":"GK","age":28,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p35886_2000025313","uid":2000025313,"name":"FAVASULI","number":0,"position":"GK","age":21.5,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p3167_37053643","uid":37053643,"name":"Gianluca Scamacca","number":0,"position":"GK","age":26,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53172_2000252799","uid":2000252799,"name":"Mattia Liberali","number":0,"position":"GK","age":20,"releaseClause":107,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p29947_2000349187","uid":2000349187,"name":"Edmund Baidoo","number":0,"position":"GK","age":21,"releaseClause":119,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p83175_2000218552","uid":2000218552,"name":"David Odogu","number":0,"position":"GK","age":21,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p51669_2000289673","uid":2000289673,"name":"Soriba Diaoune","number":0,"position":"GK","age":19,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p49049_2000298369","uid":2000298369,"name":"Branimir Mlačić","number":0,"position":"GK","age":20,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p95470_2000388375","uid":2000388375,"name":"Christian Comotto","number":0,"position":"GK","age":19,"releaseClause":111,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p59063_2000491133","uid":2000491133,"name":"Nahël Haddani","number":0,"position":"GK","age":18,"releaseClause":68,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p18687_2000440037","uid":2000440037,"name":"Luis Eduardo","number":0,"position":"GK","age":18.5,"releaseClause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92787_2000374131","uid":2000374131,"name":"Virgilio Olaya","number":0,"position":"GK","age":18.5,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p49360_2000489302","uid":2000489302,"name":"Samuele Pisati","number":0,"position":"GK","age":16.5,"releaseClause":61,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p91654_2000330183","uid":2000330183,"name":"Yunus Ünal","number":0,"position":"GK","age":17.5,"releaseClause":92,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p3575_2000298881","uid":2000298881,"name":"Federico Nardin","number":0,"position":"GK","age":18.5,"releaseClause":82,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Asante Kotoko":[{"id":"p96238_67197125","uid":67197125,"name":"Marco Asensio","number":0,"position":"GK","age":29,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p12260_91151081","uid":91151081,"name":"Kai Havertz","number":0,"position":"GK","age":26,"releaseClause":157,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p14702_14094572","uid":14094572,"name":"Rodrigo Bentancur","number":0,"position":"GK","age":28,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p17208_14101872","uid":14101872,"name":"Agustín Rossi","number":0,"position":"GK","age":22,"releaseClause":133,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p73611_19226741","uid":19226741,"name":"Lucas Paquetá","number":0,"position":"GK","age":27,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p88233_19270959","uid":19270959,"name":"Bernardo","number":0,"position":"GK","age":30,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p38581_67157624","uid":67157624,"name":"Kepa Arrizabalaga","number":0,"position":"GK","age":30,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p59078_67184140","uid":67184140,"name":"Alvaro García","number":0,"position":"GK","age":32,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p90502_86080170","uid":86080170,"name":"Jon Aramburu","number":0,"position":"GK","age":24,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p4400_98015432","uid":98015432,"name":"Berat Djimsiti","number":0,"position":"GK","age":32,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p91989_2000068412","uid":2000068412,"name":"Franjo Ivanovic","number":0,"position":"GK","age":23,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p57896_2000116169","uid":2000116169,"name":"Sergi Altimira","number":0,"position":"GK","age":25,"releaseClause":137,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p36003_28093567","uid":28093567,"name":"James Maddison","number":0,"position":"GK","age":28,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p40355_67279753","uid":67279753,"name":"Ilaix Moriba","number":0,"position":"GK","age":24,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p25598_29129073","uid":29129073,"name":"Rico Henry","number":0,"position":"GK","age":28,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p61816_19310729","uid":19310729,"name":"Paulo Henrique","number":0,"position":"GK","age":29,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5215_2000193842","uid":2000193842,"name":"Sindre Walle Egeli","number":0,"position":"GK","age":21,"releaseClause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p8953_2000158356","uid":2000158356,"name":"Jair","number":0,"position":"GK","age":22,"releaseClause":124,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p62755_2000040214","uid":2000040214,"name":"Jhon Solís","number":0,"position":"GK","age":22,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p65934_19259027","uid":19259027,"name":"Renan Lodi","number":0,"position":"GK","age":27,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p21788_37076141","uid":37076141,"name":"Youri Baas","number":0,"position":"GK","age":23,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p90599_67283137","uid":67283137,"name":"Yeremay","number":0,"position":"GK","age":24,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p80026_2000271170","uid":2000271170,"name":"Marius Courcoul","number":0,"position":"GK","age":20,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p60338_2000287938","uid":2000287938,"name":"Naoufel El Hannach","number":0,"position":"GK","age":20,"releaseClause":104,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p11475_2000289491","uid":2000289491,"name":"Julián Vignolo","number":0,"position":"GK","age":20,"releaseClause":101,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p43752_2000330177","uid":2000330177,"name":"Patrice Covic","number":0,"position":"GK","age":20,"releaseClause":108,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p90923_2000412744","uid":2000412744,"name":"Alexis Vossah","number":0,"position":"GK","age":19,"releaseClause":107,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37484_2000483445","uid":2000483445,"name":"Maxima Goffi","number":0,"position":"GK","age":19,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"AS Roma":[{"id":"p97084_28124573","uid":28124573,"name":"Levi Colwill","number":0,"position":"GK","age":24,"releaseClause":169,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p51623_29111433","uid":29111433,"name":"David Raya","number":0,"position":"GK","age":29,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p89200_2000182819","uid":2000182819,"name":"Leny Yoro","number":0,"position":"GK","age":21,"releaseClause":158,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p50671_98031331","uid":98031331,"name":"Manuel Akanji","number":0,"position":"GK","age":30,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p35367_2000295603","uid":2000295603,"name":"Marc Bernal","number":0,"position":"GK","age":20,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p79209_2000214136","uid":2000214136,"name":"George Ilenikhena","number":0,"position":"GK","age":20,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p30757_29233143","uid":29233143,"name":"Harvey Elliott","number":0,"position":"GK","age":24,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p87121_19380666","uid":19380666,"name":"Marcos Leonardo","number":0,"position":"GK","age":24,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p88356_28009478","uid":28009478,"name":"Wojciech Szczesny","number":0,"position":"GK","age":35,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p43158_43093502","uid":43093502,"name":"Gianluca Mancini","number":0,"position":"GK","age":29,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53032_52101552","uid":52101552,"name":"Jake O'Brien","number":0,"position":"GK","age":25,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p31118_70112874","uid":70112874,"name":"Baris Alper Yilmaz","number":0,"position":"GK","age":25,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p13008_76063258","uid":76063258,"name":"Jhon Durán","number":0,"position":"GK","age":23,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p47759_93123163","uid":93123163,"name":"Daniel Svensson","number":0,"position":"GK","age":25,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p914_2000027530","uid":2000027530,"name":"Juanlu","number":0,"position":"GK","age":23,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p44816_2000130568","uid":2000130568,"name":"Javier Bonar","number":0,"position":"GK","age":22,"releaseClause":95,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p3380_2000192797","uid":2000192797,"name":"Leo Sauer","number":0,"position":"GK","age":21,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p70789_2000395140","uid":2000395140,"name":"Cabanes Pau","number":0,"position":"GK","age":22,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p65047_2000082598","uid":2000082598,"name":"Stefan Bajcetic","number":0,"position":"GK","age":22,"releaseClause":139,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p58344_2000091515","uid":2000091515,"name":"Kyriani Sabbe","number":0,"position":"GK","age":21.5,"releaseClause":116,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p17587_2000246003","uid":2000246003,"name":"Relja Obric","number":0,"position":"GK","age":21,"releaseClause":97,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p33708_2000214885","uid":2000214885,"name":"Álvaro Cortés","number":0,"position":"GK","age":21.5,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p34854_91194540","uid":91194540,"name":"Anton Stach","number":0,"position":"GK","age":27,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p62237_91170086","uid":91170086,"name":"Jonathan Burkardt","number":0,"position":"GK","age":25,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p22218_2000301391","uid":2000301391,"name":"than meichtry","number":0,"position":"GK","age":21,"releaseClause":117,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p96016_2000297000","uid":2000297000,"name":"Valde","number":0,"position":"GK","age":20,"releaseClause":102,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p82703_2000300159","uid":2000300159,"name":"David Otorbi","number":0,"position":"GK","age":19,"releaseClause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p18535_2000398626","uid":2000398626,"name":"Darryl Bakola","number":0,"position":"GK","age":19,"releaseClause":108,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p32887_2000288737","uid":2000288737,"name":"Oumar Camara","number":0,"position":"GK","age":19.5,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p36442_2000223283","uid":2000223283,"name":"Jorge Cestero","number":0,"position":"GK","age":20,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p57659_2000454284","uid":2000454284,"name":"Bruninho","number":0,"position":"GK","age":17,"releaseClause":103,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p27962_2000310925","uid":2000310925,"name":"Carlos Díez","number":0,"position":"GK","age":18.5,"releaseClause":76,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p38055_2000258043","uid":2000258043,"name":"julien yanda","number":0,"position":"GK","age":17.5,"releaseClause":62,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Atl. Tucuman":[{"id":"p37410_14130029","uid":14130029,"name":"Cristian Romero","number":0,"position":"GK","age":27,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p80673_14222108","uid":14222108,"name":"Matías Soulé","number":0,"position":"GK","age":24,"releaseClause":163,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p51566_2000183231","uid":2000183231,"name":"Franco Mastantuono","number":0,"position":"GK","age":19,"releaseClause":131,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p2876_14241914","uid":14241914,"name":"Alan Varela","number":0,"position":"GK","age":25,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p42935_14236223","uid":14236223,"name":"Santiago Castro","number":0,"position":"GK","age":22,"releaseClause":159,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p43260_14030119","uid":14030119,"name":"Gerónimo Rulli","number":0,"position":"GK","age":33,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p86713_14044150","uid":14044150,"name":"Paulo Dybala","number":0,"position":"GK","age":31,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p80472_14059327","uid":14059327,"name":"Augusto Batalla","number":0,"position":"GK","age":29,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p56539_14129337","uid":14129337,"name":"Nahuel Molina","number":0,"position":"GK","age":27,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p44912_14185869","uid":14185869,"name":"Facundo Medina","number":0,"position":"GK","age":26,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p67422_14186894","uid":14186894,"name":"Juan Foyth","number":0,"position":"GK","age":27,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p65940_14217538","uid":14217538,"name":"Mateo Pellegrino","number":0,"position":"GK","age":25,"releaseClause":133,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p73284_14227360","uid":14227360,"name":"Máximo Perrone","number":0,"position":"GK","age":24,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p87698_14247304","uid":14247304,"name":"Ezequiel Fernández","number":0,"position":"GK","age":25,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p43598_14250859","uid":14250859,"name":"Giuliano Simeone","number":0,"position":"GK","age":24,"releaseClause":154,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p52617_2000044526","uid":2000044526,"name":"José López","number":0,"position":"GK","age":25,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p80442_2000096439","uid":2000096439,"name":"Tomás Palacios","number":0,"position":"GK","age":24,"releaseClause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p39852_2000142045","uid":2000142045,"name":"Julio César Soler","number":0,"position":"GK","age":22,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p74672_2000200406","uid":2000200406,"name":"Mariano Troilo","number":0,"position":"GK","age":24,"releaseClause":122,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92149_14080605","uid":14080605,"name":"Marcos Senesi","number":0,"position":"GK","age":28,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p13111_14221878","uid":14221878,"name":"Kevin Lomónaco","number":0,"position":"GK","age":23.5,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p46878_67201783","uid":67201783,"name":"Emiliano Buendía","number":0,"position":"GK","age":28,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p47909_2000176500","uid":2000176500,"name":"Dylan Aquino","number":0,"position":"GK","age":21,"releaseClause":117,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p50856_2000184436","uid":2000184436,"name":"Dylan Gorosito","number":0,"position":"GK","age":21,"releaseClause":108,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p23776_2000321323","uid":2000321323,"name":"Thomas De Martis","number":0,"position":"GK","age":19,"releaseClause":94,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p28578_2000455851","uid":2000455851,"name":"Tobias Andrada","number":0,"position":"GK","age":19,"releaseClause":113,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Celtic":[{"id":"p94103_43124203","uid":43124203,"name":"Bruno Fernandes","number":0,"position":"GK","age":30,"releaseClause":175,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p67216_83320123","uid":83320123,"name":"Renato Veiga","number":0,"position":"GK","age":24,"releaseClause":153,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p1524_2000030130","uid":2000030130,"name":"Joao Neves","number":0,"position":"GK","age":22,"releaseClause":174,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p81385_2000027719","uid":2000027719,"name":"Diego Moreira","number":0,"position":"GK","age":22,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p30898_28127254","uid":28127254,"name":"Elliot Anderson","number":0,"position":"GK","age":24,"releaseClause":164,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19750_2000104892","uid":2000104892,"name":"Eliesse Ben Seghir","number":0,"position":"GK","age":22,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p14641_43161651","uid":43161651,"name":"Federico Chiesa","number":0,"position":"GK","age":27,"releaseClause":153,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p93276_78084541","uid":78084541,"name":"Manuel Ugarte","number":0,"position":"GK","age":25,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p94141_12095040","uid":12095040,"name":"Bazoumana Touré","number":0,"position":"GK","age":21,"releaseClause":139,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p82029_14167329","uid":14167329,"name":"Lisandro Martínez","number":0,"position":"GK","age":27,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p14369_18107436","uid":18107436,"name":"Senne Lammens","number":0,"position":"GK","age":25,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p83837_19338230","uid":19338230,"name":"Antony","number":0,"position":"GK","age":25,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p93756_28049740","uid":28049740,"name":"Harry Maguire","number":0,"position":"GK","age":32,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p75993_29076105","uid":29076105,"name":"Luke Shaw","number":0,"position":"GK","age":30,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p41695_36149384","uid":36149384,"name":"Kostas Tzolakis","number":0,"position":"GK","age":24,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p12355_37076262","uid":37076262,"name":"Luciano Valente","number":0,"position":"GK","age":23,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p68819_83105845","uid":83105845,"name":"Diogo Dalot","number":0,"position":"GK","age":26,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p21149_2000010840","uid":2000010840,"name":"Toby Collyer","number":0,"position":"GK","age":23,"releaseClause":124,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p60989_2000022188","uid":2000022188,"name":"Lucas Stassin","number":0,"position":"GK","age":22,"releaseClause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p79345_2000087400","uid":2000087400,"name":"Dário Essugo","number":0,"position":"GK","age":22,"releaseClause":127,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p79843_2000146882","uid":2000146882,"name":"Gustavo Sá","number":0,"position":"GK","age":22,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37694_2000190386","uid":2000190386,"name":"Karl Etta Eyong","number":0,"position":"GK","age":23,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p94091_2000243635","uid":2000243635,"name":"Ousmane Diao","number":0,"position":"GK","age":23,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p58618_2000224667","uid":2000224667,"name":"Avom","number":0,"position":"GK","age":22,"releaseClause":131,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p93120_2000230641","uid":2000230641,"name":"Max Moerstedt","number":0,"position":"GK","age":21,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p9475_12094946","uid":12094946,"name":"Gueye","number":0,"position":"GK","age":20,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p4477_2000269293","uid":2000269293,"name":"Mosconi","number":0,"position":"GK","age":20,"releaseClause":96,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p86243_2000295427","uid":2000295427,"name":"Villarreal","number":0,"position":"GK","age":20,"releaseClause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p26076_2000384848","uid":2000384848,"name":"Iddrissou","number":0,"position":"GK","age":18,"releaseClause":97,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p56984_2000238729","uid":2000238729,"name":"Arroyo","number":0,"position":"GK","age":20,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p32747_2000294672","uid":2000294672,"name":"May","number":0,"position":"GK","age":19,"releaseClause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p58082_12095307","uid":12095307,"name":"Tia","number":0,"position":"GK","age":19,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Chelsea":[{"id":"p46626_14229525","uid":14229525,"name":"Enzo Fernández","number":0,"position":"GK","age":25,"releaseClause":174,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p77036_48037335","uid":48037335,"name":"Marcus Thuram","number":0,"position":"GK","age":27,"releaseClause":167,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p29246_91175868","uid":91175868,"name":"Yann Aurel Bisseck","number":0,"position":"GK","age":25,"releaseClause":161,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p12142_91207274","uid":91207274,"name":"Amadou Onana","number":0,"position":"GK","age":25,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37881_48042326","uid":48042326,"name":"Aurélien Tchouameni","number":0,"position":"GK","age":25,"releaseClause":166,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p32304_67184349","uid":67184349,"name":"Inaki Williams","number":0,"position":"GK","age":31,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p23337_28103591","uid":28103591,"name":"Trevoh Chalobah","number":0,"position":"GK","age":26,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p70227_48043873","uid":48043873,"name":"Randal Kolo Muani","number":0,"position":"GK","age":26,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p9927_62216198","uid":62216198,"name":"Djordje Petrovic","number":0,"position":"GK","age":25,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p68116_67215284","uid":67215284,"name":"Marc Cucurella","number":0,"position":"GK","age":26,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p83040_83169822","uid":83169822,"name":"Joao Félix","number":0,"position":"GK","age":25,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p98847_2000006186","uid":2000006186,"name":"Lesley Ugochukwu","number":0,"position":"GK","age":23,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p15634_2000105004","uid":2000105004,"name":"Leon Grgic","number":0,"position":"GK","age":21,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37034_2000165653","uid":2000165653,"name":"Iván Fresneda","number":0,"position":"GK","age":22,"releaseClause":154,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p29234_2000264337","uid":2000264337,"name":"Pedro Lima","number":0,"position":"GK","age":21,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p57927_28100207","uid":28100207,"name":"Harvey Barnes","number":0,"position":"GK","age":28,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p75292_43161669","uid":43161669,"name":"Michele Di Gregorio","number":0,"position":"GK","age":27,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48834_2000102796","uid":2000102796,"name":"Joshua Quarshie","number":0,"position":"GK","age":23,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p26064_43426126","uid":43426126,"name":"Nicola Zalewski","number":0,"position":"GK","age":25,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p72387_18115949","uid":18115949,"name":"Jackson Tchatchoua","number":0,"position":"GK","age":25,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p4353_2000184286","uid":2000184286,"name":"Mohamed Belloumi","number":0,"position":"GK","age":23.5,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p81365_2000014205","uid":2000014205,"name":"Martin Vitík","number":0,"position":"GK","age":24,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p60078_2000447463","uid":2000447463,"name":"Kevin Filling","number":0,"position":"GK","age":18,"releaseClause":98,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p4829_2000495995","uid":2000495995,"name":"Felipe Morais","number":0,"position":"GK","age":18,"releaseClause":79,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p22178_2000488543","uid":2000488543,"name":"Ederson Castillo","number":0,"position":"GK","age":17.5,"releaseClause":88,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Como":[{"id":"p20245_29232937","uid":29232937,"name":"Jude Bellingham","number":0,"position":"GK","age":24,"releaseClause":187,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p31362_83111483","uid":83111483,"name":"Rafael Leao","number":0,"position":"GK","age":26,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p0_62127037","uid":62127037,"name":"Sergej Milinkovic-Savic","number":0,"position":"GK","age":30,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p2556_2000055184","uid":2000055184,"name":"Bilal El Khannouss","number":0,"position":"GK","age":23,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p18341_91206105","uid":91206105,"name":"Rocco Reitz","number":0,"position":"GK","age":25,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p88103_2000065610","uid":2000065610,"name":"Armindo Sieb","number":0,"position":"GK","age":24,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p24118_2000120656","uid":2000120656,"name":"Sebastian Villaume Otoa","number":0,"position":"GK","age":23,"releaseClause":118,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p82981_2000196762","uid":2000196762,"name":"Ilyas Ansah","number":0,"position":"GK","age":22,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p72396_2000219705","uid":2000219705,"name":"Youssef Enriquez Lekhedim","number":0,"position":"GK","age":21,"releaseClause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p95833_2000241044","uid":2000241044,"name":"Vasilije Adzic","number":0,"position":"GK","age":21,"releaseClause":128,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p76651_2000333587","uid":2000333587,"name":"Victor Orakpo","number":0,"position":"GK","age":21,"releaseClause":109,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p94925_2000378259","uid":2000378259,"name":"Daniel Banjaqui","number":0,"position":"GK","age":19,"releaseClause":112,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p49271_2000383145","uid":2000383145,"name":"Matteo Palma","number":0,"position":"GK","age":19,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p14783_2000407543","uid":2000407543,"name":"Jack Porter","number":0,"position":"GK","age":19,"releaseClause":88,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p96958_2000151103","uid":2000151103,"name":"Carlos Garcés","number":0,"position":"GK","age":24.5,"releaseClause":116,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p83440_29194731","uid":29194731,"name":"William Kokolo","number":0,"position":"GK","age":25,"releaseClause":116,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p31442_2000375174","uid":2000375174,"name":"Harry Howell","number":0,"position":"GK","age":19,"releaseClause":101,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p82586_2000180847","uid":2000180847,"name":"Noël Aséko","number":0,"position":"GK","age":20.5,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p84464_49034219","uid":49034219,"name":"Jean-Philippe Mateta","number":0,"position":"GK","age":28,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p52497_91204520","uid":91204520,"name":"Merlin Rohl","number":0,"position":"GK","age":25,"releaseClause":153,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p66951_29218024","uid":29218024,"name":"Hayden Hackney","number":0,"position":"GK","age":23.5,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19315_2000097988","uid":2000097988,"name":"Valentín Carboni","number":0,"position":"GK","age":22,"releaseClause":153,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5492_27014576","uid":27014576,"name":"Frederik Ronnow","number":0,"position":"GK","age":32,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p4855_12096015","uid":12096015,"name":"Seydou Dembélé","number":0,"position":"GK","age":19,"releaseClause":93,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92151_2000302080","uid":2000302080,"name":"Sean Neave","number":0,"position":"GK","age":20,"releaseClause":83,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5319_2000310973","uid":2000310973,"name":"Tiago Pitarch Pinar","number":0,"position":"GK","age":19,"releaseClause":93,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p32120_2000472536","uid":2000472536,"name":"Aleksa Damjanović","number":0,"position":"GK","age":18,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6250_2000476049","uid":2000476049,"name":"Christ Batola","number":0,"position":"GK","age":18,"releaseClause":75,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p99793_2000511933","uid":2000511933,"name":"Tyrese Noubissie","number":0,"position":"GK","age":18,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p33544_2000462497","uid":2000462497,"name":"Yisa Alao","number":0,"position":"GK","age":17.5,"releaseClause":80,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p57261_2000423418","uid":2000423418,"name":"Nicolás Azambuja","number":0,"position":"GK","age":18,"releaseClause":114,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p71362_2000529129","uid":2000529129,"name":"Bara Ndiaye","number":0,"position":"GK","age":17.5,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p75335_2000480647","uid":2000480647,"name":"muhamadou kanteh","number":0,"position":"GK","age":18.5,"releaseClause":92,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Dortmund":[{"id":"p10116_18087914","uid":18087914,"name":"Mile Svilar","number":0,"position":"GK","age":25,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p46728_55041632","uid":55041632,"name":"Bernardo Silva","number":0,"position":"GK","age":30,"releaseClause":164,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p83382_28113827","uid":28113827,"name":"Felix Nmecha","number":0,"position":"GK","age":25,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p50739_19371552","uid":19371552,"name":"Joao Pedro","number":0,"position":"GK","age":25,"releaseClause":165,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p85826_29179717","uid":29179717,"name":"Pedro Neto","number":0,"position":"GK","age":25,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p49432_2000180889","uid":2000180889,"name":"Finn Jeltsch","number":0,"position":"GK","age":21,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p35781_12081007","uid":12081007,"name":"El Bilal Touré","number":0,"position":"GK","age":25,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p78074_12093439","uid":12093439,"name":"Lamine Camara","number":0,"position":"GK","age":23,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p99395_19220266","uid":19220266,"name":"Gabriel Jesus","number":0,"position":"GK","age":28,"releaseClause":154,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p81849_28126249","uid":28126249,"name":"James McAtee","number":0,"position":"GK","age":24,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p94934_29125265","uid":29125265,"name":"Antonee Robinson","number":0,"position":"GK","age":27,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p45474_43093382","uid":43093382,"name":"Matteo Politano","number":0,"position":"GK","age":31,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p78138_51054011","uid":51054011,"name":"Edson Alvarez","number":0,"position":"GK","age":27,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p27250_53113114","uid":53113114,"name":"Julian Ryerson","number":0,"position":"GK","age":27,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p81155_61083649","uid":61083649,"name":"Nathan Patterson","number":0,"position":"GK","age":25,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92941_67243881","uid":67243881,"name":"Javi Galán","number":0,"position":"GK","age":30,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p50604_67248170","uid":67248170,"name":"Jorge Cuenca","number":0,"position":"GK","age":25,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p22989_72051281","uid":72051281,"name":"Giovanni Reyna","number":0,"position":"GK","age":24,"releaseClause":126,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p30757_92012109","uid":92012109,"name":"Bernd Leno","number":0,"position":"GK","age":33,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p76663_2000137635","uid":2000137635,"name":"Ashley Phillips","number":0,"position":"GK","age":22,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53872_2000155483","uid":2000155483,"name":"Julien Duranville","number":0,"position":"GK","age":21,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p87923_2000184837","uid":2000184837,"name":"Mario Dorgeles","number":0,"position":"GK","age":22,"releaseClause":129,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p63949_24003746","uid":24003746,"name":"Ante Budimir","number":0,"position":"GK","age":34,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p58486_2000399711","uid":2000399711,"name":"Juma Bah","number":0,"position":"GK","age":21,"releaseClause":129,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p41028_2000325860","uid":2000325860,"name":"Divine Mukasa","number":0,"position":"GK","age":19,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p22499_2000378240","uid":2000378240,"name":"Jose Neto","number":0,"position":"GK","age":19,"releaseClause":103,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p17292_2000397242","uid":2000397242,"name":"Mauro Furtado","number":0,"position":"GK","age":19,"releaseClause":79,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p25270_2000409460","uid":2000409460,"name":"Tomas Soares","number":0,"position":"GK","age":19,"releaseClause":77,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p22662_2000412364","uid":2000412364,"name":"Michael Noonan","number":0,"position":"GK","age":19,"releaseClause":82,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p89711_2000416598","uid":2000416598,"name":"Ryan McAidoo","number":0,"position":"GK","age":19,"releaseClause":107,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p90767_2000515504","uid":2000515504,"name":"Jan-Luca Riedl","number":0,"position":"GK","age":18,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"FC Koln":[{"id":"p37632_14180903","uid":14180903,"name":"Mateo Retegui","number":0,"position":"GK","age":26,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p32135_83228731","uid":83228731,"name":"Goncalo Inácio","number":0,"position":"GK","age":25,"releaseClause":158,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p32092_14110846","uid":14110846,"name":"Exequiel Palacios","number":0,"position":"GK","age":26,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p45074_2000011147","uid":2000011147,"name":"Milos Kerkez","number":0,"position":"GK","age":23,"releaseClause":173,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p82655_71108249","uid":71108249,"name":"Heorhii Sudakov","number":0,"position":"GK","age":24,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p39429_19260918","uid":19260918,"name":"David Neres","number":0,"position":"GK","age":28,"releaseClause":153,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p71360_19391095","uid":19391095,"name":"Richard Ríos","number":0,"position":"GK","age":25,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p82999_28122195","uid":28122195,"name":"Fábio Carvalho","number":0,"position":"GK","age":24,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p10756_29137172","uid":29137172,"name":"Aaron Ramsdale","number":0,"position":"GK","age":27,"releaseClause":137,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92810_48037162","uid":48037162,"name":"Robin Le Normand","number":0,"position":"GK","age":28,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p71752_67197145","uid":67197145,"name":"Lucas Hernández","number":0,"position":"GK","age":29,"releaseClause":153,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p23463_84159755","uid":84159755,"name":"Marvin Keller","number":0,"position":"GK","age":25,"releaseClause":133,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p25371_2000016808","uid":2000016808,"name":"Ismaël Doukouré","number":0,"position":"GK","age":23,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p14858_2000020287","uid":2000020287,"name":"Andreas Schjelderup","number":0,"position":"GK","age":23,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p95234_2000028607","uid":2000028607,"name":"Leon Avdullahu","number":0,"position":"GK","age":23,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48069_2000108031","uid":2000108031,"name":"Will Lankshear","number":0,"position":"GK","age":22,"releaseClause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p33883_43091113","uid":43091113,"name":"Bryan Cristante","number":0,"position":"GK","age":30,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p10_62096282","uid":62096282,"name":"Aleksandar Mitrovic","number":0,"position":"GK","age":30,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p8019_2000271959","uid":2000271959,"name":"Gabriele Biancheri","number":0,"position":"GK","age":20,"releaseClause":92,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p31073_2000273442","uid":2000273442,"name":"Elias Benkara","number":0,"position":"GK","age":20,"releaseClause":86,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"FC Nurnberg":[{"id":"p30408_12080051","uid":12080051,"name":"Pape Matar Sarr","number":0,"position":"GK","age":24,"releaseClause":163,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19558_49048380","uid":49048380,"name":"Georginio Rutter","number":0,"position":"GK","age":25,"releaseClause":161,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p17282_27156352","uid":27156352,"name":"Maurits Kjaergaard","number":0,"position":"GK","age":24,"releaseClause":157,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92741_28116386","uid":28116386,"name":"Anthony Gordon","number":0,"position":"GK","age":25,"releaseClause":159,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p9983_2000181790","uid":2000181790,"name":"Junior Kroupi","number":0,"position":"GK","age":21,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p2023_67086656","uid":67086656,"name":"Antoine Griezmann","number":0,"position":"GK","age":34,"releaseClause":154,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p44725_67139735","uid":67139735,"name":"Dani Carvajal","number":0,"position":"GK","age":33,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20507_92071707","uid":92071707,"name":"Alexander Nübel","number":0,"position":"GK","age":28,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p2981_2000027898","uid":2000027898,"name":"Shea Charles","number":0,"position":"GK","age":23,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p12711_2000147146","uid":2000147146,"name":"Dzenan Pejcinovic","number":0,"position":"GK","age":22,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p8177_2000175080","uid":2000175080,"name":"Dennis Seimen","number":0,"position":"GK","age":21,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p8556_43295822","uid":43295822,"name":"Nicolò Cambiaghi","number":0,"position":"GK","age":25,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p84623_53161610","uid":53161610,"name":"Pedersen","number":0,"position":"GK","age":25,"releaseClause":128,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p72014_19337893","uid":19337893,"name":"Roger Ibanez","number":0,"position":"GK","age":26,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p91679_85132406","uid":85132406,"name":"Allan Saint-Maximin","number":0,"position":"GK","age":28,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p67630_29165656","uid":29165656,"name":"Ryan Sessegnon","number":0,"position":"GK","age":25,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6777_48043868","uid":48043868,"name":"Batista Mendy","number":0,"position":"GK","age":25,"releaseClause":137,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p1127_29219115","uid":29219115,"name":"Flavien-Enzo Boyomo","number":0,"position":"GK","age":25,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p57524_37076459","uid":37076459,"name":"Ruben Kluivert","number":0,"position":"GK","age":24.5,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p42070_67178177","uid":67178177,"name":"José Gayà","number":0,"position":"GK","age":30,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p72428_53160749","uid":53160749,"name":"Igoh Ogbu","number":0,"position":"GK","age":25,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p34011_43162321","uid":43162321,"name":"Riccardo Orsolini","number":0,"position":"GK","age":29,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p98352_93142470","uid":93142470,"name":"Yasin Ayari","number":0,"position":"GK","age":23,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p73201_2000054508","uid":2000054508,"name":"Jaden Fernando Slory","number":0,"position":"GK","age":22,"releaseClause":121,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p80145_2000291355","uid":2000291355,"name":"Jorge Salinas","number":0,"position":"GK","age":20,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p29472_2000476260","uid":2000476260,"name":"Chizaram Ezenwata","number":0,"position":"GK","age":18,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p21659_2000283704","uid":2000283704,"name":"Ryunosuke Sato","number":0,"position":"GK","age":18.5,"releaseClause":122,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p64327_2000150854","uid":2000150854,"name":"Peio Canales","number":0,"position":"GK","age":20.5,"releaseClause":126,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p74650_2000233779","uid":2000233779,"name":"Izan Merino","number":0,"position":"GK","age":19.5,"releaseClause":117,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48808_2000180850","uid":2000180850,"name":"Mert Kömür","number":0,"position":"GK","age":19.5,"releaseClause":122,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p74266_2000402956","uid":2000402956,"name":"Sama Nomoko","number":0,"position":"GK","age":17.5,"releaseClause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Genk":[{"id":"p12194_53122155","uid":53122155,"name":"Leo Skiri Østigård","number":0,"position":"GK","age":25,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p55052_70104047","uid":70104047,"name":"Berke Özer","number":0,"position":"GK","age":26,"releaseClause":131,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92009_91183532","uid":91183532,"name":"Diant Ramaj","number":0,"position":"GK","age":25,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p50271_2000191043","uid":2000191043,"name":"Herba Guirassy","number":0,"position":"GK","age":20,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p9968_85033422","uid":85033422,"name":"Geoffrey Kondogbia","number":0,"position":"GK","age":32,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53869_2000054475","uid":2000054475,"name":"Antoni-Djibu Milambo","number":0,"position":"GK","age":21,"releaseClause":133,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p62176_2000053497","uid":2000053497,"name":"David Mella Boullón","number":0,"position":"GK","age":21,"releaseClause":124,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p52088_2000529223","uid":2000529223,"name":"Bryan Bugarín Gonçalves","number":0,"position":"GK","age":17,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p12697_2000379979","uid":2000379979,"name":"Vinicius Lira","number":0,"position":"GK","age":18,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p18786_2000062325","uid":2000062325,"name":"Matte Smets","number":0,"position":"GK","age":22,"releaseClause":124,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p74783_91108805","uid":91108805,"name":"Robert Andrich","number":0,"position":"GK","age":30,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p28899_2000344636","uid":2000344636,"name":"Djylian N'Guessan","number":0,"position":"GK","age":18,"releaseClause":80,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p62663_2000188753","uid":2000188753,"name":"Aladji Bamba","number":0,"position":"GK","age":20,"releaseClause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p35976_2000238992","uid":2000238992,"name":"Tawaratsumida Kota","number":0,"position":"GK","age":22,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p16145_28018613","uid":28018613,"name":"Kieran Trippier","number":0,"position":"GK","age":34,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p86317_2000191040","uid":2000191040,"name":"Louis Leroux","number":0,"position":"GK","age":21,"releaseClause":119,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p91791_2000241496","uid":2000241496,"name":"Moisés Paniagua","number":0,"position":"GK","age":19,"releaseClause":108,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p29580_2000257060","uid":2000257060,"name":"Sebastian Olderheim","number":0,"position":"GK","age":20,"releaseClause":102,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p41233_2000271175","uid":2000271175,"name":"Sidiki Chérif","number":0,"position":"GK","age":20,"releaseClause":122,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p79019_2000275657","uid":2000275657,"name":"Jay Robinson","number":0,"position":"GK","age":20,"releaseClause":126,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p3664_2000288566","uid":2000288566,"name":"Nikola Simic","number":0,"position":"GK","age":20,"releaseClause":104,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p4360_2000288567","uid":2000288567,"name":"Bogdan Kostić","number":0,"position":"GK","age":20,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p8773_2000288923","uid":2000288923,"name":"Khalis Merah","number":0,"position":"GK","age":20,"releaseClause":113,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p3369_2000475823","uid":2000475823,"name":"Tiago Rocha Rodrigues","number":0,"position":"GK","age":17,"releaseClause":77,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53115_2000271667","uid":2000271667,"name":"Tommaso Rubino","number":0,"position":"GK","age":19,"releaseClause":101,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Leverkusen":[{"id":"p87581_2000011972","uid":2000011972,"name":"Sávio","number":0,"position":"GK","age":23,"releaseClause":180,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p93074_28126247","uid":28126247,"name":"Liam Delap","number":0,"position":"GK","age":24,"releaseClause":175,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p89264_86066853","uid":86066853,"name":"Piero Hincapié","number":0,"position":"GK","age":25,"releaseClause":168,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p26818_92088306","uid":92088306,"name":"Nico Schlotterbeck","number":0,"position":"GK","age":25,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p45545_25055037","uid":25055037,"name":"David Doudera","number":0,"position":"GK","age":27,"releaseClause":131,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p538_39062838","uid":39062838,"name":"Orri Steinn Oskarsson","number":0,"position":"GK","age":22,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p2510_49061476","uid":49061476,"name":"Yoan Bonny","number":0,"position":"GK","age":23,"releaseClause":153,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48938_91207698","uid":91207698,"name":"Jonas Urbig","number":0,"position":"GK","age":23,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p93354_2000010316","uid":2000010316,"name":"Rav van den Berg","number":0,"position":"GK","age":23,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p89589_2000023222","uid":2000023222,"name":"Djaoui Cissé","number":0,"position":"GK","age":23,"releaseClause":121,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p97270_2000048260","uid":2000048260,"name":"Alberto Baio","number":0,"position":"GK","age":23,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37247_2000190479","uid":2000190479,"name":"Sam Amo-Ameyaw","number":0,"position":"GK","age":21,"releaseClause":129,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p50296_2000222926","uid":2000222926,"name":"Jeff Ekhator","number":0,"position":"GK","age":20,"releaseClause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p87567_2000243128","uid":2000243128,"name":"Gonzalo Petit","number":0,"position":"GK","age":20,"releaseClause":111,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p69085_2000254692","uid":2000254692,"name":"Chris Rigg","number":0,"position":"GK","age":20,"releaseClause":127,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p57690_2000257921","uid":2000257921,"name":"Karim Coulibaly","number":0,"position":"GK","age":20,"releaseClause":116,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p16740_2000290285","uid":2000290285,"name":"Artem Stepanov","number":0,"position":"GK","age":19,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p14372_2000300244","uid":2000300244,"name":"Omar Janneh","number":0,"position":"GK","age":20,"releaseClause":97,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p44677_28110835","uid":28110835,"name":"Daniel Ballard","number":0,"position":"GK","age":25,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p4466_2000207199","uid":2000207199,"name":"João Victor de Souza Menezes","number":0,"position":"GK","age":20.5,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p23356_2000310749","uid":2000310749,"name":"mertcan ayhan","number":0,"position":"GK","age":20,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p81625_2000154161","uid":2000154161,"name":"aljoscha kemlein","number":0,"position":"GK","age":21,"releaseClause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p60075_37060896","uid":37060896,"name":"Joey Veerman","number":0,"position":"GK","age":26,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p21219_2000395183","uid":2000395183,"name":"Rémi Himbert","number":0,"position":"GK","age":18,"releaseClause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p93322_2000104655","uid":2000104655,"name":"Edoardo Motta","number":0,"position":"GK","age":20.5,"releaseClause":114,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p99313_2000368639","uid":2000368639,"name":"vasilije kostov","number":0,"position":"GK","age":19,"releaseClause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p31089_2000391611","uid":2000391611,"name":"Bovio","number":0,"position":"GK","age":19,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37844_2000459742","uid":2000459742,"name":"Cassiano Kiala","number":0,"position":"GK","age":18,"releaseClause":102,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p29835_2000331119","uid":2000331119,"name":"Fynn schenten","number":0,"position":"GK","age":18.5,"releaseClause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p10113_2000262633","uid":2000262633,"name":"David Santos Daiber","number":0,"position":"GK","age":19.5,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p72079_2000282469","uid":2000282469,"name":"Felipe Chávez","number":0,"position":"GK","age":19.5,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p64959_2000485210","uid":2000485210,"name":"miguel Cubo","number":0,"position":"GK","age":17.5,"releaseClause":82,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Man Utd":[{"id":"p57631_2000123586","uid":2000123586,"name":"Kobbie Mainoo","number":0,"position":"GK","age":22,"releaseClause":179,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p733_43425040","uid":43425040,"name":"Amad Diallo","number":0,"position":"GK","age":25,"releaseClause":166,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p90750_2000035036","uid":2000035036,"name":"Alejandro Garnacho","number":0,"position":"GK","age":23,"releaseClause":170,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5203_19334410","uid":19334410,"name":"Matheus Cunha","number":0,"position":"GK","age":26,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p36057_37058363","uid":37058363,"name":"Tyrell Malacia","number":0,"position":"GK","age":25,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p17785_67201634","uid":67201634,"name":"André Onana","number":0,"position":"GK","age":29,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p18350_2000025291","uid":2000025291,"name":"Rhys Bennett","number":0,"position":"GK","age":23,"releaseClause":92,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p44496_2000123107","uid":2000123107,"name":"Tyler Fredricson","number":0,"position":"GK","age":22,"releaseClause":102,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p88456_2000123626","uid":2000123626,"name":"Daniel Gore","number":0,"position":"GK","age":22,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5212_2000272176","uid":2000272176,"name":"Jayce Fitzgerald","number":0,"position":"GK","age":20,"releaseClause":93,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p83196_2000272185","uid":2000272185,"name":"James Scanlon","number":0,"position":"GK","age":20,"releaseClause":96,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p28530_2000272807","uid":2000272807,"name":"Reece Munro","number":0,"position":"GK","age":20,"releaseClause":88,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48049_2000272808","uid":2000272808,"name":"Jaydan Kamason","number":0,"position":"GK","age":20,"releaseClause":95,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p91585_2000280809","uid":2000280809,"name":"Jack Fletcher","number":0,"position":"GK","age":20,"releaseClause":102,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19341_2000280811","uid":2000280811,"name":"Tyler Fletcher","number":0,"position":"GK","age":20,"releaseClause":96,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p31529_2000392421","uid":2000392421,"name":"Daniel Arner","number":0,"position":"GK","age":19,"releaseClause":82,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p18524_2000392429","uid":2000392429,"name":"Amir Ibragimov","number":0,"position":"GK","age":19,"releaseClause":88,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p74497_2000392431","uid":2000392431,"name":"Bendito Mantato","number":0,"position":"GK","age":19,"releaseClause":91,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p58852_2000392459","uid":2000392459,"name":"Jim Thwaites","number":0,"position":"GK","age":19,"releaseClause":92,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p78915_2000401490","uid":2000401490,"name":"Enzo Kana-Biyik","number":0,"position":"GK","age":20,"releaseClause":96,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48982_2000474164","uid":2000474164,"name":"Jayden Ngwashi","number":0,"position":"GK","age":18,"releaseClause":86,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p18040_28103590","uid":28103590,"name":"Mason Mount","number":0,"position":"GK","age":26,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p73983_2000273647","uid":2000273647,"name":"Jacob Devaney","number":0,"position":"GK","age":20,"releaseClause":99,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p31384_2000474167","uid":2000474167,"name":"Jay McEvoy","number":0,"position":"GK","age":18,"releaseClause":80,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p25087_2000474178","uid":2000474178,"name":"Noah Ajayi","number":0,"position":"GK","age":17,"releaseClause":68,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Newcastle":[{"id":"p75330_49038942","uid":49038942,"name":"Benoit Badiashile","number":0,"position":"GK","age":25,"releaseClause":159,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p24453_2000053516","uid":2000053516,"name":"Adam Wharton","number":0,"position":"GK","age":23,"releaseClause":167,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p95691_2000257209","uid":2000257209,"name":"Givairo Read","number":0,"position":"GK","age":21,"releaseClause":164,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p81557_57178516","uid":57178516,"name":"Radu Dragusin","number":0,"position":"GK","age":25,"releaseClause":159,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p89580_85140301","uid":85140301,"name":"Christopher Nkunku","number":0,"position":"GK","age":27,"releaseClause":153,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p33844_28106999","uid":28106999,"name":"Brahim Díaz","number":0,"position":"GK","age":25,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20436_43272557","uid":43272557,"name":"Davide Frattesi","number":0,"position":"GK","age":25,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5295_48044735","uid":48044735,"name":"Amine Gouiri","number":0,"position":"GK","age":25,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p26170_49047065","uid":49047065,"name":"Mohamed Simakan","number":0,"position":"GK","age":25,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p22440_53143395","uid":53143395,"name":"Jorgen Strand Larsen","number":0,"position":"GK","age":25,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p55931_73201428","uid":73201428,"name":"Guela Doué","number":0,"position":"GK","age":24,"releaseClause":139,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p18277_2000006280","uid":2000006280,"name":"Mohamed-Ali Cho","number":0,"position":"GK","age":23,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p67824_2000011415","uid":2000011415,"name":"Kévin Danois","number":0,"position":"GK","age":23,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20237_2000102722","uid":2000102722,"name":"Wilson Odobert","number":0,"position":"GK","age":22,"releaseClause":154,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p2944_2000142236","uid":2000142236,"name":"Romain Esse","number":0,"position":"GK","age":22,"releaseClause":116,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p71279_2000184285","uid":2000184285,"name":"Clement Bischoff","number":0,"position":"GK","age":21,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p96688_2000190480","uid":2000190480,"name":"Jayden Meghoma","number":0,"position":"GK","age":21,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p80843_2000028428","uid":2000028428,"name":"Leo Román","number":0,"position":"GK","age":25,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p46374_2000188079","uid":2000188079,"name":"Dayann Methalie","number":0,"position":"GK","age":21,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p61266_2000333625","uid":2000333625,"name":"Gessime Yassine","number":0,"position":"GK","age":20.5,"releaseClause":116,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p98604_2000288697","uid":2000288697,"name":"Harrison Armstrong","number":0,"position":"GK","age":20,"releaseClause":122,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p93032_2000255823","uid":2000255823,"name":"Viery","number":0,"position":"GK","age":20.5,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p10647_2000280486","uid":2000280486,"name":"Moustapha Dabo","number":0,"position":"GK","age":19,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p35875_2000319095","uid":2000319095,"name":"Domchak Nazar","number":0,"position":"GK","age":19.5,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p46074_2000475043","uid":2000475043,"name":"Stephan Zagadou","number":0,"position":"GK","age":18,"releaseClause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p27326_2000407283","uid":2000407283,"name":"Marvyn Muzungu","number":0,"position":"GK","age":19,"releaseClause":100,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p84545_2000368352","uid":2000368352,"name":"Ifeanyi Ndukwe","number":0,"position":"GK","age":18.5,"releaseClause":87,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53229_2000471424","uid":2000471424,"name":"Zadok Yohanna","number":0,"position":"GK","age":18.5,"releaseClause":84,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p45386_2000481260","uid":2000481260,"name":"Joshua Dago","number":0,"position":"GK","age":16.5,"releaseClause":83,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Oriental Dragon":[{"id":"p30527_91187791","uid":91187791,"name":"Nick Woltemade","number":0,"position":"GK","age":25,"releaseClause":165,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p28149_2000077193","uid":2000077193,"name":"Arda Güler","number":0,"position":"GK","age":22,"releaseClause":173,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p467_2000090211","uid":2000090211,"name":"Antonio Nusa","number":0,"position":"GK","age":22,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p84181_2000184611","uid":2000184611,"name":"Josh Acheampong","number":0,"position":"GK","age":21,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5201_2000262615","uid":2000262615,"name":"El Hadji Malick Diouf","number":0,"position":"GK","age":22,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p15120_36159445","uid":36159445,"name":"Kostas Koulierakis","number":0,"position":"GK","age":23,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p36071_37063774","uid":37063774,"name":"Sam Beukema","number":0,"position":"GK","age":26,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p60949_45112276","uid":45112276,"name":"Zion Suzuki","number":0,"position":"GK","age":24,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p27075_49039789","uid":49039789,"name":"Loic Badé","number":0,"position":"GK","age":25,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p71021_67294886","uid":67294886,"name":"Gabri Veiga","number":0,"position":"GK","age":25,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p81213_89066513","uid":89066513,"name":"Johnny","number":0,"position":"GK","age":25,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p38702_91205129","uid":91205129,"name":"Fisnik Asllani","number":0,"position":"GK","age":24,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6028_2000026180","uid":2000026180,"name":"Conrad Harder","number":0,"position":"GK","age":22,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p90961_2000065061","uid":2000065061,"name":"Oscar Gloukh","number":0,"position":"GK","age":23,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p45626_2000122572","uid":2000122572,"name":"Aarón Anselmino","number":0,"position":"GK","age":22,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p24181_2000126407","uid":2000126407,"name":"Raúl Asencio","number":0,"position":"GK","age":24,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p18846_2000179623","uid":2000179623,"name":"Dies Janse","number":0,"position":"GK","age":21,"releaseClause":119,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p37607_2000188763","uid":2000188763,"name":"Alvaro Montoro","number":0,"position":"GK","age":20,"releaseClause":124,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p42443_2000298276","uid":2000298276,"name":"Pedro Luccas Morisco da Silva","number":0,"position":"GK","age":23,"releaseClause":123,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p40544_2000375912","uid":2000375912,"name":"Ruud Nijstad","number":0,"position":"GK","age":19,"releaseClause":95,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p51292_2000411042","uid":2000411042,"name":"Anísio","number":0,"position":"GK","age":19,"releaseClause":101,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p23879_2000414242","uid":2000414242,"name":"Bradley Burrowes","number":0,"position":"GK","age":19,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p375_2000415453","uid":2000415453,"name":"Kaden Elliot Braithwaite","number":0,"position":"GK","age":19,"releaseClause":75,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48638_2000493921","uid":2000493921,"name":"Seth Somapalan Ridgeon","number":0,"position":"GK","age":18,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"PSV":[{"id":"p97523_28124569","uid":28124569,"name":"Tino Livramento","number":0,"position":"GK","age":24,"releaseClause":170,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5808_83137935","uid":83137935,"name":"Francisco Trincao","number":0,"position":"GK","age":25,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p86719_91205962","uid":91205962,"name":"Omar Marmoush","number":0,"position":"GK","age":26,"releaseClause":163,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p77817_2000107079","uid":2000107079,"name":"Malick Fofana","number":0,"position":"GK","age":22,"releaseClause":171,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p14802_28108492","uid":28108492,"name":"Arijanet Anan Murić","number":0,"position":"GK","age":26,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p91272_29125842","uid":29125842,"name":"Jarrod Bowen","number":0,"position":"GK","age":28,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p39240_47102498","uid":47102498,"name":"Gvidas Gineitis","number":0,"position":"GK","age":23,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p97315_67288450","uid":67288450,"name":"Abel Bretones","number":0,"position":"GK","age":25,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p89737_85033423","uid":85033423,"name":"Lucas Digne","number":0,"position":"GK","age":32,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p81026_91011532","uid":91011532,"name":"Willi Orbán","number":0,"position":"GK","age":32,"releaseClause":153,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19056_91137493","uid":91137493,"name":"Waldemar Anton","number":0,"position":"GK","age":29,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p3638_2000006106","uid":2000006106,"name":"Isaak Touré","number":0,"position":"GK","age":24,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6730_2000254793","uid":2000254793,"name":"Sverre Nypan","number":0,"position":"GK","age":20,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p94147_2000387880","uid":2000387880,"name":"Sami Bouhoudane","number":0,"position":"GK","age":19,"releaseClause":102,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p98048_37065767","uid":37065767,"name":"Sergino Dest","number":0,"position":"GK","age":25,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p43934_37076315","uid":37076315,"name":"Couhaib Driouech","number":0,"position":"GK","age":24,"releaseClause":137,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p15243_2000188625","uid":2000188625,"name":"Yanis Massolin","number":0,"position":"GK","age":23,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5974_37057744","uid":37057744,"name":"Jerdy Schouten","number":0,"position":"GK","age":28,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p50257_20048604","uid":20048604,"name":"Ricardo Pepi","number":0,"position":"GK","age":24,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p86863_2000110948","uid":2000110948,"name":"Julian Gonstad","number":0,"position":"GK","age":20,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p82502_2000379974","uid":2000379974,"name":"João Pedro","number":0,"position":"GK","age":18,"releaseClause":107,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p1204_2000257651","uid":2000257651,"name":"Noah Darvich","number":0,"position":"GK","age":20,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p86773_2000258154","uid":2000258154,"name":"Luis Engelns","number":0,"position":"GK","age":20,"releaseClause":108,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19182_2000382564","uid":2000382564,"name":"Marc Domènech","number":0,"position":"GK","age":20,"releaseClause":118,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p41203_2000143321","uid":2000143321,"name":"David Martínez","number":0,"position":"GK","age":20,"releaseClause":111,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p40870_2000284118","uid":2000284118,"name":"Yunus Emre Konak","number":0,"position":"GK","age":20,"releaseClause":119,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p28965_2000174402","uid":2000174402,"name":"Jones El-Abdellaoui","number":0,"position":"GK","age":17.5,"releaseClause":126,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p80618_2000183494","uid":2000183494,"name":"Saïmon Bouabré","number":0,"position":"GK","age":19.5,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"R. Madrid":[{"id":"p28445_2000169739","uid":2000169739,"name":"Lucas Bergvall","number":0,"position":"GK","age":21,"releaseClause":180,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p26668_719601","uid":719601,"name":"Robert Lewandowski","number":0,"position":"GK","age":36,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p95297_16202373","uid":16202373,"name":"Dominik Szoboszlai","number":0,"position":"GK","age":25,"releaseClause":170,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p34761_37062185","uid":37062185,"name":"Cody Gakpo","number":0,"position":"GK","age":26,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p29530_45104608","uid":45104608,"name":"Takefusa Kubo","number":0,"position":"GK","age":25,"releaseClause":166,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p27465_2000183245","uid":2000183245,"name":"Martim Fernandes","number":0,"position":"GK","age":21,"releaseClause":159,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p93702_2000056415","uid":2000056415,"name":"Ilias Akhomach","number":0,"position":"GK","age":23,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p22857_27069975","uid":27069975,"name":"Joachim Andersen","number":0,"position":"GK","age":29,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p70807_28018193","uid":28018193,"name":"Péter Gulácsi","number":0,"position":"GK","age":35,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p59020_28104130","uid":28104130,"name":"Caoimhin Kelleher","number":0,"position":"GK","age":26,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p3817_45030953","uid":45030953,"name":"Wataru Endo","number":0,"position":"GK","age":32,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p86475_48044499","uid":48044499,"name":"Jean-Clair Todibo","number":0,"position":"GK","age":25,"releaseClause":139,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p26319_62095383","uid":62095383,"name":"Adam Marusic","number":0,"position":"GK","age":32,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p74458_67196204","uid":67196204,"name":"Carlos Soler","number":0,"position":"GK","age":28,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p66408_67210735","uid":67210735,"name":"Alejandro Catena","number":0,"position":"GK","age":30,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p67808_67257950","uid":67257950,"name":"Víctor Gómez","number":0,"position":"GK","age":25,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p39778_85028361","uid":85028361,"name":"Benjamin André","number":0,"position":"GK","age":34,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p72065_85136376","uid":85136376,"name":"Nicolas Pépé","number":0,"position":"GK","age":30,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p32820_86047272","uid":86047272,"name":"Yangel Clemente Herrera Ravelo","number":0,"position":"GK","age":27,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p78623_91143714","uid":91143714,"name":"Maximilian Mittelstädt","number":0,"position":"GK","age":28,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p35991_92020288","uid":92020288,"name":"Heung-Min Son","number":0,"position":"GK","age":33,"releaseClause":151,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p77050_2000273988","uid":2000273988,"name":"Gabriel Carvalho","number":0,"position":"GK","age":19,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p50224_2000288465","uid":2000288465,"name":"Andrija Maksimovic","number":0,"position":"GK","age":20,"releaseClause":122,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p43441_2000379917","uid":2000379917,"name":"Wesley Natã","number":0,"position":"GK","age":19,"releaseClause":86,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p77821_2000407413","uid":2000407413,"name":"Asier Bonel Aicua","number":0,"position":"GK","age":19,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p40163_2000465225","uid":2000465225,"name":"Mathis Albert","number":0,"position":"GK","age":18,"releaseClause":92,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p15348_2000474063","uid":2000474063,"name":"Jayden Onia Seke","number":0,"position":"GK","age":18,"releaseClause":97,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p34601_2000495383","uid":2000495383,"name":"Quenten Attigah","number":0,"position":"GK","age":18,"releaseClause":98,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Sporting":[{"id":"p5524_37024025","uid":37024025,"name":"Virgil van Dijk","number":0,"position":"GK","age":32,"releaseClause":179,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p9741_67246385","uid":67246385,"name":"Martín Zubimendi","number":0,"position":"GK","age":26,"releaseClause":161,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p50679_2000311833","uid":2000311833,"name":"Yan Diomandé","number":0,"position":"GK","age":20,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p70472_28060397","uid":28060397,"name":"John Stones","number":0,"position":"GK","age":31,"releaseClause":162,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p79682_12029963","uid":12029963,"name":"Yassine Bounou","number":0,"position":"GK","age":34,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92176_19320258","uid":19320258,"name":"Samuel Lino","number":0,"position":"GK","age":25,"releaseClause":138,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48162_21024436","uid":21024436,"name":"Nikola Vasilj","number":0,"position":"GK","age":29,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p13249_27039017","uid":27039017,"name":"Christian Norgaard","number":0,"position":"GK","age":31,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p73436_27129532","uid":27129532,"name":"Alexander Bah","number":0,"position":"GK","age":27,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p89285_48042766","uid":48042766,"name":"Ismaïla Sarr","number":0,"position":"GK","age":27,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p42016_72048200","uid":72048200,"name":"Miles Robinson","number":0,"position":"GK","age":28,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p64790_89040516","uid":89040516,"name":"Ethan Pinnock","number":0,"position":"GK","age":32,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p50659_2000120348","uid":2000120348,"name":"Hamza Igamane","number":0,"position":"GK","age":24,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p31686_2000288850","uid":2000288850,"name":"Quentin Ndjantou","number":0,"position":"GK","age":20,"releaseClause":108,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p65029_2000330201","uid":2000330201,"name":"Kennet Eichhorn","number":0,"position":"GK","age":18,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p84808_2000369658","uid":2000369658,"name":"Davinchi","number":0,"position":"GK","age":19,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p34304_2000388558","uid":2000388558,"name":"Louis Page","number":0,"position":"GK","age":19,"releaseClause":112,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p83131_28068727","uid":28068727,"name":"Ruben Loftus-Cheek","number":0,"position":"GK","age":29,"releaseClause":144,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p54097_27100968","uid":27100968,"name":"Rasmus Kristensen","number":0,"position":"GK","age":28,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p62581_29192705","uid":29192705,"name":"Pedro Goncalves","number":0,"position":"GK","age":27,"releaseClause":153,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p90627_2000248160","uid":2000248160,"name":"Enrique Aguilar","number":0,"position":"GK","age":20,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p1345_2000386325","uid":2000386325,"name":"Emmanuel Mbemba","number":0,"position":"GK","age":19,"releaseClause":80,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p23238_2000403408","uid":2000403408,"name":"Kaua Prates","number":0,"position":"GK","age":18,"releaseClause":94,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p44934_2000403932","uid":2000403932,"name":"Baba Korouma","number":0,"position":"GK","age":18,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p69893_2000417769","uid":2000417769,"name":"Robinho Junior","number":0,"position":"GK","age":19,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p63784_2000423813","uid":2000423813,"name":"Zinadine Zidane Bedoya","number":0,"position":"GK","age":18,"releaseClause":82,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p34907_2000448414","uid":2000448414,"name":"Rafael Belinho","number":0,"position":"GK","age":18,"releaseClause":82,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p55661_2000468465","uid":2000468465,"name":"Wael Mohya","number":0,"position":"GK","age":18,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p15609_2000476254","uid":2000476254,"name":"Calvin Diakite","number":0,"position":"GK","age":18,"releaseClause":75,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p11932_2000494868","uid":2000494868,"name":"Sam Alabi","number":0,"position":"GK","age":18,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Stuttgart":[{"id":"p45718_86078360","uid":86078360,"name":"Moisés Caicedo","number":0,"position":"GK","age":25,"releaseClause":185,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p88199_18110528","uid":18110528,"name":"Charles De Ketelaere","number":0,"position":"GK","age":25,"releaseClause":160,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p24017_19273276","uid":19273276,"name":"Eder Militao","number":0,"position":"GK","age":27,"releaseClause":159,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p65636_91187679","uid":91187679,"name":"Malik Tillman","number":0,"position":"GK","age":25,"releaseClause":158,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p80733_2000474101","uid":2000474101,"name":"Jeremy Monga","number":0,"position":"GK","age":18,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53322_37074900","uid":37074900,"name":"Palmeirasp van den Berg","number":0,"position":"GK","age":25,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p56257_2000202578","uid":2000202578,"name":"Alisson","number":0,"position":"GK","age":21,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p58439_2000241381","uid":2000241381,"name":"Matvey Kislyak","number":0,"position":"GK","age":22,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p28057_28095342","uid":28095342,"name":"Angeliño","number":0,"position":"GK","age":28,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p24536_63029353","uid":63029353,"name":"Dávid Hancko","number":0,"position":"GK","age":27,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p62727_91105813","uid":91105813,"name":"Robin Zentner","number":0,"position":"GK","age":30,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p5736_92103754","uid":92103754,"name":"Jamie Leweling","number":0,"position":"GK","age":25,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p50864_2000112357","uid":2000112357,"name":"Kauã Santos","number":0,"position":"GK","age":24,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p23095_2000136301","uid":2000136301,"name":"Marlon Gomes","number":0,"position":"GK","age":23,"releaseClause":139,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p14406_2000158854","uid":2000158854,"name":"Tani Oluwaseyi","number":0,"position":"GK","age":25,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p73836_2000165617","uid":2000165617,"name":"Kike Salas","number":0,"position":"GK","age":25,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p51399_2000241413","uid":2000241413,"name":"Kirill Glebov","number":0,"position":"GK","age":21,"releaseClause":129,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p13545_2000409386","uid":2000409386,"name":"José Reyes","number":0,"position":"GK","age":19,"releaseClause":95,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p79917_2000485992","uid":2000485992,"name":"Luca Williams-Barnett","number":0,"position":"GK","age":18,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p16373_2000080723","uid":2000080723,"name":"Demir Ege Tiknaz","number":0,"position":"GK","age":22,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p24348_19409389","uid":19409389,"name":"Thiago","number":0,"position":"GK","age":25,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p85316_2000227977","uid":2000227977,"name":"Héctor Fort","number":0,"position":"GK","age":20,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p64503_91203087","uid":91203087,"name":"Ansgar Knauff","number":0,"position":"GK","age":25,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p26074_2000227258","uid":2000227258,"name":"Ricardo Mathias","number":0,"position":"GK","age":21,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p72940_2000272205","uid":2000272205,"name":"Lucas Ferreira","number":0,"position":"GK","age":21,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p36400_2000350902","uid":2000350902,"name":"Emre Unüvar","number":0,"position":"GK","age":19,"releaseClause":101,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p64231_2000375172","uid":2000375172,"name":"Freddie Simmonds","number":0,"position":"GK","age":19,"releaseClause":95,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Sunderland":[{"id":"p88716_2000095783","uid":2000095783,"name":"Vitor Roque","number":0,"position":"GK","age":22,"releaseClause":161,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p11448_2000399897","uid":2000399897,"name":"Rio Ngumoha","number":0,"position":"GK","age":18,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p57721_2000096278","uid":2000096278,"name":"Pietro Comuzzo","number":0,"position":"GK","age":22,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p67432_27129125","uid":27129125,"name":"Frank Onyeka","number":0,"position":"GK","age":27,"releaseClause":131,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6096_28128173","uid":28128173,"name":"William Osula","number":0,"position":"GK","age":23,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p87253_43272105","uid":43272105,"name":"Michele Collocolo","number":0,"position":"GK","age":25,"releaseClause":127,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p75366_59058929","uid":59058929,"name":"Tärlan Ähmädli","number":0,"position":"GK","age":30,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p44020_76018954","uid":76018954,"name":"Jhon Córdoba","number":0,"position":"GK","age":32,"releaseClause":139,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p11854_91193999","uid":91193999,"name":"Omar Traoré","number":0,"position":"GK","age":27,"releaseClause":126,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p17930_2000184143","uid":2000184143,"name":"Tommaso Martinelli","number":0,"position":"GK","age":21,"releaseClause":117,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p88251_2000251841","uid":2000251841,"name":"Mtias Acevedo","number":0,"position":"GK","age":19,"releaseClause":92,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48753_2000274341","uid":2000274341,"name":"Kacper Potulski","number":0,"position":"GK","age":19,"releaseClause":122,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p8972_2000288922","uid":2000288922,"name":"Enzo Molebe","number":0,"position":"GK","age":19,"releaseClause":102,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p9771_2000326671","uid":2000326671,"name":"Viktor Bjarki Daðason","number":0,"position":"GK","age":19,"releaseClause":114,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p9845_2000351894","uid":2000351894,"name":"Mateus Mané","number":0,"position":"GK","age":19,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53386_2000448428","uid":2000448428,"name":"Mikkel Bro Hansen","number":0,"position":"GK","age":18,"releaseClause":98,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p97107_2000466272","uid":2000466272,"name":"Brian Madjo","number":0,"position":"GK","age":18,"releaseClause":95,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p94946_2000481114","uid":2000481114,"name":"Tian Nai Koren","number":0,"position":"GK","age":18,"releaseClause":95,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p10309_2000019039","uid":2000019039,"name":"Lorenzo Bernasconi","number":0,"position":"GK","age":22.5,"releaseClause":124,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p50850_2000233765","uid":2000233765,"name":"Younes Ebnoutalib","number":0,"position":"GK","age":23.5,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p17688_2000312176","uid":2000312176,"name":"Igor Tyjon","number":0,"position":"GK","age":19,"releaseClause":96,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p69797_2000335003","uid":2000335003,"name":"Maxloren Castro","number":0,"position":"GK","age":19,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p88084_2000338373","uid":2000338373,"name":"Francisco Baridó","number":0,"position":"GK","age":19,"releaseClause":93,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p88600_2000370918","uid":2000370918,"name":"Igor Oyono","number":0,"position":"GK","age":19,"releaseClause":88,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p73815_2000292320","uid":2000292320,"name":"Jesse Derry","number":0,"position":"GK","age":20,"releaseClause":98,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p15397_2000474873","uid":2000474873,"name":"Jivayno Zinhagel","number":0,"position":"GK","age":18,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6736_2000500824","uid":2000500824,"name":"Ekene Russel Chukwuani","number":0,"position":"GK","age":18,"releaseClause":76,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p81649_2000488948","uid":2000488948,"name":"David Nogueira Carmo","number":0,"position":"GK","age":17.5,"releaseClause":84,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p78944_2000324081","uid":2000324081,"name":"Tomás Leandro Aranda","number":0,"position":"GK","age":18.5,"releaseClause":109,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p64310_2000447684","uid":2000447684,"name":"José Rafael Escorcia De La Cruz","number":0,"position":"GK","age":16.5,"releaseClause":75,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"West Ham":[{"id":"p62945_2000390047","uid":2000390047,"name":"Tylel Tati","number":0,"position":"GK","age":19,"releaseClause":114,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6457_2000395118","uid":2000395118,"name":"Uchenna Ogundu","number":0,"position":"GK","age":21,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p46753_2000258668","uid":2000258668,"name":"Louey Ben Farhat","number":0,"position":"GK","age":21,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p35452_2000466343","uid":2000466343,"name":"Olivier Mambwa","number":0,"position":"GK","age":18,"releaseClause":96,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p11307_2000485995","uid":2000485995,"name":"Byfield Jun'ai","number":0,"position":"GK","age":18,"releaseClause":88,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p4368_2000461946","uid":2000461946,"name":"Antonio Arena","number":0,"position":"GK","age":18,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19635_2000408376","uid":2000408376,"name":"Cheveyo Balentien","number":0,"position":"GK","age":20,"releaseClause":85,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19307_2000497044","uid":2000497044,"name":"David Boly","number":0,"position":"GK","age":18,"releaseClause":88,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p75294_2000214745","uid":2000214745,"name":"Sascha Britschgi","number":0,"position":"GK","age":20,"releaseClause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p99006_2000216339","uid":2000216339,"name":"Othmane Maamma","number":0,"position":"GK","age":21,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p30546_2000350319","uid":2000350319,"name":"Love Arrhov","number":0,"position":"GK","age":19,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p13739_2000449300","uid":2000449300,"name":"Moncef Zekri","number":0,"position":"GK","age":18,"releaseClause":91,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p75409_27120988","uid":27120988,"name":"Mads Hermansen","number":0,"position":"GK","age":25,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p48867_14063109","uid":14063109,"name":"Jeremías Ledesma","number":0,"position":"GK","age":32,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6441_76042952","uid":76042952,"name":"Jhon Lucumí","number":0,"position":"GK","age":27,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p17964_83257795","uid":83257795,"name":"Leonardo Filipe Cruz Lelo","number":0,"position":"GK","age":25,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6309_2000170028","uid":2000170028,"name":"Lennon Miller","number":0,"position":"GK","age":20,"releaseClause":126,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p62701_2000030160","uid":2000030160,"name":"Franculino Djú","number":0,"position":"GK","age":23,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p64471_28058224","uid":28058224,"name":"Ross Barkley","number":0,"position":"GK","age":31,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p17836_28127273","uid":28127273,"name":"Jonathan Rowe","number":0,"position":"GK","age":24,"releaseClause":137,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p21227_2000047226","uid":2000047226,"name":"Brooke Norton-Cuffy","number":0,"position":"GK","age":23,"releaseClause":131,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p68931_2000252612","uid":2000252612,"name":"Santiago Londoño","number":0,"position":"GK","age":19,"releaseClause":96,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p90584_2000290759","uid":2000290759,"name":"Hugo Camberos","number":0,"position":"GK","age":20,"releaseClause":113,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p875_2000372610","uid":2000372610,"name":"Rin Ahmeti","number":0,"position":"GK","age":18,"releaseClause":60,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p78348_2000378267","uid":2000378267,"name":"Rafael Quintas","number":0,"position":"GK","age":19,"releaseClause":83,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p3797_2000487699","uid":2000487699,"name":"Destiny Elimoghale","number":0,"position":"GK","age":18,"releaseClause":78,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"Wolfsburg":[{"id":"p50797_16337125","uid":16337125,"name":"Leopold Querfeld","number":0,"position":"GK","age":23,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p88333_28122837","uid":28122837,"name":"Troy Parrott","number":0,"position":"GK","age":25,"releaseClause":133,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p32951_37053569","uid":37053569,"name":"Kingsley Ehizibue","number":0,"position":"GK","age":30,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p42590_49055037","uid":49055037,"name":"Maghnes Akliouche","number":0,"position":"GK","age":25,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p95778_53020695","uid":53020695,"name":"Joshua King","number":0,"position":"GK","age":33,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p44533_2000199255","uid":2000199255,"name":"Joao Fonseca","number":0,"position":"GK","age":20,"releaseClause":99,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6300_2000457461","uid":2000457461,"name":"Daulet Orynbasar","number":0,"position":"GK","age":18,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p30109_2000463321","uid":2000463321,"name":"Harry Gray","number":0,"position":"GK","age":18,"releaseClause":114,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p62944_2000131124","uid":2000131124,"name":"Christian Mawissa","number":0,"position":"GK","age":22,"releaseClause":125,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p85574_2000466929","uid":2000466929,"name":"Zabi","number":0,"position":"GK","age":19.5,"releaseClause":106,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p74739_2000407487","uid":2000407487,"name":"Bernardo Lima","number":0,"position":"GK","age":18,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p61600_2000384911","uid":2000384911,"name":"Renato Nhaga","number":0,"position":"GK","age":19,"releaseClause":113,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p77671_2000072022","uid":2000072022,"name":"Igor Matanovic","number":0,"position":"GK","age":24,"releaseClause":127,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p76442_2000187623","uid":2000187623,"name":"Jaydee Canvot","number":0,"position":"GK","age":21,"releaseClause":133,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p42031_2000311463","uid":2000311463,"name":"Oskar Pietuszewski","number":0,"position":"GK","age":19,"releaseClause":120,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p59052_2000154217","uid":2000154217,"name":"Semih Kilicsoy","number":0,"position":"GK","age":21,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p10131_292380027","uid":292380027,"name":"Tim Iroegbunam","number":0,"position":"GK","age":24,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p45389_16202375","uid":16202375,"name":"David Affengruber","number":0,"position":"GK","age":24.5,"releaseClause":133,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p59830_2000063168","uid":2000063168,"name":"Luka Kharatishvili","number":0,"position":"GK","age":23,"releaseClause":108,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p4174_2000206446","uid":2000206446,"name":"Taras Mykhavko","number":0,"position":"GK","age":21,"releaseClause":118,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p65470_2000310893","uid":2000310893,"name":"cajetan lenz","number":0,"position":"GK","age":20.5,"releaseClause":118,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p61186_2000299857","uid":2000299857,"name":"Alfie Cresswell","number":0,"position":"GK","age":19,"releaseClause":92,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p25620_2000461757","uid":2000461757,"name":"Mussa Kaba","number":0,"position":"GK","age":18,"releaseClause":90,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p49893_2000498739","uid":2000498739,"name":"Finlay Gorman","number":0,"position":"GK","age":18,"releaseClause":75,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p63040_2000503845","uid":2000503845,"name":"Aly Traoré","number":0,"position":"GK","age":17.5,"releaseClause":65,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p1602_2000330431","uid":2000330431,"name":"Faik Sakar","number":0,"position":"GK","age":18.5,"releaseClause":86,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p98246_2000320711","uid":2000320711,"name":"John Otomewo","number":0,"position":"GK","age":19,"releaseClause":82,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p18291_2000314725","uid":2000314725,"name":"Bartosz Mazurek","number":0,"position":"GK","age":18.5,"releaseClause":88,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p98677_2000228176","uid":2000228176,"name":"Diego Kochen","number":0,"position":"GK","age":19.5,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p85634_2000302640","uid":2000302640,"name":"Tiago Silva","number":0,"position":"GK","age":17.5,"releaseClause":76,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53182_2000189187","uid":2000189187,"name":"Olti Hyseni","number":0,"position":"GK","age":17.5,"releaseClause":106,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"青岛海神":[{"id":"p78536_43295814","uid":43295814,"name":"Dejan Kulusevski","number":0,"position":"GK","age":25,"releaseClause":164,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p75020_63012964","uid":63012964,"name":"Stanislav Lobotka","number":0,"position":"GK","age":30,"releaseClause":157,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p85455_67153376","uid":67153376,"name":"Alex Grimaldo","number":0,"position":"GK","age":29,"releaseClause":162,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p27992_67196198","uid":67196198,"name":"Marcos Llorente","number":0,"position":"GK","age":30,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p24692_69000199","uid":69000199,"name":"Yann Sommer","number":0,"position":"GK","age":36,"releaseClause":156,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p35638_2000125958","uid":2000125958,"name":"Pablo Barrios","number":0,"position":"GK","age":24,"releaseClause":174,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p2650_18087987","uid":18087987,"name":"Sebastiaan Bornauw","number":0,"position":"GK","age":26,"releaseClause":132,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p87295_19158043","uid":19158043,"name":"Emerson","number":0,"position":"GK","age":30,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p45767_27129146","uid":27129146,"name":"Gustav Isaksen","number":0,"position":"GK","age":25,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p11107_37039829","uid":37039829,"name":"Kenny Tete","number":0,"position":"GK","age":29,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p12360_43491384","uid":43491384,"name":"Federico Gatti","number":0,"position":"GK","age":27,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p83201_45104245","uid":45104245,"name":"Ao Tanaka","number":0,"position":"GK","age":26,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p90547_55069796","uid":55069796,"name":"Ricardo Horta","number":0,"position":"GK","age":30,"releaseClause":147,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6031_62215974","uid":62215974,"name":"Jaka Bijol","number":0,"position":"GK","age":26,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20880_67047092","uid":67047092,"name":"Koke","number":0,"position":"GK","age":33,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p59222_90087316","uid":90087316,"name":"Keven Schlotterbeck","number":0,"position":"GK","age":28,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p32228_91107360","uid":91107360,"name":"Niklas Süle","number":0,"position":"GK","age":29,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p38552_2000091914","uid":2000091914,"name":"Froilan Díaz","number":0,"position":"GK","age":21,"releaseClause":103,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p16295_11022221","uid":11022221,"name":"Vedat Muriqi","number":0,"position":"GK","age":31,"releaseClause":145,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92348_13162051","uid":13162051,"name":"Oscar","number":0,"position":"GK","age":27,"releaseClause":143,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p53124_8435089","uid":8435089,"name":"Karim Benzema","number":0,"position":"GK","age":37,"releaseClause":150,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p36576_25059064","uid":25059064,"name":"Pavel Šulc","number":0,"position":"GK","age":25,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p98842_2000264015","uid":2000264015,"name":"Alessandro Nunziante","number":0,"position":"GK","age":20,"releaseClause":110,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p42938_2000280572","uid":2000280572,"name":"Joachim Kayi Sanda","number":0,"position":"GK","age":20,"releaseClause":105,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p14294_2000302088","uid":2000302088,"name":"Leo Shahar","number":0,"position":"GK","age":20,"releaseClause":94,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}],"上海申花":[{"id":"p45623_18106083","uid":18106083,"name":"Jérémy Doku","number":0,"position":"GK","age":25,"releaseClause":175,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p36374_19297055","uid":19297055,"name":"Bruno Guimaraes","number":0,"position":"GK","age":27,"releaseClause":168,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p15944_37076355","uid":37076355,"name":"Bart Verbruggen","number":0,"position":"GK","age":24,"releaseClause":165,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p35043_2000262919","uid":2000262919,"name":"Luka Vuskovic","number":0,"position":"GK","age":21,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p56903_18115016","uid":18115016,"name":"Zeno Debast","number":0,"position":"GK","age":23,"releaseClause":155,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p3002_2000016527","uid":2000016527,"name":"Stanis Idumbo Muzambo","number":0,"position":"GK","age":22,"releaseClause":141,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p21319_16254093","uid":16254093,"name":"Luka Sucic","number":0,"position":"GK","age":24,"releaseClause":142,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p97543_18108540","uid":18108540,"name":"Jonathan David","number":0,"position":"GK","age":25,"releaseClause":152,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p23432_43500350","uid":43500350,"name":"Wilfried Gnonto","number":0,"position":"GK","age":23,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p15762_58104594","uid":58104594,"name":"Alexandr Golovin","number":0,"position":"GK","age":29,"releaseClause":135,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p54251_58123738","uid":58123738,"name":"Matvey Safonov","number":0,"position":"GK","age":26,"releaseClause":149,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p19816_72048035","uid":72048035,"name":"Weston McKennie","number":0,"position":"GK","age":26,"releaseClause":153,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p18460_93142472","uid":93142472,"name":"Samuel Dahl","number":0,"position":"GK","age":24,"releaseClause":136,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p6818_2000005988","uid":2000005988,"name":"Thomas Kristensen","number":0,"position":"GK","age":25,"releaseClause":140,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p67751_2000014077","uid":2000014077,"name":"Arsen Zakharyan","number":0,"position":"GK","age":24,"releaseClause":128,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p87519_2000124157","uid":2000124157,"name":"Javi Rodriguez","number":0,"position":"GK","age":24,"releaseClause":148,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p60537_2000127465","uid":2000127465,"name":"Arthur Vermeeren","number":0,"position":"GK","age":22,"releaseClause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p20363_2000146355","uid":2000146355,"name":"Adam Daghim","number":0,"position":"GK","age":21,"releaseClause":133,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p55400_2000264561","uid":2000264561,"name":"Luka Topalovic","number":0,"position":"GK","age":21,"releaseClause":113,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p22550_2000368248","uid":2000368248,"name":"Jorthy Mokio","number":0,"position":"GK","age":19,"releaseClause":121,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p81470_2000318285","uid":2000318285,"name":"Bruno Durdov","number":0,"position":"GK","age":19,"releaseClause":102,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p77918_85145172","uid":85145172,"name":"Armand Laurienté","number":0,"position":"GK","age":26,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p92053_96047750","uid":96047750,"name":"Jan Bednarek","number":0,"position":"GK","age":29,"releaseClause":146,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p34158_2000129108","uid":2000129108,"name":"Noah Nartey","number":0,"position":"GK","age":21,"releaseClause":128,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p10035_2000181028","uid":2000181028,"name":"Elijah Dijkstra","number":0,"position":"GK","age":20,"releaseClause":116,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p61939_2000268884","uid":2000268884,"name":"Joao Simões","number":0,"position":"GK","age":20,"releaseClause":134,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p3483_2000303379","uid":2000303379,"name":"Salvador Blopá","number":0,"position":"GK","age":20,"releaseClause":111,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p72740_2000339841","uid":2000339841,"name":"Mohammed El Âdfaoui","number":0,"position":"GK","age":19,"releaseClause":106,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p69951_2000366580","uid":2000366580,"name":"Noah Fernandez","number":0,"position":"GK","age":19,"releaseClause":109,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p3879_2000490708","uid":2000490708,"name":"Fabian Merién","number":0,"position":"GK","age":17,"releaseClause":104,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p87568_2000218555","uid":2000218555,"name":"JP Chermont","number":0,"position":"GK","age":20,"releaseClause":111,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},{"id":"p14055_2000221876","uid":2000221876,"name":"Winsley Boteli","number":0,"position":"GK","age":20,"releaseClause":102,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}]};
-  var updated = 0, totalPlayers = 0;
-  for (var i = 0; i < state.teams.length; i++) {
-    var t = state.teams[i];
-    var players = ARCHIVE_PLAYERS[t.name];
-    if (players && players.length > 0) {
-      t.players = JSON.parse(JSON.stringify(players));
-      updated++;
-      totalPlayers += players.length;
-    }
-  }
-  if (updated > 0) {
-    saveState();
-    console.log('[迁移] 62赛季球员数据已迁移到63赛季: ' + updated + '队, ' + totalPlayers + '名球员');
-  }
-  return updated > 0;
-}
-
 
 // 第62届PGM联赛完整赛程表
 const LEAGUE_FIXTURES = {
-  'super': [
+  super: [
     // 第1轮
     [{h:2,a:11},{h:6,a:0},{h:9,a:4},{h:8,a:7},{h:3,a:10},{h:5,a:1}],
     // 第2轮
@@ -3750,9 +1311,7 @@ const LEAGUE_FIXTURES = {
     // 第22轮
     [{h:6,a:2},{h:9,a:0},{h:8,a:4},{h:3,a:7},{h:5,a:10},{h:1,a:11}]
   ],
-  jiaEast: [
-    // 第1轮
-    [{h:0,a:5},{h:1,a:3},{h:11,a:10},{h:7,a:8},{h:6,a:2},{h:4,a:9}],
+  jiaEast: ['1860 Munchen','Aberdeen','A. Madrid','Barcelona','Hertha BSC','Juventus','Liverpool','Marseille','Monaco','Nottingham Forest','River','Tottenham'],
     // 第2轮
     [{h:5,a:0},{h:3,a:1},{h:10,a:11},{h:8,a:7},{h:2,a:6},{h:9,a:4}],
     // 第3轮
@@ -3796,9 +1355,7 @@ const LEAGUE_FIXTURES = {
     // 第22轮
     [{h:1,a:0},{h:11,a:3},{h:7,a:10},{h:6,a:8},{h:4,a:2},{h:9,a:5}]
   ],
-  jiaWest: [
-    // 第1轮
-    [{h:1,a:9},{h:6,a:11},{h:7,a:0},{h:8,a:5},{h:3,a:4},{h:10,a:2}],
+  jiaWest: ['Ajax','Atalanta','Brighton','Everton','Fiorentina','Flamengo','Frankfurt','Inter','Leicester','Napoli','RC Lens','Schalke'],
     // 第2轮
     [{h:9,a:1},{h:11,a:6},{h:0,a:7},{h:5,a:8},{h:4,a:3},{h:2,a:10}],
     // 第3轮
@@ -3842,9 +1399,7 @@ const LEAGUE_FIXTURES = {
     // 第22轮
     [{h:6,a:1},{h:7,a:11},{h:8,a:0},{h:3,a:5},{h:10,a:4},{h:2,a:9}]
   ],
-yiEast: [
-    // 第1轮
-    [{h:4,a:6},{h:7,a:10},{h:0,a:1},{h:9,a:3},{h:5,a:8},{h:2,a:11}],
+yiEast: ['AS Roma','Atl. Tucuman','Dortmund','Newcastle','Como','FC Porto','Leverkusen','Oriental Dragon','R. Madrid','Stuttgart','Sunderland','青岛海神'],
     // 第2轮
     [{h:6,a:4},{h:10,a:7},{h:1,a:0},{h:3,a:9},{h:8,a:5},{h:11,a:2}],
     // 第3轮
@@ -3888,9 +1443,7 @@ yiEast: [
     // 第22轮
     [{h:7,a:4},{h:0,a:10},{h:9,a:1},{h:5,a:3},{h:2,a:8},{h:11,a:6}]
   ],
-yiWest: [
-    // 第1轮
-    [{h:11,a:10},{h:1,a:9},{h:7,a:8},{h:6,a:4},{h:3,a:5},{h:2,a:0}],
+yiWest: ['AC Milan','Asante Kotoko','Celtic','Chelsea','FC Koln','Genk','Man Utd','PSV','Sporting','West Ham','Wolfsburg','上海申花'],
     // 第2轮
     [{h:10,a:11},{h:9,a:1},{h:8,a:7},{h:4,a:6},{h:5,a:3},{h:0,a:2}],
     // 第3轮
@@ -4032,7 +1585,7 @@ function renderCupSchedule(cupId) {
       const awayScorerStr = countNames(awayGoals);
       const awayAssistStr = countNames(awayAssists);
       const motmPlayer = isCompleted && m.motm ? findPlayerById(m.motm) : null;
-      const motmIsHome = !!m.motm && (motmPlayer ? (home && home.players && home.players.find(p=>p.id===m.motm) ? true : false) : isPlayerOfTeam(m.motm, m.homeTeam));
+      const motmIsHome = !!m.motm && isPlayerOfTeam(m.motm, m.homeTeam);
       const motmUid = m.motm && m.motm.includes('_') ? m.motm.split('_').pop() : '';
       const homeMotmName = motmIsHome && motmPlayer ? motmPlayer.name : (motmIsHome && motmUid ? motmUid : '');
       const homeMotmStr = motmIsHome && homeMotmName ? (motmUid ? `<span class="player-expand" onclick="event.stopPropagation();togglePlayerSeasonDetail(this,'${motmUid}')">${homeMotmName}</span>` : homeMotmName) : '';
@@ -6421,10 +3974,10 @@ function submitCupMatchResult(matchId, cupId) {
     displayToActualTeamId[match.awayTeam] = match.awayTeam;
   }
   const cupInvolvedPlayers = new Set();
-  document.querySelectorAll('[data-goal="home"]').forEach(inp => { const g = parseInt(inp.value) || 0; if (g > 0) { const pid = inp.dataset.pid; const ownerTeam = state.teams.find(t => t.players && t.players.find(x => x.id === pid)); const actualTeamId = ownerTeam ? ownerTeam.id : (displayToActualTeamId[displayHomeTeam.id] || match.homeTeam); const p = ownerTeam ? ownerTeam.players.find(x => x.id === pid) : null; if (p) { p.goals = (p.goals || 0) + g; cupInvolvedPlayers.add(p.id); for (let i = 0; i < g; i++) match.scorers.push({ playerId: pid, teamId: actualTeamId, minute: null }); } } });
-  document.querySelectorAll('[data-goal="away"]').forEach(inp => { const g = parseInt(inp.value) || 0; if (g > 0) { const pid = inp.dataset.pid; const ownerTeam = state.teams.find(t => t.players && t.players.find(x => x.id === pid)); const actualTeamId = ownerTeam ? ownerTeam.id : (displayToActualTeamId[displayAwayTeam.id] || match.awayTeam); const p = ownerTeam ? ownerTeam.players.find(x => x.id === pid) : null; if (p) { p.goals = (p.goals || 0) + g; cupInvolvedPlayers.add(p.id); for (let i = 0; i < g; i++) match.scorers.push({ playerId: pid, teamId: actualTeamId, minute: null }); } } });
-  document.querySelectorAll('[data-ast="home"]').forEach(inp => { const a = parseInt(inp.value) || 0; if (a > 0) { const pid = inp.dataset.pid; const ownerTeam = state.teams.find(t => t.players && t.players.find(x => x.id === pid)); const actualTeamId = ownerTeam ? ownerTeam.id : (displayToActualTeamId[displayHomeTeam.id] || match.homeTeam); const p = ownerTeam ? ownerTeam.players.find(x => x.id === pid) : null; if (p) { p.assists = (p.assists || 0) + a; cupInvolvedPlayers.add(p.id); for (let i = 0; i < a; i++) match.assists.push({ playerId: pid, teamId: actualTeamId }); } } });
-  document.querySelectorAll('[data-ast="away"]').forEach(inp => { const a = parseInt(inp.value) || 0; if (a > 0) { const pid = inp.dataset.pid; const ownerTeam = state.teams.find(t => t.players && t.players.find(x => x.id === pid)); const actualTeamId = ownerTeam ? ownerTeam.id : (displayToActualTeamId[displayAwayTeam.id] || match.awayTeam); const p = ownerTeam ? ownerTeam.players.find(x => x.id === pid) : null; if (p) { p.assists = (p.assists || 0) + a; cupInvolvedPlayers.add(p.id); for (let i = 0; i < a; i++) match.assists.push({ playerId: pid, teamId: actualTeamId }); } } });
+  document.querySelectorAll('[data-goal="home"]').forEach(inp => { const g = parseInt(inp.value) || 0; if (g > 0) { const displayTeamId = inp.dataset.pid; const actualTeamId = displayToActualTeamId[displayTeamId] || match.homeTeam; const p = state.teams.find(t => t.id === actualTeamId)?.players.find(x => x.id === displayTeamId); if (p) { p.goals = (p.goals || 0) + g; cupInvolvedPlayers.add(p.id); for (let i = 0; i < g; i++) match.scorers.push({ playerId: displayTeamId, teamId: actualTeamId, minute: null }); } } });
+  document.querySelectorAll('[data-goal="away"]').forEach(inp => { const g = parseInt(inp.value) || 0; if (g > 0) { const displayTeamId = inp.dataset.pid; const actualTeamId = displayToActualTeamId[displayTeamId] || match.awayTeam; const p = state.teams.find(t => t.id === actualTeamId)?.players.find(x => x.id === displayTeamId); if (p) { p.goals = (p.goals || 0) + g; cupInvolvedPlayers.add(p.id); for (let i = 0; i < g; i++) match.scorers.push({ playerId: displayTeamId, teamId: actualTeamId, minute: null }); } } });
+  document.querySelectorAll('[data-ast="home"]').forEach(inp => { const a = parseInt(inp.value) || 0; if (a > 0) { const displayTeamId = inp.dataset.pid; const actualTeamId = displayToActualTeamId[displayTeamId] || match.homeTeam; const p = state.teams.find(t => t.id === actualTeamId)?.players.find(x => x.id === displayTeamId); if (p) { p.assists = (p.assists || 0) + a; cupInvolvedPlayers.add(p.id); for (let i = 0; i < a; i++) match.assists.push({ playerId: displayTeamId, teamId: actualTeamId }); } } });
+  document.querySelectorAll('[data-ast="away"]').forEach(inp => { const a = parseInt(inp.value) || 0; if (a > 0) { const displayTeamId = inp.dataset.pid; const actualTeamId = displayToActualTeamId[displayTeamId] || match.awayTeam; const p = state.teams.find(t => t.id === actualTeamId)?.players.find(x => x.id === displayTeamId); if (p) { p.assists = (p.assists || 0) + a; cupInvolvedPlayers.add(p.id); for (let i = 0; i < a; i++) match.assists.push({ playerId: displayTeamId, teamId: actualTeamId }); } } });
   // 统一为每个参与进球/助攻的球员 +1 gamesPlayed（而不是按进球数/助攻数累加）
   cupInvolvedPlayers.forEach(pid => {
     const p = [...homeTeam.players, ...awayTeam.players].find(x => x.id === pid);
@@ -7322,7 +4875,7 @@ function renderSchedule() {
       const awayScorerStr = countNames(awayGoals);
       const awayAssistStr = countNames(awayAssists);
       const motmPlayer = isCompleted && m.motm ? findPlayerById(m.motm) : null;
-      const motmIsHome = !!m.motm && (motmPlayer ? (home && home.players && home.players.find(p=>p.id===m.motm) ? true : false) : isPlayerOfTeam(m.motm, m.homeTeam));
+      const motmIsHome = !!m.motm && isPlayerOfTeam(m.motm, m.homeTeam);
       const motmUid = m.motm && m.motm.includes('_') ? m.motm.split('_').pop() : '';
       const homeMotmName = motmIsHome && motmPlayer ? motmPlayer.name : (motmIsHome && motmUid ? motmUid : '');
       const homeMotmStr = motmIsHome && homeMotmName ? (motmUid ? `<span class="player-expand" onclick="event.stopPropagation();togglePlayerSeasonDetail(this,'${motmUid}')">${homeMotmName}</span>` : homeMotmName) : '';
@@ -8568,13 +6121,7 @@ function buildPlayerSeasonDetailHtml(uid, name) {
   // 标题行：球员姓名 + 年龄 + 违约金 + 转会按钮
   const clauseStr = currentReleaseClause > 0
     ? `<span style="font-size:11px;color:#c62828;margin-left:8px;white-space:nowrap;background:#fce4ec;padding:1px 6px;border-radius:4px">违约金 ${currentReleaseClause}M</span>` : '';
-      const posStr = currentPlayerPos
-      ? `<span style="font-size:11px;color:#455a64;margin-left:8px;white-space:nowrap;background:#e8eaf6;padding:1px 6px;border-radius:4px">${currentPlayerPos}</span>`
-      : '';
-    const caStr = currentPlayerCa > 0
-      ? `<span style="font-size:11px;color:#1b5e20;margin-left:8px;white-space:nowrap;background:#e8f5e9;padding:1px 6px;border-radius:4px">CA ${currentPlayerCa}</span>`
-      : '';
-const ageStr = currentPlayerAge > 0
+  const ageStr = currentPlayerAge > 0
     ? `<span style="font-size:11px;color:#546e7a;margin-left:8px;white-space:nowrap;background:#eceff1;padding:1px 6px;border-radius:4px">${currentPlayerAge % 1 === 0 ? currentPlayerAge.toFixed(0) : currentPlayerAge}岁</span>` : '';
   const pendingTransfer = (state.pendingTransfers || []).find(pt => pt.status === 'pending' && pt.playerUid == uid);
   const canTransfer = state.currentUser && state.currentUser.isSuperAdmin && !pendingTransfer;
@@ -8591,7 +6138,7 @@ const ageStr = currentPlayerAge > 0
 
   html += `<div style="display:flex;align-items:center;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #dce2e8">`;
   html += `<span style="font-size:14px;font-weight:700;color:#1a1a1a;white-space:nowrap">${name}</span>`;
-  html += `${ageStr}${posStr}${caStr}${clauseStr}`;
+  html += `${ageStr}${clauseStr}`;
   html += `${transferBtnHtml}${listBtnHtml}<button onclick="event.stopPropagation();lookupCA('${name.replace(/'/g, "\\'")}')" style="font-size:10px;padding:3px 12px;border-radius:12px;border:none;background:linear-gradient(135deg,#7C4DFF,#536DFE);color:#fff;cursor:pointer;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.15);letter-spacing:0.5px;margin-left:6px">🔍 查CA</button>`;
   html += '</div>';
 
@@ -9012,8 +6559,7 @@ function getLeaguePlayerStats(league, type, limit) {
     if (m.assists) m.assists.forEach(a => { if (stats[a.teamId] && stats[a.teamId].players[a.playerId]) stats[a.teamId].players[a.playerId].assists++; });
     if (m.motm) {
       [m.homeTeam, m.awayTeam].forEach(tid => {
-        const motmOwner = sd.teams.find(t => t.players && t.players.find(p => p.id === m.motm));
-        if (stats[tid] && (motmOwner && motmOwner.id === tid) || (!motmOwner && isPlayerOfTeam(m.motm, tid))) {
+        if (stats[tid] && isPlayerOfTeam(m.motm, tid)) {
           if (stats[tid].players[m.motm]) stats[tid].players[m.motm].motm++;
           else {
             const uid = m.motm.substring(('p' + tid + '_').length);
@@ -9062,8 +6608,7 @@ function getCupPlayerStats(cupId, type, limit) {
     if (m.assists) m.assists.forEach(a => { if (stats[a.teamId] && stats[a.teamId].players[a.playerId]) stats[a.teamId].players[a.playerId].assists++; });
     if (m.motm) {
       [m.homeTeam, m.awayTeam].forEach(tid => {
-        const motmOwner2 = sd.teams.find(t => t.players && t.players.find(p => p.id === m.motm));
-        if (stats[tid] && ((motmOwner2 && motmOwner2.id === tid) || (!motmOwner2 && isPlayerOfTeam(m.motm, tid)))) {
+        if (stats[tid] && isPlayerOfTeam(m.motm, tid)) {
           if (stats[tid].players[m.motm]) stats[tid].players[m.motm].motm++;
           else {
             const uid = m.motm.substring(('p' + tid + '_').length);
@@ -9249,7 +6794,7 @@ function showTeamDetail(teamId) {
       return `<div class="player-row">
         <span class="player-num">${p.number}</span>
         <span class="player-nm"><span class="player-expand" onclick="event.stopPropagation();togglePlayerSeasonDetail(this,'${p.uid}')">${p.name}</span>${nameExtra}</span>
-        <span class="player-st">#${p.number} · ${p.position || '-'} · CA${p.ca || '?'} · ⚽${p.goals || 0} 👟${p.assists || 0} ⭐${p.motmCount || 0}</span>
+        <span class="player-st">⚽${p.goals || 0} 👟${p.assists || 0} ⭐${p.motmCount || 0}</span>
       </div>`;
     };
 
@@ -11758,7 +9303,7 @@ async function fetchCloudUploadInfo() {
 
 // 获取数据员显示名称
 function getRecorderDisplayName(league) {
-  const map = { 'super': '超级联赛', jiaEast: '甲东', jiaWest: '甲西', yiEast: '乙东', yiWest: '乙西' };
+  const map = { super: '超级联赛', jiaEast: '甲东', jiaWest: '甲西', yiEast: '乙东', yiWest: '乙西' };
   if (map[league]) return map[league];
   if (CUP_NAMES[league]) return CUP_NAMES[league].replace('🏆 ', '');
   return league;
@@ -13271,29 +10816,8 @@ document.getElementById('modalOverlay').onclick = (e) => {
   } catch(e) { /* 网络异常忽略 */ }
   // 正常初始化
   loadState();
-  // 检测 state.teams 球队名是否与 PLAYERS_DB 匹配，不匹配则重建
-  (function checkTeamsMatch() {
-    if (!state.teams || state.teams.length === 0) {
-      console.log('[CHECK] state.teams empty, calling initData()');
-      initData(); saveState();
-      return;
-    }
-    const dbTeamNames = new Set(Object.keys(PLAYERS_DB));
-    const stateTeamNames = state.teams.map(t => t.name);
-    const unmatched = stateTeamNames.filter(n => !dbTeamNames.has(n));
-    if (unmatched.length > 0) {
-      console.log('[CHECK] ' + unmatched.length + ' teams not in PLAYERS_DB, rebuilding: ' + unmatched.join(', '));
-      initData(); saveState();
-    } else {
-      console.log('[CHECK] All teams match PLAYERS_DB');
-    }
-  })();
-  syncPlayersFromDB(); // 用PLAYERS_DB覆盖球员列表
-  // 63赛季：清空所有转会记录（转入/转出球员TAB显示为空）
-  state.pendingTransfers = [];
-  state.transferMarket = [];
-  saveState();
-  // replayTransfers 已无数据可 replay，跳过
+  syncPlayersFromDB(); // 合并PLAYERS_DB新增球员到现有state
+  replayTransfers(); // 根据转会记录重建球员归属+同步PLAYERS_DB
   
   // === 强制清理：删除 Tottenham 中的 Leif Davis (uid 29175587) ===
   (function() {
@@ -13576,9 +11100,6 @@ async function autoSyncFromCloud() {
         if (TEAM_LOGOS && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
         if (!t.teamUid && TEAM_UID_MAP && TEAM_UID_MAP[t.name]) t.teamUid = TEAM_UID_MAP[t.name];
       });
-      // ★ v1.0.485: 云端数据覆盖后再次用 PLAYERS_DB 同步球员列表
-      // 防止云端旧数据（缺少新增球员）覆盖本地已同步的最新球员
-      syncPlayersFromDB();
       saveState();
 
       const now = new Date();
@@ -13707,9 +11228,6 @@ async function autoSyncTransferGist() {
     if (cloudData.pendingTransfers) {
       state.pendingTransfers = mergePendingTransfers(cloudData.pendingTransfers, state.pendingTransfers || []);
     }
-    // 63赛季：清空所有转会记录（转入/转出球员TAB显示为空）
-    state.pendingTransfers = [];
-    state.transferMarket = [];
 
     // 保存 updated_at 缓存
     if (gistUpdatedAt) {
@@ -13828,12 +11346,12 @@ if ('serviceWorker' in navigator) {
     const oldRegs = regs.filter(r => !r.active || !r.active.scriptURL.includes('sw.js'));
     return Promise.all(oldRegs.map(r => r.unregister()));
   }).then(() => {
-    return navigator.serviceWorker.getRegistration('sw2.js');
+    return navigator.serviceWorker.getRegistration('sw.js');
   }).then(existing => {
     if (existing) {
       return existing.update().then(() => existing);
     }
-    return navigator.serviceWorker.register('sw2.js', { updateViaCache: 'none' });
+    return navigator.serviceWorker.register('sw.js?v=300', { updateViaCache: 'none' });
   }).then(reg => {
     console.log('Service Worker 就绪, scope:', reg.scope);
     if (reg.waiting) {
@@ -13858,6 +11376,3 @@ if ('serviceWorker' in navigator) {
     console.warn('Service Worker 注册失败:', err);
   });
 }
-</script>
-</body>
-</html>
