@@ -642,7 +642,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 486 };
+const APP_VERSION = { major: 1, minor: 0, patch: 487 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -654,6 +654,8 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.487', date: '2026-07-17', items: ['🐛 修复：球员详情页「违约金」与「CA」显示错位——改为优先读取 PLAYERS_DB 权威数据（ca=CA，clause/releaseClause=违约金），修正 state 字段命名混乱导致的串值'] },
+
   { v: '1.0.486', date: '2026-07-17', items: ['🐛 修复：点击球员名字无反应——buildPlayerSeasonDetailHtml 中 currentPlayerPos / currentPlayerCa 变量未定义导致 ReferenceError，球员详情弹窗无法展开'] },
 
   { v: '1.0.485', date: '2026-07-17', items: ['🐛 修复：autoSyncFromCloud云端数据覆盖后球员列表丢失新增球员（如Darwin Guagua）的问题——state=cloudData后追加syncPlayersFromDB()'] },
@@ -8515,28 +8517,35 @@ function buildPlayerSeasonDetailHtml(uid, name) {
   const stats = getPlayerCrossSeasonStats(uid, name);
 
   // 获取当前球员的违约金和年龄（先查 state 当前赛季，再回退 PLAYERS_DB）
-  let currentReleaseClause = 0;
+  let currentReleaseClause = 0;   // 违约金
   let currentPlayerAge = 0;
-  let currentPlayerCa = 0;
+  let currentPlayerCa = 0;        // CA
   let currentPlayerPos = '';
-  // 始终从 state（当前赛季）查找，不受 viewingSeasonId 影响
-  if (state.teams) {
-    for (const team of state.teams) {
-      if (!team.players) continue;
-      const p = team.players.find(x => x.uid == uid || (x.id && x.id.includes('_' + uid)));
-      if (p) { currentReleaseClause = p.releaseClause || 0; currentPlayerAge = p.age || 0; currentPlayerCa = p.ca || 0; currentPlayerPos = p.position || ''; break; }
+  // PLAYERS_DB 权威：ca=CA；违约金在 clause 或 releaseClause 字段（不同批次命名不同）
+  // 优先用 PLAYERS_DB，避免 state 中字段命名/取值混乱导致 违约金 与 CA 显示错位
+  for (const teamName in PLAYERS_DB) {
+    const dbPlayer = PLAYERS_DB[teamName].find(x => x.uid == uid);
+    if (dbPlayer) {
+      if (!currentPlayerCa) currentPlayerCa = dbPlayer.ca || 0;
+      if (!currentReleaseClause) currentReleaseClause = dbPlayer.clause || dbPlayer.releaseClause || 0;
+      if (!currentPlayerAge) currentPlayerAge = dbPlayer.age || 0;
+      if (!currentPlayerPos) currentPlayerPos = dbPlayer.position || '';
+      break;
     }
   }
-  // 回退到 PLAYERS_DB
-  if (!currentReleaseClause || !currentPlayerAge || !currentPlayerCa || !currentPlayerPos) {
-    for (const teamName in PLAYERS_DB) {
-      const dbPlayer = PLAYERS_DB[teamName].find(x => x.uid == uid);
-      if (dbPlayer) {
-        if (!currentReleaseClause) currentReleaseClause = dbPlayer.releaseClause || 0;
-        if (!currentPlayerAge) currentPlayerAge = dbPlayer.age || 0;
-        if (!currentPlayerCa) currentPlayerCa = dbPlayer.ca || 0;
-        if (!currentPlayerPos) currentPlayerPos = dbPlayer.position || '';
-        break;
+  // state 当前赛季补充（市场新增等 PLAYERS_DB 无记录的球员）
+  if (!currentPlayerCa || !currentReleaseClause || !currentPlayerAge || !currentPlayerPos) {
+    if (state.teams) {
+      for (const team of state.teams) {
+        if (!team.players) continue;
+        const p = team.players.find(x => x.uid == uid || (x.id && x.id.includes('_' + uid)));
+        if (p) {
+          if (!currentPlayerCa) currentPlayerCa = p.ca || 0;
+          if (!currentReleaseClause) currentReleaseClause = p.releaseClause || p.clause || 0;
+          if (!currentPlayerAge) currentPlayerAge = p.age || 0;
+          if (!currentPlayerPos) currentPlayerPos = p.position || '';
+          break;
+        }
       }
     }
   }
@@ -13582,6 +13591,7 @@ async function autoSyncFromCloud() {
         if (TEAM_LOGOS && TEAM_LOGOS[t.name]) t.logo = TEAM_LOGOS[t.name];
         if (!t.teamUid && TEAM_UID_MAP && TEAM_UID_MAP[t.name]) t.teamUid = TEAM_UID_MAP[t.name];
       });
+      // ★ v1.0.487: 球员详情页违约金/CA改读 PLAYERS_DB 权威数据
       // ★ v1.0.486: 修复 buildPlayerSeasonDetailHtml 中 currentPlayerPos/currentPlayerCa 未定义
       // ★ v1.0.485: 云端数据覆盖后再次用 PLAYERS_DB 同步球员列表
       // 防止云端旧数据（缺少新增球员）覆盖本地已同步的最新球员
