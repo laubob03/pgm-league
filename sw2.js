@@ -1,10 +1,17 @@
-// v1.0.493 - cache name bumped to force old SW replacement
-const CACHE_NAME = 'pgm-league-v493';
-const REQUIRED_VERSION = '1.0.483';
+// v1.0.495 - force clear all caches to fix SW lock issue
+const CACHE_NAME = 'pgm-league-v495';
+const REQUIRED_VERSION = '1.0.495';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
-  event.waitUntil(Promise.resolve());
+  event.waitUntil(
+    caches.keys().then(names => {
+      return Promise.all(names.map(n => {
+        console.log('[SW] Force deleting cache:', n);
+        return caches.delete(n);
+      }));
+    })
+  );
 });
 
 self.addEventListener('activate', event => {
