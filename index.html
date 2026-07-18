@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <link rel="icon" type="image/png" sizes="192x192" href="unpackage/res/icons/192x192.png">
-  <!-- ★ v1.0.493: 强制清理 SW 缓存 — 无条件注销旧 SW 并清空所有 cache，只执行一次 -->
+  <!-- ★ v1.0.499: 强制清理 SW 缓存 — 无条件注销旧 SW 并清空所有 cache，只执行一次 -->
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
@@ -725,7 +725,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 493 };
+const APP_VERSION = { major: 1, minor: 0, patch: 499 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -736,7 +736,7 @@ if (location.search.includes('_v=')) {
 const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
-const CHANGELOG = [
+const CHANGELOG = [ {v:'v1.0.499',d:'2026-07-19',c:'修复队名迁移后队徽不同步：TEAM_RENAME_MAP改名时同步更新t.logo'},
   { v: '1.0.491', date: '2026-07-18', items: ['📌 63赛季乙级24队735名球员全量更新'] },
     { v: '1.0.490', date: '2026-07-18', items: ['📌 63赛季甲级24队759名球员全量更新'] },
     { v: '1.0.489', date: '2026-07-18', items: ['📌 Kudus 数据修正：CA=162, 违约金=60（从早期批次格式升级为后期批次格式）'] },
@@ -3339,7 +3339,7 @@ function loadState() {
       // ★ v1.0.476-477: 队名迁移（Brighton→La Coruna, FC Porto→FC Nurnberg, Fulham→Leeds）
       const TEAM_RENAME_MAP = { 'Brighton': 'La Coruna', 'FC Porto': 'FC Nurnberg', 'Fulham': 'Leeds' };
       state.teams.forEach(t => {
-        if (TEAM_RENAME_MAP[t.name]) t.name = TEAM_RENAME_MAP[t.name];
+        if (TEAM_RENAME_MAP[t.name]) { t.name = TEAM_RENAME_MAP[t.name]; t.logo = (typeof TEAM_LOGOS !== 'undefined' && TEAM_LOGOS[t.name]) ? TEAM_LOGOS[t.name] : t.logo; }
       });
       if (state.matches) state.matches.forEach(m => {
         if (TEAM_RENAME_MAP[m.home]) m.home = TEAM_RENAME_MAP[m.home];
