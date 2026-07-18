@@ -1,5 +1,5 @@
-// v1.0.494 - cache name bumped to force old SW replacement
-const CACHE_NAME = 'pgm-league-v494';
+// v1.0.493 - cache name bumped to force old SW replacement
+const CACHE_NAME = 'pgm-league-v493';
 const REQUIRED_VERSION = '1.0.483';
 
 self.addEventListener('install', event => {
