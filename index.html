@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <link rel="icon" type="image/png" sizes="192x192" href="unpackage/res/icons/192x192.png">
-  <!-- ★ v1.0.493: 强制清理 SW 缓存 — 无条件注销旧 SW 并清空所有 cache，只执行一次 -->
+  <!-- ★ v1.0.494: 强制清理 SW 缓存 — 无条件注销旧 SW 并清空所有 cache，只执行一次 -->
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
@@ -725,7 +725,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 493 };
+const APP_VERSION = { major: 1, minor: 0, patch: 494 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -1081,7 +1081,7 @@ const POSITION_NAMES = { GK: '门将', DF: '后卫', MF: '中场', FW: '前锋' 
 
 
 const TEAM_NAMES = {
-  'super': ['A. Bilbao','Arsenal','Aston Villa','Benfica','FC Bayern','Leeds','Hamburger SV','Lazio','Man City','Palmeiras','Paris SG','Wrexham'],
+  'super': [{uid:48043084,name:"Boubacar Kamara",age:25,ca:159,clause:50},{uid:85094520,name:"Mike Maignan",age:30,ca:162,clause:40},{uid:2000146883,name:"Francesco Pio Esposito",age:22,ca:156,clause:100},{uid:92074020,name:"Christian Pulisic",age:26,ca:160,clause:50},{uid:91206164,name:"Malick Thiaw",age:25,ca:157,clause:80},{uid:2000211997,name:"Alex Jiménez",age:22,ca:146,clause:47},{uid:43270682,name:"Alessandro Buongiorno",age:26,ca:154,clause:30},{uid:24065108,name:"Martin Baturina",age:24,ca:141,clause:40},{uid:43266774,name:"Matteo Gabbia",age:25,ca:147,clause:5},{uid:43339195,name:"Andrea Cambiaso",age:25,ca:148,clause:15},{uid:43500064,name:"Cesare Casadei",age:24,ca:132,clause:10},{uid:84153276,name:"Dan Ndoye",age:25,ca:154,clause:27},{uid:84161856,name:"Ardon Jashari",age:25,ca:134,clause:5},{uid:2000033291,name:"Valentín Barco",age:23,ca:151,clause:40},{uid:2000103120,name:"Lorenzo Torriani",age:22,ca:111,clause:3},{uid:2000107103,name:"Mamadou Sarr",age:21,ca:131,clause:40},{uid:2000183044,name:"Davide Bartesaghi",age:21,ca:130,clause:40},{uid:2000338371,name:"Francesco Camarda",age:19,ca:115,clause:65},{uid:49048348,name:"Dilane Bakwa",age:24,ca:150,clause:20},{uid:67229630,name:"Youssef En-Nesyri",age:28,ca:140,clause:5},{uid:2000025313,name:"FAVASULI",age:21.5,ca:115,clause:8},{uid:37053643,name:"Gianluca Scamacca",age:26,ca:145,clause:6},{uid:2000252799,name:"Mattia Liberali",age:20,ca:107,clause:8},{uid:2000349187,name:"Edmund Baidoo",age:21,ca:119,clause:9},{uid:2000218552,name:"David Odogu",age:21,ca:115,clause:8},{uid:2000289673,name:"Soriba Diaoune",age:19,ca:110,clause:0},{uid:2000298369,name:"Branimir Mlačić",age:20,ca:110,clause:0},{uid:2000388375,name:"Christian Comotto",age:19,ca:111,clause:0},{uid:2000491133,name:"Nahël Haddani",age:18,ca:68,clause:0},{uid:2000440037,name:"Luis Eduardo",age:18.5,ca:100,clause:0},{uid:2000374131,name:"Virgilio Olaya",age:18.5,ca:90,clause:0},{uid:2000489302,name:"Samuele Pisati",age:16.5,ca:61,clause:0},{uid:2000330183,name:"Yunus Ünal",age:17.5,ca:92,clause:0},{uid:2000298881,name:"Federico Nardin",age:18.5,ca:82,clause:0}],
   jiaEast: ['1860 Munchen','Aberdeen','A. Madrid','Barcelona','Hertha BSC','Juventus','Liverpool','Marseille','Monaco','Nottingham Forest','River','Tottenham'],
   jiaWest: ['Ajax','Atalanta','La Coruna','Everton','Fiorentina','Flamengo','Frankfurt','Inter','Leicester','Napoli','RC Lens','Schalke'],
   yiEast: ['AS Roma','Atl. Tucuman','Dortmund','Newcastle','Como','FC Nurnberg','Leverkusen','Oriental Dragon','R. Madrid','Stuttgart','Sunderland','青岛海神'],
@@ -1153,7 +1153,7 @@ const TEAM_LOGOS = {
   'Wolfsburg': 'logos/961.webp'
 };
 
-// 通用获取队徽函数 - 优先用 team.logo，兜底用 TEAM_LOGOS[name]
+// 通用获取队徽函数 - 优先用 team.logo，兜底用 TEAM_LOGOS[{"uid":48043084,"name":"Boubacar Kamara","age":25,"ca":159,"clause":50},{"uid":85094520,"name":"Mike Maignan","age":30,"ca":162,"clause":40},{"uid":2000146883,"name":"Francesco Pio Esposito","age":22,"ca":156,"clause":100},{"uid":92074020,"name":"Christian Pulisic","age":26,"ca":160,"clause":50},{"uid":91206164,"name":"Malick Thiaw","age":25,"ca":157,"clause":80},{"uid":2000211997,"name":"Alex Jiménez","age":22,"ca":146,"clause":47},{"uid":43270682,"name":"Alessandro Buongiorno","age":26,"ca":154,"clause":30},{"uid":24065108,"name":"Martin Baturina","age":24,"ca":141,"clause":40},{"uid":43266774,"name":"Matteo Gabbia","age":25,"ca":147,"clause":5},{"uid":43339195,"name":"Andrea Cambiaso","age":25,"ca":148,"clause":15},{"uid":43500064,"name":"Cesare Casadei","age":24,"ca":132,"clause":10},{"uid":84153276,"name":"Dan Ndoye","age":25,"ca":154,"clause":27},{"uid":84161856,"name":"Ardon Jashari","age":25,"ca":134,"clause":5},{"uid":2000033291,"name":"Valentín Barco","age":23,"ca":151,"clause":40},{"uid":2000103120,"name":"Lorenzo Torriani","age":22,"ca":111,"clause":3},{"uid":2000107103,"name":"Mamadou Sarr","age":21,"ca":131,"clause":40},{"uid":2000183044,"name":"Davide Bartesaghi","age":21,"ca":130,"clause":40},{"uid":2000338371,"name":"Francesco Camarda","age":19,"ca":115,"clause":65},{"uid":49048348,"name":"Dilane Bakwa","age":24,"ca":150,"clause":20},{"uid":67229630,"name":"Youssef En-Nesyri","age":28,"ca":140,"clause":5},{"uid":2000025313,"name":"FAVASULI","age":21.5,"ca":115,"clause":8},{"uid":37053643,"name":"Gianluca Scamacca","age":26,"ca":145,"clause":6},{"uid":2000252799,"name":"Mattia Liberali","age":20,"ca":107,"clause":8},{"uid":2000349187,"name":"Edmund Baidoo","age":21,"ca":119,"clause":9},{"uid":2000218552,"name":"David Odogu","age":21,"ca":115,"clause":8},{"uid":2000289673,"name":"Soriba Diaoune","age":19,"ca":110,"clause":0},{"uid":2000298369,"name":"Branimir Mlačić","age":20,"ca":110,"clause":0},{"uid":2000388375,"name":"Christian Comotto","age":19,"ca":111,"clause":0},{"uid":2000491133,"name":"Nahël Haddani","age":18,"ca":68,"clause":0},{"uid":2000440037,"name":"Luis Eduardo","age":18.5,"ca":100,"clause":0},{"uid":2000374131,"name":"Virgilio Olaya","age":18.5,"ca":90,"clause":0},{"uid":2000489302,"name":"Samuele Pisati","age":16.5,"ca":61,"clause":0},{"uid":2000330183,"name":"Yunus Ünal","age":17.5,"ca":92,"clause":0},{"uid":2000298881,"name":"Federico Nardin","age":18.5,"ca":82,"clause":0}]
 function getTeamLogo(team) {
   if (!team) return '';
   if (team.logo) return team.logo;
