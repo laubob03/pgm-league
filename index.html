@@ -736,7 +736,7 @@
 
 <script>
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 495 };
+const APP_VERSION = { major: 1, minor: 0, patch: 496 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -748,6 +748,7 @@ const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
 const CHANGELOG = [
+  { v: '1.0.496', date: '2026-07-18', items: ['🔧 彻底禁用SW：移除index.html底部SW注册代码，sw.js/sw2.js改为unregister-only模式（自动注销+走网络），从根源解决SW拦截请求导致刷新无反应'] },
   { v: '1.0.495', date: '2026-07-18', items: ['🔧 强制清理SW缓存：sw.js/sw2.js install时清空所有cache，CACHE_NAME升级v495，修复刷新无反应'] },
   { v: '1.0.494', date: '2026-07-18', items: ['63赛季乙级24队全量替换（含CA+违约金）'] },
   { v: '1.0.493', date: '2026-07-18', items: ['63赛季甲级24队全量替换'] },
