@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>PGM联赛 - 缓存重置</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;margin:0;padding:20px;}
+.box{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:20px;padding:40px;max-width:500px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.3);}
+h1{font-size:24px;margin:0 0 16px 0;}
+.status{background:rgba(0,0,0,0.3);border-radius:10px;padding:16px;margin:20px 0;font-family:monospace;font-size:14px;text-align:left;max-height:300px;overflow-y:auto;}
+.ok{color:#4ade80;}
+.fail{color:#f87171;}
+.btn{display:inline-block;background:#fff;color:#1e3a8a;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:16px;margin-top:16px;transition:transform 0.2s;cursor:pointer;border:none;}
+.btn:hover{transform:scale(1.05);}
+.btn2{background:transparent;color:#fff;border:2px solid #fff;margin-left:8px;}
+</style>
+</head>
+<body>
+<div class="box">
+<h1>🔧 PGM联赛缓存重置工具</h1>
+<p>正在彻底清理浏览器缓存...</p>
+<div id="status" class="status"><div>» 初始化...</div></div>
+<button id="goBtn" class="btn" style="display:none" onclick="window.location.href='index.html?nuke='+Date.now()">前往 PGM联赛 →</button>
+</div>
+<script>
+var log = document.getElementById("status");
+function add(msg, ok){ var d=document.createElement("div"); d.className=ok===true?"ok":(ok===false?"fail":""); d.textContent=(ok===true?"✓ ":(ok===false?"✗ ":"» "))+msg; log.appendChild(d); }
+
+async function reset(){
+  add("开始清理浏览器缓存");
+  if("serviceWorker" in navigator){
+    try{
+      var regs = await navigator.serviceWorker.getRegistrations();
+      for(var i=0;i<regs.length;i++){ await regs[i].unregister(); }
+      add("Service Worker: 已注销 "+regs.length+" 个", regs.length>=0);
+    }catch(e){ add("Service Worker: "+e.message, false); }
+  } else { add("Service Worker: 浏览器不支持（无需清理）", true); }
+  
+  if("caches" in window){
+    try{
+      var keys = await caches.keys();
+      for(var i=0;i<keys.length;i++){ await caches.delete(keys[i]); }
+      add("Cache Storage: 已清理 "+keys.length+" 个缓存", keys.length>=0);
+      for(var i=0;i<keys.length;i++){ add("  - "+keys[i]); }
+    }catch(e){ add("Cache Storage: "+e.message, false); }
+  }
+  
+  try{
+    var lsSize = localStorage.length;
+    var ssSize = sessionStorage.length;
+    localStorage.clear();
+    sessionStorage.clear();
+    add("localStorage: 已清理 "+lsSize+" 项", true);
+    add("sessionStorage: 已清理 "+ssSize+" 项", true);
+  }catch(e){ add("Storage: "+e.message, false); }
+  
+  if("indexedDB" in window){
+    try{
+      var dbs = await indexedDB.databases();
+      for(var i=0;i<dbs.length;i++){ indexedDB.deleteDatabase(dbs[i].name); }
+      add("IndexedDB: 已清理 "+dbs.length+" 个数据库", true);
+    }catch(e){ add("IndexedDB: "+e.message, false); }
+  }
+  
+  add("");
+  add("✅ 清理完成！", true);
+  add("点击下方按钮前往 PGM联赛");
+  document.getElementById("goBtn").style.display="inline-block";
+}
+reset();
+</script>
+</body>
+</html>
