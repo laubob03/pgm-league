@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -1080,8 +1080,364 @@
   }();
   
 
+  !function(){
+    var _fc = sessionStorage.getItem('pgm_force_clean');
+    var _curVer = '1.0.500';
+    if (!_fc || _fc !== _curVer) {
+      sessionStorage.setItem('pgm_force_clean', _curVer);
+      var tasks = [];
+      if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+      if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
+      Promise.all(tasks).then(function(){
+        location.replace(location.href.split('?')[0].split('#')[0] + '?_fc=' + Date.now() + location.hash);
+      });
+      return; // 阻止后续脚本执行，等 reload
+    } else {
+      // 标记已清理，保持标记避免循环刷新
+    }
+  }();
+  
+
+  !function(){
+    // v1.0.358: 修复12强杯赛 container 致命bug——_c12SelectTeam/submitCupMatchResult12 写入 scheduleContent 而非 standingsContent，导致选队/录入比分后对阵图不刷新；修复 submitCupMatchResult12 中 inp.datasetpid 笔误
+    var _upgraded = sessionStorage.getItem('pgm_upgraded');
+    if (_upgraded) {
+      // 上一次是升级跳转来的，清除 SW 缓存并移除标记
+      sessionStorage.removeItem('pgm_upgraded');
+      Promise.resolve().then(function(){
+        var tasks = [];
+        if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+        if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
+        return Promise.all(tasks);
+      }).then(function(){
+        var baseUrl = location.href.split('?')[0].split('#')[0];
+        var newUrl = baseUrl + '?_v=' + Date.now();
+        location.replace(newUrl);
+      });
+      return;
+    }
+    fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
+      // 公告条
+      if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
+      // 🛡️ 防止升级后循环弹框：刚完成升级则跳过本次检查
+      if(sessionStorage.getItem('pgm_upgraded')==='1'){ sessionStorage.removeItem('pgm_upgraded')
+      } else {
+      var needUpgrade=false
+      try{
+      var myV=0;try{var parts2=(APP_VERSION.major+'.'+APP_VERSION.minor+'.'+APP_VERSION.patch).split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
+      var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
+      if(myV<minV) needUpgrade=true
+      }catch(e){}
+      if(needUpgrade){
+          // 创建升级提示框
+          var overlay = document.createElement('div');
+          overlay.id = 'versionUpdateOverlay';
+          overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999998;display:flex;align-items:center;justify-content:center;';
+          overlay.innerHTML = '<div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);">' +
+            '<div style="font-size:52px;margin-bottom:12px;">🚀</div>' +
+            '<div style="font-size:20px;font-weight:bold;color:#1B5E20;margin-bottom:6px;">发现新版本</div>' +
+            '<div style="font-size:13px;color:#666;margin-bottom:20px;line-height:1.7;">' +
+              '当前版本：v' + parts2.join('.') + '<br>' +
+              '最新版本：<b style="color:#e91e63;">v' + d.minVersion + '</b><br>' +
+              '点击下方按钮更新到最新版本' +
+            '</div>' +
+            '<button id="btnUpdateNow" style="width:100%;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;padding:13px 0;border-radius:50px;font-size:15px;font-weight:bold;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 12px rgba(27,94,32,0.35);">🚀 立即更新</button>' +
+            '<button id="btnUpdateLater" style="width:100%;background:#f5f5f5;color:#999;border:none;padding:11px 0;border-radius:50px;font-size:14px;cursor:pointer;">稍后再说</button>' +
+          '</div>';
+          document.body.appendChild(overlay);
+
+          // 立即更新按钮
+          document.getElementById('btnUpdateNow').onclick = function(){
+            var btn = this;
+            btn.disabled = true;
+            btn.textContent = '⏳ 正在清理缓存...';
+            // 先标记升级状态
+            try { sessionStorage.setItem('pgm_upgraded', '1'); } catch(e){}
+            var tasks = [];
+            if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+            if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
+            Promise.all(tasks).then(function(){
+              var baseUrl = location.href.split('?')[0].split('#')[0];
+              var newUrl = baseUrl + '?_v=' + Date.now();
+              location.replace(newUrl);
+            }).catch(function(){
+              var baseUrl = location.href.split('?')[0].split('#')[0];
+              var newUrl = baseUrl + '?_v=' + Date.now();
+              location.replace(newUrl);
+            });
+          };
+
+          // 稍后再说按钮
+          document.getElementById('btnUpdateLater').onclick = function(){
+            overlay.remove();
+          };
+        }
+      }
+    }).catch(function(){})
+  }();
+  
+
+  !function(){
+    // v1.0.358: 修复12强杯赛 container 致命bug——_c12SelectTeam/submitCupMatchResult12 写入 scheduleContent 而非 standingsContent，导致选队/录入比分后对阵图不刷新；修复 submitCupMatchResult12 中 inp.datasetpid 笔误
+    var _upgraded = sessionStorage.getItem('pgm_upgraded');
+    if (_upgraded) {
+      // 上一次是升级跳转来的，清除 SW 缓存并移除标记
+      sessionStorage.removeItem('pgm_upgraded');
+      Promise.resolve().then(function(){
+        var tasks = [];
+        if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+        if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
+        return Promise.all(tasks);
+      }).then(function(){
+        var baseUrl = location.href.split('?')[0].split('#')[0];
+        var newUrl = baseUrl + '?_v=' + Date.now();
+        location.replace(newUrl);
+      });
+      return;
+    }
+    fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
+      // 公告条
+      if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
+      // 🛡️ 防止升级后循环弹框：刚完成升级则跳过本次检查
+      if(sessionStorage.getItem('pgm_upgraded')==='1'){ sessionStorage.removeItem('pgm_upgraded')
+      } else {
+      var needUpgrade=false
+      try{
+      var myV=0;try{var parts2=(APP_VERSION.major+'.'+APP_VERSION.minor+'.'+APP_VERSION.patch).split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
+      var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
+      if(myV<minV) needUpgrade=true
+      }catch(e){}
+      if(needUpgrade){
+          // 创建升级提示框
+          var overlay = document.createElement('div');
+          overlay.id = 'versionUpdateOverlay';
+          overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999998;display:flex;align-items:center;justify-content:center;';
+          overlay.innerHTML = '<div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);">' +
+            '<div style="font-size:52px;margin-bottom:12px;">🚀</div>' +
+            '<div style="font-size:20px;font-weight:bold;color:#1B5E20;margin-bottom:6px;">发现新版本</div>' +
+            '<div style="font-size:13px;color:#666;margin-bottom:20px;line-height:1.7;">' +
+              '当前版本：v' + parts2.join('.') + '<br>' +
+              '最新版本：<b style="color:#e91e63;">v' + d.minVersion + '</b><br>' +
+              '点击下方按钮更新到最新版本' +
+            '</div>' +
+            '<button id="btnUpdateNow" style="width:100%;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;padding:13px 0;border-radius:50px;font-size:15px;font-weight:bold;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 12px rgba(27,94,32,0.35);">🚀 立即更新</button>' +
+            '<button id="btnUpdateLater" style="width:100%;background:#f5f5f5;color:#999;border:none;padding:11px 0;border-radius:50px;font-size:14px;cursor:pointer;">稍后再说</button>' +
+          '</div>';
+          document.body.appendChild(overlay);
+
+          // 立即更新按钮
+          document.getElementById('btnUpdateNow').onclick = function(){
+            var btn = this;
+            btn.disabled = true;
+            btn.textContent = '⏳ 正在清理缓存...';
+            // 先标记升级状态
+            try { sessionStorage.setItem('pgm_upgraded', '1'); } catch(e){}
+            var tasks = [];
+            if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+            if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
+            Promise.all(tasks).then(function(){
+              var baseUrl = location.href.split('?')[0].split('#')[0];
+              var newUrl = baseUrl + '?_v=' + Date.now();
+              location.replace(newUrl);
+            }).catch(function(){
+              var baseUrl = location.href.split('?')[0].split('#')[0];
+              var newUrl = baseUrl + '?_v=' + Date.now();
+              location.replace(newUrl);
+            });
+          };
+
+          // 稍后再说按钮
+          document.getElementById('btnUpdateLater').onclick = function(){
+            overlay.remove();
+          };
+        }
+      }
+    }).catch(function(){})
+  }();
+  
+
+  !function(){
+    var _fc = sessionStorage.getItem('pgm_force_clean');
+    var _curVer = '1.0.500';
+    if (!_fc || _fc !== _curVer) {
+      sessionStorage.setItem('pgm_force_clean', _curVer);
+      var tasks = [];
+      if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+      if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
+      Promise.all(tasks).then(function(){
+        location.replace(location.href.split('?')[0].split('#')[0] + '?_fc=' + Date.now() + location.hash);
+      });
+      return; // 阻止后续脚本执行，等 reload
+    } else {
+      // 标记已清理，保持标记避免循环刷新
+    }
+  }();
+  
+
+  !function(){
+    // v1.0.358: 修复12强杯赛 container 致命bug——_c12SelectTeam/submitCupMatchResult12 写入 scheduleContent 而非 standingsContent，导致选队/录入比分后对阵图不刷新；修复 submitCupMatchResult12 中 inp.datasetpid 笔误
+    var _upgraded = sessionStorage.getItem('pgm_upgraded');
+    if (_upgraded) {
+      // 上一次是升级跳转来的，清除 SW 缓存并移除标记
+      sessionStorage.removeItem('pgm_upgraded');
+      Promise.resolve().then(function(){
+        var tasks = [];
+        if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+        if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
+        return Promise.all(tasks);
+      }).then(function(){
+        var baseUrl = location.href.split('?')[0].split('#')[0];
+        var newUrl = baseUrl + '?_v=' + Date.now();
+        location.replace(newUrl);
+      });
+      return;
+    }
+    fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
+      // 公告条
+      if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
+      // 🛡️ 防止升级后循环弹框：刚完成升级则跳过本次检查
+      if(sessionStorage.getItem('pgm_upgraded')==='1'){ sessionStorage.removeItem('pgm_upgraded')
+      } else {
+      var needUpgrade=false
+      try{
+      var myV=0;try{var parts2=(APP_VERSION.major+'.'+APP_VERSION.minor+'.'+APP_VERSION.patch).split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
+      var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
+      if(myV<minV) needUpgrade=true
+      }catch(e){}
+      if(needUpgrade){
+          // 创建升级提示框
+          var overlay = document.createElement('div');
+          overlay.id = 'versionUpdateOverlay';
+          overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999998;display:flex;align-items:center;justify-content:center;';
+          overlay.innerHTML = '<div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);">' +
+            '<div style="font-size:52px;margin-bottom:12px;">🚀</div>' +
+            '<div style="font-size:20px;font-weight:bold;color:#1B5E20;margin-bottom:6px;">发现新版本</div>' +
+            '<div style="font-size:13px;color:#666;margin-bottom:20px;line-height:1.7;">' +
+              '当前版本：v' + parts2.join('.') + '<br>' +
+              '最新版本：<b style="color:#e91e63;">v' + d.minVersion + '</b><br>' +
+              '点击下方按钮更新到最新版本' +
+            '</div>' +
+            '<button id="btnUpdateNow" style="width:100%;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;padding:13px 0;border-radius:50px;font-size:15px;font-weight:bold;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 12px rgba(27,94,32,0.35);">🚀 立即更新</button>' +
+            '<button id="btnUpdateLater" style="width:100%;background:#f5f5f5;color:#999;border:none;padding:11px 0;border-radius:50px;font-size:14px;cursor:pointer;">稍后再说</button>' +
+          '</div>';
+          document.body.appendChild(overlay);
+
+          // 立即更新按钮
+          document.getElementById('btnUpdateNow').onclick = function(){
+            var btn = this;
+            btn.disabled = true;
+            btn.textContent = '⏳ 正在清理缓存...';
+            // 先标记升级状态
+            try { sessionStorage.setItem('pgm_upgraded', '1'); } catch(e){}
+            var tasks = [];
+            if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+            if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
+            Promise.all(tasks).then(function(){
+              var baseUrl = location.href.split('?')[0].split('#')[0];
+              var newUrl = baseUrl + '?_v=' + Date.now();
+              location.replace(newUrl);
+            }).catch(function(){
+              var baseUrl = location.href.split('?')[0].split('#')[0];
+              var newUrl = baseUrl + '?_v=' + Date.now();
+              location.replace(newUrl);
+            });
+          };
+
+          // 稍后再说按钮
+          document.getElementById('btnUpdateLater').onclick = function(){
+            overlay.remove();
+          };
+        }
+      }
+    }).catch(function(){})
+  }();
+  
+
+  !function(){
+    // v1.0.358: 修复12强杯赛 container 致命bug——_c12SelectTeam/submitCupMatchResult12 写入 scheduleContent 而非 standingsContent，导致选队/录入比分后对阵图不刷新；修复 submitCupMatchResult12 中 inp.datasetpid 笔误
+    var _upgraded = sessionStorage.getItem('pgm_upgraded');
+    if (_upgraded) {
+      // 上一次是升级跳转来的，清除 SW 缓存并移除标记
+      sessionStorage.removeItem('pgm_upgraded');
+      Promise.resolve().then(function(){
+        var tasks = [];
+        if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+        if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
+        return Promise.all(tasks);
+      }).then(function(){
+        var baseUrl = location.href.split('?')[0].split('#')[0];
+        var newUrl = baseUrl + '?_v=' + Date.now();
+        location.replace(newUrl);
+      });
+      return;
+    }
+    fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
+      // 公告条
+      if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
+      // 🛡️ 防止升级后循环弹框：刚完成升级则跳过本次检查
+      if(sessionStorage.getItem('pgm_upgraded')==='1'){ sessionStorage.removeItem('pgm_upgraded')
+      } else {
+      var needUpgrade=false
+      try{
+      var myV=0;try{var parts2=(APP_VERSION.major+'.'+APP_VERSION.minor+'.'+APP_VERSION.patch).split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
+      var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
+      if(myV<minV) needUpgrade=true
+      }catch(e){}
+      if(needUpgrade){
+          // 创建升级提示框
+          var overlay = document.createElement('div');
+          overlay.id = 'versionUpdateOverlay';
+          overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999998;display:flex;align-items:center;justify-content:center;';
+          overlay.innerHTML = '<div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);">' +
+            '<div style="font-size:52px;margin-bottom:12px;">🚀</div>' +
+            '<div style="font-size:20px;font-weight:bold;color:#1B5E20;margin-bottom:6px;">发现新版本</div>' +
+            '<div style="font-size:13px;color:#666;margin-bottom:20px;line-height:1.7;">' +
+              '当前版本：v' + parts2.join('.') + '<br>' +
+              '最新版本：<b style="color:#e91e63;">v' + d.minVersion + '</b><br>' +
+              '点击下方按钮更新到最新版本' +
+            '</div>' +
+            '<button id="btnUpdateNow" style="width:100%;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;padding:13px 0;border-radius:50px;font-size:15px;font-weight:bold;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 12px rgba(27,94,32,0.35);">🚀 立即更新</button>' +
+            '<button id="btnUpdateLater" style="width:100%;background:#f5f5f5;color:#999;border:none;padding:11px 0;border-radius:50px;font-size:14px;cursor:pointer;">稍后再说</button>' +
+          '</div>';
+          document.body.appendChild(overlay);
+
+          // 立即更新按钮
+          document.getElementById('btnUpdateNow').onclick = function(){
+            var btn = this;
+            btn.disabled = true;
+            btn.textContent = '⏳ 正在清理缓存...';
+            // 先标记升级状态
+            try { sessionStorage.setItem('pgm_upgraded', '1'); } catch(e){}
+            var tasks = [];
+            if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+            if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
+            Promise.all(tasks).then(function(){
+              var baseUrl = location.href.split('?')[0].split('#')[0];
+              var newUrl = baseUrl + '?_v=' + Date.now();
+              location.replace(newUrl);
+            }).catch(function(){
+              var baseUrl = location.href.split('?')[0].split('#')[0];
+              var newUrl = baseUrl + '?_v=' + Date.now();
+              location.replace(newUrl);
+            });
+          };
+
+          // 稍后再说按钮
+          document.getElementById('btnUpdateLater').onclick = function(){
+            overlay.remove();
+          };
+        }
+      }
+    }).catch(function(){})
+  }();
+  
+
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 500 };
+const APP_VERSION = { major: 1, minor: 0, patch: 501 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -13917,28 +14273,61 @@ document.getElementById('modalOverlay').onclick = (e) => {
 async function autoSyncFromCloud() {
   if (!GIST_ID) return; // 无云端ID则跳过
 
-  // 显示顶部同步指示条
-  const bar = document.createElement('div');
-  bar.id = 'autoSyncBar';
-  bar.style.cssText = 'position:fixed;top:0;left:0;right:0;height:4px;z-index:999998;overflow:hidden;';
-  bar.innerHTML = '<div id="autoSyncBarInner" style="height:100%;width:0;background:linear-gradient(90deg,#42a5f5,#29b6f6);transition:width 0.6s ease;border-radius:0 2px 2px 0;"></div>';
-  document.body.prepend(bar);
+  // 🚀 数据下载动画弹窗
+  const syncOverlay = document.createElement('div');
+  syncOverlay.id = 'syncLoadingOverlay';
+  syncOverlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999999;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.3s ease;';
+  syncOverlay.innerHTML = '<div id="syncLoadingCard" style="background:#fff;border-radius:20px;padding:36px 32px 28px;max-width:360px;width:90%;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,0.3);transform:scale(0.9);transition:transform 0.3s ease;">' +
+    '<div style="margin:0 auto 20px;width:56px;height:56px;position:relative;">' +
+      '<svg width="56" height="56" viewBox="0 0 56 56" style="animation:syncSpin 1s linear infinite;">' +
+        '<circle cx="28" cy="28" r="22" fill="none" stroke="#e0e0e0" stroke-width="3"/>' +
+        '<circle cx="28" cy="28" r="22" fill="none" stroke="#1B5E20" stroke-width="3" stroke-dasharray="100 140" stroke-linecap="round"/>' +
+      '</svg>' +
+      '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:22px;">☁️</div>' +
+    '</div>' +
+    '<div id="syncLoadingTitle" style="font-size:18px;font-weight:bold;color:#1B5E20;margin-bottom:6px;">正在同步数据</div>' +
+    '<div id="syncLoadingStatus" style="font-size:13px;color:#888;margin-bottom:18px;min-height:18px;">连接云端...</div>' +
+    '<div style="display:flex;justify-content:center;gap:6px;">' +
+      '<div class="syncDot" style="width:8px;height:8px;border-radius:50%;background:#ccc;animation:syncBounce 1.4s ease infinite;"></div>' +
+      '<div class="syncDot" style="width:8px;height:8px;border-radius:50%;background:#ccc;animation:syncBounce 1.4s ease 0.2s infinite;"></div>' +
+      '<div class="syncDot" style="width:8px;height:8px;border-radius:50%;background:#ccc;animation:syncBounce 1.4s ease 0.4s infinite;"></div>' +
+    '</div>' +
+  '</div>';
+  document.body.prepend(syncOverlay);
 
-  // 首次使用（无本地数据）时显示明显的加载提示
-  const isFirstTime = !localStorage.getItem('pgm_last_sync_time');
-  let tipEl = null;
-  if (isFirstTime && GIST_ID) {
-    tipEl = document.createElement('div');
-    tipEl.id = 'autoSyncTip';
-    tipEl.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:#1a237e;color:#fff;padding:10px 28px;border-radius:24px;font-size:14px;z-index:999998;box-shadow:0 4px 20px rgba(26,35,126,0.4);white-space:nowrap;';
-    tipEl.innerHTML = '⏳ 正在从云端拉取最新数据，请稍候...';
-    document.body.prepend(tipEl);
+  // 注入动画 keyframes（只注一次）
+  if (!document.getElementById('syncLoadingStyle')) {
+    var animStyle = document.createElement('style');
+    animStyle.id = 'syncLoadingStyle';
+    animStyle.textContent = '@keyframes syncSpin{to{transform:rotate(360deg)}} @keyframes syncBounce{0%,80%,100%{transform:scale(0.6);background:#ccc}40%{transform:scale(1);background:#1B5E20}}';
+    document.head.appendChild(animStyle);
   }
 
-  const inner = document.getElementById('autoSyncBarInner');
+  requestAnimationFrame(function() {
+    syncOverlay.style.opacity = '1';
+    document.getElementById('syncLoadingCard').style.transform = 'scale(1)';
+  });
+
+  function updateSyncStatus(text) {
+    var el = document.getElementById('syncLoadingStatus');
+    if (el) el.textContent = text;
+  }
+  function dismissSyncOverlay(delay) {
+    setTimeout(function() {
+      var ov = document.getElementById('syncLoadingOverlay');
+      if (ov) {
+        var card = document.getElementById('syncLoadingCard');
+        if (card) card.style.transform = 'scale(0.95)';
+        ov.style.opacity = '0';
+        setTimeout(function() { if (ov.parentNode) ov.remove(); }, 350);
+      }
+    }, delay || 200);
+  }
+
+  updateSyncStatus('正在连接云端...');
 
   try {
-    inner.style.width = '30%';
+    updateSyncStatus('正在获取数据信息...');
 
     // ★ 修复：移除 ETag/If-None-Match 机制，直接请求 Gist 元数据
     // ETag 在代理/CDN 环境下容易误判 304 导致跳过下载
@@ -13957,18 +14346,13 @@ async function autoSyncFromCloud() {
     if (resp.status === 304) {
       // 304 只在带 If-None-Match 时才可能出现，这里理论上不应该出现
       // 但作为安全网，仍然处理
-      inner.style.width = '100%';
-      inner.style.background = 'linear-gradient(90deg,#66bb6a,#43a047)';
+      updateSyncStatus('同步完成 ✓');
       const cachedHint = localStorage.getItem('pgm_last_upload_hint');
       let lastUploadInfo = null;
       if (cachedHint) { try { lastUploadInfo = JSON.parse(cachedHint); } catch(e) {} }
       updateSidebarCloudInfo(lastUploadInfo);
-      removeSyncTip();
-      setTimeout(() => {
-        bar.style.opacity = '0';
-        bar.style.transition = 'opacity 0.5s';
-        setTimeout(() => bar.remove(), 500);
-      }, 400);
+      
+      dismissSyncOverlay(400);
       skipMainSync = true;
     } else if (!resp.ok) {
       // ★ 增强：403 通常是 API 限流，给出明确提示
@@ -13983,7 +14367,7 @@ async function autoSyncFromCloud() {
     if (!skipMainSync) {
     gist = await resp.json();
 
-    inner.style.width = '50%';
+    updateSyncStatus('正在检查数据版本...');
 
     // ★ v1.0.215 修复：用时间戳比较代替精确字符串匹配
     gistUpdatedAt = gist.updated_at; // ISO 8601
@@ -13993,20 +14377,15 @@ async function autoSyncFromCloud() {
       const cachedTime = new Date(lastKnownUpdate).getTime();
       if (!isNaN(gistTime) && !isNaN(cachedTime) && gistTime <= cachedTime) {
         // 云端没有变化，跳过下载，直接显示信息
-        inner.style.width = '100%';
-        inner.style.background = 'linear-gradient(90deg,#66bb6a,#43a047)';
+        updateSyncStatus('同步完成 ✓');
         const cachedHint = localStorage.getItem('pgm_last_upload_hint');
         let lastUploadInfo = null;
         if (cachedHint) {
           try { lastUploadInfo = JSON.parse(cachedHint); } catch(e) {}
         }
         updateSidebarCloudInfo(lastUploadInfo);
-        removeSyncTip();
-        setTimeout(() => {
-          bar.style.opacity = '0';
-          bar.style.transition = 'opacity 0.5s';
-          setTimeout(() => bar.remove(), 500);
-        }, 800);
+        
+        dismissSyncOverlay(800);
         skipMainSync = true;
       }
     }
@@ -14022,7 +14401,7 @@ async function autoSyncFromCloud() {
     let cloudData;
     if (teamsFile && matchesFile && otherFile) {
       // ★ 新格式：拆分文件，按需下载
-      inner.style.width = '60%';
+      updateSyncStatus('正在下载球队数据...');
 
       // 用 raw_url 下载各分片
       const fetchRaw = async (fileObj) => {
@@ -14042,7 +14421,7 @@ async function autoSyncFromCloud() {
         fetchRaw(gistFiles[otherFile])
       ]);
 
-      inner.style.width = '85%';
+      updateSyncStatus('正在解析数据...');
 
       // 组装完整 state
       cloudData = otherObj || {};
@@ -14058,7 +14437,7 @@ async function autoSyncFromCloud() {
       const dataFile = Object.values(gistFiles)[0];
       if (!dataFile) throw new Error('no data');
 
-      inner.style.width = '70%';
+      updateSyncStatus('正在下载比赛数据...');
 
       let content;
       if (dataFile.truncated || !dataFile.content) {
@@ -14070,7 +14449,7 @@ async function autoSyncFromCloud() {
         content = dataFile.content;
       }
 
-      inner.style.width = '85%';
+      updateSyncStatus('正在解析数据...');
       cloudData = JSON.parse(content);
     }
 
@@ -14191,24 +14570,18 @@ async function autoSyncFromCloud() {
         }
       })();
 
-      inner.style.width = '100%';
-      inner.style.background = 'linear-gradient(90deg,#66bb6a,#43a047)';
+      updateSyncStatus('同步完成 ✓');
       showToast('✅ 数据已自动同步至最新');
     } else {
-      inner.style.width = '100%';
-      inner.style.background = 'linear-gradient(90deg,#66bb6a,#43a047)';
-    }
+      updateSyncStatus('同步完成 ✓');
+      }
 
     // 更新导航栏云端信息（无论是否更新都显示）
     updateSidebarCloudInfo(lastUploadInfo);
 
     // 1.5秒后移除进度条
-    removeSyncTip();
-    setTimeout(() => {
-      bar.style.opacity = '0';
-      bar.style.transition = 'opacity 0.5s';
-      setTimeout(() => bar.remove(), 500);
-    }, 1500);
+    
+    dismissSyncOverlay(800);
     } // end if (!skipMainSync)
 
   } catch(e) {
@@ -14216,19 +14589,14 @@ async function autoSyncFromCloud() {
     console.warn('自动同步失败:', e.message);
     // 进度条变红色表示失败
     if (inner) {
-      inner.style.width = '100%';
-      inner.style.background = 'linear-gradient(90deg,#ef5350,#e53935)';
-    }
-    removeSyncTip();
+      updateSyncStatus('同步完成 ✓');
+      }
+    
     // 首次使用失败时，特别提示（因为本地没有数据，页面会是空的）
     if (isFirstTime) {
       showToast('⚠️ 云端同步失败: ' + e.message + '，请检查网络后刷新重试');
     }
-    setTimeout(() => {
-      bar.style.opacity = '0';
-      bar.style.transition = 'opacity 0.3s';
-      setTimeout(() => bar.remove(), 300);
-    }, 800);
+    dismissSyncOverlay(1500);
   }
 
   // 主数据同步完成后，也同步独立的转会市场 Gist
@@ -14446,6 +14814,8 @@ if ('serviceWorker' in navigator) {
     console.warn('Service Worker 注册失败:', err);
   });
 }
+
+
 
 
 </script>
