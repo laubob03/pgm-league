@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.505';
+    var _curVer = '1.0.506';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -726,7 +726,7 @@
 <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.505';
+    var _curVer = '1.0.506';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -904,7 +904,7 @@
 
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.505';
+    var _curVer = '1.0.506';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -1082,7 +1082,7 @@
 
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.505';
+    var _curVer = '1.0.506';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -1260,7 +1260,7 @@
 
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.505';
+    var _curVer = '1.0.506';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -1438,7 +1438,7 @@
 
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.505';
+    var _curVer = '1.0.506';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -1616,7 +1616,7 @@
 
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.505';
+    var _curVer = '1.0.506';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -1794,7 +1794,7 @@
 
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.505';
+    var _curVer = '1.0.506';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -1972,7 +1972,7 @@
 
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.505';
+    var _curVer = '1.0.506';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -2150,7 +2150,7 @@
 
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.505';
+    var _curVer = '1.0.506';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -2327,7 +2327,7 @@
   
 
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 505 };
+const APP_VERSION = { major: 1, minor: 0, patch: 506 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -15247,7 +15247,7 @@ async function autoSyncFromCloud() {
       bar.style.borderTopColor = '#f44336';
     }
     txt.textContent = text || '系统状态';
-    if (detail) detail.textContent = 'v1.0.505 · PGM联赛';
+    if (detail) detail.textContent = 'v1.0.506 · PGM联赛';
     // 始终显示,不淡出
   }
 
@@ -15769,10 +15769,11 @@ if ('serviceWorker' in navigator) {
 
 </script>
 
-  <div id="bottomStatusBar" style="position:fixed;bottom:0;left:0;right:0;height:28px;background:#1a1a2e;border-top:1px solid #2a2a4e;display:flex;align-items:center;justify-content:center;gap:10px;z-index:99999;font-size:11px;color:#aaa;transition:opacity 0.3s;opacity:0;">
-    <span id="bottomStatusDot" style="width:8px;height:8px;border-radius:50%;background:#666;flex-shrink:0;transition:background 0.3s,box-shadow 0.3s;"></span>
-    <span id="bottomStatusText">系统状态</span>
+  <div id="bottomStatusBar" style="position:fixed;bottom:0;left:0;right:0;min-height:32px;background:linear-gradient(90deg,#1a1a2e,#2a2a4e);border-top:2px solid #4caf50;display:flex;align-items:center;justify-content:center;gap:10px;z-index:99999;font-size:13px;color:#fff;box-shadow:0 -2px 8px rgba(0,0,0,0.3);padding:4px 0;">
+    <span id="bottomStatusDot" style="width:12px;height:12px;border-radius:50%;background:#4caf50;box-shadow:0 0 8px #4caf50;flex-shrink:0;"></span>
+    <span id="bottomStatusText" style="color:#fff;font-weight:600;">系统就绪</span>
+    <span style="color:#888;margin-left:8px;">|</span>
+    <span id="bottomStatusDetail" style="color:#aaa;font-size:11px;">v1.0.506 · PGM联赛</span>
   </div>
-  <style>#bottomStatusBar.show{opacity:1} #bottomStatusDot.ok{background:#4caf50;box-shadow:0 0 6px #4caf50} #bottomStatusDot.sync{background:#ff9800;box-shadow:0 0 6px #ff9800;animation:dotPulse 1s ease infinite} #bottomStatusDot.err{background:#f44336;box-shadow:0 0 6px #f44336} @keyframes dotPulse{0%,100%{opacity:0.4;transform:scale(0.8)}50%{opacity:1;transform:scale(1.2)}}</style>
 </body>
 </html>
