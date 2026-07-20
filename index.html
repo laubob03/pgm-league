@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.502';
+    var _curVer = '1.0.503';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -726,7 +726,7 @@
 <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.502';
+    var _curVer = '1.0.503';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -904,7 +904,7 @@
 
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.502';
+    var _curVer = '1.0.503';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -1082,7 +1082,7 @@
 
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.502';
+    var _curVer = '1.0.503';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -1260,7 +1260,7 @@
 
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.502';
+    var _curVer = '1.0.503';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -1438,7 +1438,185 @@
 
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.502';
+    var _curVer = '1.0.503';
+    if (!_fc || _fc !== _curVer) {
+      sessionStorage.setItem('pgm_force_clean', _curVer);
+      var tasks = [];
+      if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+      if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
+      Promise.all(tasks).then(function(){
+        location.replace(location.href.split('?')[0].split('#')[0] + '?_fc=' + Date.now() + location.hash);
+      });
+      return; // 阻止后续脚本执行，等 reload
+    } else {
+      // 标记已清理，保持标记避免循环刷新
+    }
+  }();
+  
+
+  !function(){
+    // v1.0.358: 修复12强杯赛 container 致命bug——_c12SelectTeam/submitCupMatchResult12 写入 scheduleContent 而非 standingsContent，导致选队/录入比分后对阵图不刷新；修复 submitCupMatchResult12 中 inp.datasetpid 笔误
+    var _upgraded = sessionStorage.getItem('pgm_upgraded');
+    if (_upgraded) {
+      // 上一次是升级跳转来的，清除 SW 缓存并移除标记
+      sessionStorage.removeItem('pgm_upgraded');
+      Promise.resolve().then(function(){
+        var tasks = [];
+        if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+        if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
+        return Promise.all(tasks);
+      }).then(function(){
+        var baseUrl = location.href.split('?')[0].split('#')[0];
+        var newUrl = baseUrl + '?_v=' + Date.now();
+        location.replace(newUrl);
+      });
+      return;
+    }
+    fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
+      // 公告条
+      if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
+      // 🛡️ 防止升级后循环弹框：刚完成升级则跳过本次检查
+      if(sessionStorage.getItem('pgm_upgraded')==='1'){ sessionStorage.removeItem('pgm_upgraded')
+      } else {
+      var needUpgrade=false
+      try{
+      var myV=0;try{var parts2=(APP_VERSION.major+'.'+APP_VERSION.minor+'.'+APP_VERSION.patch).split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
+      var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
+      if(myV<minV) needUpgrade=true
+      }catch(e){}
+      if(needUpgrade){
+          // 创建升级提示框
+          var overlay = document.createElement('div');
+          overlay.id = 'versionUpdateOverlay';
+          overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999998;display:flex;align-items:center;justify-content:center;';
+          overlay.innerHTML = '<div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);">' +
+            '<div style="font-size:52px;margin-bottom:12px;">🚀</div>' +
+            '<div style="font-size:20px;font-weight:bold;color:#1B5E20;margin-bottom:6px;">发现新版本</div>' +
+            '<div style="font-size:13px;color:#666;margin-bottom:20px;line-height:1.7;">' +
+              '当前版本：v' + parts2.join('.') + '<br>' +
+              '最新版本：<b style="color:#e91e63;">v' + d.minVersion + '</b><br>' +
+              '点击下方按钮更新到最新版本' +
+            '</div>' +
+            '<button id="btnUpdateNow" style="width:100%;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;padding:13px 0;border-radius:50px;font-size:15px;font-weight:bold;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 12px rgba(27,94,32,0.35);">🚀 立即更新</button>' +
+            '<button id="btnUpdateLater" style="width:100%;background:#f5f5f5;color:#999;border:none;padding:11px 0;border-radius:50px;font-size:14px;cursor:pointer;">稍后再说</button>' +
+          '</div>';
+          document.body.appendChild(overlay);
+
+          // 立即更新按钮
+          document.getElementById('btnUpdateNow').onclick = function(){
+            var btn = this;
+            btn.disabled = true;
+            btn.textContent = '⏳ 正在清理缓存...';
+            // 先标记升级状态
+            try { sessionStorage.setItem('pgm_upgraded', '1'); } catch(e){}
+            var tasks = [];
+            if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+            if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
+            Promise.all(tasks).then(function(){
+              var baseUrl = location.href.split('?')[0].split('#')[0];
+              var newUrl = baseUrl + '?_v=' + Date.now();
+              location.replace(newUrl);
+            }).catch(function(){
+              var baseUrl = location.href.split('?')[0].split('#')[0];
+              var newUrl = baseUrl + '?_v=' + Date.now();
+              location.replace(newUrl);
+            });
+          };
+
+          // 稍后再说按钮
+          document.getElementById('btnUpdateLater').onclick = function(){
+            overlay.remove();
+          };
+        }
+      }
+    }).catch(function(){})
+  }();
+  
+
+  !function(){
+    // v1.0.358: 修复12强杯赛 container 致命bug——_c12SelectTeam/submitCupMatchResult12 写入 scheduleContent 而非 standingsContent，导致选队/录入比分后对阵图不刷新；修复 submitCupMatchResult12 中 inp.datasetpid 笔误
+    var _upgraded = sessionStorage.getItem('pgm_upgraded');
+    if (_upgraded) {
+      // 上一次是升级跳转来的，清除 SW 缓存并移除标记
+      sessionStorage.removeItem('pgm_upgraded');
+      Promise.resolve().then(function(){
+        var tasks = [];
+        if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+        if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
+        return Promise.all(tasks);
+      }).then(function(){
+        var baseUrl = location.href.split('?')[0].split('#')[0];
+        var newUrl = baseUrl + '?_v=' + Date.now();
+        location.replace(newUrl);
+      });
+      return;
+    }
+    fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){
+      // 公告条
+      if(d.notice&&d.notice.trim()){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#e91e63,#ff5722);color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:bold;z-index:999999;';var _ns=document.createElement('span');_ns.textContent='📢 '+d.notice;var _nw=document.createElement('div');_nw.style.cssText='max-width:600px;margin:0 auto;';_nw.appendChild(_ns);b.appendChild(_nw);document.body.prepend(b)}
+      // 🛡️ 防止升级后循环弹框：刚完成升级则跳过本次检查
+      if(sessionStorage.getItem('pgm_upgraded')==='1'){ sessionStorage.removeItem('pgm_upgraded')
+      } else {
+      var needUpgrade=false
+      try{
+      var myV=0;try{var parts2=(APP_VERSION.major+'.'+APP_VERSION.minor+'.'+APP_VERSION.patch).split('.').map(Number);myV=(parts2[0]||0)*10000+(parts2[1]||0)*100+(parts2[2]||0)}catch(e){}
+      var parts=d.minVersion?d.minVersion.split('.').map(Number):[]
+      var minV=parts.length?((parts[0]||0)*10000+(parts[1]||0)*100+(parts[2]||0)):myV
+      if(myV<minV) needUpgrade=true
+      }catch(e){}
+      if(needUpgrade){
+          // 创建升级提示框
+          var overlay = document.createElement('div');
+          overlay.id = 'versionUpdateOverlay';
+          overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999998;display:flex;align-items:center;justify-content:center;';
+          overlay.innerHTML = '<div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:360px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);">' +
+            '<div style="font-size:52px;margin-bottom:12px;">🚀</div>' +
+            '<div style="font-size:20px;font-weight:bold;color:#1B5E20;margin-bottom:6px;">发现新版本</div>' +
+            '<div style="font-size:13px;color:#666;margin-bottom:20px;line-height:1.7;">' +
+              '当前版本：v' + parts2.join('.') + '<br>' +
+              '最新版本：<b style="color:#e91e63;">v' + d.minVersion + '</b><br>' +
+              '点击下方按钮更新到最新版本' +
+            '</div>' +
+            '<button id="btnUpdateNow" style="width:100%;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;padding:13px 0;border-radius:50px;font-size:15px;font-weight:bold;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 12px rgba(27,94,32,0.35);">🚀 立即更新</button>' +
+            '<button id="btnUpdateLater" style="width:100%;background:#f5f5f5;color:#999;border:none;padding:11px 0;border-radius:50px;font-size:14px;cursor:pointer;">稍后再说</button>' +
+          '</div>';
+          document.body.appendChild(overlay);
+
+          // 立即更新按钮
+          document.getElementById('btnUpdateNow').onclick = function(){
+            var btn = this;
+            btn.disabled = true;
+            btn.textContent = '⏳ 正在清理缓存...';
+            // 先标记升级状态
+            try { sessionStorage.setItem('pgm_upgraded', '1'); } catch(e){}
+            var tasks = [];
+            if('serviceWorker' in navigator){tasks.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}
+            if('caches' in window){tasks.push(caches.keys().then(function(ns){return Promise.all(ns.map(function(n){return caches.delete(n)}))}))}
+            Promise.all(tasks).then(function(){
+              var baseUrl = location.href.split('?')[0].split('#')[0];
+              var newUrl = baseUrl + '?_v=' + Date.now();
+              location.replace(newUrl);
+            }).catch(function(){
+              var baseUrl = location.href.split('?')[0].split('#')[0];
+              var newUrl = baseUrl + '?_v=' + Date.now();
+              location.replace(newUrl);
+            });
+          };
+
+          // 稍后再说按钮
+          document.getElementById('btnUpdateLater').onclick = function(){
+            overlay.remove();
+          };
+        }
+      }
+    }).catch(function(){})
+  }();
+  
+
+  !function(){
+    var _fc = sessionStorage.getItem('pgm_force_clean');
+    var _curVer = '1.0.503';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -1615,7 +1793,7 @@
   
 
 // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 502 };
+const APP_VERSION = { major: 1, minor: 0, patch: 503 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -14489,7 +14667,7 @@ async function autoSyncFromCloud() {
   function updateSyncStatus(text) {
     var el = document.getElementById('syncLoadingStatus');
     if (el) el.textContent = text;
-    setNavStatus('sync', text);
+    setBottomStatus('sync', text);
   }
   function dismissSyncOverlay(delay, isError) {
     setTimeout(function() {
@@ -14501,40 +14679,39 @@ async function autoSyncFromCloud() {
         setTimeout(function() { if (ov.parentNode) ov.remove(); }, 350);
       }
       if (!isError) {
-        setNavStatus('ok', '数据已同步');
+        setBottomStatus('ok', '数据已同步');
       }
     }, delay || 200);
   }
 
-  // 导航栏状态指示器
-  function setNavStatus(state, text) {
-    var dot = document.getElementById('navSyncDot');
-    if (!dot) return;
-    var cls = '';
-    if (state === 'ok') cls = 'ok';
-    else if (state === 'sync') cls = 'sync';
-    else if (state === 'err') cls = 'err';
-    dot.innerHTML = '<span class="dot ' + cls + '"></span>' + text;
-    dot.className = 'nav-status-dot show';
+  // 底部状态栏指示器
+  function setBottomStatus(state, text) {
+    var bar = document.getElementById('bottomStatusBar');
+    var dot = document.getElementById('bottomStatusDot');
+    var txt = document.getElementById('bottomStatusText');
+    if (!bar || !dot || !txt) return;
+    bar.className = 'show';
+    dot.className = state === 'ok' ? 'ok' : (state === 'sync' ? 'sync' : 'err');
+    txt.textContent = text || '系统状态';
     // 正常状态 4 秒后淡出
     if (state === 'ok') {
-      setTimeout(function() { dot.className = 'nav-status-dot'; }, 4000);
+      setTimeout(function() { if (bar) bar.className = ''; }, 4000);
     }
   }
 
   // 网络状态监听
   window.addEventListener('online', function() {
-    setNavStatus('ok', '网络恢复');
+    setBottomStatus('ok', '网络恢复');
     if (typeof autoSyncFromCloud === 'function') {
       setTimeout(function() { autoSyncFromCloud(); }, 500);
     }
   });
   window.addEventListener('offline', function() {
-    setNavStatus('err', '网络断开');
+    setBottomStatus('err', '网络断开');
   });
   // 初始检测
   if (!navigator.onLine) {
-    setNavStatus('err', '离线');
+    setBottomStatus('err', '离线');
   }
 
 
@@ -15034,6 +15211,13 @@ if ('serviceWorker' in navigator) {
 
 
 
+
 </script>
+
+  <div id="bottomStatusBar" style="position:fixed;bottom:0;left:0;right:0;height:28px;background:#1a1a2e;border-top:1px solid #2a2a4e;display:flex;align-items:center;justify-content:center;gap:10px;z-index:99999;font-size:11px;color:#aaa;transition:opacity 0.3s;opacity:0;">
+    <span id="bottomStatusDot" style="width:8px;height:8px;border-radius:50%;background:#666;flex-shrink:0;transition:background 0.3s,box-shadow 0.3s;"></span>
+    <span id="bottomStatusText">系统状态</span>
+  </div>
+  <style>#bottomStatusBar.show{opacity:1} #bottomStatusDot.ok{background:#4caf50;box-shadow:0 0 6px #4caf50} #bottomStatusDot.sync{background:#ff9800;box-shadow:0 0 6px #ff9800;animation:dotPulse 1s ease infinite} #bottomStatusDot.err{background:#f44336;box-shadow:0 0 6px #f44336} @keyframes dotPulse{0%,100%{opacity:0.4;transform:scale(0.8)}50%{opacity:1;transform:scale(1.2)}}</style>
 </body>
 </html>
