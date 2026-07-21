@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.501';
+    var _curVer = '1.0.502';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -647,7 +647,7 @@
 <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.501';
+    var _curVer = '1.0.502';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -742,7 +742,7 @@
     }).catch(function(){})
   }()
   // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 501 };
+const APP_VERSION = { major: 1, minor: 0, patch: 502 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -753,7 +753,8 @@ if (location.search.includes('_v=')) {
 const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
-const CHANGELOG = [ {v:'v1.0.499',d:'2026-07-19',c:'修复队名迁移后队徽不同步：TEAM_RENAME_MAP改名时同步更新t.logo'},
+const CHANGELOG = [{v:'v1.0.502',d:'2026-07-21',c:'甲东 A. Madrid 更名为 ABC（队徽不变）'},
+   {v:'v1.0.499',d:'2026-07-19',c:'修复队名迁移后队徽不同步：TEAM_RENAME_MAP改名时同步更新t.logo'},
   { v: '1.0.491', date: '2026-07-18', items: ['📌 63赛季乙级24队735名球员全量更新'] },
     { v: '1.0.490', date: '2026-07-18', items: ['📌 63赛季甲级24队759名球员全量更新'] },
     { v: '1.0.489', date: '2026-07-18', items: ['📌 Kudus 数据修正：CA=162, 违约金=60（从早期批次格式升级为后期批次格式）'] },
@@ -1062,7 +1063,7 @@ const TEAM_UID_MAP = {
   'Genk': 258, 'Hamburger SV': 947, 'Hertha BSC': 2247, 'Lazio': 1140,
   'Leicester': 673, 'Liverpool': 676, 'Marseille': 866, 'Monaco': 826,
   'Newcastle': 688, 'Nottingham Forest': 692, 'RC Lens': 871, 'Schalke': 920,
-  'AC Milan': 1099, 'A. Madrid': 1687, 'Asante Kotoko': 801910, 'Atalanta': 1106,
+  'AC Milan': 1099, 'ABC': 1687, 'Asante Kotoko': 801910, 'Atalanta': 1106,
   'Celtic': 1569, 'Como': 1123, 'FC Koln': 916, 'FC Nurnberg': 899,
   'Flamengo': 322, 'Inter': 1135, 'Leverkusen': 901, 'Man Utd': 680,
   'Napoli': 1150, 'Oriental Dragon': 83111757, 'PSV': 1028, 'R. Madrid': 1736,
@@ -1099,7 +1100,7 @@ const POSITION_NAMES = { GK: '门将', DF: '后卫', MF: '中场', FW: '前锋' 
 
 const TEAM_NAMES = {
   'super': ['A. Bilbao','Arsenal','Aston Villa','Benfica','FC Bayern','Leeds','Hamburger SV','Lazio','Man City','Palmeiras','Paris SG','Wrexham'],
-  jiaEast: ['1860 Munchen','Aberdeen','A. Madrid','Barcelona','Hertha BSC','Juventus','Liverpool','Marseille','Monaco','Nottingham Forest','River','Tottenham'],
+  jiaEast: ['1860 Munchen','Aberdeen','ABC','Barcelona','Hertha BSC','Juventus','Liverpool','Marseille','Monaco','Nottingham Forest','River','Tottenham'],
   jiaWest: ['Ajax','Atalanta','La Coruna','Everton','Fiorentina','Flamengo','Frankfurt','Inter','Leicester','Napoli','RC Lens','Schalke'],
   yiEast: ['AS Roma','Atl. Tucuman','Dortmund','Newcastle','Como','FC Nurnberg','Leverkusen','Oriental Dragon','R. Madrid','Stuttgart','Sunderland','青岛海神'],
   yiWest: ['AC Milan','Asante Kotoko','Celtic','Chelsea','FC Koln','Genk','Man Utd','PSV','Sporting','West Ham','Wolfsburg','上海申花']
@@ -1662,7 +1663,7 @@ const PLAYERS_DB = {
     {uid:2000350553,name:'Benjamin Brantlind',age:17,ca:92},
     {uid:2000366429,name:'Denner',age:17,ca:74}
   ],
-  'A. Madrid': [
+  'ABC': [
     {uid:14183207,name:'Julián Alvarez',age:25,ca:172,clause:130},
     {uid:37047745,name:'Frenkie de Jong',age:28,ca:165,clause:40},
     {uid:37071126,name:'Tijjani Reijnders',age:27,ca:158,clause:30},
@@ -2643,7 +2644,7 @@ function loadState() {
         if (t.toTeam === 'Nottm Forest') t.toTeam = 'Nottingham Forest';
       });
       // ★ v1.0.476-477: 队名迁移（Brighton→La Coruna, FC Porto→FC Nurnberg, Fulham→Leeds）
-      const TEAM_RENAME_MAP = { 'Brighton': 'La Coruna', 'FC Porto': 'FC Nurnberg', 'Fulham': 'Leeds' };
+      const TEAM_RENAME_MAP = { 'Brighton': 'La Coruna', 'FC Porto': 'FC Nurnberg', 'Fulham': 'Leeds', 'A. Madrid': 'ABC' };
       state.teams.forEach(t => {
         if (TEAM_RENAME_MAP[t.name]) { t.name = TEAM_RENAME_MAP[t.name]; t.logo = (typeof TEAM_LOGOS !== 'undefined' && TEAM_LOGOS[t.name]) ? TEAM_LOGOS[t.name] : t.logo; }
       });
@@ -2994,7 +2995,7 @@ const COACH_ASSIGN = {
   'Wrexham': 'bobo',
   '1860 Munchen': '苟',
   'Aberdeen': '布指导',
-  'A. Madrid': '咖啡',
+  'ABC': '咖啡',
   'Barcelona': 'fzjjjjw',
   'Hertha BSC': '小君',
   'Juventus': '史丁比',
@@ -3225,7 +3226,7 @@ function migratePlayersFromArchive() {
       {"id":"p_2000368023","uid":2000368023,"name":"Jan Leszczyński","number":0,"position":"","age":18,"ca":88,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},
       {"id":"p_2000350553","uid":2000350553,"name":"Benjamin Brantlind","number":0,"position":"","age":17,"ca":92,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},
       {"id":"p_2000366429","uid":2000366429,"name":"Denner","number":0,"position":"","age":17,"ca":74,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}
-    ],"A. Madrid":[
+    ],"ABC":[
       {"id":"p_14183207","uid":14183207,"name":"Julián Alvarez","number":0,"position":"","age":25,"ca":172,"clause":130,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},
       {"id":"p_37047745","uid":37047745,"name":"Frenkie de Jong","number":0,"position":"","age":28,"ca":165,"clause":40,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},
       {"id":"p_37071126","uid":37071126,"name":"Tijjani Reijnders","number":0,"position":"","age":27,"ca":158,"clause":30,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},
