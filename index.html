@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.503';
+    var _curVer = '1.0.504';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -647,7 +647,7 @@
 <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.503';
+    var _curVer = '1.0.504';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -742,7 +742,7 @@
     }).catch(function(){})
   }()
   // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 503 };
+const APP_VERSION = { major: 1, minor: 0, patch: 504 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -753,7 +753,8 @@ if (location.search.includes('_v=')) {
 const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
-const CHANGELOG = [{v:'v1.0.503',d:'2026-07-22',c:'甲东 ABC(原A. Madrid) 更名为 Villarreal，队徽更换为1777.png'},
+const CHANGELOG = [{v:'v1.0.504',d:'2026-07-22',c:'甲东 Aberdeen 更名为 A. Madrid，队徽更换为1687.webp'},
+  {v:'v1.0.503',d:'2026-07-22',c:'甲东 ABC(原A. Madrid) 更名为 Villarreal，队徽更换为1777.png'},
   {v:'v1.0.502',d:'2026-07-21',c:'甲东 A. Madrid 更名为 ABC（队徽不变）'},
    {v:'v1.0.499',d:'2026-07-19',c:'修复队名迁移后队徽不同步：TEAM_RENAME_MAP改名时同步更新t.logo'},
   { v: '1.0.491', date: '2026-07-18', items: ['📌 63赛季乙级24队735名球员全量更新'] },
@@ -1058,7 +1059,7 @@ const TEAM_UID_MAP = {
   'A. Bilbao': 1664, 'Arsenal': 602, 'Aston Villa': 603, 'Barcelona': 1708,
   'Benfica': 1487, 'FC Bayern': 915, 'Juventus': 1139, 'Man City': 679,
   'Palmeiras': 329, 'Paris SG': 868, 'River': 94, 'Wrexham': 741,
-  '1860 Munchen': 955, 'Aberdeen': 1536, 'Ajax': 992, 'AS Roma': 1100,
+  '1860 Munchen': 955, 'A. Madrid': 1536, 'Ajax': 992, 'AS Roma': 1100,
   'Atl. Tucuman': 102474, 'La Coruna': 2000252605, 'Chelsea': 630, 'Dortmund': 907,
   'Everton': 650, 'Fiorentina': 1129, 'Frankfurt': 912, 'Leeds': 671,
   'Genk': 258, 'Hamburger SV': 947, 'Hertha BSC': 2247, 'Lazio': 1140,
@@ -1101,7 +1102,7 @@ const POSITION_NAMES = { GK: '门将', DF: '后卫', MF: '中场', FW: '前锋' 
 
 const TEAM_NAMES = {
   'super': ['A. Bilbao','Arsenal','Aston Villa','Benfica','FC Bayern','Leeds','Hamburger SV','Lazio','Man City','Palmeiras','Paris SG','Wrexham'],
-  jiaEast: ['1860 Munchen','Aberdeen','Villarreal','Barcelona','Hertha BSC','Juventus','Liverpool','Marseille','Monaco','Nottingham Forest','River','Tottenham'],
+  jiaEast: ['1860 Munchen','A. Madrid','Villarreal','Barcelona','Hertha BSC','Juventus','Liverpool','Marseille','Monaco','Nottingham Forest','River','Tottenham'],
   jiaWest: ['Ajax','Atalanta','La Coruna','Everton','Fiorentina','Flamengo','Frankfurt','Inter','Leicester','Napoli','RC Lens','Schalke'],
   yiEast: ['AS Roma','Atl. Tucuman','Dortmund','Newcastle','Como','FC Nurnberg','Leverkusen','Oriental Dragon','R. Madrid','Stuttgart','Sunderland','青岛海神'],
   yiWest: ['AC Milan','Asante Kotoko','Celtic','Chelsea','FC Koln','Genk','Man Utd','PSV','Sporting','West Ham','Wolfsburg','上海申花']
@@ -1122,7 +1123,7 @@ const TEAM_LOGOS = {
   'River': 'logos/94.webp',
   'Wrexham': 'logos/741.webp',
   '1860 Munchen': 'logos/955.webp',
-  'Aberdeen': 'logos/1536.webp',
+  'A. Madrid': 'logos/1687.webp',
   'AS Roma': 'logos/1100.webp',
   'Atl. Tucuman': 'logos/102474.webp',
   'Dortmund': 'logos/907.webp',
@@ -1594,7 +1595,7 @@ const PLAYERS_DB = {
     {uid:2000315332,name:'Nehemiah Oriola',age:18,ca:92},
     {uid:2000299823,name:'Mario Rivas',age:18,ca:84}
   ],
-  'Aberdeen': [
+  'A. Madrid': [
     {uid:27160181,name:'Rasmus Hojlund',age:24,ca:160,clause:98},
     {uid:28121564,name:'Mason Greenwood',age:25,ca:167,clause:115},
     {uid:95079228,name:'Alex Scott',age:23,ca:164,clause:49},
@@ -2645,7 +2646,7 @@ function loadState() {
         if (t.toTeam === 'Nottm Forest') t.toTeam = 'Nottingham Forest';
       });
       // ★ v1.0.476-477: 队名迁移（Brighton→La Coruna, FC Porto→FC Nurnberg, Fulham→Leeds）
-      const TEAM_RENAME_MAP = { 'Brighton': 'La Coruna', 'FC Porto': 'FC Nurnberg', 'Fulham': 'Leeds', 'A. Madrid': 'ABC', 'ABC': 'Villarreal' };
+      const TEAM_RENAME_MAP = { 'Brighton': 'La Coruna', 'FC Porto': 'FC Nurnberg', 'Fulham': 'Leeds', 'A. Madrid': 'ABC', 'ABC': 'Villarreal' , 'Aberdeen': 'A. Madrid' };
       state.teams.forEach(t => {
         if (TEAM_RENAME_MAP[t.name]) { t.name = TEAM_RENAME_MAP[t.name]; t.logo = (typeof TEAM_LOGOS !== 'undefined' && TEAM_LOGOS[t.name]) ? TEAM_LOGOS[t.name] : t.logo; }
       });
@@ -2995,7 +2996,7 @@ const COACH_ASSIGN = {
   'Paris SG': '包子',
   'Wrexham': 'bobo',
   '1860 Munchen': '苟',
-  'Aberdeen': '布指导',
+  'A. Madrid': '布指导',
   'Villarreal': '咖啡',
   'Barcelona': 'fzjjjjw',
   'Hertha BSC': '小君',
@@ -3159,7 +3160,7 @@ function migratePlayersFromArchive() {
       {"id":"p_2000497719","uid":2000497719,"name":"Adil Hamdani","number":0,"position":"","age":17.5,"ca":88,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},
       {"id":"p_2000315332","uid":2000315332,"name":"Nehemiah Oriola","number":0,"position":"","age":18,"ca":92,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},
       {"id":"p_2000299823","uid":2000299823,"name":"Mario Rivas","number":0,"position":"","age":18,"ca":84,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}
-    ],"Aberdeen":[
+    ],"A. Madrid":[
       {"id":"p_27160181","uid":27160181,"name":"Rasmus Hojlund","number":0,"position":"","age":24,"ca":160,"clause":98,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},
       {"id":"p_28121564","uid":28121564,"name":"Mason Greenwood","number":0,"position":"","age":25,"ca":167,"clause":115,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},
       {"id":"p_95079228","uid":95079228,"name":"Alex Scott","number":0,"position":"","age":23,"ca":164,"clause":49,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},
