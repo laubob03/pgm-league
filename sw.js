@@ -1,5 +1,5 @@
-﻿// v1.0.502 - cache name bumped to force old SW replacement
-const CACHE_NAME = 'pgm-v1.0.502';
+﻿// v1.0.503 - cache name bumped to force old SW replacement
+const CACHE_NAME = 'pgm-v1.0.503';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
