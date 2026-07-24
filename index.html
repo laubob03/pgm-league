@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.508';
+    var _curVer = '1.0.509';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -647,7 +647,7 @@
 <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.508';
+    var _curVer = '1.0.509';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -742,7 +742,7 @@
     }).catch(function(){})
   }()
   // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 508 };
+const APP_VERSION = { major: 1, minor: 0, patch: 509 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -753,7 +753,9 @@ if (location.search.includes('_v=')) {
 const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
-const CHANGELOG = [{v:'v1.0.508',d:'2026-07-24',c:'甲西 La Coruna 更名为 Brighton，队徽更换为618.webp'},
+const CHANGELOG = [{v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
+  {v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
+  {v:'v1.0.508',d:'2026-07-24',c:'甲西 La Coruna 更名为 Brighton，队徽更换为618.webp'},
   {v:'v1.0.507',d:'2026-07-23',c:'甲西 Atalanta 更名为 Angers，队徽更换为875.png'},
   {v:'v1.0.506',d:'2026-07-23',c:'乙西 Genk 更名为 Independiente del Valle，队徽更换为80001277.png'},
   {v:'v1.0.505',d:'2026-07-22',c:'甲东 1860 Munchen 更名为 Aberdeen，队徽更换为1536.webp'},
@@ -1106,10 +1108,10 @@ const POSITION_NAMES = { GK: '门将', DF: '后卫', MF: '中场', FW: '前锋' 
 
 const TEAM_NAMES = {
   'super': ['A. Bilbao','Arsenal','Aston Villa','Benfica','FC Bayern','Leeds','Hamburger SV','Lazio','Man City','Palmeiras','Paris SG','Wrexham'],
-  jiaEast: ['Aberdeen','A. Madrid','Villarreal','Barcelona','Hertha BSC','Juventus','Liverpool','Marseille','Monaco','Nottingham Forest','River','Tottenham'],
-  jiaWest: ['Ajax','Angers','Brighton','Everton','Fiorentina','Flamengo','Frankfurt','Inter','Leicester','Napoli','RC Lens','Schalke'],
-  yiEast: ['AS Roma','Atl. Tucuman','Dortmund','Newcastle','Como','FC Nurnberg','Leverkusen','Oriental Dragon','R. Madrid','Stuttgart','Sunderland','青岛海神'],
-  yiWest: ['AC Milan','Asante Kotoko','Celtic','Chelsea','FC Koln','Independiente del Valle','Man Utd','PSV','Sporting','West Ham','Wolfsburg','上海申花']
+  jiaEast: ['Ajax','Barcelona','Frankfurt','Flamengo','Inter','Juventus','Leicester','Liverpool','Napoli','Nottingham Forest','RC Lens','Schalke'],
+  jiaWest: ['Aberdeen','A. Madrid','Angers','Brighton','Everton','Fiorentina','Hertha BSC','Marseille','Monaco','River','Tottenham','Villarreal'],
+  yiEast: ['Asante Kotoko','AS Roma','Leverkusen','Newcastle','FC Nurnberg','PSV','R. Madrid','Sporting','Stuttgart','Wolfsburg','青岛海神','上海申花'],
+  yiWest: ['AC Milan','Atl. Tucuman','Celtic','Chelsea','Como','Dortmund','FC Koln','Independiente del Valle','Man Utd','Oriental Dragon','Sunderland','West Ham']
 };
 
 // Team logos from Transfermarkt CDN
