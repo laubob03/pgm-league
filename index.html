@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.518';
+    var _curVer = '1.0.519';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -647,7 +647,7 @@
 <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.518';
+    var _curVer = '1.0.519';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -742,7 +742,7 @@
     }).catch(function(){})
   }()
   // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 518 };
+const APP_VERSION = { major: 1, minor: 0, patch: 519 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -753,7 +753,7 @@ if (location.search.includes('_v=')) {
 const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
-const CHANGELOG = [{v:'v1.0.518',d:'2026-07-25',c:'三大杯赛程从5轮50场扩展为10轮100场(每队主客场双循环)'},{v:'v1.0.517',d:'2026-07-25',c:'杯赛CUP_FIXTURES中homeTeam/awayTeam/teams从数字改为字符串tX'},{v:'v1.0.516',d:'2026-07-25',c:'修复杯赛填充条件:云端cups缺少championsCup等key时自动创建'},{v:'v1.0.515',d:'2026-07-25',c:'添加debugCups()调试函数排查杯赛不显示问题'},{v:'v1.0.514',d:'2026-07-24',c:'修复autoSyncFromCloud的state=cloudData覆盖杯赛赛程(v1.0.513只改了syncDownload未改autoSyncFromCloud)'},{v:'v1.0.513',d:'2026-07-24',c:'修复杯赛赛程不显示:autoSyncFromCloud的state=cloudData覆盖loadState填充,增加云端同步后重新填充+saveState'},{v:'v1.0.512',d:'2026-07-24',c:'导入63赛季协会杯赛程(20队5轮50场,CUP_FIXTURES新增associationCup)'},{v:'v1.0.511',d:'2026-07-24',c:'导入63赛季联盟杯赛程(20队5轮50场,CUP_FIXTURES新增leagueCup)'},{v:'v1.0.510',d:'2026-07-24',c:'导入63赛季冠军杯赛程(20队5轮50场,CUP_FIXTURES常量+loadState自动填充)'},{v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
+const CHANGELOG = [{v:'v1.0.519',d:'2026-07-25',c:'热修复:teams数组引号丢失导致t10 is not defined'},{v:'v1.0.518',d:'2026-07-25',c:'三大杯赛程从5轮50场扩展为10轮100场(每队主客场双循环)'},{v:'v1.0.517',d:'2026-07-25',c:'杯赛CUP_FIXTURES中homeTeam/awayTeam/teams从数字改为字符串tX'},{v:'v1.0.516',d:'2026-07-25',c:'修复杯赛填充条件:云端cups缺少championsCup等key时自动创建'},{v:'v1.0.515',d:'2026-07-25',c:'添加debugCups()调试函数排查杯赛不显示问题'},{v:'v1.0.514',d:'2026-07-24',c:'修复autoSyncFromCloud的state=cloudData覆盖杯赛赛程(v1.0.513只改了syncDownload未改autoSyncFromCloud)'},{v:'v1.0.513',d:'2026-07-24',c:'修复杯赛赛程不显示:autoSyncFromCloud的state=cloudData覆盖loadState填充,增加云端同步后重新填充+saveState'},{v:'v1.0.512',d:'2026-07-24',c:'导入63赛季协会杯赛程(20队5轮50场,CUP_FIXTURES新增associationCup)'},{v:'v1.0.511',d:'2026-07-24',c:'导入63赛季联盟杯赛程(20队5轮50场,CUP_FIXTURES新增leagueCup)'},{v:'v1.0.510',d:'2026-07-24',c:'导入63赛季冠军杯赛程(20队5轮50场,CUP_FIXTURES常量+loadState自动填充)'},{v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
   {v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
   {v:'v1.0.508',d:'2026-07-24',c:'甲西 La Coruna 更名为 Brighton，队徽更换为618.webp'},
   {v:'v1.0.507',d:'2026-07-23',c:'甲西 Atalanta 更名为 Angers，队徽更换为875.png'},
@@ -4186,7 +4186,7 @@ yiWest: [
 // ============ CUP FIXTURES (63赛季) ============
 const CUP_FIXTURES = {
   championsCup: {
-    teams: [t10, t13, t6, t14, t5, t52, t45, t11, t12, t26, t34, t1, t4, t20, t8, t18, t7, t9, t3, t2],
+    teams: ['t10', 't13', 't6', 't14', 't5', 't52', 't45', 't11', 't12', 't26', 't34', 't1', 't4', 't20', 't8', 't18', 't7', 't9', 't3', 't2'],
     matches: [
     {'id':'championsCup_1','round':1,'homeTeam':'t10','awayTeam':'t13','date':null,'time':'15:00','venue':'Palmeiras主场','homeScore':null,'awayScore':null,'scorers':[],'assists':[],'motm':null,'status':'pending'},
     {'id':'championsCup_2','round':1,'homeTeam':'t6','awayTeam':'t14','date':null,'time':'15:00','venue':'Leeds主场','homeScore':null,'awayScore':null,'scorers':[],'assists':[],'motm':null,'status':'pending'},
@@ -4291,7 +4291,7 @@ const CUP_FIXTURES = {
     ]
   },
   leagueCup: {
-    teams: [t24, t27, t15, t25, t28, t50, t33, t22, t23, t35, t38, t29, t40, t31, t16, t30, t36, t19, t54, t32],
+    teams: ['t24', 't27', 't15', 't25', 't28', 't50', 't33', 't22', 't23', 't35', 't38', 't29', 't40', 't31', 't16', 't30', 't36', 't19', 't54', 't32'],
     matches: [
     {'id':'leagueCup_1','round':1,'homeTeam':'t24','awayTeam':'t27','date':null,'time':'15:00','venue':'Schalke主场','homeScore':null,'awayScore':null,'scorers':[],'assists':[],'motm':null,'status':'pending'},
     {'id':'leagueCup_2','round':1,'homeTeam':'t15','awayTeam':'t25','date':null,'time':'15:00','venue':'Frankfurt主场','homeScore':null,'awayScore':null,'scorers':[],'assists':[],'motm':null,'status':'pending'},
@@ -4396,7 +4396,7 @@ const CUP_FIXTURES = {
     ]
   },
   associationCup: {
-    teams: [t53, t37, t60, t39, t56, t47, t57, t17, t21, t42, t58, t44, t43, t51, t55, t49, t48, t59, t41, t46],
+    teams: ['t53', 't37', 't60', 't39', 't56', 't47', 't57', 't17', 't21', 't42', 't58', 't44', 't43', 't51', 't55', 't49', 't48', 't59', 't41', 't46'],
     matches: [
     {'id':'associationCup_1','round':1,'homeTeam':'t53','awayTeam':'t37','date':null,'time':'15:00','venue':'Como主场','homeScore':null,'awayScore':null,'scorers':[],'assists':[],'motm':null,'status':'pending'},
     {'id':'associationCup_2','round':1,'homeTeam':'t60','awayTeam':'t39','date':null,'time':'15:00','venue':'West Ham主场','homeScore':null,'awayScore':null,'scorers':[],'assists':[],'motm':null,'status':'pending'},
