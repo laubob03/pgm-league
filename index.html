@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.520';
+    var _curVer = '1.0.521';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -647,7 +647,7 @@
 <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.520';
+    var _curVer = '1.0.521';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -742,7 +742,7 @@
     }).catch(function(){})
   }()
   // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 520 };
+const APP_VERSION = { major: 1, minor: 0, patch: 521 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -753,7 +753,7 @@ if (location.search.includes('_v=')) {
 const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
-const CHANGELOG = [{v:'v1.0.520',d:'2026-07-25',c:'63赛季60队1845名球员全量更新(含CA+违约金)'},{v:'v1.0.519',d:'2026-07-25',c:'热修复:teams数组引号丢失导致t10 is not defined'},{v:'v1.0.518',d:'2026-07-25',c:'三大杯赛程从5轮50场扩展为10轮100场(每队主客场双循环)'},{v:'v1.0.517',d:'2026-07-25',c:'杯赛CUP_FIXTURES中homeTeam/awayTeam/teams从数字改为字符串tX'},{v:'v1.0.516',d:'2026-07-25',c:'修复杯赛填充条件:云端cups缺少championsCup等key时自动创建'},{v:'v1.0.515',d:'2026-07-25',c:'添加debugCups()调试函数排查杯赛不显示问题'},{v:'v1.0.514',d:'2026-07-24',c:'修复autoSyncFromCloud的state=cloudData覆盖杯赛赛程(v1.0.513只改了syncDownload未改autoSyncFromCloud)'},{v:'v1.0.513',d:'2026-07-24',c:'修复杯赛赛程不显示:autoSyncFromCloud的state=cloudData覆盖loadState填充,增加云端同步后重新填充+saveState'},{v:'v1.0.512',d:'2026-07-24',c:'导入63赛季协会杯赛程(20队5轮50场,CUP_FIXTURES新增associationCup)'},{v:'v1.0.511',d:'2026-07-24',c:'导入63赛季联盟杯赛程(20队5轮50场,CUP_FIXTURES新增leagueCup)'},{v:'v1.0.510',d:'2026-07-24',c:'导入63赛季冠军杯赛程(20队5轮50场,CUP_FIXTURES常量+loadState自动填充)'},{v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
+const CHANGELOG = [{v:'v1.0.521',d:'2026-07-25',c:'修复syncPlayersFromDB公海误删：已在PLAYERS_DB的球员不再从公海清理'},{v:'v1.0.520',d:'2026-07-25',c:'63赛季60队1845名球员全量更新(含CA+违约金)'},{v:'v1.0.519',d:'2026-07-25',c:'热修复:teams数组引号丢失导致t10 is not defined'},{v:'v1.0.518',d:'2026-07-25',c:'三大杯赛程从5轮50场扩展为10轮100场(每队主客场双循环)'},{v:'v1.0.517',d:'2026-07-25',c:'杯赛CUP_FIXTURES中homeTeam/awayTeam/teams从数字改为字符串tX'},{v:'v1.0.516',d:'2026-07-25',c:'修复杯赛填充条件:云端cups缺少championsCup等key时自动创建'},{v:'v1.0.515',d:'2026-07-25',c:'添加debugCups()调试函数排查杯赛不显示问题'},{v:'v1.0.514',d:'2026-07-24',c:'修复autoSyncFromCloud的state=cloudData覆盖杯赛赛程(v1.0.513只改了syncDownload未改autoSyncFromCloud)'},{v:'v1.0.513',d:'2026-07-24',c:'修复杯赛赛程不显示:autoSyncFromCloud的state=cloudData覆盖loadState填充,增加云端同步后重新填充+saveState'},{v:'v1.0.512',d:'2026-07-24',c:'导入63赛季协会杯赛程(20队5轮50场,CUP_FIXTURES新增associationCup)'},{v:'v1.0.511',d:'2026-07-24',c:'导入63赛季联盟杯赛程(20队5轮50场,CUP_FIXTURES新增leagueCup)'},{v:'v1.0.510',d:'2026-07-24',c:'导入63赛季冠军杯赛程(20队5轮50场,CUP_FIXTURES常量+loadState自动填充)'},{v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
   {v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
   {v:'v1.0.508',d:'2026-07-24',c:'甲西 La Coruna 更名为 Brighton，队徽更换为618.webp'},
   {v:'v1.0.507',d:'2026-07-23',c:'甲西 Atalanta 更名为 Angers，队徽更换为875.png'},
@@ -3594,13 +3594,15 @@ function syncPlayersFromDB() {
     console.log('[SYNC] ' + team.name + ': ' + oldCount + ' -> ' + team.players.length + ' players');
   }
 
-  // 清理公海球员
+  // 清理公海球员：只清理既在公海又不在PLAYERS_DB的球员（避免误删已重新加入PLAYERS_DB的球员）
+  const allDbUids = new Set();
+  for (const tn of Object.keys(PLAYERS_DB)) { PLAYERS_DB[tn].forEach(p => allDbUids.add(String(p.uid))); }
   const allOpenSeaUids = new Set((state.openSeaPlayers || []).map(p => String(p.uid)));
   for (const team of state.teams) {
     const beforeCount = team.players.length;
     team.players = team.players.filter(p => {
       const uid = String(p.uid);
-      if (allOpenSeaUids.has(uid)) { console.log('[CLEAN] Removed ' + p.name + ' from ' + team.name + ' (in openSea)'); return false; }
+      if (allOpenSeaUids.has(uid) && !allDbUids.has(uid)) { console.log('[CLEAN] Removed ' + p.name + ' from ' + team.name + ' (in openSea, not in DB)'); return false; }
       return true;
     });
     if (team.players.length < beforeCount) totalRemoved += (beforeCount - team.players.length);
