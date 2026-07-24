@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.507';
+    var _curVer = '1.0.508';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -647,7 +647,7 @@
 <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.507';
+    var _curVer = '1.0.508';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -742,7 +742,7 @@
     }).catch(function(){})
   }()
   // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 507 };
+const APP_VERSION = { major: 1, minor: 0, patch: 508 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -753,7 +753,8 @@ if (location.search.includes('_v=')) {
 const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
-const CHANGELOG = [{v:'v1.0.507',d:'2026-07-23',c:'甲西 Atalanta 更名为 Angers，队徽更换为875.png'},
+const CHANGELOG = [{v:'v1.0.508',d:'2026-07-24',c:'甲西 La Coruna 更名为 Brighton，队徽更换为618.webp'},
+  {v:'v1.0.507',d:'2026-07-23',c:'甲西 Atalanta 更名为 Angers，队徽更换为875.png'},
   {v:'v1.0.506',d:'2026-07-23',c:'乙西 Genk 更名为 Independiente del Valle，队徽更换为80001277.png'},
   {v:'v1.0.505',d:'2026-07-22',c:'甲东 1860 Munchen 更名为 Aberdeen，队徽更换为1536.webp'},
   {v:'v1.0.504',d:'2026-07-22',c:'甲东 Aberdeen 更名为 A. Madrid，队徽更换为1687.webp'},
@@ -1063,7 +1064,7 @@ const TEAM_UID_MAP = {
   'Benfica': 1487, 'FC Bayern': 915, 'Juventus': 1139, 'Man City': 679,
   'Palmeiras': 329, 'Paris SG': 868, 'River': 94, 'Wrexham': 741,
   'Aberdeen': 955, 'A. Madrid': 1536, 'Ajax': 992, 'AS Roma': 1100,
-  'Atl. Tucuman': 102474, 'La Coruna': 2000252605, 'Chelsea': 630, 'Dortmund': 907,
+  'Atl. Tucuman': 102474, 'Brighton': 2000252605, 'Chelsea': 630, 'Dortmund': 907,
   'Everton': 650, 'Fiorentina': 1129, 'Frankfurt': 912, 'Leeds': 671,
   'Independiente del Valle': 258, 'Hamburger SV': 947, 'Hertha BSC': 2247, 'Lazio': 1140,
   'Leicester': 673, 'Liverpool': 676, 'Marseille': 866, 'Monaco': 826,
@@ -1106,7 +1107,7 @@ const POSITION_NAMES = { GK: '门将', DF: '后卫', MF: '中场', FW: '前锋' 
 const TEAM_NAMES = {
   'super': ['A. Bilbao','Arsenal','Aston Villa','Benfica','FC Bayern','Leeds','Hamburger SV','Lazio','Man City','Palmeiras','Paris SG','Wrexham'],
   jiaEast: ['Aberdeen','A. Madrid','Villarreal','Barcelona','Hertha BSC','Juventus','Liverpool','Marseille','Monaco','Nottingham Forest','River','Tottenham'],
-  jiaWest: ['Ajax','Angers','La Coruna','Everton','Fiorentina','Flamengo','Frankfurt','Inter','Leicester','Napoli','RC Lens','Schalke'],
+  jiaWest: ['Ajax','Angers','Brighton','Everton','Fiorentina','Flamengo','Frankfurt','Inter','Leicester','Napoli','RC Lens','Schalke'],
   yiEast: ['AS Roma','Atl. Tucuman','Dortmund','Newcastle','Como','FC Nurnberg','Leverkusen','Oriental Dragon','R. Madrid','Stuttgart','Sunderland','青岛海神'],
   yiWest: ['AC Milan','Asante Kotoko','Celtic','Chelsea','FC Koln','Independiente del Valle','Man Utd','PSV','Sporting','West Ham','Wolfsburg','上海申花']
 };
@@ -1139,7 +1140,7 @@ const TEAM_LOGOS = {
   'Nottingham Forest': 'logos/692.webp',
 
   'Ajax': 'logos/992.webp',
-  'La Coruna': 'logos/2000252605.png',
+  'Brighton': 'logos/618.webp',
   'Chelsea': 'logos/630.webp',
   'Everton': 'logos/650.webp',
   'Fiorentina': 'logos/1129.webp',
@@ -1769,7 +1770,7 @@ const PLAYERS_DB = {
     {uid:2000426366,name:'Aymen Assab',age:17.5,ca:75},
     {uid:2000389019,name:'Alexis Ciria',age:18.5,ca:94}
   ],
-  'La Coruna': [
+  'Brighton': [
     {uid:2000120742,name:'Evan Ferguson',age:22,ca:155,clause:122},
     {uid:735216,name:'Cristiano Ronaldo',age:40,ca:155,clause:15},
     {uid:16199713,name:'Igor',age:27,ca:139,clause:4},
@@ -2649,7 +2650,7 @@ function loadState() {
         if (t.toTeam === 'Nottm Forest') t.toTeam = 'Nottingham Forest';
       });
       // ★ v1.0.476-477: 队名迁移（Brighton→La Coruna, FC Porto→FC Nurnberg, Fulham→Leeds）
-      const TEAM_RENAME_MAP = { 'Brighton': 'La Coruna', 'FC Porto': 'FC Nurnberg', 'Fulham': 'Leeds', 'A. Madrid': 'ABC', 'ABC': 'Villarreal' , 'Aberdeen': 'A. Madrid' , '1860 Munchen': 'Aberdeen' , 'Genk': 'Independiente del Valle' , 'Atalanta': 'Angers' };
+      const TEAM_RENAME_MAP = { 'Brighton': 'La Coruna', 'FC Porto': 'FC Nurnberg', 'Fulham': 'Leeds', 'A. Madrid': 'ABC', 'ABC': 'Villarreal' , 'Aberdeen': 'A. Madrid' , '1860 Munchen': 'Aberdeen' , 'Genk': 'Independiente del Valle' , 'Atalanta': 'Angers' , 'La Coruna': 'Brighton' };
       state.teams.forEach(t => {
         if (TEAM_RENAME_MAP[t.name]) { t.name = TEAM_RENAME_MAP[t.name]; t.logo = (typeof TEAM_LOGOS !== 'undefined' && TEAM_LOGOS[t.name]) ? TEAM_LOGOS[t.name] : t.logo; }
       });
@@ -3012,7 +3013,7 @@ const COACH_ASSIGN = {
   'Tottenham': 'J.K',
   'Ajax': '老虎',
   'Angers': '边缘的光',
-  'La Coruna': '7指导',
+  'Brighton': '7指导',
   'Everton': '酱油',
   'Fiorentina': '暗影',
   'Flamengo': '骚傲',
@@ -3329,7 +3330,7 @@ function migratePlayersFromArchive() {
       {"id":"p_2000408022","uid":2000408022,"name":"Malcom Dacosta","number":0,"position":"","age":17.5,"ca":60,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},
       {"id":"p_2000426366","uid":2000426366,"name":"Aymen Assab","number":0,"position":"","age":17.5,"ca":75,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},
       {"id":"p_2000389019","uid":2000389019,"name":"Alexis Ciria","number":0,"position":"","age":18.5,"ca":94,"clause":0,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0}
-    ],"La Coruna":[
+    ],"Brighton":[
       {"id":"p_2000120742","uid":2000120742,"name":"Evan Ferguson","number":0,"position":"","age":22,"ca":155,"clause":122,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},
       {"id":"p_735216","uid":735216,"name":"Cristiano Ronaldo","number":0,"position":"","age":40,"ca":155,"clause":15,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},
       {"id":"p_16199713","uid":16199713,"name":"Igor","number":0,"position":"","age":27,"ca":139,"clause":4,"goals":0,"assists":0,"rating":0,"gamesPlayed":0,"motmCount":0},
