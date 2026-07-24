@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.514';
+    var _curVer = '1.0.515';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -647,7 +647,7 @@
 <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.514';
+    var _curVer = '1.0.515';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -742,7 +742,7 @@
     }).catch(function(){})
   }()
   // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 514 };
+const APP_VERSION = { major: 1, minor: 0, patch: 515 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -753,7 +753,7 @@ if (location.search.includes('_v=')) {
 const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
-const CHANGELOG = [{v:'v1.0.514',d:'2026-07-24',c:'修复autoSyncFromCloud的state=cloudData覆盖杯赛赛程(v1.0.513只改了syncDownload未改autoSyncFromCloud)'},{v:'v1.0.513',d:'2026-07-24',c:'修复杯赛赛程不显示:autoSyncFromCloud的state=cloudData覆盖loadState填充,增加云端同步后重新填充+saveState'},{v:'v1.0.512',d:'2026-07-24',c:'导入63赛季协会杯赛程(20队5轮50场,CUP_FIXTURES新增associationCup)'},{v:'v1.0.511',d:'2026-07-24',c:'导入63赛季联盟杯赛程(20队5轮50场,CUP_FIXTURES新增leagueCup)'},{v:'v1.0.510',d:'2026-07-24',c:'导入63赛季冠军杯赛程(20队5轮50场,CUP_FIXTURES常量+loadState自动填充)'},{v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
+const CHANGELOG = [{v:'v1.0.515',d:'2026-07-25',c:'添加debugCups()调试函数排查杯赛不显示问题'},{v:'v1.0.514',d:'2026-07-24',c:'修复autoSyncFromCloud的state=cloudData覆盖杯赛赛程(v1.0.513只改了syncDownload未改autoSyncFromCloud)'},{v:'v1.0.513',d:'2026-07-24',c:'修复杯赛赛程不显示:autoSyncFromCloud的state=cloudData覆盖loadState填充,增加云端同步后重新填充+saveState'},{v:'v1.0.512',d:'2026-07-24',c:'导入63赛季协会杯赛程(20队5轮50场,CUP_FIXTURES新增associationCup)'},{v:'v1.0.511',d:'2026-07-24',c:'导入63赛季联盟杯赛程(20队5轮50场,CUP_FIXTURES新增leagueCup)'},{v:'v1.0.510',d:'2026-07-24',c:'导入63赛季冠军杯赛程(20队5轮50场,CUP_FIXTURES常量+loadState自动填充)'},{v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
   {v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
   {v:'v1.0.508',d:'2026-07-24',c:'甲西 La Coruna 更名为 Brighton，队徽更换为618.webp'},
   {v:'v1.0.507',d:'2026-07-23',c:'甲西 Atalanta 更名为 Angers，队徽更换为875.png'},
@@ -4366,6 +4366,44 @@ function importCupFixtures(force) {
   if (typeof render === 'function') render();
   console.log('[CUP] importCupFixtures done, cups updated: ' + count);
   if (typeof showToast === 'function') showToast('✅ 杯赛赛程已导入 (' + count + ' 个杯赛)');
+}
+
+function debugCups() {
+  console.log('=== CUP DEBUG ===');
+  console.log('1. _curVer:', typeof _curVer !== 'undefined' ? _curVer : 'NOT DEFINED');
+  console.log('2. CUP_FIXTURES defined:', typeof CUP_FIXTURES !== 'undefined');
+  if (typeof CUP_FIXTURES !== 'undefined') {
+    console.log('   CUP_FIXTURES keys:', Object.keys(CUP_FIXTURES));
+    for (const k in CUP_FIXTURES) {
+      console.log('   ' + k + ': teams=' + CUP_FIXTURES[k].teams.length + ', matches=' + CUP_FIXTURES[k].matches.length);
+    }
+  }
+  console.log('3. state.cups:');
+  if (state && state.cups) {
+    for (const k in state.cups) {
+      const c = state.cups[k];
+      console.log('   ' + k + ': teams=' + (c.teams ? c.teams.length : 'null') + ', matches=' + (c.matches ? c.matches.length : 'null'));
+      if (c.matches && c.matches.length > 0) {
+        console.log('   first match:', JSON.stringify(c.matches[0]).substring(0, 200));
+      }
+    }
+  } else {
+    console.log('   state.cups is null/undefined!');
+  }
+  console.log('4. getCurrentSeasonData():');
+  const sd = getCurrentSeasonData();
+  console.log('   sd === state:', sd === state);
+  console.log('   viewingSeasonId:', viewingSeasonId);
+  if (sd.cups) {
+    for (const k in sd.cups) {
+      const c = sd.cups[k];
+      console.log('   sd.cups.' + k + ': teams=' + (c.teams ? c.teams.length : 'null') + ', matches=' + (c.matches ? c.matches.length : 'null'));
+    }
+  }
+  console.log('5. state.currentLeague:', state.currentLeague);
+  console.log('6. isCupLeague(championsCup):', isCupLeague('championsCup'));
+  console.log('7. state.teams[0]:', state.teams && state.teams[0] ? state.teams[0].name + ' (id=' + state.teams[0].id + ')' : 'NO TEAMS');
+  console.log('=== END CUP DEBUG ===');
 }
 
 function generateAllMatches() {
