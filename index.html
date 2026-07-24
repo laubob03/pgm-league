@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.510';
+    var _curVer = '1.0.511';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -647,7 +647,7 @@
 <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.510';
+    var _curVer = '1.0.511';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -742,7 +742,7 @@
     }).catch(function(){})
   }()
   // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 510 };
+const APP_VERSION = { major: 1, minor: 0, patch: 511 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -753,7 +753,7 @@ if (location.search.includes('_v=')) {
 const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
-const CHANGELOG = [{v:'v1.0.510',d:'2026-07-24',c:'导入63赛季冠军杯赛程(20队5轮50场,CUP_FIXTURES常量+loadState自动填充)'},{v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
+const CHANGELOG = [{v:'v1.0.511',d:'2026-07-24',c:'导入63赛季联盟杯赛程(20队5轮50场,CUP_FIXTURES新增leagueCup)'},{v:'v1.0.510',d:'2026-07-24',c:'导入63赛季冠军杯赛程(20队5轮50场,CUP_FIXTURES常量+loadState自动填充)'},{v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
   {v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
   {v:'v1.0.508',d:'2026-07-24',c:'甲西 La Coruna 更名为 Brighton，队徽更换为618.webp'},
   {v:'v1.0.507',d:'2026-07-23',c:'甲西 Atalanta 更名为 Angers，队徽更换为875.png'},
@@ -4234,6 +4234,61 @@ const CUP_FIXTURES = {
     { id: 'championsCup_48', round: 5, homeTeam: 8, awayTeam: 9, date: null, time: '15:00', venue: 'Lazio主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
     { id: 'championsCup_49', round: 5, homeTeam: 3, awayTeam: 26, date: null, time: '15:00', venue: 'Aston Villa主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
     { id: 'championsCup_50', round: 5, homeTeam: 34, awayTeam: 2, date: null, time: '15:00', venue: 'River主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    ]
+  },
+  leagueCup: {
+    teams: [24, 27, 15, 25, 28, 50, 33, 22, 23, 35, 38, 29, 40, 31, 16, 30, 36, 19, 54, 32],
+    matches: [
+    { id: 'leagueCup_1', round: 1, homeTeam: 24, awayTeam: 27, date: null, time: '15:00', venue: 'Schalke主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_2', round: 1, homeTeam: 15, awayTeam: 25, date: null, time: '15:00', venue: 'Frankfurt主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_3', round: 1, homeTeam: 28, awayTeam: 50, date: null, time: '15:00', venue: 'Brighton主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_4', round: 1, homeTeam: 33, awayTeam: 22, date: null, time: '15:00', venue: 'Monaco主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_5', round: 1, homeTeam: 23, awayTeam: 35, date: null, time: '15:00', venue: 'RC Lens主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_6', round: 1, homeTeam: 38, awayTeam: 29, date: null, time: '15:00', venue: 'AS Roma主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_7', round: 1, homeTeam: 40, awayTeam: 31, date: null, time: '15:00', venue: 'Newcastle主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_8', round: 1, homeTeam: 16, awayTeam: 30, date: null, time: '15:00', venue: 'Flamengo主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_9', round: 1, homeTeam: 36, awayTeam: 19, date: null, time: '15:00', venue: 'Villarreal主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_10', round: 1, homeTeam: 54, awayTeam: 32, date: null, time: '15:00', venue: 'Dortmund主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_11', round: 2, homeTeam: 30, awayTeam: 24, date: null, time: '15:00', venue: 'Fiorentina主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_12', round: 2, homeTeam: 25, awayTeam: 40, date: null, time: '15:00', venue: 'Aberdeen主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_13', round: 2, homeTeam: 29, awayTeam: 28, date: null, time: '15:00', venue: 'Everton主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_14', round: 2, homeTeam: 22, awayTeam: 23, date: null, time: '15:00', venue: 'Nottingham Forest主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_15', round: 2, homeTeam: 50, awayTeam: 36, date: null, time: '15:00', venue: 'Atl. Tucuman主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_16', round: 2, homeTeam: 19, awayTeam: 33, date: null, time: '15:00', venue: 'Leicester主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_17', round: 2, homeTeam: 27, awayTeam: 54, date: null, time: '15:00', venue: 'Angers主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_18', round: 2, homeTeam: 32, awayTeam: 15, date: null, time: '15:00', venue: 'Marseille主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_19', round: 2, homeTeam: 31, awayTeam: 38, date: null, time: '15:00', venue: 'Hertha BSC主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_20', round: 2, homeTeam: 35, awayTeam: 16, date: null, time: '15:00', venue: 'Tottenham主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_21', round: 3, homeTeam: 24, awayTeam: 54, date: null, time: '15:00', venue: 'Schalke主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_22', round: 3, homeTeam: 32, awayTeam: 25, date: null, time: '15:00', venue: 'Marseille主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_23', round: 3, homeTeam: 36, awayTeam: 28, date: null, time: '15:00', venue: 'Villarreal主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_24', round: 3, homeTeam: 22, awayTeam: 19, date: null, time: '15:00', venue: 'Nottingham Forest主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_25', round: 3, homeTeam: 23, awayTeam: 40, date: null, time: '15:00', venue: 'RC Lens主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_26', round: 3, homeTeam: 30, awayTeam: 29, date: null, time: '15:00', venue: 'Fiorentina主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_27', round: 3, homeTeam: 38, awayTeam: 33, date: null, time: '15:00', venue: 'AS Roma主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_28', round: 3, homeTeam: 50, awayTeam: 35, date: null, time: '15:00', venue: 'Atl. Tucuman主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_29', round: 3, homeTeam: 15, awayTeam: 16, date: null, time: '15:00', venue: 'Frankfurt主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_30', round: 3, homeTeam: 31, awayTeam: 27, date: null, time: '15:00', venue: 'Hertha BSC主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_31', round: 4, homeTeam: 35, awayTeam: 24, date: null, time: '15:00', venue: 'Tottenham主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_32', round: 4, homeTeam: 25, awayTeam: 38, date: null, time: '15:00', venue: 'Aberdeen主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_33', round: 4, homeTeam: 28, awayTeam: 31, date: null, time: '15:00', venue: 'Brighton主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_34', round: 4, homeTeam: 16, awayTeam: 22, date: null, time: '15:00', venue: 'Flamengo主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_35', round: 4, homeTeam: 19, awayTeam: 23, date: null, time: '15:00', venue: 'Leicester主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_36', round: 4, homeTeam: 29, awayTeam: 36, date: null, time: '15:00', venue: 'Everton主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_37', round: 4, homeTeam: 40, awayTeam: 32, date: null, time: '15:00', venue: 'Newcastle主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_38', round: 4, homeTeam: 54, awayTeam: 30, date: null, time: '15:00', venue: 'Dortmund主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_39', round: 4, homeTeam: 27, awayTeam: 15, date: null, time: '15:00', venue: 'Angers主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_40', round: 4, homeTeam: 33, awayTeam: 50, date: null, time: '15:00', venue: 'Monaco主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_41', round: 5, homeTeam: 24, awayTeam: 22, date: null, time: '15:00', venue: 'Schalke主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_42', round: 5, homeTeam: 28, awayTeam: 25, date: null, time: '15:00', venue: 'Brighton主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_43', round: 5, homeTeam: 23, awayTeam: 50, date: null, time: '15:00', venue: 'RC Lens主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_44', round: 5, homeTeam: 33, awayTeam: 29, date: null, time: '15:00', venue: 'Monaco主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_45', round: 5, homeTeam: 40, awayTeam: 27, date: null, time: '15:00', venue: 'Newcastle主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_46', round: 5, homeTeam: 15, awayTeam: 30, date: null, time: '15:00', venue: 'Frankfurt主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_47', round: 5, homeTeam: 36, awayTeam: 31, date: null, time: '15:00', venue: 'Villarreal主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_48', round: 5, homeTeam: 16, awayTeam: 19, date: null, time: '15:00', venue: 'Flamengo主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_49', round: 5, homeTeam: 54, awayTeam: 35, date: null, time: '15:00', venue: 'Dortmund主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
+    { id: 'leagueCup_50', round: 5, homeTeam: 38, awayTeam: 32, date: null, time: '15:00', venue: 'AS Roma主场', homeScore: null, awayScore: null, scorers: [], assists: [], motm: null, status: 'pending' },
     ]
   }
 };
