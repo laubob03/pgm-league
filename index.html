@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.523';
+    var _curVer = '1.0.524';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -647,7 +647,7 @@
 <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.523';
+    var _curVer = '1.0.524';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -742,7 +742,7 @@
     }).catch(function(){})
   }()
   // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 523 };
+const APP_VERSION = { major: 1, minor: 0, patch: 524 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -753,7 +753,7 @@ if (location.search.includes('_v=')) {
 const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
-const CHANGELOG = [{v:'v1.0.523',d:'2026-07-25',c:'修复赛程排序-保持Excel原始对阵顺序(逐轮延续而非按round分组)'},{v:'v1.0.522',d:'2026-07-25',c:'63赛季五大联赛赛程导入(超级/甲东/甲西/乙东/乙西各22轮)'},{v:'v1.0.522',d:'2026-07-25',c:'63赛季五大联赛赛程导入(超级/甲东/甲西/乙东/乙西各22轮)'},{v:'v1.0.521',d:'2026-07-25',c:'修复syncPlayersFromDB公海误删：已在PLAYERS_DB的球员不再从公海清理'},{v:'v1.0.520',d:'2026-07-25',c:'63赛季60队1845名球员全量更新(含CA+违约金)'},{v:'v1.0.519',d:'2026-07-25',c:'热修复:teams数组引号丢失导致t10 is not defined'},{v:'v1.0.518',d:'2026-07-25',c:'三大杯赛程从5轮50场扩展为10轮100场(每队主客场双循环)'},{v:'v1.0.517',d:'2026-07-25',c:'杯赛CUP_FIXTURES中homeTeam/awayTeam/teams从数字改为字符串tX'},{v:'v1.0.516',d:'2026-07-25',c:'修复杯赛填充条件:云端cups缺少championsCup等key时自动创建'},{v:'v1.0.515',d:'2026-07-25',c:'添加debugCups()调试函数排查杯赛不显示问题'},{v:'v1.0.514',d:'2026-07-24',c:'修复autoSyncFromCloud的state=cloudData覆盖杯赛赛程(v1.0.513只改了syncDownload未改autoSyncFromCloud)'},{v:'v1.0.513',d:'2026-07-24',c:'修复杯赛赛程不显示:autoSyncFromCloud的state=cloudData覆盖loadState填充,增加云端同步后重新填充+saveState'},{v:'v1.0.512',d:'2026-07-24',c:'导入63赛季协会杯赛程(20队5轮50场,CUP_FIXTURES新增associationCup)'},{v:'v1.0.511',d:'2026-07-24',c:'导入63赛季联盟杯赛程(20队5轮50场,CUP_FIXTURES新增leagueCup)'},{v:'v1.0.510',d:'2026-07-24',c:'导入63赛季冠军杯赛程(20队5轮50场,CUP_FIXTURES常量+loadState自动填充)'},{v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
+const CHANGELOG = [{v:'v1.0.524',d:'2026-07-25',c:'联赛赛程自动从LEAGUE_FIXTURES重新生成(修复localStorage旧数据覆盖新赛程)'},{v:'v1.0.523',d:'2026-07-25',c:'修复赛程排序-保持Excel原始对阵顺序(逐轮延续而非按round分组)'},{v:'v1.0.522',d:'2026-07-25',c:'63赛季五大联赛赛程导入(超级/甲东/甲西/乙东/乙西各22轮)'},{v:'v1.0.522',d:'2026-07-25',c:'63赛季五大联赛赛程导入(超级/甲东/甲西/乙东/乙西各22轮)'},{v:'v1.0.521',d:'2026-07-25',c:'修复syncPlayersFromDB公海误删：已在PLAYERS_DB的球员不再从公海清理'},{v:'v1.0.520',d:'2026-07-25',c:'63赛季60队1845名球员全量更新(含CA+违约金)'},{v:'v1.0.519',d:'2026-07-25',c:'热修复:teams数组引号丢失导致t10 is not defined'},{v:'v1.0.518',d:'2026-07-25',c:'三大杯赛程从5轮50场扩展为10轮100场(每队主客场双循环)'},{v:'v1.0.517',d:'2026-07-25',c:'杯赛CUP_FIXTURES中homeTeam/awayTeam/teams从数字改为字符串tX'},{v:'v1.0.516',d:'2026-07-25',c:'修复杯赛填充条件:云端cups缺少championsCup等key时自动创建'},{v:'v1.0.515',d:'2026-07-25',c:'添加debugCups()调试函数排查杯赛不显示问题'},{v:'v1.0.514',d:'2026-07-24',c:'修复autoSyncFromCloud的state=cloudData覆盖杯赛赛程(v1.0.513只改了syncDownload未改autoSyncFromCloud)'},{v:'v1.0.513',d:'2026-07-24',c:'修复杯赛赛程不显示:autoSyncFromCloud的state=cloudData覆盖loadState填充,增加云端同步后重新填充+saveState'},{v:'v1.0.512',d:'2026-07-24',c:'导入63赛季协会杯赛程(20队5轮50场,CUP_FIXTURES新增associationCup)'},{v:'v1.0.511',d:'2026-07-24',c:'导入63赛季联盟杯赛程(20队5轮50场,CUP_FIXTURES新增leagueCup)'},{v:'v1.0.510',d:'2026-07-24',c:'导入63赛季冠军杯赛程(20队5轮50场,CUP_FIXTURES常量+loadState自动填充)'},{v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
   {v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
   {v:'v1.0.508',d:'2026-07-24',c:'甲西 La Coruna 更名为 Brighton，队徽更换为618.webp'},
   {v:'v1.0.507',d:'2026-07-23',c:'甲西 Atalanta 更名为 Angers，队徽更换为875.png'},
@@ -3445,7 +3445,19 @@ function loadState() {
   } else {
     initData();
   }
-  // ★ v1.0.510: 杯赛赛程自动填充（仅当杯赛为空时，不覆盖已录入比分）
+  // ★ v1.0.524: 联赛赛程自动从 LEAGUE_FIXTURES 重新生成（修复 localStorage 旧赛程覆盖）
+  if (typeof LEAGUE_FIXTURES !== 'undefined' && state.teams && state.teams.length > 0) {
+    let needRegen = !state.matches || state.matches.length === 0;
+    if (!needRegen && state.matches[0] && LEAGUE_FIXTURES.super && LEAGUE_FIXTURES.super[0]) {
+      needRegen = state.matches[0].homeTeam !== LEAGUE_FIXTURES.super[0].homeTeam;
+    }
+    if (needRegen) {
+      state.matches = generateAllMatches();
+      console.log('[LEAGUE] 赛程已从 LEAGUE_FIXTURES 重新生成: ' + state.matches.length + '场');
+      saveState();
+    }
+  }
+    // ★ v1.0.510: 杯赛赛程自动填充（仅当杯赛为空时，不覆盖已录入比分）
   if (typeof CUP_FIXTURES !== 'undefined') {
     for (const cupId in CUP_FIXTURES) {
       if (!state.cups) state.cups = {};
@@ -5761,33 +5773,36 @@ function debugCups() {
 }
 
 function generateAllMatches() {
+  // ★ v1.0.523: 支持新赛程格式 {round, homeTeam, awayTeam}
   const matches = [];
   const leagues = ['super', 'jiaEast', 'jiaWest', 'yiEast', 'yiWest'];
   let matchId = 1;
   
   for (const league of leagues) {
-    const teams = state.teams.filter(t => t.league === league);
     const fixtures = LEAGUE_FIXTURES[league];
+    if (!fixtures) continue;
     
-    for (let round = 0; round < fixtures.length; round++) {
-      const roundMatches = fixtures[round];
-      for (const fixture of roundMatches) {
-        matches.push({
-          id: `m${matchId++}`,
-          round: round + 1,
-          homeTeam: teams[fixture.h].id,
-          awayTeam: teams[fixture.a].id,
-          date: null,
-          time: '15:00',
-          venue: teams[fixture.h].name + '主场',
-          homeScore: null,
-          awayScore: null,
-          scorers: [],
-          assists: [],
-          motm: null,
-          status: 'pending'
-        });
-      }
+    for (const fixture of fixtures) {
+      const homeTeam = state.teams.find(t => t.id === fixture.homeTeam);
+      const awayTeam = state.teams.find(t => t.id === fixture.awayTeam);
+      const homeName = homeTeam ? homeTeam.name : fixture.homeTeam;
+      const awayName = awayTeam ? awayTeam.name : fixture.awayTeam;
+      
+      matches.push({
+        id: `m${matchId++}`,
+        round: fixture.round,
+        homeTeam: fixture.homeTeam,
+        awayTeam: fixture.awayTeam,
+        date: null,
+        time: '15:00',
+        venue: homeName + '主场',
+        homeScore: null,
+        awayScore: null,
+        scorers: [],
+        assists: [],
+        motm: null,
+        status: 'pending'
+      });
     }
   }
   return matches;
