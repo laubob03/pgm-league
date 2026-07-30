@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.528';
+    var _curVer = '1.0.529';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -645,7 +645,7 @@
 <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.528';
+    var _curVer = '1.0.529';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -740,7 +740,7 @@
     }).catch(function(){})
   }()
   // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 528 };
+const APP_VERSION = { major: 1, minor: 0, patch: 529 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -751,7 +751,7 @@ if (location.search.includes('_v=')) {
 const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
-const CHANGELOG = [{v:'v1.0.528',d:'2026-07-30',c:'修复:autoSyncFromCloud/syncDownload的state=cloudData覆盖后联赛赛程丢失(仅杯赛有恢复)'},{v:'v1.0.527',d:'2026-07-26',c:'修复:autoSyncFromCloud catch块引用未定义inner变量导致同步弹窗卡死'},{v:'v1.0.526',d:'2026-07-25',c:'侧边栏:骚傲官方CA→联赛管理'},{v:'v1.0.525',d:'2026-07-25',c:'代码清理:移除showForceUpdateModal空壳+重复busuanzi+deploy目录20个垃圾文件'},{v:'v1.0.524',d:'2026-07-25',c:'联赛赛程自动从LEAGUE_FIXTURES重新生成(修复localStorage旧数据覆盖新赛程)'},{v:'v1.0.523',d:'2026-07-25',c:'修复赛程排序-保持Excel原始对阵顺序(逐轮延续而非按round分组)'},{v:'v1.0.522',d:'2026-07-25',c:'63赛季五大联赛赛程导入(超级/甲东/甲西/乙东/乙西各22轮)'},{v:'v1.0.522',d:'2026-07-25',c:'63赛季五大联赛赛程导入(超级/甲东/甲西/乙东/乙西各22轮)'},{v:'v1.0.521',d:'2026-07-25',c:'修复syncPlayersFromDB公海误删：已在PLAYERS_DB的球员不再从公海清理'},{v:'v1.0.520',d:'2026-07-25',c:'63赛季60队1845名球员全量更新(含CA+违约金)'},{v:'v1.0.519',d:'2026-07-25',c:'热修复:teams数组引号丢失导致t10 is not defined'},{v:'v1.0.518',d:'2026-07-25',c:'三大杯赛程从5轮50场扩展为10轮100场(每队主客场双循环)'},{v:'v1.0.517',d:'2026-07-25',c:'杯赛CUP_FIXTURES中homeTeam/awayTeam/teams从数字改为字符串tX'},{v:'v1.0.516',d:'2026-07-25',c:'修复杯赛填充条件:云端cups缺少championsCup等key时自动创建'},{v:'v1.0.515',d:'2026-07-25',c:'添加debugCups()调试函数排查杯赛不显示问题'},{v:'v1.0.514',d:'2026-07-24',c:'修复autoSyncFromCloud的state=cloudData覆盖杯赛赛程(v1.0.513只改了syncDownload未改autoSyncFromCloud)'},{v:'v1.0.513',d:'2026-07-24',c:'修复杯赛赛程不显示:autoSyncFromCloud的state=cloudData覆盖loadState填充,增加云端同步后重新填充+saveState'},{v:'v1.0.512',d:'2026-07-24',c:'导入63赛季协会杯赛程(20队5轮50场,CUP_FIXTURES新增associationCup)'},{v:'v1.0.511',d:'2026-07-24',c:'导入63赛季联盟杯赛程(20队5轮50场,CUP_FIXTURES新增leagueCup)'},{v:'v1.0.510',d:'2026-07-24',c:'导入63赛季冠军杯赛程(20队5轮50场,CUP_FIXTURES常量+loadState自动填充)'},{v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
+const CHANGELOG = [{v:'v1.0.529',d:'2026-07-30',c:'修复:v1.0.528的generateAllMatches无条件覆盖比分(改为loadState的条件判断)+补全autoSyncFromCloud的LEAGUE_FIXTURES恢复'},{v:'v1.0.528',d:'2026-07-30',c:'修复:autoSyncFromCloud/syncDownload的state=cloudData覆盖后联赛赛程丢失(仅杯赛有恢复)'},{v:'v1.0.527',d:'2026-07-26',c:'修复:autoSyncFromCloud catch块引用未定义inner变量导致同步弹窗卡死'},{v:'v1.0.526',d:'2026-07-25',c:'侧边栏:骚傲官方CA→联赛管理'},{v:'v1.0.525',d:'2026-07-25',c:'代码清理:移除showForceUpdateModal空壳+重复busuanzi+deploy目录20个垃圾文件'},{v:'v1.0.524',d:'2026-07-25',c:'联赛赛程自动从LEAGUE_FIXTURES重新生成(修复localStorage旧数据覆盖新赛程)'},{v:'v1.0.523',d:'2026-07-25',c:'修复赛程排序-保持Excel原始对阵顺序(逐轮延续而非按round分组)'},{v:'v1.0.522',d:'2026-07-25',c:'63赛季五大联赛赛程导入(超级/甲东/甲西/乙东/乙西各22轮)'},{v:'v1.0.522',d:'2026-07-25',c:'63赛季五大联赛赛程导入(超级/甲东/甲西/乙东/乙西各22轮)'},{v:'v1.0.521',d:'2026-07-25',c:'修复syncPlayersFromDB公海误删：已在PLAYERS_DB的球员不再从公海清理'},{v:'v1.0.520',d:'2026-07-25',c:'63赛季60队1845名球员全量更新(含CA+违约金)'},{v:'v1.0.519',d:'2026-07-25',c:'热修复:teams数组引号丢失导致t10 is not defined'},{v:'v1.0.518',d:'2026-07-25',c:'三大杯赛程从5轮50场扩展为10轮100场(每队主客场双循环)'},{v:'v1.0.517',d:'2026-07-25',c:'杯赛CUP_FIXTURES中homeTeam/awayTeam/teams从数字改为字符串tX'},{v:'v1.0.516',d:'2026-07-25',c:'修复杯赛填充条件:云端cups缺少championsCup等key时自动创建'},{v:'v1.0.515',d:'2026-07-25',c:'添加debugCups()调试函数排查杯赛不显示问题'},{v:'v1.0.514',d:'2026-07-24',c:'修复autoSyncFromCloud的state=cloudData覆盖杯赛赛程(v1.0.513只改了syncDownload未改autoSyncFromCloud)'},{v:'v1.0.513',d:'2026-07-24',c:'修复杯赛赛程不显示:autoSyncFromCloud的state=cloudData覆盖loadState填充,增加云端同步后重新填充+saveState'},{v:'v1.0.512',d:'2026-07-24',c:'导入63赛季协会杯赛程(20队5轮50场,CUP_FIXTURES新增associationCup)'},{v:'v1.0.511',d:'2026-07-24',c:'导入63赛季联盟杯赛程(20队5轮50场,CUP_FIXTURES新增leagueCup)'},{v:'v1.0.510',d:'2026-07-24',c:'导入63赛季冠军杯赛程(20队5轮50场,CUP_FIXTURES常量+loadState自动填充)'},{v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
   {v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
   {v:'v1.0.508',d:'2026-07-24',c:'甲西 La Coruna 更名为 Brighton，队徽更换为618.webp'},
   {v:'v1.0.507',d:'2026-07-23',c:'甲西 Atalanta 更名为 Angers，队徽更换为875.png'},
@@ -14934,12 +14934,19 @@ async function syncDownload() {
       }
       saveState();
     }
-    // ★ v1.0.528修复: 联赛赛程也需从LEAGUE_FIXTURES恢复（state=cloudData覆盖后）
-    if (typeof LEAGUE_FIXTURES !== 'undefined' && state.teams && state.teams.length > 0) {
-      state.matches = generateAllMatches();
-      console.log('[LEAGUE] syncDownload: 赛程已从LEAGUE_FIXTURES恢复: ' + state.matches.length + '场');
-      saveState();
-    }
+    // ★ v1.0.529修复: 联赛赛程恢复（条件判断：只有对阵结构变了才重建，不覆盖已有比分）
+    (function() {
+      if (typeof LEAGUE_FIXTURES === 'undefined' || !state.teams || state.teams.length === 0) return;
+      var needRegen = !state.matches || state.matches.length === 0;
+      if (!needRegen && state.matches[0] && LEAGUE_FIXTURES.super && LEAGUE_FIXTURES.super[0]) {
+        needRegen = state.matches[0].homeTeam !== LEAGUE_FIXTURES.super[0].homeTeam;
+      }
+      if (needRegen) {
+        state.matches = generateAllMatches();
+        console.log('[LEAGUE] syncDownload: 赛程已从LEAGUE_FIXTURES恢复: ' + state.matches.length + '场');
+        saveState();
+      }
+    })();
     const now = new Date();
     const timeStr = now.getFullYear() + '-' + 
       String(now.getMonth()+1).padStart(2,'0') + '-' + 
@@ -15491,6 +15498,19 @@ async function autoSyncFromCloud() {
         }
         saveState();
       }
+      // ★ v1.0.529修复: 联赛赛程恢复（条件判断，不覆盖已有比分）
+      (function() {
+        if (typeof LEAGUE_FIXTURES === 'undefined' || !state.teams || state.teams.length === 0) return;
+        var needRegen = !state.matches || state.matches.length === 0;
+        if (!needRegen && state.matches[0] && LEAGUE_FIXTURES.super && LEAGUE_FIXTURES.super[0]) {
+          needRegen = state.matches[0].homeTeam !== LEAGUE_FIXTURES.super[0].homeTeam;
+        }
+        if (needRegen) {
+          state.matches = generateAllMatches();
+          console.log('[LEAGUE] autoSync: 赛程已从LEAGUE_FIXTURES恢复: ' + state.matches.length + '场');
+          saveState();
+        }
+      })();
 
       const now = new Date();
       const timeStr = now.getFullYear() + '-' +
