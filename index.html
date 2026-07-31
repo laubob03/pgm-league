@@ -10,7 +10,7 @@
   <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.529';
+    var _curVer = '1.0.530';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -645,7 +645,7 @@
 <script>
   !function(){
     var _fc = sessionStorage.getItem('pgm_force_clean');
-    var _curVer = '1.0.529';
+    var _curVer = '1.0.530';
     if (!_fc || _fc !== _curVer) {
       sessionStorage.setItem('pgm_force_clean', _curVer);
       var tasks = [];
@@ -740,7 +740,7 @@
     }).catch(function(){})
   }()
   // ============ VERSION ============
-const APP_VERSION = { major: 1, minor: 0, patch: 529 };
+const APP_VERSION = { major: 1, minor: 0, patch: 530 };
 
 const APP_AUTHOR = 'J.K';
 
@@ -751,7 +751,7 @@ if (location.search.includes('_v=')) {
 const APP_BUILD_DATE = '2026-05-02';
 
 // ============ CHANGELOG ============
-const CHANGELOG = [{v:'v1.0.529',d:'2026-07-30',c:'修复:v1.0.528的generateAllMatches无条件覆盖比分(改为loadState的条件判断)+补全autoSyncFromCloud的LEAGUE_FIXTURES恢复'},{v:'v1.0.528',d:'2026-07-30',c:'修复:autoSyncFromCloud/syncDownload的state=cloudData覆盖后联赛赛程丢失(仅杯赛有恢复)'},{v:'v1.0.527',d:'2026-07-26',c:'修复:autoSyncFromCloud catch块引用未定义inner变量导致同步弹窗卡死'},{v:'v1.0.526',d:'2026-07-25',c:'侧边栏:骚傲官方CA→联赛管理'},{v:'v1.0.525',d:'2026-07-25',c:'代码清理:移除showForceUpdateModal空壳+重复busuanzi+deploy目录20个垃圾文件'},{v:'v1.0.524',d:'2026-07-25',c:'联赛赛程自动从LEAGUE_FIXTURES重新生成(修复localStorage旧数据覆盖新赛程)'},{v:'v1.0.523',d:'2026-07-25',c:'修复赛程排序-保持Excel原始对阵顺序(逐轮延续而非按round分组)'},{v:'v1.0.522',d:'2026-07-25',c:'63赛季五大联赛赛程导入(超级/甲东/甲西/乙东/乙西各22轮)'},{v:'v1.0.522',d:'2026-07-25',c:'63赛季五大联赛赛程导入(超级/甲东/甲西/乙东/乙西各22轮)'},{v:'v1.0.521',d:'2026-07-25',c:'修复syncPlayersFromDB公海误删：已在PLAYERS_DB的球员不再从公海清理'},{v:'v1.0.520',d:'2026-07-25',c:'63赛季60队1845名球员全量更新(含CA+违约金)'},{v:'v1.0.519',d:'2026-07-25',c:'热修复:teams数组引号丢失导致t10 is not defined'},{v:'v1.0.518',d:'2026-07-25',c:'三大杯赛程从5轮50场扩展为10轮100场(每队主客场双循环)'},{v:'v1.0.517',d:'2026-07-25',c:'杯赛CUP_FIXTURES中homeTeam/awayTeam/teams从数字改为字符串tX'},{v:'v1.0.516',d:'2026-07-25',c:'修复杯赛填充条件:云端cups缺少championsCup等key时自动创建'},{v:'v1.0.515',d:'2026-07-25',c:'添加debugCups()调试函数排查杯赛不显示问题'},{v:'v1.0.514',d:'2026-07-24',c:'修复autoSyncFromCloud的state=cloudData覆盖杯赛赛程(v1.0.513只改了syncDownload未改autoSyncFromCloud)'},{v:'v1.0.513',d:'2026-07-24',c:'修复杯赛赛程不显示:autoSyncFromCloud的state=cloudData覆盖loadState填充,增加云端同步后重新填充+saveState'},{v:'v1.0.512',d:'2026-07-24',c:'导入63赛季协会杯赛程(20队5轮50场,CUP_FIXTURES新增associationCup)'},{v:'v1.0.511',d:'2026-07-24',c:'导入63赛季联盟杯赛程(20队5轮50场,CUP_FIXTURES新增leagueCup)'},{v:'v1.0.510',d:'2026-07-24',c:'导入63赛季冠军杯赛程(20队5轮50场,CUP_FIXTURES常量+loadState自动填充)'},{v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
+const CHANGELOG = [{v:'v1.0.530',d:'2026-07-31',c:'致命修复:needUpdate时区bug致pgm_last_sync_time(本地时间)与_lastUpload.at(UTC)比较永远差8h→needUpdate=false→云端数据永不下载(设备累死);同步写入格式改为ISO UTC+旧格式兼容'},{v:'v1.0.529',d:'2026-07-30',c:'修复:v1.0.528的generateAllMatches无条件覆盖比分(改为loadState的条件判断)+补全autoSyncFromCloud的LEAGUE_FIXTURES恢复'},{v:'v1.0.528',d:'2026-07-30',c:'修复:autoSyncFromCloud/syncDownload的state=cloudData覆盖后联赛赛程丢失(仅杯赛有恢复)'},{v:'v1.0.527',d:'2026-07-26',c:'修复:autoSyncFromCloud catch块引用未定义inner变量导致同步弹窗卡死'},{v:'v1.0.526',d:'2026-07-25',c:'侧边栏:骚傲官方CA→联赛管理'},{v:'v1.0.525',d:'2026-07-25',c:'代码清理:移除showForceUpdateModal空壳+重复busuanzi+deploy目录20个垃圾文件'},{v:'v1.0.524',d:'2026-07-25',c:'联赛赛程自动从LEAGUE_FIXTURES重新生成(修复localStorage旧数据覆盖新赛程)'},{v:'v1.0.523',d:'2026-07-25',c:'修复赛程排序-保持Excel原始对阵顺序(逐轮延续而非按round分组)'},{v:'v1.0.522',d:'2026-07-25',c:'63赛季五大联赛赛程导入(超级/甲东/甲西/乙东/乙西各22轮)'},{v:'v1.0.522',d:'2026-07-25',c:'63赛季五大联赛赛程导入(超级/甲东/甲西/乙东/乙西各22轮)'},{v:'v1.0.521',d:'2026-07-25',c:'修复syncPlayersFromDB公海误删：已在PLAYERS_DB的球员不再从公海清理'},{v:'v1.0.520',d:'2026-07-25',c:'63赛季60队1845名球员全量更新(含CA+违约金)'},{v:'v1.0.519',d:'2026-07-25',c:'热修复:teams数组引号丢失导致t10 is not defined'},{v:'v1.0.518',d:'2026-07-25',c:'三大杯赛程从5轮50场扩展为10轮100场(每队主客场双循环)'},{v:'v1.0.517',d:'2026-07-25',c:'杯赛CUP_FIXTURES中homeTeam/awayTeam/teams从数字改为字符串tX'},{v:'v1.0.516',d:'2026-07-25',c:'修复杯赛填充条件:云端cups缺少championsCup等key时自动创建'},{v:'v1.0.515',d:'2026-07-25',c:'添加debugCups()调试函数排查杯赛不显示问题'},{v:'v1.0.514',d:'2026-07-24',c:'修复autoSyncFromCloud的state=cloudData覆盖杯赛赛程(v1.0.513只改了syncDownload未改autoSyncFromCloud)'},{v:'v1.0.513',d:'2026-07-24',c:'修复杯赛赛程不显示:autoSyncFromCloud的state=cloudData覆盖loadState填充,增加云端同步后重新填充+saveState'},{v:'v1.0.512',d:'2026-07-24',c:'导入63赛季协会杯赛程(20队5轮50场,CUP_FIXTURES新增associationCup)'},{v:'v1.0.511',d:'2026-07-24',c:'导入63赛季联盟杯赛程(20队5轮50场,CUP_FIXTURES新增leagueCup)'},{v:'v1.0.510',d:'2026-07-24',c:'导入63赛季冠军杯赛程(20队5轮50场,CUP_FIXTURES常量+loadState自动填充)'},{v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
   {v:'v1.0.509',d:'2026-07-25',c:'63赛季甲乙级升降级分组调整(甲东/甲西/乙东/乙西)'},
   {v:'v1.0.508',d:'2026-07-24',c:'甲西 La Coruna 更名为 Brighton，队徽更换为618.webp'},
   {v:'v1.0.507',d:'2026-07-23',c:'甲西 Atalanta 更名为 Angers，队徽更换为875.png'},
@@ -14697,12 +14697,7 @@ async function syncUpload() {
 
     // 记录同步时间
     const now = new Date();
-    const timeStr = now.getFullYear() + '-' +
-      String(now.getMonth()+1).padStart(2,'0') + '-' +
-      String(now.getDate()).padStart(2,'0') + ' ' +
-      String(now.getHours()).padStart(2,'0') + ':' +
-      String(now.getMinutes()).padStart(2,'0');
-    localStorage.setItem('pgm_last_sync_time', timeStr);
+    localStorage.setItem('pgm_last_sync_time', now.toISOString()); // ★ v1.0.530: ISO UTC 格式，与 _lastUpload.at 对齐
 
     const uploadInfo = {
       by: state.currentUser ? state.currentUser.coachName : '未知',
@@ -14948,14 +14943,9 @@ async function syncDownload() {
       }
     })();
     const now = new Date();
-    const timeStr = now.getFullYear() + '-' + 
-      String(now.getMonth()+1).padStart(2,'0') + '-' + 
-      String(now.getDate()).padStart(2,'0') + ' ' + 
-      String(now.getHours()).padStart(2,'0') + ':' + 
-      String(now.getMinutes()).padStart(2,'0');
-    localStorage.setItem('pgm_last_sync_time', timeStr);
-    
-    closeModal();
+
+      localStorage.setItem('pgm_last_sync_time', now.toISOString()); // ★ v1.0.530: UTC格式
+      closeModal();
     updateSidebar();
     render();
     showToast('✅ 下载成功！数据已更新');
@@ -15414,20 +15404,21 @@ async function autoSyncFromCloud() {
     let needUpdate = true;
     if (localSync && cloudUpload) {
       try {
-        // 本地同步时间格式："2026-04-24 15:30"（本地时间，无时区后缀）
-        // ★ 用空格替换解析，手动构造本地时间戳避免浏览器时区解析差异
-        const parts = localSync.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/);
-        let localTs = NaN;
-        if (parts) {
-          const [, y, mo, d, h, mi] = parts.map(Number);
-          localTs = new Date(y, mo - 1, d, h, mi).getTime();
-        } else {
-          // 回退：直接用 Date 解析
-          localTs = new Date(localSync.replace(' ', 'T')).getTime();
+        // ★ v1.0.530修复: 时区对齐
+        // pgm_last_sync_time 新格式: ISO 8601 UTC (v1.0.530+)
+        // pgm_last_sync_time 旧格式: "2026-04-24 15:30" 本地时间(上海UTC+8)
+        // _lastUpload.at 始终: ISO 8601 UTC
+        let localTs = Date.parse(localSync); // 新格式ISO可直接parse
+        if (isNaN(localTs)) {
+          // 旧格式兼容: 本地时间 → 减去8小时转为UTC
+          const parts = localSync.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/);
+          if (parts) {
+            const [, y, mo, d, h, mi] = parts.map(Number);
+            // 上海 UTC+8，本地时间转UTC: 直接减8小时毫秒
+            localTs = new Date(y, mo - 1, d, h, mi).getTime() - 8 * 3600000;
+          }
         }
-        // 云端上传时间格式：ISO 8601 UTC "2026-04-24T07:30:00.000Z"
-        const cloudTs = new Date(cloudUpload).getTime();
-        // 比较时间戳（毫秒），云端更新时间 > 本地同步时间则需要更新
+        const cloudTs = Date.parse(cloudUpload);
         if (!isNaN(localTs) && !isNaN(cloudTs)) {
           if (localTs >= cloudTs) needUpdate = false;
         }
@@ -15513,12 +15504,7 @@ async function autoSyncFromCloud() {
       })();
 
       const now = new Date();
-      const timeStr = now.getFullYear() + '-' +
-        String(now.getMonth()+1).padStart(2,'0') + '-' +
-        String(now.getDate()).padStart(2,'0') + ' ' +
-        String(now.getHours()).padStart(2,'0') + ':' +
-        String(now.getMinutes()).padStart(2,'0');
-      localStorage.setItem('pgm_last_sync_time', timeStr);
+      localStorage.setItem('pgm_last_sync_time', now.toISOString()); // ★ v1.0.530: UTC格式
 
       // 重新渲染
       updateSidebar();
